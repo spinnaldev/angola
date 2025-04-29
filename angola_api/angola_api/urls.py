@@ -20,31 +20,40 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
+    
 )
 from operation import views
 
 router = DefaultRouter()
-router.register(r'users', views.UserViewSet)
-router.register(r'categories', views.CategoryViewSet)
-router.register(r'subcategories', views.SubCategoryViewSet)
-router.register(r'providers', views.ProviderViewSet)
-router.register(r'services', views.ProviderServiceViewSet)
-router.register(r'portfolio', views.PortfolioViewSet)
-router.register(r'certificates', views.CertificateViewSet)
-router.register(r'reviews', views.ReviewViewSet)
-router.register(r'favorites', views.FavoriteViewSet)
-router.register(r'conversations', views.ConversationViewSet)
-router.register(r'disputes', views.DisputeViewSet)
-router.register(r'notifications', views.NotificationViewSet)
-router.register(r'reports', views.ReportViewSet)
+router.register(r'api/users', views.UserViewSet)
+router.register(r'api/categories', views.CategoryViewSet)
+router.register(r'api/subcategories', views.SubCategoryViewSet)
+router.register(r'api/providers', views.ProviderViewSet)
+router.register(r'api/services', views.ProviderServiceViewSet)
+router.register(r'api/portfolio', views.PortfolioViewSet)
+router.register(r'api/certificates', views.CertificateViewSet)
+router.register(r'api/reviews', views.ReviewViewSet)
+router.register(r'api/favorites', views.FavoriteViewSet)
+router.register(r'api/conversations', views.ConversationViewSet)
+router.register(r'api/disputes', views.DisputeViewSet)
+router.register(r'api/notifications', views.NotificationViewSet)
+router.register(r'api/reports', views.ReportViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('auth/register/', views.RegisterView.as_view(), name='register'),
-    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-]
-urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+    path('api/auth/login/', views.LoginView.as_view(), name='login'),  # Nouveau: endpoint de connexion
+    path('api/auth/register/', views.RegisterView.as_view(), name='register'),
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Password reset endpoints
+    path('api/password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('api/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
+    path('api/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
 ]
+# urlpatterns = [
+    
+# ]
 

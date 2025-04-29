@@ -8,12 +8,25 @@ enum AuthStatus {
   unauthenticated
 }
 
+enum PasswordResetStatus {
+  initial,
+  requestSent,
+  codeVerified,
+  completed,
+  failed
+}
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService;
   
   AuthStatus _status = AuthStatus.uninitialized;
   User? _currentUser;
   String? _errorMessage;
+  
+  // État pour le reset de mot de passe
+  PasswordResetStatus _resetStatus = PasswordResetStatus.initial;
+  String? _resetEmail;
+  String? _resetCode;
 
   AuthProvider(this._authService) {
     // Vérifier l'état d'authentification au démarrage
@@ -24,22 +37,48 @@ class AuthProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
+  
+  // Getters pour le reset de mot de passe
+  PasswordResetStatus get resetStatus => _resetStatus;
+  String? get resetEmail => _resetEmail;
+  String? get resetCode => _resetCode;
 
+  // Méthodes pour l'authentification et la vérification du statut
   Future<void> _checkCurrentUser() async {
-    final user = await _authService.getCurrentUser();
-    if (user != null) {
-      _currentUser = user;
-      _status = AuthStatus.authenticated;
-    } else {
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user != null) {
+        _currentUser = user;
+        _status = AuthStatus.authenticated;
+      } else {
+        _status = AuthStatus.unauthenticated;
+      }
+    } catch (e) {
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
   }
 
-  Future<bool> login(String username, String password) async {
+  // Nouvelle méthode: Récupérer explicitement les informations utilisateur
+  Future<void> getCurrentUser() async {
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user != null) {
+        _currentUser = user;
+        _status = AuthStatus.authenticated;
+      }
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  // Méthodes d'authentification existantes
+  Future<bool> login(String email, String password) async {
     try {
       _errorMessage = null;
-      final user = await _authService.login(username, password);
+      final user = await _authService.login(email, password);
       
       if (user != null) {
         _currentUser = user;
@@ -59,7 +98,7 @@ class AuthProvider with ChangeNotifier {
       return false;
     }
   }
-
+  
   Future<bool> register(String username, String email, String password, 
       String firstName, String lastName, String phoneNumber, String role) async {
     try {
@@ -86,11 +125,52 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> resetPassword(String email) async {
+  // Méthodes existantes pour le reset de mot de passe
+  Future<bool> requestPasswordReset(String email) async {
     try {
       _errorMessage = null;
-      final result = await _authService.resetPassword(email);
-      return result;
+      _resetStatus = PasswordResetStatus.initial;
+      final result = await _authService.requestPasswordReset(email);
+      
+      if (result) {
+        _resetEmail = email;
+        _resetStatus = PasswordResetStatus.requestSent;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Échec de la demande de réinitialisation.";
+        _resetStatus = PasswordResetStatus.failed;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      _resetStatus = PasswordResetStatus.failed;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> verifyResetCode(String code) async {
+    try {
+      _errorMessage = null;
+      if (_resetEmail == null) {
+        _errorMessage = "Email non défini. Veuillez réessayer depuis le début.";
+        return false;
+      }
+      
+      final result = await _authService.verifyResetCode(_resetEmail!, code);
+      
+      if (result) {
+        _resetCode = code;
+        _resetStatus = PasswordResetStatus.codeVerified;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Code de vérification invalide.";
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
@@ -98,11 +178,58 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> logout() async {
-    await _authService.logout();
-    _currentUser = null;
-    _status = AuthStatus.unauthenticated;
+  Future<bool> resetPasswordConfirm(String newPassword) async {
+    try {
+      _errorMessage = null;
+      if (_resetEmail == null || _resetCode == null) {
+        _errorMessage = "Informations manquantes. Veuillez réessayer depuis le début.";
+        return false;
+      }
+      
+      final result = await _authService.resetPasswordConfirm(_resetEmail!, _resetCode!, newPassword);
+      
+      if (result) {
+        _resetStatus = PasswordResetStatus.completed;
+        // Réinitialiser les valeurs
+        _resetEmail = null;
+        _resetCode = null;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Échec de la réinitialisation du mot de passe.";
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void resetPasswordProcess() {
+    _resetStatus = PasswordResetStatus.initial;
+    _resetEmail = null;
+    _resetCode = null;
+    _errorMessage = null;
     notifyListeners();
+  }
+
+  // Méthode de déconnexion améliorée
+  Future<bool> logout() async {
+    try {
+      final success = await _authService.logout();
+      if (success) {
+        _currentUser = null;
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+      }
+      return success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   void clearError() {

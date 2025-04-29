@@ -32,6 +32,18 @@ class User(AbstractUser, TimeStampMixin):
     def __str__(self):
         return self.username
 
+class ResetPasswordCode(models.Model):
+    """
+    Modèle pour stocker les codes de réinitialisation de mot de passe
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reset_codes')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    def __str__(self):
+        return f"Code de réinitialisation pour {self.user.email}"
+    
 class Category(TimeStampMixin):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)

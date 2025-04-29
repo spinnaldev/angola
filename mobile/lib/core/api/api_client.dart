@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
   final String baseUrl;
-  final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   ApiClient({required this.baseUrl});
 
@@ -71,51 +69,147 @@ class ApiClient {
       }
       return null;
     } else if (response.statusCode == 401) {
+      // Si token expiré ou invalide
+      _refreshToken();
       throw Exception('Non autorisé. Veuillez vous reconnecter.');
     } else {
       try {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['detail'] ?? 'Une erreur est survenue');
+        if (errorData is Map) {
+          // Rechercher les erreurs dans la réponse
+          if (errorData.containsKey('detail')) {
+            throw Exception(errorData['detail']);
+          } else if (errorData.containsKey('error')) {
+            throw Exception(errorData['error']);
+          } else if (errorData.containsKey('non_field_errors')) {
+            if (errorData['non_field_errors'] is List) {
+              throw Exception(errorData['non_field_errors'].join(', '));
+            } else {
+              throw Exception(errorData['non_field_errors'].toString());
+            }
+          } else {
+            // Parcourir les erreurs de champs
+            String errorMessages = '';
+            errorData.forEach((key, value) {
+              if (value is List) {
+                errorMessages += '$key: ${value.join(', ')}\n';
+              } else {
+                errorMessages += '$key: $value\n';
+              }
+            });
+            
+            if (errorMessages.isNotEmpty) {
+              throw Exception(errorMessages.trim());
+            }
+          }
+        }
+        
+        throw Exception('Erreur ${response.statusCode}: ${response.reasonPhrase}');
       } catch (e) {
+        if (e is Exception) {
+          rethrow;
+        }
         throw Exception('Erreur ${response.statusCode}: ${response.reasonPhrase}');
       }
     }
   }
 
-  // Méthodes spécifiques à l'authentification
-  Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await post('auth/token/', 
-      data: {
-        'username': username,
-        'password': password,
-      },
-      requireAuth: false,
-    );
-    
-    if (response != null && response['access'] != null) {
-      await _secureStorage.write(key: 'access_token', value: response['access']);
-      await _secureStorage.write(key: 'refresh_token', value: response['refresh']);
-    }
-    
-    return response;
-  }
-
-  Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
-    return await post('auth/register/', data: userData, requireAuth: false);
-  }
-
-  Future<bool> resetPassword(String email) async {
+  Future<void> _refreshToken() async {
     try {
-      await post('auth/password-reset/', data: {'email': email}, requireAuth: false);
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      if (refreshToken == null) return;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/token/refresh/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        await _secureStorage.write(key: 'access_token', value: data['access']);
+      } else {
+        // Si le refresh token est également invalide
+        await _secureStorage.delete(key: 'access_token');
+        await _secureStorage.delete(key: 'refresh_token');
+      }
+    } catch (e) {
+      print('Erreur de rafraîchissement du token: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await post(
+        'auth/login/',  // Nouvel endpoint
+        data: {
+          'email': email,
+          'password': password,
+        },
+        requireAuth: false,
+      );
+      
+      if (response != null && response['access'] != null) {
+        // Sauvegarder les tokens
+        await _secureStorage.write(key: 'access_token', value: response['access']);
+        await _secureStorage.write(key: 'refresh_token', value: response['refresh']);
+        
+        // La réponse contient déjà les données utilisateur
+        return response;
+      }
+      throw Exception('Échec de connexion');
+    } catch (e) {
+      print('Erreur de login: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> resetPasswordRequest(String email) async {
+    try {
+      final response = await post(
+        'auth/password-reset-request/',
+        data: {'email': email},
+        requireAuth: false
+      );
       return true;
     } catch (e) {
-      return false;
+      print('Erreur de demande de réinitialisation de mot de passe: $e');
+      rethrow;
     }
   }
 
-  Future<bool> logout() async {
-    await _secureStorage.delete(key: 'access_token');
-    await _secureStorage.delete(key: 'refresh_token');
-    return true;
+  Future<bool> verifyResetCode(String email, String code) async {
+    try {
+      final response = await post(
+        'auth/verify-reset-code/',
+        data: {
+          'email': email,
+          'code': code
+        },
+        requireAuth: false
+      );
+      return true;
+    } catch (e) {
+      print('Erreur de vérification du code: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> resetPasswordConfirm(String email, String code, String newPassword) async {
+    try {
+      final response = await post(
+        'auth/password-reset-confirm/',
+        data: {
+          'email': email,
+          'code': code,
+          'new_password': newPassword
+        },
+        requireAuth: false
+      );
+      return true;
+    } catch (e) {
+      print('Erreur de réinitialisation du mot de passe: $e');
+      rethrow;
+    }
   }
 }

@@ -262,11 +262,11 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    # password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     
     class Meta:
         model = User
-        fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name', 
+        fields = ('username', 'password',  'email', 'first_name', 'last_name', 
                  'phone_number', 'role', 'location')
         extra_kwargs = {
             'first_name': {'required': True},
@@ -274,13 +274,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             'email': {'required': True}
         }
     
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        return attrs
+    # def validate(self, attrs):
+    #     if attrs['password'] != attrs['password2']:
+    #         raise serializers.ValidationError({"password": "Password fields didn't match."})
+    #     return attrs
     
     def create(self, validated_data):
-        validated_data.pop('password2')
+        # validated_data.pop('password2')
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data['email'],

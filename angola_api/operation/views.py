@@ -1,6 +1,6 @@
 from django.forms import ValidationError
 from django.shortcuts import render
-
+import math
 # Create your views here.
 from rest_framework import viewsets, generics, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
@@ -11,9 +11,18 @@ from django.db.models import Q, Count, Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
-from django.contrib.gis.geos import Point
-from django.contrib.gis.measure import D
-from django.contrib.gis.db.models.functions import Distance
+from django.utils import timezone
+from datetime import timedelta
+from .models import ResetPasswordCode
+from rest_framework.views import APIView
+from django.core.mail import send_mail
+import random
+import string
+from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
+# from django.contrib.gis.geos import Point
+# from django.contrib.gis.measure import D
+# from django.contrib.gis.db.models.functions import Distance
 
 from .models import (
     Category, SubCategory, Provider, ProviderService, Portfolio, 
@@ -37,11 +46,237 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+
+class LoginView(APIView):
+    permission_classes = (AllowAny,)
+    """
+    Vue pour la connexion avec email et mot de passe
+    Retourne les informations utilisateur et les tokens
+    """
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        if not email or not password:
+            return Response(
+                {"detail": "Email et mot de passe sont requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Chercher l'utilisateur par email
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Aucun compte trouvé avec cet email"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Vérifier le mot de passe
+        if not user.check_password(password):
+            return Response(
+                {"detail": "Mot de passe incorrect"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Si l'utilisateur n'est pas actif
+        if not user.is_active:
+            return Response(
+                {"detail": "Ce compte a été désactivé"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Générer les tokens
+        refresh = RefreshToken.for_user(user)
+        
+        # Récupérer les infos utilisateur
+        serializer = UserSerializer(user)
+        
+        # Créer la réponse
+        response_data = {
+            'user': serializer.data,
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+    
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
 
+class PasswordResetRequestView(APIView):
+    """
+    Vue pour demander un code de réinitialisation de mot de passe
+    """
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email:
+            return Response(
+                {"detail": "Email est requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si l'utilisateur existe
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Pour des raisons de sécurité, ne pas révéler que l'email n'existe pas
+            return Response(
+                {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
+                status=status.HTTP_200_OK
+            )
+        
+        # Générer un code à 6 chiffres
+        code = ''.join(random.choices(string.digits, k=6))
+        
+        # Supprimer les anciens codes pour cet utilisateur
+        ResetPasswordCode.objects.filter(user=user).delete()
+        
+        # Créer un nouveau code
+        expiration = timezone.now() + timedelta(minutes=15)
+        reset_code = ResetPasswordCode.objects.create(
+            user=user,
+            code=code,
+            expires_at=expiration
+        )
+        
+        # Envoyer l'email
+        subject = 'Code de réinitialisation de mot de passe'
+        message = f"""
+        Bonjour,
+        
+        Vous avez demandé la réinitialisation de votre mot de passe.
+        Voici votre code de réinitialisation: {code}
+        
+        Ce code est valable pendant 15 minutes.
+        
+        Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.
+        
+        Cordialement,
+        L'équipe Angola
+        """
+        
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Erreur lors de l'envoi de l'email: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(
+            {"detail": "Code de réinitialisation envoyé"}, 
+            status=status.HTTP_200_OK
+        )
+
+class VerifyResetCodeView(APIView):
+    """
+    Vue pour vérifier le code de réinitialisation
+    """
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        
+        if not email or not code:
+            return Response(
+                {"detail": "Email et code sont requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si l'utilisateur existe
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Code invalide"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si le code existe et est valide
+        try:
+            reset_code = ResetPasswordCode.objects.get(user=user, code=code)
+            
+            # Vérifier si le code a expiré
+            if reset_code.expires_at < timezone.now():
+                reset_code.delete()
+                return Response(
+                    {"detail": "Code expiré"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except ResetPasswordCode.DoesNotExist:
+            return Response(
+                {"detail": "Code invalide"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return Response(
+            {"detail": "Code vérifié avec succès"}, 
+            status=status.HTTP_200_OK
+        )
+
+class PasswordResetConfirmView(APIView):
+    """
+    Vue pour réinitialiser le mot de passe avec le code
+    """
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('new_password')
+        
+        if not email or not code or not new_password:
+            return Response(
+                {"detail": "Email, code et nouveau mot de passe sont requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si l'utilisateur existe
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Code invalide"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si le code existe et est valide
+        try:
+            reset_code = ResetPasswordCode.objects.get(user=user, code=code)
+            
+            # Vérifier si le code a expiré
+            if reset_code.expires_at < timezone.now():
+                reset_code.delete()
+                return Response(
+                    {"detail": "Code expiré"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except ResetPasswordCode.DoesNotExist:
+            return Response(
+                {"detail": "Code invalide"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Changer le mot de passe
+        user.set_password(new_password)
+        user.save()
+        
+        # Supprimer le code
+        reset_code.delete()
+        
+        return Response(
+            {"detail": "Mot de passe réinitialisé avec succès"}, 
+            status=status.HTTP_200_OK
+        )
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -195,20 +430,29 @@ class ProviderViewSet(viewsets.ModelViewSet):
         except ValueError:
             return Response({"detail": "Invalid coordinates or radius"}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create a point from the coordinates
-        user_location = Point(lng, lat, srid=4326)
-        
-        # Find providers within the radius
+        # Filtrer les prestataires avec latitude et longitude non nulles
         providers = Provider.objects.filter(
             longitude__isnull=False,
             latitude__isnull=False
-        ).extra(
-            select={'distance': 'ST_Distance_Sphere(POINT(longitude, latitude), POINT(%s, %s))'},
-            select_params=[lng, lat]
-        ).order_by('distance')
+        )
         
-        # Filter by radius (in meters)
-        providers = providers.filter(distance__lte=radius * 1000)
+        # Calculer une zone approximative basée sur le rayon (approche simplifiée)
+        # 1 degré de latitude ≈ 111 km
+        # 1 degré de longitude ≈ 111 km * cos(latitude)
+        lat_radius = radius / 111.0
+        lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
+        
+        providers = providers.filter(
+            latitude__gte=lat - lat_radius,
+            latitude__lte=lat + lat_radius,
+            longitude__gte=lng - lng_radius,
+            longitude__lte=lng + lng_radius
+        )
+        
+        # Tri par distance approximative (Pythagore)
+        providers = sorted(providers, key=lambda p: (
+            (p.latitude - lat) ** 2 + (p.longitude - lng) ** 2
+        ))
         
         page = self.paginate_queryset(providers)
         if page is not None:
@@ -217,7 +461,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(providers, many=True)
         return Response(serializer.data)
-
+    
 class ProviderServiceViewSet(viewsets.ModelViewSet):
     queryset = ProviderService.objects.all()
     serializer_class = ProviderServiceSerializer
