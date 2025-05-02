@@ -314,10 +314,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
     
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdminUser()]
-        return [AllowAny()]
+    # def get_permissions(self):
+    #     if self.action in ['create', 'update', 'partial_update', 'destroy']:
+    #         return [IsAdminUser()]
+    #     return [AllowAny()]
 
 class SubCategoryViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
@@ -327,10 +327,10 @@ class SubCategoryViewSet(viewsets.ModelViewSet):
     filterset_fields = ['category']
     search_fields = ['name', 'description']
     
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdminUser()]
-        return [AllowAny()]
+    # def get_permissions(self):
+    #     if self.action in ['create', 'update', 'partial_update', 'destroy']:
+    #         return [IsAdminUser()]
+    #     return [AllowAny()]
 
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = Provider.objects.all()
@@ -465,7 +465,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
 class ProviderServiceViewSet(viewsets.ModelViewSet):
     queryset = ProviderService.objects.all()
     serializer_class = ProviderServiceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['subcategory', 'is_available', 'price_type']
@@ -477,10 +477,10 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
             return ProviderService.objects.filter(provider_id=provider_id)
         return ProviderService.objects.all()
     
-    def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    # def get_permissions(self):
+    #     if self.action == 'list' or self.action == 'retrieve':
+    #         return [AllowAny()]
+    #     return [IsAuthenticated()]
     
     def perform_create(self, serializer):
         # Make sure the logged-in user is a provider
@@ -503,6 +503,69 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(services, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def count(self, request):
+        """
+        Endpoint pour compter le nombre de services par catégorie
+        Paramètre: category_id
+        """
+        category_id = request.query_params.get('category_id')
+        
+        if not category_id:
+            return Response({"detail": "category_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Convertir en entier
+            category_id = int(category_id)
+        except ValueError:
+            return Response({"detail": "category_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Compter les services pour cette catégorie
+            # On compte les services qui ont une sous-catégorie appartenant à cette catégorie
+            count = ProviderService.objects.filter(
+                subcategory__category_id=category_id, 
+                is_available=True
+            ).count()
+            
+            return Response({"count": count})
+        except Exception as e:
+            return Response(
+                {"detail": f"Error counting services: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def count_by_subcategory(self, request):
+        """
+        Endpoint pour compter le nombre de services par sous-catégorie
+        Paramètre: subcategory_id
+        """
+        subcategory_id = request.query_params.get('subcategory_id')
+        
+        if not subcategory_id:
+            return Response({"detail": "subcategory_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Convertir en entier
+            subcategory_id = int(subcategory_id)
+        except ValueError:
+            return Response({"detail": "subcategory_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Compter les services pour cette sous-catégorie
+            count = ProviderService.objects.filter(
+                subcategory_id=subcategory_id, 
+                is_available=True
+            ).count()
+            
+            return Response({"count": count})
+        except Exception as e:
+            return Response(
+                {"detail": f"Error counting services: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 class PortfolioViewSet(viewsets.ModelViewSet):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer

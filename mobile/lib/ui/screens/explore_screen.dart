@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import '../../core/models/category.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../widgets/category_card.dart';
+import '../widgets/category_grid_card.dart';
 import '../widgets/side_menu.dart';
 import 'service_list_screen.dart';
 import 'profile_screen.dart';
+import '../common/bottom_navigation.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -41,12 +42,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
     super.dispose();
   }
 
+  void _handleNavigation(int index) {
+    if (index == 0) {
+      // Déjà sur Explorer, ne rien faire
+    } else if (index == 1) {
+      // Navigation vers Messages
+    } else if (index == 2) {
+      // Ouvrir le menu latéral quand on appuie sur Profil
+      setState(() {
+        _isMenuOpen = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
     final menuWidth = MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
     
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Contenu principal
@@ -55,40 +70,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // En-tête avec logo et icône de notification
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           'LOGO',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _isMenuOpen = true;
-                            });
+                        // Icône de notification au lieu du profil
+                        IconButton(
+                          icon: const Icon(Icons.notifications_outlined),
+                          onPressed: () {
+                            // Action pour les notifications
                           },
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundImage: authProvider.currentUser?.profilePicture != null && 
-                                          authProvider.currentUser!.profilePicture!.isNotEmpty
-                                ? NetworkImage(authProvider.currentUser!.profilePicture!)
-                                : null,
-                            child: authProvider.currentUser?.profilePicture == null || 
-                                  authProvider.currentUser!.profilePicture!.isEmpty
-                                ? Text(
-                                    authProvider.currentUser?.firstName.isNotEmpty == true 
-                                      ? authProvider.currentUser!.firstName[0] 
-                                      : 'U',
-                                    style: const TextStyle(fontSize: 14),
-                                  )
-                                : null,
-                          ),
                         ),
                       ],
                     ),
@@ -99,25 +99,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     child: Container(
                       height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Recherche de services...',
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Recherche de services...',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 15),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   
                   // Texte "Tous les services"
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 15, 20, 5),
+                    padding: EdgeInsets.fromLTRB(20, 15, 20, 10),
                     child: Text(
                       'Tous les services',
                       style: TextStyle(
@@ -127,7 +136,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ),
                   ),
                   
-                  // Grille des catégories
+                  // Grille des catégories (style image 2)
                   Expanded(
                     child: Consumer<CategoryProvider>(
                       builder: (context, categoryProvider, child) {
@@ -135,35 +144,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           return const Center(child: CircularProgressIndicator());
                         }
                         
-                        if (categoryProvider.categories.isEmpty) {
+                        if (categoryProvider.categoriesWithCount.isEmpty) {
                           return const Center(child: Text('Aucune catégorie disponible'));
                         }
                         
+                        // Affichage en grille avec 2 catégories par ligne comme dans l'image 2
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15),
                           child: GridView.builder(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.0,
+                              crossAxisCount: 2, // 2 éléments par ligne
+                              childAspectRatio: 1.0, // Ratio 1:1 pour forme carrée
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
                             ),
-                            itemCount: categoryProvider.categories.length,
+                            itemCount: categoryProvider.categoriesWithCount.length,
                             itemBuilder: (context, index) {
-                              final category = categoryProvider.categories[index];
+                              final categoryWithCount = categoryProvider.categoriesWithCount[index];
                               return GestureDetector(
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ServiceListScreen(
-                                        categoryId: category.id,
-                                        categoryName: category.name,
+                                        categoryId: categoryWithCount.category.id,
+                                        categoryName: categoryWithCount.category.name,
                                       ),
                                     ),
                                   );
                                 },
-                                child: CategoryCard(category: category),
+                                child: CategoryGridCard(
+                                  category: categoryWithCount.category,
+                                  serviceCount: categoryWithCount.serviceCount,
+                                ),
                               );
                             },
                           ),
@@ -214,98 +227,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ],
       ),
       
-      // Barre de navigation inférieure
-      bottomNavigationBar: Container(
-        height: 65,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 0,
-          selectedItemColor: const Color(0xFF4B39EF), // Bleu plus précis
-          unselectedItemColor: Colors.grey,
-          backgroundColor: Colors.transparent, // Transparent pour éviter le fond gris
-          elevation: 0, // Supprime l'ombre par défaut
-          type: BottomNavigationBarType.fixed, // Fixed pour un comportement constant
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search, size: 24),
-              label: 'Explorer',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline, size: 24),
-              label: 'Message',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline, size: 24),
-              label: 'Profil',
-            ),
-          ],
-          onTap: (index) {
-            if (index == 0) {
-              // Déjà sur Explorer
-            } else if (index == 1) {
-              // Navigation vers Messages
-            } else if (index == 2) {
-              // Navigation vers Profil
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            }
-          },
-        ),
+      // Utilisation du composant BottomNavigationBar
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 0, // Explorer par défaut
+        onTap: _handleNavigation,
       ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex: 0,
-      //   selectedItemColor: const Color(0xFF142FE2),
-      //   unselectedItemColor: Colors.grey,
-      //   items: const [
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.search),
-      //       label: 'Explorer',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.chat_bubble_outline),
-      //       label: 'Message',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.person_outline),
-      //       label: 'Profil',
-      //     ),
-      //   ],
-      //   onTap: (index) {
-      //     if (index == 0) {
-      //       // Déjà sur Explorer
-      //     } else if (index == 1) {
-      //       // Navigation vers Messages
-      //     } else if (index == 2) {
-      //       // Navigation vers Profil
-      //       Navigator.push(
-      //         context,
-      //         MaterialPageRoute(builder: (context) => const ProfileScreen()),
-      //       );
-      //     }
-      //   },
-      // ),
     );
   }
 }

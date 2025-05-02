@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../common/bottom_navigation.dart';
 // import '../../providers/project_provider.dart';
 import '../../core/models/user.dart';
 // import '../../core/models/project.dart';
@@ -24,7 +25,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Provider.of<ProjectProvider>(context, listen: false).fetchUserProjects();
     });
   }
-
+  void _handleNavigation(int index) {
+    if (index == 0) {
+      // Déjà sur Explorer
+    } else if (index == 1) {
+      // Navigation vers Messages
+    } else if (index == 2) {
+      // Navigation vers Profil
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -239,35 +252,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
       // Barre de navigation inférieure
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,  // Index de l'onglet Profil
-        selectedItemColor: const Color(0xFF142FE2),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Explorer',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Message',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 0) {
-            // Navigation vers Explorer
-            Navigator.pushReplacementNamed(context, '/explore');
-          } else if (index == 1) {
-            // Navigation vers Messages
-            // Navigator.pushReplacementNamed(context, '/messages');
-          } else if (index == 2) {
-            // Déjà sur Profil
-          }
-        },
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 0, // Explore screen est l'index 0
+        onTap: _handleNavigation,
       ),
     );
   }

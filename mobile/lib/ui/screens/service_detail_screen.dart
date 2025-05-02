@@ -5,7 +5,8 @@ import '../../core/models/service.dart';
 import '../../core/models/provider_model.dart'; // Renommé pour éviter la confusion avec le package provider
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
-
+import '../common/bottom_navigation.dart';
+import 'profile_screen.dart';
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
 
@@ -29,7 +30,20 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> with SingleTi
       Provider.of<ProviderDetailProvider>(context, listen: false).fetchProviderByServiceId(widget.serviceId);
     });
   }
-  
+  void _handleNavigation(int index) {
+    if (index == 0) {
+      // Déjà sur Explorer
+    } else if (index == 1) {
+      // Navigation vers Messages
+    } else if (index == 2) {
+      // Navigation vers Profil
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -340,24 +354,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> with SingleTi
       ),
       
       // Barre de navigation inférieure
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: const Color(0xFF142FE2),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Explorer',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Message',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 0, // Explore screen est l'index 0
+        onTap: _handleNavigation,
       ),
     );
   }

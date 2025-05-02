@@ -130,7 +130,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/categories/'),
         headers: {
-          'Authorization': 'Bearer $apiKey',
+          // 'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
         },
       );
@@ -155,12 +155,13 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/subcategories/?category_id=$categoryId'),
         headers: {
-          'Authorization': 'Bearer $apiKey',
+          // 'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
         },
       );
 
       if (response.statusCode == 200) {
+        
         final List<dynamic> data = json.decode(response.body)['results'] ?? [];
         return data.map((item) => Subcategory.fromJson(item)).toList();
       } else {
@@ -174,13 +175,55 @@ class ApiService {
     }
   }
 
+  Future<int> getServiceCountByCategory(int categoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/services/count/?category_id=$categoryId'),
+        headers: {
+          // 'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['count'] ?? 0;
+      } else {
+        // En cas d'erreur, retourner le résultat d'une méthode mock
+        return _getMockServiceCountByCategory(categoryId);
+      }
+    } catch (e) {
+      print('Error in getServiceCountByCategory: $e');
+      // En cas d'exception, retourner le résultat d'une méthode mock
+      return _getMockServiceCountByCategory(categoryId);
+    }
+  }
+
+// Méthode mock pour fournir des nombres fictifs en cas d'erreur
+int _getMockServiceCountByCategory(int categoryId) {
+  // Associer à chaque catégorie un nombre fictif
+  final Map<int, int> mockCounts = {
+    1: 11, // Maison & Construction
+    2: 5,  // Bien-être & Beauté
+    3: 6,  // Événements & Artistiques
+    4: 4,  // Transport & Logistique
+    5: 3,  // Santé & Bien-être
+    6: 5,  // Services Professionnels & Formation
+    7: 4,  // Services Numériques & Technologiques
+    8: 3,  // Services pour Animaux
+    9: 3,  // Services Divers
+  };
+  
+  return mockCounts[categoryId] ?? 0;
+}
+
   // Obtenir les services d'une catégorie
   Future<List<Service>> getServicesByCategory(int categoryId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/services/?category_id=$categoryId'),
         headers: {
-          'Authorization': 'Bearer $apiKey',
+          // 'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
         },
       );
@@ -205,7 +248,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/services/?subcategory_id=$subcategoryId'),
         headers: {
-          'Authorization': 'Bearer $apiKey',
+          // 'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
         },
       );
@@ -323,7 +366,63 @@ class ApiService {
       return _getMockReviews();
     }
   }
+  
+// Ajouter cette méthode à votre class ApiService dans le fichier api_service.dart
 
+  Future<int> getServiceCountBySubcategory(int subcategoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/services/count_by_subcategory/?subcategory_id=$subcategoryId'),
+        headers: {
+          // 'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['count'] ?? 0;
+      } else {
+        // En cas d'erreur, retourner le résultat d'une méthode mock
+        return _getMockServiceCountBySubcategory(subcategoryId);
+      }
+    } catch (e) {
+      print('Error in getServiceCountBySubcategory: $e');
+      // En cas d'exception, retourner le résultat d'une méthode mock
+      return _getMockServiceCountBySubcategory(subcategoryId);
+    }
+  }
+
+  // Méthode mock pour fournir des nombres fictifs en cas d'erreur
+  int _getMockServiceCountBySubcategory(int subcategoryId) {
+    // Associer à chaque sous-catégorie un nombre fictif de services
+    final Map<int, int> mockCounts = {
+      1: 5,  // Construction & rénovation
+      2: 3,  // Plomberie
+      3: 4,  // Électricité
+      4: 2,  // Menuiserie & Ébénisterie
+      5: 3,  // Peinture & Décoration
+      6: 2,  // Paysagisme & Jardinage
+      7: 1,  // Serrurerie
+      8: 2,  // Ménage & Nettoyage
+      9: 1,  // Pest Control
+      10: 1, // Vitrerie & Fenêtres
+      11: 2, // Froid & Climatisation
+      12: 3, // Coiffure & Barbier
+      13: 2, // Esthétique & Maquillage
+      14: 2, // Massages & Thérapies
+      15: 1, // Fitness & Coaching Sportif
+      16: 1, // Nutrition & Diététique
+      17: 2, // Photographie & Vidéographie
+      18: 3, // Organisation d'événements
+      19: 2, // Traiteur & Chef à domicile
+      20: 2, // Animation & Spectacle
+      21: 1, // Location de matériel
+      22: 2, // Fleuristes & Décoration florale
+    };
+    
+    return mockCounts[subcategoryId] ?? 0;
+  }
   // --- Méthodes pour générer des données de test ---
 
   // --- Méthodes pour générer des données de test ---

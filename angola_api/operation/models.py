@@ -48,7 +48,7 @@ class Category(TimeStampMixin):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True)  # Font Awesome icon class or similar
-    
+    image_url = models.URLField(blank=True, help_text="URL de l'image de catégorie")
     class Meta:
         verbose_name_plural = "Categories"
     

@@ -73,6 +73,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'file_charset': 'utf-8',
         },
     },
 ]
@@ -98,6 +99,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+
+    'UNICODE_JSON': True,
+    'COMPACT_JSON': True,
 }
 
 # Configuration de Simple JWT
@@ -151,6 +155,9 @@ DATABASES = {
         'PASSWORD': SECRETS['PASS'] ,
         'HOST': SECRETS['HOST'], 
         'PORT':  SECRETS['PORT'],
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        },
     }
 }
 
@@ -204,3 +211,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_CHARSET = 'utf-8'

@@ -10,8 +10,9 @@ class ApiClient {
 
   Future<Map<String, String>> _getHeaders({bool requireAuth = true}) async {
     Map<String, String> headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',  // Spécifier UTF-8
       'Accept': 'application/json',
+      'Accept-Charset': 'utf-8',  // Accepter UTF-8
     };
 
     if (requireAuth) {
@@ -30,27 +31,44 @@ class ApiClient {
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
     );
-    return _handleResponse(response);
+    
+    // Force l'encodage en UTF-8 pour la réponse
+    final encodedResponse = utf8.decode(response.bodyBytes);
+    return _handleResponse(response.statusCode, encodedResponse);
   }
 
   Future<dynamic> post(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
     final headers = await _getHeaders(requireAuth: requireAuth);
+    
+    // Convertir les données en JSON avec encodage UTF-8
+    final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
+    
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
-      body: data != null ? json.encode(data) : null,
+      body: encodedData,
     );
-    return _handleResponse(response);
+    
+    // Force l'encodage en UTF-8 pour la réponse
+    final encodedResponse = utf8.decode(response.bodyBytes);
+    return _handleResponse(response.statusCode, encodedResponse);
   }
 
   Future<dynamic> put(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
     final headers = await _getHeaders(requireAuth: requireAuth);
+    
+    // Convertir les données en JSON avec encodage UTF-8
+    final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
+    
     final response = await http.put(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
-      body: data != null ? json.encode(data) : null,
+      body: encodedData,
     );
-    return _handleResponse(response);
+    
+    // Force l'encodage en UTF-8 pour la réponse
+    final encodedResponse = utf8.decode(response.bodyBytes);
+    return _handleResponse(response.statusCode, encodedResponse);
   }
 
   Future<dynamic> delete(String endpoint, {bool requireAuth = true}) async {
@@ -59,22 +77,25 @@ class ApiClient {
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
     );
-    return _handleResponse(response);
+    
+    // Force l'encodage en UTF-8 pour la réponse
+    final encodedResponse = utf8.decode(response.bodyBytes);
+    return _handleResponse(response.statusCode, encodedResponse);
   }
 
-  dynamic _handleResponse(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isNotEmpty) {
-        return json.decode(response.body);
+  dynamic _handleResponse(int statusCode, String responseBody) {
+    if (statusCode >= 200 && statusCode < 300) {
+      if (responseBody.isNotEmpty) {
+        return json.decode(responseBody);
       }
       return null;
-    } else if (response.statusCode == 401) {
+    } else if (statusCode == 401) {
       // Si token expiré ou invalide
       _refreshToken();
       throw Exception('Non autorisé. Veuillez vous reconnecter.');
     } else {
       try {
-        final errorData = json.decode(response.body);
+        final errorData = json.decode(responseBody);
         if (errorData is Map) {
           // Rechercher les erreurs dans la réponse
           if (errorData.containsKey('detail')) {
@@ -104,12 +125,12 @@ class ApiClient {
           }
         }
         
-        throw Exception('Erreur ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception('Erreur $statusCode');
       } catch (e) {
         if (e is Exception) {
           rethrow;
         }
-        throw Exception('Erreur ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception('Erreur $statusCode');
       }
     }
   }
@@ -121,12 +142,12 @@ class ApiClient {
 
       final response = await http.post(
         Uri.parse('$baseUrl/auth/token/refresh/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode({'refresh': refreshToken}),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = json.decode(utf8.decode(response.bodyBytes));
         await _secureStorage.write(key: 'access_token', value: data['access']);
       } else {
         // Si le refresh token est également invalide
