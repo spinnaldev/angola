@@ -5,14 +5,16 @@ class Category {
   final String name;
   final String imageUrl;
   final String description;
-  final String icon;
+  final String? icon;
+  final int serviceCount; 
 
   Category({
     required this.id,
     required this.name,
     required this.imageUrl,
     required this.description,
-    this.icon = '',
+    this.icon,
+    this.serviceCount = 0,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -36,7 +38,8 @@ class Category {
       name: decodeName(json['name'] ?? ''),
       imageUrl: json['image_url'] ?? '',
       description: decodeName(json['description'] ?? ''),
-      icon: json['icon'] ?? '',
+      icon: json['icon'],
+      serviceCount: json['service_count'] ?? 0,
     );
   }
   static List<Category> getDefaultCategories() {

@@ -6,6 +6,7 @@ import '../ui/screens/auth/forgot_password_screen.dart';
 import '../ui/screens/auth/verify_code_screen.dart';
 import '../ui/screens/auth/reset_password_screen.dart';
 import '../ui/screens/home/home_screen.dart';
+import '../ui/screens/messaging/messages_screen.dart';
 import '../ui/screens/profile_selector_screen.dart';
 
 
@@ -18,6 +19,7 @@ class AppRoutes {
   static const String resetPassword = '/reset-password';
   static const String profileSelector = '/profile-selector';
   static const String explore = '/explore';
+  static const String messages = '/messages';
   static Map<String, WidgetBuilder> get routes => {
     login: (context) => const LoginScreen(),
     signup: (context) => const SignupScreen(),
@@ -27,6 +29,7 @@ class AppRoutes {
     home: (context) => const HomeScreen(),
     profileSelector: (context) => const ProfileSelectorScreen(),
     explore: (context) => const ExploreScreen(),
+    messages: (context) => const MessagesScreen(),
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {

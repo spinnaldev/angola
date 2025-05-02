@@ -318,15 +318,50 @@ class CategoryViewSet(viewsets.ModelViewSet):
     #     if self.action in ['create', 'update', 'partial_update', 'destroy']:
     #         return [IsAdminUser()]
     #     return [AllowAny()]
-
 class SubCategoryViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategorySerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category']
+    filterset_fields = ['category']  # Permet de filtrer par category_id
     search_fields = ['name', 'description']
     
+    def get_queryset(self):
+        queryset = SubCategory.objects.all()
+        
+        # Récupérer le paramètre category_id de la requête
+        category_id = self.request.query_params.get('category_id')
+        
+        # Si category_id est fourni, filtrer les sous-catégories par catégorie
+        if category_id:
+            try:
+                category_id = int(category_id)  # Convertir en entier
+                queryset = queryset.filter(category_id=category_id)
+            except (ValueError, TypeError):
+                # En cas d'erreur de conversion, on retourne une queryset vide
+                queryset = SubCategory.objects.none()
+                
+        return queryset
+    
+    # Méthode pour fournir le nombre de services par sous-catégorie
+    @action(detail=False, methods=['get'])
+    def with_service_count(self, request):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        
+        # Ajouter le nombre de services pour chaque sous-catégorie
+        results = []
+        for subcategory in (page or queryset):
+            service_count = ProviderService.objects.filter(subcategory=subcategory).count()
+            subcategory_data = SubCategorySerializer(subcategory).data
+            subcategory_data['service_count'] = service_count
+            results.append(subcategory_data)
+            
+        if page is not None:
+            return self.get_paginated_response(results)
+        
+        return Response(results)
+
     # def get_permissions(self):
     #     if self.action in ['create', 'update', 'partial_update', 'destroy']:
     #         return [IsAdminUser()]
@@ -700,93 +735,269 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             return Response({"status": "added to favorites"})
 
 class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.all()
+    queryset = Conversation.objects.all().order_by('-updated_at')
     serializer_class = ConversationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Pour accepter les requêtes avec userId
     
     def get_queryset(self):
-        user = self.request.user
+        # Récupérer l'ID utilisateur de la requête
+        user_id = self.request.query_params.get('user_id')
+        
+        if not user_id:
+            return Conversation.objects.none()
+            
+        try:
+            user_id = int(user_id)
+            user = User.objects.get(id=user_id)
+        except (ValueError, User.DoesNotExist):
+            return Conversation.objects.none()
+            
+        # Vérifier si l'utilisateur est un prestataire ou un client
         if hasattr(user, 'provider_profile'):
-            # If user is a provider, get conversations where they are the provider
-            provider_conversations = Conversation.objects.filter(provider=user.provider_profile)
-            return provider_conversations
+            return Conversation.objects.filter(provider=user.provider_profile)
         else:
-            # If user is a client, get conversations where they are the client
             return Conversation.objects.filter(client=user)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        
+        user_id = request.query_params.get('user_id')
+        if user_id:
+            context = {'user_id': user_id}
+        else:
+            context = {}
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context=context)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True, context=context)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
+        user_id = request.query_params.get('user_id')
+        
+        if not user_id:
+            return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user_id = int(user_id)
+            user = User.objects.get(id=user_id)
+        except (ValueError, User.DoesNotExist):
+            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            
         conversation = self.get_object()
+        
+        # Vérifier que l'utilisateur fait partie de la conversation
+        if conversation.client.id != user.id and (
+            not hasattr(user, 'provider_profile') or 
+            conversation.provider.id != user.provider_profile.id
+        ):
+            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Marquer les messages comme lus pour cet utilisateur
+        # (tous les messages envoyés par l'autre personne)
+        if hasattr(user, 'provider_profile') and conversation.provider.id == user.provider_profile.id:
+            # L'utilisateur est le prestataire, marquer les messages du client comme lus
+            Message.objects.filter(
+                conversation=conversation,
+                sender=conversation.client,
+                is_read=False
+            ).update(is_read=True)
+        else:
+            # L'utilisateur est le client, marquer les messages du prestataire comme lus
+            Message.objects.filter(
+                conversation=conversation,
+                sender=conversation.provider.user,
+                is_read=False
+            ).update(is_read=True)
+        
+        # Mettre à jour la date de la conversation
+        conversation.updated_at = timezone.now()
+        conversation.save()
+        
+        # Récupérer les messages
         messages = conversation.messages.all().order_by('created_at')
+        page = self.paginate_queryset(messages)
         
-        # Mark messages as read
-        unread_messages = messages.filter(is_read=False).exclude(sender=request.user)
-        for message in unread_messages:
-            message.is_read = True
-            message.save()
+        if page is not None:
+            serializer = MessageSerializer(page, many=True, context={'user_id': user_id})
+            return self.get_paginated_response(serializer.data)
         
-        serializer = MessageSerializer(messages, many=True)
+        serializer = MessageSerializer(messages, many=True, context={'user_id': user_id})
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
-        conversation = self.get_object()
+        user_id = request.data.get('user_id')
         content = request.data.get('content')
-        if not content:
-            return Response({"detail": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
         
+        if not user_id or not content:
+            return Response(
+                {"detail": "user_id et content sont requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            user_id = int(user_id)
+            user = User.objects.get(id=user_id)
+        except (ValueError, User.DoesNotExist):
+            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            
+        conversation = self.get_object()
+        
+        # Vérifier que l'utilisateur fait partie de la conversation
+        if conversation.client.id != user.id and (
+            not hasattr(user, 'provider_profile') or 
+            conversation.provider.id != user.provider_profile.id
+        ):
+            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Créer le message
         message = Message.objects.create(
             conversation=conversation,
-            sender=request.user,
+            sender=user,
             content=content
         )
         
-        # Handle attachments if any
-        files = request.FILES.getlist('files')
-        for file in files:
-            Attachment.objects.create(
-                message=message,
-                file=file,
-                file_name=file.name
-            )
+        # Mettre à jour la date de la conversation
+        conversation.updated_at = timezone.now()
+        conversation.save()
         
-        serializer = MessageSerializer(message)
+        serializer = MessageSerializer(message, context={'user_id': user_id})
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        user_id = request.data.get('user_id')
+        
+        if not user_id:
+            return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user_id = int(user_id)
+            user = User.objects.get(id=user_id)
+        except (ValueError, User.DoesNotExist):
+            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            
+        conversation = self.get_object()
+        
+        # Vérifier que l'utilisateur fait partie de la conversation
+        if conversation.client.id != user.id and (
+            not hasattr(user, 'provider_profile') or 
+            conversation.provider.id != user.provider_profile.id
+        ):
+            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Marquer les messages comme lus
+        if hasattr(user, 'provider_profile') and conversation.provider.id == user.provider_profile.id:
+            # L'utilisateur est le prestataire, marquer les messages du client comme lus
+            count = Message.objects.filter(
+                conversation=conversation,
+                sender=conversation.client,
+                is_read=False
+            ).update(is_read=True)
+        else:
+            # L'utilisateur est le client, marquer les messages du prestataire comme lus
+            count = Message.objects.filter(
+                conversation=conversation,
+                sender=conversation.provider.user,
+                is_read=False
+            ).update(is_read=True)
+        
+        return Response({"count": count, "status": "success"})
     
     @action(detail=False, methods=['post'])
     def start(self, request):
+        user_id = request.data.get('user_id')
         provider_id = request.data.get('provider_id')
-        if not provider_id:
-            return Response({"detail": "provider_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        provider = get_object_or_404(Provider, id=provider_id)
-        user = request.user
-        
-        # Check if the user is not trying to start a conversation with themselves
-        if hasattr(user, 'provider_profile') and user.provider_profile.id == provider.id:
-            return Response({"detail": "You cannot start a conversation with yourself"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Check if there's already a conversation between the user and the provider
-        existing_conversation = Conversation.objects.filter(client=user, provider=provider).first()
-        if existing_conversation:
-            serializer = self.get_serializer(existing_conversation)
-            return Response(serializer.data)
-        
-        # Create a new conversation
-        conversation = Conversation.objects.create(client=user, provider=provider)
-        
-        # Add an initial message if provided
         initial_message = request.data.get('message')
+        
+        if not user_id or not provider_id:
+            return Response(
+                {"detail": "user_id et provider_id sont requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            user_id = int(user_id)
+            provider_id = int(provider_id)
+            user = User.objects.get(id=user_id)
+            provider = Provider.objects.get(id=provider_id)
+        except (ValueError, User.DoesNotExist, Provider.DoesNotExist):
+            return Response({"detail": "Utilisateur ou prestataire non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Vérifier que l'utilisateur n'est pas le prestataire lui-même
+        if hasattr(user, 'provider_profile') and user.provider_profile.id == provider.id:
+            return Response(
+                {"detail": "Vous ne pouvez pas démarrer une conversation avec vous-même"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier si une conversation existe déjà
+        existing_conversation = Conversation.objects.filter(client=user, provider=provider).first()
+        
+        if existing_conversation:
+            conversation = existing_conversation
+        else:
+            # Créer une nouvelle conversation
+            conversation = Conversation.objects.create(client=user, provider=provider)
+        
+        # Ajouter un message initial si fourni
         if initial_message:
             Message.objects.create(
                 conversation=conversation,
                 sender=user,
                 content=initial_message
             )
+            # Mettre à jour la date de la conversation
+            conversation.updated_at = timezone.now()
+            conversation.save()
         
-        serializer = self.get_serializer(conversation)
+        serializer = ConversationSerializer(conversation, context={'user_id': user_id})
         return Response(serializer.data)
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_notification_count(request):
+    user_id = request.query_params.get('user_id')
+    
+    if not user_id:
+        return Response({"count": 0}, status=status.HTTP_200_OK)
+    
+    try:
+        user_id = int(user_id)
+        user = User.objects.get(id=user_id)
+        
+        # Compte les notifications non lues pour cet utilisateur
+        count = Notification.objects.filter(user=user, is_read=False).count()
+        
+        return Response({"count": count}, status=status.HTTP_200_OK)
+    except (ValueError, User.DoesNotExist):
+        return Response({"count": 0}, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def mark_all_notifications_read(request):
+    user_id = request.data.get('user_id')
+    
+    if not user_id:
+        return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user_id = int(user_id)
+        user = User.objects.get(id=user_id)
+        
+        # Marque toutes les notifications comme lues
+        count = Notification.objects.filter(user=user, is_read=False).update(is_read=True)
+        
+        return Response({"count": count, "status": "success"}, status=status.HTTP_200_OK)
+    except (ValueError, User.DoesNotExist):
+        return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+
+  
 class DisputeViewSet(viewsets.ModelViewSet):
     queryset = Dispute.objects.all()
     serializer_class = DisputeSerializer

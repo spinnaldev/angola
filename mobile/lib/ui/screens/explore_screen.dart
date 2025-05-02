@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import '../../core/models/category.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../widgets/category_grid_card.dart';
+import '../../providers/notification_provider.dart';
+import '../widgets/app_bottom_navigation.dart';
+import '../widgets/category_card.dart';
 import '../widgets/side_menu.dart';
+import 'messaging/messages_screen.dart';
 import 'service_list_screen.dart';
 import 'profile_screen.dart';
-import '../common/bottom_navigation.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -20,14 +22,14 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isMenuOpen = false;
-  
+
   @override
   void initState() {
     super.initState();
     // Charger les catégories au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(context, listen: false).fetchCategories();
-      
+
       // Vérifier si l'utilisateur est connecté
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.currentUser == null) {
@@ -35,33 +37,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }
     });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  void _handleNavigation(int index) {
-    if (index == 0) {
-      // Déjà sur Explorer, ne rien faire
-    } else if (index == 1) {
-      // Navigation vers Messages
-    } else if (index == 2) {
-      // Ouvrir le menu latéral quand on appuie sur Profil
-      setState(() {
-        _isMenuOpen = true;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final menuWidth = MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
-    
+    final authProvider = Provider.of<AuthProvider>(context);
+    final menuWidth =
+        MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Contenu principal
@@ -70,63 +59,91 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec logo et icône de notification
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'LOGO',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                        // Logo - utiliser un logo local
+                        Image.asset(
+                          'assets/images/logo.png',
+                          height: 40,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Text(
+                            'LOGO',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        // Icône de notification au lieu du profil
-                        IconButton(
-                          icon: const Icon(Icons.notifications_outlined),
-                          onPressed: () {
-                            // Action pour les notifications
+                        InkWell(
+                          onTap: () {
+                            // Naviguer vers l'écran des notifications
+                            Navigator.pushNamed(context, '/notifications');
                           },
+                          child: Stack(
+                            children: [
+                              const Icon(Icons.notifications_none, size: 28),
+                              if (Provider.of<NotificationProvider>(context).unreadCount > 0)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 12,
+                                      minHeight: 12,
+                                    ),
+                                    child: Text(
+                                      '${Provider.of<NotificationProvider>(context).unreadCount}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   // Champ de recherche
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     child: Container(
                       height: 50,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.search, color: Colors.grey[600]),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: const InputDecoration(
-                                hintText: 'Recherche de services...',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(vertical: 15),
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Recherche de services...',
+                          prefixIcon:
+                              const Icon(Icons.search, color: Colors.grey),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 15),
+                        ),
                       ),
                     ),
                   ),
-                  
+
                   // Texte "Tous les services"
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 15, 20, 10),
+                    padding: EdgeInsets.fromLTRB(20, 15, 20, 5),
                     child: Text(
                       'Tous les services',
                       style: TextStyle(
@@ -135,8 +152,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       ),
                     ),
                   ),
-                  
-                  // Grille des catégories (style image 2)
+
+                  // Grille des catégories
                   Expanded(
                     child: Consumer<CategoryProvider>(
                       builder: (context, categoryProvider, child) {
@@ -144,38 +161,40 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           return const Center(child: CircularProgressIndicator());
                         }
                         
-                        if (categoryProvider.categoriesWithCount.isEmpty) {
+                        if (categoryProvider.categories.isEmpty) {
                           return const Center(child: Text('Aucune catégorie disponible'));
                         }
                         
-                        // Affichage en grille avec 2 catégories par ligne comme dans l'image 2
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15),
                           child: GridView.builder(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, // 2 éléments par ligne
-                              childAspectRatio: 1.0, // Ratio 1:1 pour forme carrée
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.0,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
                             ),
-                            itemCount: categoryProvider.categoriesWithCount.length,
+                            itemCount: categoryProvider.categories.length,
                             itemBuilder: (context, index) {
-                              final categoryWithCount = categoryProvider.categoriesWithCount[index];
+                              final category = categoryProvider.categories[index];
+                              // Récupérer le nombre de services pour cette catégorie
+                              final serviceCount = categoryProvider.getServiceCount(category.id);
+                              
                               return GestureDetector(
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ServiceListScreen(
-                                        categoryId: categoryWithCount.category.id,
-                                        categoryName: categoryWithCount.category.name,
+                                        categoryId: category.id,
+                                        categoryName: category.name,
                                       ),
                                     ),
                                   );
                                 },
-                                child: CategoryGridCard(
-                                  category: categoryWithCount.category,
-                                  serviceCount: categoryWithCount.serviceCount,
+                                child: CategoryCard(
+                                  category: category,
+                                  serviceCount: serviceCount,
                                 ),
                               );
                             },
@@ -188,7 +207,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
           ),
-          
+
           // Superposition semi-transparente quand le menu est ouvert
           if (_isMenuOpen)
             Positioned.fill(
@@ -203,7 +222,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 ),
               ),
             ),
-          
+
           // Menu latéral avec animation
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
@@ -226,11 +245,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ],
       ),
-      
-      // Utilisation du composant BottomNavigationBar
+
+      // Barre de navigation inférieure
       bottomNavigationBar: AppBottomNavigation(
-        currentIndex: 0, // Explorer par défaut
-        onTap: _handleNavigation,
+        currentIndex: 0, // Index "Explorer"
+        onTap: (index) {
+          if (index == 0) {
+            // Déjà sur Explorer
+          } else if (index == 1) {
+            // Naviguer vers Messages
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MessagesScreen()),
+            );
+          } else if (index == 2) {
+            // Ouvrir le menu latéral pour le profil
+            setState(() {
+              _isMenuOpen = true;
+            });
+          }
+        },
       ),
     );
   }

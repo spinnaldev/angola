@@ -51,7 +51,8 @@ urlpatterns = [
     path('api/password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('api/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
     path('api/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-
+    path('notifications/count/', views.get_notification_count, name='notification-count'),
+    path('notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
 ]
 # urlpatterns = [
     

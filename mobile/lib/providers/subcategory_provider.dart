@@ -23,7 +23,8 @@ class SubcategoryProvider with ChangeNotifier {
   SubcategoryProvider(this._apiService);
 
   List<Subcategory> get subcategories => _subcategories;
-  List<SubcategoryWithCount> get subcategoriesWithCount => _subcategoriesWithCount;
+  List<SubcategoryWithCount> get subcategoriesWithCount =>
+      _subcategoriesWithCount;
   bool get isLoading => _isLoading;
   int? get selectedCategoryId => _selectedCategoryId;
 
@@ -33,51 +34,52 @@ class SubcategoryProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedSubcategories = await _apiService.getSubcategories(categoryId);
+      final fetchedSubcategories =
+          await _apiService.getSubcategories(categoryId);
+      print('ON est arrivé ici oh et on a $fetchedSubcategories');
       _subcategories = fetchedSubcategories;
-      
+      print('Pour afficher on a : $_subcategories');
       // Récupérer le nombre de services pour chaque sous-catégorie
       List<SubcategoryWithCount> tempList = [];
       for (var subcategory in fetchedSubcategories) {
         int count = 0;
         try {
           // Essayer de récupérer le nombre de services par sous-catégorie
-          count = await _apiService.getServiceCountBySubcategory(subcategory.id);
+          count =
+              await _apiService.getServiceCountBySubcategory(subcategory.id);
         } catch (e) {
-          print('Erreur lors de la récupération du nombre de services pour la sous-catégorie ${subcategory.id}: $e');
+          print(
+              'Erreur lors de la récupération du nombre de services pour la sous-catégorie ${subcategory.id}: $e');
           // En cas d'erreur, nous continuons avec count = 0
         }
-        
+
         // Ajouter à la liste temporaire
         tempList.add(SubcategoryWithCount(
           subcategory: subcategory,
           serviceCount: count,
         ));
       }
-      
+
       _subcategoriesWithCount = tempList;
-      
     } catch (error) {
       print('Error fetching subcategories: $error');
-      
+
       // En cas d'erreur, utiliser des données de test
       _subcategories = _getMockSubcategories(categoryId);
-      _subcategoriesWithCount = _subcategories.map((subcategory) => 
-        SubcategoryWithCount(
-          subcategory: subcategory, 
-          serviceCount: 0
-        )
-      ).toList();
-      
+      _subcategoriesWithCount = _subcategories
+          .map((subcategory) =>
+              SubcategoryWithCount(subcategory: subcategory, serviceCount: 0))
+          .toList();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-  
+
   // Méthode mock pour fournir des sous-catégories de test
   List<Subcategory> _getMockSubcategories(int categoryId) {
-    if (categoryId == 1) { // Maison & Construction
+    if (categoryId == 1) {
+      // Maison & Construction
       return [
         Subcategory(
           id: 1,
@@ -110,7 +112,8 @@ class SubcategoryProvider with ChangeNotifier {
           description: 'Peintres en bâtiment, décorateurs d\'intérieur',
         ),
       ];
-    } else if (categoryId == 2) { // Bien-être & Beauté
+    } else if (categoryId == 2) {
+      // Bien-être & Beauté
       return [
         Subcategory(
           id: 12,
@@ -133,7 +136,7 @@ class SubcategoryProvider with ChangeNotifier {
       ];
     }
     // Ajouter d'autres catégories au besoin
-    
+
     return [
       Subcategory(
         id: 999,

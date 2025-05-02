@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/category.dart';
+import '../models/conversation.dart';
+import '../models/message.dart';
 import '../models/subcategory.dart';
 import '../models/service.dart';
 import '../models/provider_model.dart';
@@ -109,7 +111,8 @@ class ApiService {
       Project(
         id: 1,
         title: 'Rénovation maison',
-        description: 'Je recherche une entreprise capable de gérer l\'ensemble de la construction, y compris la conception, le choix des matériaux, la main-d\'œuvre et le respect des délais.',
+        description:
+            'Je recherche une entreprise capable de gérer l\'ensemble de la construction, y compris la conception, le choix des matériaux, la main-d\'œuvre et le respect des délais.',
         status: 'En cours',
         createdAt: DateTime.now().subtract(const Duration(days: 30)),
         providers: [
@@ -152,6 +155,7 @@ class ApiService {
   // Obtenir les sous-catégories d'une catégorie
   Future<List<Subcategory>> getSubcategories(int categoryId) async {
     try {
+      print(categoryId);
       final response = await http.get(
         Uri.parse('$baseUrl/subcategories/?category_id=$categoryId'),
         headers: {
@@ -163,6 +167,7 @@ class ApiService {
       if (response.statusCode == 200) {
         
         final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        print('Les données recuperes sont : $data');
         return data.map((item) => Subcategory.fromJson(item)).toList();
       } else {
         // En cas d'erreur, retourner des données de test
@@ -199,23 +204,244 @@ class ApiService {
     }
   }
 
-// Méthode mock pour fournir des nombres fictifs en cas d'erreur
-int _getMockServiceCountByCategory(int categoryId) {
-  // Associer à chaque catégorie un nombre fictif
-  final Map<int, int> mockCounts = {
-    1: 11, // Maison & Construction
-    2: 5,  // Bien-être & Beauté
-    3: 6,  // Événements & Artistiques
-    4: 4,  // Transport & Logistique
-    5: 3,  // Santé & Bien-être
-    6: 5,  // Services Professionnels & Formation
-    7: 4,  // Services Numériques & Technologiques
-    8: 3,  // Services pour Animaux
-    9: 3,  // Services Divers
-  };
-  
-  return mockCounts[categoryId] ?? 0;
+  Future<int> getCurrentUserId() async {
+  try {
+    // Récupérer l'utilisateur courant depuis le stockage local
+    final user = await getCurrentUser();
+    if (user != null) {
+      return user.id;
+    }
+    
+    // Si l'utilisateur n'est pas disponible localement
+    throw Exception("Utilisateur non connecté");
+  } catch (e) {
+    print('Error in getCurrentUserId: $e');
+    throw e;
+  }
 }
+
+Future<List<Conversation>> getConversations() async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/conversations/?user_id=$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final List<dynamic> data = responseData['results'] ?? [];
+      return data.map((item) => Conversation.fromJson(item, userId)).toList();
+    } else {
+      print('Error response: ${response.body}');
+      throw Exception('Failed to load conversations: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error in getConversations: $e');
+    return []; // Retourner une liste vide en cas d'erreur
+  }
+}
+
+Future<List<Message>> getMessages(int conversationId) async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/conversations/$conversationId/messages/?user_id=$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final List<dynamic> data = responseData['results'] ?? [];
+      return data.map((item) => Message.fromJson(item, userId)).toList();
+    } else {
+      print('Error response: ${response.body}');
+      throw Exception('Failed to load messages: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error in getMessages: $e');
+    return []; // Retourner une liste vide en cas d'erreur
+  }
+}
+
+Future<Message> sendMessage(int conversationId, String content) async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/conversations/$conversationId/send_message/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'user_id': userId,
+        'content': content,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = json.decode(response.body);
+      return Message.fromJson(data, userId);
+    } else {
+      print('Error response: ${response.body}');
+      throw Exception('Failed to send message: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error in sendMessage: $e');
+    throw e;
+  }
+}
+
+Future<Conversation> startConversation(int providerId, String? initialMessage) async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final Map<String, dynamic> data = {
+      'user_id': userId,
+      'provider_id': providerId,
+    };
+    
+    if (initialMessage != null && initialMessage.isNotEmpty) {
+      data['message'] = initialMessage;
+    }
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/conversations/start/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode(data),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final responseData = json.decode(response.body);
+      return Conversation.fromJson(responseData, userId);
+    } else {
+      print('Error response: ${response.body}');
+      throw Exception('Failed to start conversation: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error in startConversation: $e');
+    throw e;
+  }
+}
+
+Future<Message?> getInitialMessage(int conversationId) async {
+  try {
+    final messages = await getMessages(conversationId);
+    if (messages.isNotEmpty) {
+      return messages.first;
+    }
+    return null;
+  } catch (e) {
+    print('Error in getInitialMessage: $e');
+    return null;
+  }
+}
+
+Future<bool> markMessagesAsRead(int conversationId) async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/conversations/$conversationId/mark_read/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'user_id': userId,
+      }),
+    );
+
+    return response.statusCode == 200;
+  } catch (e) {
+    print('Error in markMessagesAsRead: $e');
+    return false;
+  }
+}
+Future<int> getUnreadNotificationCount() async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/notifications/count/?user_id=$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['count'] ?? 0;
+    } else {
+      print('Error response: ${response.body}');
+      return 0;
+    }
+  } catch (e) {
+    print('Error in getUnreadNotificationCount: $e');
+    return 0; // En cas d'erreur, retourner 0 comme valeur par défaut
+  }
+}
+
+Future<bool> markAllNotificationsAsRead() async {
+  try {
+    // Récupérer l'ID de l'utilisateur courant
+    final userId = await getCurrentUserId();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/notifications/mark_all_read/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'user_id': userId,
+      }),
+    );
+
+    return response.statusCode == 200;
+  } catch (e) {
+    print('Error in markAllNotificationsAsRead: $e');
+    return false;
+  }
+}
+
+
+// Méthode mock pour fournir des nombres fictifs en cas d'erreur
+  int _getMockServiceCountByCategory(int categoryId) {
+    // Associer à chaque catégorie un nombre fictif
+    final Map<int, int> mockCounts = {
+      1: 11, // Maison & Construction
+      2: 5, // Bien-être & Beauté
+      3: 6, // Événements & Artistiques
+      4: 4, // Transport & Logistique
+      5: 3, // Santé & Bien-être
+      6: 5, // Services Professionnels & Formation
+      7: 4, // Services Numériques & Technologiques
+      8: 3, // Services pour Animaux
+      9: 3, // Services Divers
+    };
+
+    return mockCounts[categoryId] ?? 0;
+  }
 
   // Obtenir les services d'une catégorie
   Future<List<Service>> getServicesByCategory(int categoryId) async {
@@ -366,13 +592,14 @@ int _getMockServiceCountByCategory(int categoryId) {
       return _getMockReviews();
     }
   }
-  
+
 // Ajouter cette méthode à votre class ApiService dans le fichier api_service.dart
 
   Future<int> getServiceCountBySubcategory(int subcategoryId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/services/count_by_subcategory/?subcategory_id=$subcategoryId'),
+        Uri.parse(
+            '$baseUrl/services/count_by_subcategory/?subcategory_id=$subcategoryId'),
         headers: {
           // 'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
@@ -397,15 +624,15 @@ int _getMockServiceCountByCategory(int categoryId) {
   int _getMockServiceCountBySubcategory(int subcategoryId) {
     // Associer à chaque sous-catégorie un nombre fictif de services
     final Map<int, int> mockCounts = {
-      1: 5,  // Construction & rénovation
-      2: 3,  // Plomberie
-      3: 4,  // Électricité
-      4: 2,  // Menuiserie & Ébénisterie
-      5: 3,  // Peinture & Décoration
-      6: 2,  // Paysagisme & Jardinage
-      7: 1,  // Serrurerie
-      8: 2,  // Ménage & Nettoyage
-      9: 1,  // Pest Control
+      1: 5, // Construction & rénovation
+      2: 3, // Plomberie
+      3: 4, // Électricité
+      4: 2, // Menuiserie & Ébénisterie
+      5: 3, // Peinture & Décoration
+      6: 2, // Paysagisme & Jardinage
+      7: 1, // Serrurerie
+      8: 2, // Ménage & Nettoyage
+      9: 1, // Pest Control
       10: 1, // Vitrerie & Fenêtres
       11: 2, // Froid & Climatisation
       12: 3, // Coiffure & Barbier
@@ -420,7 +647,7 @@ int _getMockServiceCountByCategory(int categoryId) {
       21: 1, // Location de matériel
       22: 2, // Fleuristes & Décoration florale
     };
-    
+
     return mockCounts[subcategoryId] ?? 0;
   }
   // --- Méthodes pour générer des données de test ---
@@ -507,7 +734,8 @@ int _getMockServiceCountByCategory(int categoryId) {
       ];
     }
   }
-   List<Service> _getMockServices() {
+
+  List<Service> _getMockServices() {
     return [
       Service(
         id: 1,
@@ -571,7 +799,8 @@ int _getMockServiceCountByCategory(int categoryId) {
     return Service(
       id: serviceId,
       title: 'MICC Services',
-      description: 'Entreprise spécialisée dans la maçonnerie et les travaux de rénovation.',
+      description:
+          'Entreprise spécialisée dans la maçonnerie et les travaux de rénovation.',
       imageUrl: 'https://picsum.photos/id/1029/600/400',
       rating: 4.5,
       reviewCount: 27,
@@ -586,10 +815,12 @@ int _getMockServiceCountByCategory(int categoryId) {
       id: providerId,
       name: 'Martin Construction',
       businessType: 'Entreprise générale du bâtiment',
-      profileImageUrl: 'https://randomuser.me/api/portraits/men/$providerId.jpg',
+      profileImageUrl:
+          'https://randomuser.me/api/portraits/men/$providerId.jpg',
       rating: 4.5,
       reviewCount: 127,
-      description: 'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
+      description:
+          'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
       services: [
         ServiceItem(
           id: 1,
@@ -598,7 +829,8 @@ int _getMockServiceCountByCategory(int categoryId) {
         ),
         ServiceItem(
           id: 2,
-          title: 'Construction complète de maisons individuelles et bâtiments professionnels',
+          title:
+              'Construction complète de maisons individuelles et bâtiments professionnels',
           priceType: 'Sur devis',
         ),
         ServiceItem(
@@ -618,7 +850,8 @@ int _getMockServiceCountByCategory(int categoryId) {
       profileImageUrl: 'https://randomuser.me/api/portraits/men/22.jpg',
       rating: 4.5,
       reviewCount: 127,
-      description: 'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
+      description:
+          'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
       services: [
         ServiceItem(
           id: 1,
@@ -627,7 +860,8 @@ int _getMockServiceCountByCategory(int categoryId) {
         ),
         ServiceItem(
           id: 2,
-          title: 'Construction complète de maisons individuelles et bâtiments professionnels',
+          title:
+              'Construction complète de maisons individuelles et bâtiments professionnels',
           priceType: 'Sur devis',
         ),
         ServiceItem(
@@ -646,7 +880,8 @@ int _getMockServiceCountByCategory(int categoryId) {
         userName: 'Jean Dupont',
         userImageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
         rating: 5.0,
-        comment: 'Excellent travail, je suis très satisfait du résultat. L\'équipe était professionnelle et ponctuelle.',
+        comment:
+            'Excellent travail, je suis très satisfait du résultat. L\'équipe était professionnelle et ponctuelle.',
         date: DateTime.now().subtract(const Duration(days: 2)),
       ),
       Review(
@@ -654,7 +889,8 @@ int _getMockServiceCountByCategory(int categoryId) {
         userName: 'Marie Leclerc',
         userImageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
         rating: 4.0,
-        comment: 'Bon travail dans l\'ensemble, quelques petits détails à améliorer mais je recommande.',
+        comment:
+            'Bon travail dans l\'ensemble, quelques petits détails à améliorer mais je recommande.',
         date: DateTime.now().subtract(const Duration(days: 15)),
       ),
       Review(
@@ -662,49 +898,50 @@ int _getMockServiceCountByCategory(int categoryId) {
         userName: 'Pierre Martin',
         userImageUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
         rating: 5.0,
-        comment: 'Très professionnel, travail soigné et dans les délais. Je recommande vivement !',
+        comment:
+            'Très professionnel, travail soigné et dans les délais. Je recommande vivement !',
         date: DateTime.now().subtract(const Duration(days: 30)),
       ),
     ];
   }
 }
-    
-  List<Subcategory> _getMockSubcategories(int categoryId) {
-    if (categoryId == 1) {
-      return [
-        Subcategory(
-          id: 1,
-          name: 'Construction & rénovation',
-          categoryId: 1,
-          description: 'Services de construction et rénovation',
-        ),
-        Subcategory(
-          id: 2,
-          name: 'Plomberie',
-          categoryId: 1,
-          description: 'Services de plomberie',
-        ),
-        Subcategory(
-          id: 3,
-          name: 'Électricité',
-          categoryId: 1,
-          description: 'Services d\'électricité',
-        ),
-      ];
-    } else {
-      return [
-        Subcategory(
-          id: 4,
-          name: 'Sous-catégorie 1',
-          categoryId: categoryId,
-          description: 'Description sous-catégorie 1',
-        ),
-        Subcategory(
-          id: 5,
-          name: 'Sous-catégorie 2',
-          categoryId: categoryId,
-          description: 'Description sous-catégorie 2',
-        ),
-      ];
-    }
+
+List<Subcategory> _getMockSubcategories(int categoryId) {
+  if (categoryId == 1) {
+    return [
+      Subcategory(
+        id: 1,
+        name: 'Construction & rénovation',
+        categoryId: 1,
+        description: 'Services de construction et rénovation',
+      ),
+      Subcategory(
+        id: 2,
+        name: 'Plomberie',
+        categoryId: 1,
+        description: 'Services de plomberie',
+      ),
+      Subcategory(
+        id: 3,
+        name: 'Électricité',
+        categoryId: 1,
+        description: 'Services d\'électricité',
+      ),
+    ];
+  } else {
+    return [
+      Subcategory(
+        id: 4,
+        name: 'Sous-catégorie 1',
+        categoryId: categoryId,
+        description: 'Description sous-catégorie 1',
+      ),
+      Subcategory(
+        id: 5,
+        name: 'Sous-catégorie 2',
+        categoryId: categoryId,
+        description: 'Description sous-catégorie 2',
+      ),
+    ];
   }
+}

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:w3_loc/core/api/api_client.dart';
 import 'core/services/api_service.dart';
 import 'providers/category_provider.dart';
+import 'providers/messaging_provider.dart';
+import 'providers/notification_provider.dart';
 import 'providers/subcategory_provider.dart';
 import 'core/services/auth_service.dart';
 import 'providers/service_provider.dart';
@@ -57,6 +59,12 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ProjectProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => MessagingProvider(apiService),
         ),
       ],
       child: MaterialApp(

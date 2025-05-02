@@ -166,9 +166,22 @@ class Favorite(TimeStampMixin):
 class Conversation(TimeStampMixin):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_conversations')
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='provider_conversations')
+    updated_at = models.DateTimeField(auto_now=True)  # Pour trier par date du dernier message
+    
+    class Meta:
+        ordering = ['-updated_at']
     
     def __str__(self):
-        return f"Conversation between {self.client.username} and {self.provider.user.username}"
+        return f"Conversation entre {self.client.username} et {self.provider.user.username}"
+    
+    def unread_count_for_user(self, user):
+        """Retourne le nombre de messages non lus pour un utilisateur donné"""
+        if hasattr(user, 'provider_profile') and self.provider.id == user.provider_profile.id:
+            # L'utilisateur est le prestataire
+            return self.messages.filter(sender=self.client, is_read=False).count()
+        else:
+            # L'utilisateur est le client
+            return self.messages.filter(sender=self.provider.user, is_read=False).count()
 
 class Message(TimeStampMixin):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
@@ -176,8 +189,16 @@ class Message(TimeStampMixin):
     content = models.TextField()
     is_read = models.BooleanField(default=False)
     
+    class Meta:
+        ordering = ['created_at']
+    
     def __str__(self):
-        return f"Message from {self.sender.username} in conversation {self.conversation.id}"
+        return f"Message de {self.sender.username} dans conversation {self.conversation.id}"
+    
+    def save(self, *args, **kwargs):
+        # Mettre à jour la date de la conversation
+        self.conversation.save()
+        super().save(*args, **kwargs)
 
 class Attachment(TimeStampMixin):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='attachments')

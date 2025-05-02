@@ -1,3 +1,4 @@
+import random
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
@@ -164,39 +165,52 @@ class FavoriteSerializer(serializers.ModelSerializer):
         read_only_fields = ('user',)
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.StringRelatedField(source='sender.username', read_only=True)
-    attachments = serializers.SerializerMethodField()
+    sender_id = serializers.IntegerField(source='sender.id')
+    sender_name = serializers.SerializerMethodField()
+    sender_picture = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
     
     class Meta:
         model = Message
-        fields = ('id', 'sender', 'sender_name', 'content', 'is_read', 
-                 'created_at', 'attachments')
-        read_only_fields = ('sender', 'is_read')
+        fields = ('id', 'sender_id', 'sender_name', 'sender_picture', 'content', 
+                 'is_read', 'created_at', 'is_mine')
     
-    def get_attachments(self, obj):
-        return [{'id': attachment.id, 'file': attachment.file.url, 'file_name': attachment.file_name}
-                for attachment in obj.attachments.all()]
+    def get_sender_name(self, obj):
+        return f"{obj.sender.first_name} {obj.sender.last_name}".strip() or obj.sender.username
+    
+    def get_sender_picture(self, obj):
+        if obj.sender.profile_picture:
+            return obj.sender.profile_picture.url
+        return None
+    
+    def get_is_mine(self, obj):
+        user_id = self.context.get('user_id')
+        if user_id:
+            return obj.sender.id == int(user_id)
+        return False
 
 class ConversationSerializer(serializers.ModelSerializer):
-    client_details = UserSerializer(source='client', read_only=True)
-    provider_details = serializers.SerializerMethodField()
+    client = UserSerializer()
+    provider = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
     
     class Meta:
         model = Conversation
-        fields = ('id', 'client', 'provider', 'client_details', 'provider_details',
-                 'last_message', 'unread_count', 'created_at')
+        fields = ('id', 'client', 'provider', 'last_message', 
+                 'unread_count', 'created_at', 'updated_at', 'is_online')
     
-    def get_provider_details(self, obj):
-        return {
-            'id': obj.provider.id,
+    def get_provider(self, obj):
+        provider_data = {
             'user_id': obj.provider.user.id,
             'username': obj.provider.user.username,
-            'full_name': f"{obj.provider.user.first_name} {obj.provider.user.last_name}".strip(),
+            'first_name': obj.provider.user.first_name,
+            'last_name': obj.provider.user.last_name,
+            'profile_picture': obj.provider.user.profile_picture.url if obj.provider.user.profile_picture else None,
             'company_name': obj.provider.company_name,
-            'profile_picture': obj.provider.user.profile_picture.url if obj.provider.user.profile_picture else None
         }
+        return provider_data
     
     def get_last_message(self, obj):
         message = obj.messages.order_by('-created_at').first()
@@ -210,11 +224,33 @@ class ConversationSerializer(serializers.ModelSerializer):
         return None
     
     def get_unread_count(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.messages.filter(is_read=False).exclude(sender=request.user).count()
+        user_id = self.context.get('user_id')
+        if user_id:
+            try:
+                user = User.objects.get(id=int(user_id))
+                if hasattr(user, 'provider_profile') and obj.provider.id == user.provider_profile.id:
+                    # L'utilisateur est le prestataire
+                    return Message.objects.filter(
+                        conversation=obj,
+                        sender=obj.client,
+                        is_read=False
+                    ).count()
+                else:
+                    # L'utilisateur est le client
+                    return Message.objects.filter(
+                        conversation=obj,
+                        sender=obj.provider.user,
+                        is_read=False
+                    ).count()
+            except (ValueError, User.DoesNotExist):
+                pass
         return 0
-
+    
+    def get_is_online(self, obj):
+        # Simuler un statut en ligne
+        # À remplacer par une vraie logique de statut en ligne dans une application de production
+        return random.choice([True, False])
+    
 class DisputeEvidenceSerializer(serializers.ModelSerializer):
     user_name = serializers.StringRelatedField(source='user.username', read_only=True)
     
