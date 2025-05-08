@@ -315,21 +315,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SocialLoginButton(
-                            icon: 'assets/images/google.png',
-                            onPressed: () {
-                              // Implémentation de la connexion Google
-                            },
-                          ),
+                          _socialLoginButton('assets/images/google.png'),
                           const SizedBox(width: 20),
-                          SocialLoginButton(
-                            icon: 'assets/images/facebook.png',
-                            onPressed: () {
-                              // Implémentation de la connexion Facebook
-                            },
-                          ),
+                          _socialLoginButton('assets/images/facebook.png'),
                         ],
                       ),
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.center,
+                      //   children: [
+                      //     SocialLoginButton(
+                      //       icon: 'assets/images/google.png',
+                      //       onPressed: () {
+                      //         // Implémentation de la connexion Google
+                      //       },
+                      //     ),
+                      //     const SizedBox(width: 20),
+                      //     SocialLoginButton(
+                      //       icon: 'assets/images/facebook.png',
+                      //       onPressed: () {
+                      //         // Implémentation de la connexion Facebook
+                      //       },
+                      //     ),
+                      //   ],
+                      // ),
                       
                     ],
                   ),
@@ -342,28 +350,28 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Widget _socialLoginButton(String iconPath, IconData fallbackIcon) {
-  //   return Container(
-  //     width: 50,
-  //     height: 50,
-  //     decoration: BoxDecoration(
-  //       border: Border.all(color: Colors.grey.shade300),
-  //       borderRadius: BorderRadius.circular(8),
-  //     ),
-  //     child: Center(
-  //       child: Image.asset(
-  //         iconPath,
-  //         width: 24,
-  //         height: 24,
-  //         errorBuilder: (context, error, stackTrace) => Icon(
-  //           fallbackIcon,
-  //           size: 24,
-  //           color: const Color(0xFF142FE2),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _socialLoginButton(String iconPath) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Image.asset(
+          iconPath,
+          width: 24,
+          height: 24,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            iconPath.contains('google') ? Icons.g_mobiledata : Icons.facebook,
+            size: 24,
+            color: Colors.blue,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SocialLoginButton extends StatelessWidget {

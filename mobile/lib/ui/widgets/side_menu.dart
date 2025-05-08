@@ -1,9 +1,13 @@
 // lib/ui/widgets/side_menu.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/models/user.dart';
 import '../screens/profile_screen.dart';
+import '../screens/provider/service_management_screen.dart';
+import '../screens/provider/quote_requests_screen.dart';
+import '../screens/client/my_quote_requests_screen.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -27,10 +31,11 @@ class SideMenu extends StatelessWidget {
           color: Colors.white,
           child: SafeArea(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // En-tête avec bouton de fermeture
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -49,58 +54,86 @@ class SideMenu extends StatelessWidget {
                   ),
                 ),
                 
-                // Profil utilisateur
+                // Profil utilisateur avec photo décalée à gauche
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
-                            ? NetworkImage(user.profilePicture!)
-                            : null,
-                        child: user.profilePicture == null || user.profilePicture!.isEmpty
-                            ? Text(
-                                user.firstName.isNotEmpty ? user.firstName[0] : 'U',
-                                style: const TextStyle(fontSize: 28),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      // Photo de profil
+                      Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            Text(
-                              user.firstName + ' ' + user.lastName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            // Cercle de fond
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100],
+                                shape: BoxShape.circle,
                               ),
+                              child: user.profilePicture != null && user.profilePicture!.isNotEmpty
+                                ? null
+                                : Center(
+                                    child: Text(
+                                      user.firstName.isNotEmpty ? user.firstName[0] : 'U',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
                             ),
-                            Text(
-                              user.email,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            
+                            // Image de profil si disponible
+                            if (user.profilePicture != null && user.profilePicture!.isNotEmpty)
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundImage: NetworkImage(user.profilePicture!),
                               ),
-                            ),
                           ],
+                        ),
+                      ),
+                      
+                      // Email uniquement
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.username.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 
-                const Divider(),
-                
-                // Options principales
+                // Options du menu - première section
                 _buildMenuItem(
                   context,
                   icon: Icons.person_outline,
                   text: 'Mon profil',
                   onTap: () {
-                    onClose(); // Fermer le menu
+                    onClose();
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const ProfileScreen()),
@@ -112,17 +145,60 @@ class SideMenu extends StatelessWidget {
                   icon: Icons.chat_bubble_outline,
                   text: 'Message',
                   onTap: () {
-                    onClose(); // Fermer le menu
-                    // Navigation vers les messages
+                    onClose();
+                    // Navigation vers messages
                   },
                 ),
+                
+                // Options spécifiques selon le rôle
+                if (user.role == 'provider') ...[
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.home_repair_service_outlined,
+                    text: 'Mes services',
+                    onTap: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ServiceManagementScreen()),
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.receipt_long_outlined,
+                    text: 'Demandes de devis',
+                    onTap: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
+                      );
+                    },
+                  ),
+                ],
+                
+                if (user.role == 'client')
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.receipt_long_outlined,
+                    text: 'Demandes de devis',
+                    onTap: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MyQuoteRequestsScreen()),
+                      );
+                    },
+                  ),
+                
                 _buildMenuItem(
                   context,
                   icon: Icons.notifications_none,
                   text: 'Notifications',
                   onTap: () {
-                    onClose(); // Fermer le menu
-                    // Navigation vers les notifications
+                    onClose();
+                    // Navigation vers notifications
                   },
                 ),
                 
@@ -134,8 +210,8 @@ class SideMenu extends StatelessWidget {
                   icon: Icons.settings_outlined,
                   text: 'Paramètres',
                   onTap: () {
-                    onClose(); // Fermer le menu
-                    // Navigation vers les paramètres
+                    onClose();
+                    // Navigation vers paramètres
                   },
                 ),
                 _buildMenuItem(
@@ -143,8 +219,8 @@ class SideMenu extends StatelessWidget {
                   icon: Icons.help_outline,
                   text: 'Aide et FAQ',
                   onTap: () {
-                    onClose(); // Fermer le menu
-                    // Navigation vers l'aide
+                    onClose();
+                    // Navigation vers aide
                   },
                 ),
                 _buildMenuItem(
@@ -152,10 +228,9 @@ class SideMenu extends StatelessWidget {
                   icon: Icons.logout,
                   text: 'Déconnexion',
                   onTap: () async {
-                    onClose(); // Fermer le menu
+                    onClose();
                     await authProvider.logout();
                     if (context.mounted) {
-                      // Rediriger vers la page de connexion
                       Navigator.pushNamedAndRemoveUntil(
                         context,
                         '/login',
@@ -165,7 +240,7 @@ class SideMenu extends StatelessWidget {
                   },
                 ),
                 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -183,7 +258,7 @@ class SideMenu extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Icon(icon, size: 24, color: Colors.grey[800]),

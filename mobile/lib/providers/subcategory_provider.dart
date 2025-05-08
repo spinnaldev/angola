@@ -1,5 +1,8 @@
 // lib/providers/subcategory_provider.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../core/models/subcategory.dart';
 import '../core/services/api_service.dart';
 
@@ -23,6 +26,7 @@ class SubcategoryProvider with ChangeNotifier {
   SubcategoryProvider(this._apiService);
 
   List<Subcategory> get subcategories => _subcategories;
+
   List<SubcategoryWithCount> get subcategoriesWithCount =>
       _subcategoriesWithCount;
   bool get isLoading => _isLoading;
@@ -70,6 +74,55 @@ class SubcategoryProvider with ChangeNotifier {
           .map((subcategory) =>
               SubcategoryWithCount(subcategory: subcategory, serviceCount: 0))
           .toList();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchAllSubcategories() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Appel à l'API pour récupérer toutes les sous-catégories
+      print('Fin de connait B');
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/subcategories/'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+      print("Les répponses: $response");
+      print("Code de statut: ${response.statusCode}");
+      print("Corps de la réponse: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        print("Données brutes: $data");
+
+        // Mettre à jour les sous-catégories avec gestion des nulls
+        _subcategories = data
+            .map((item) {
+              try {
+                return Subcategory.fromJson(item);
+              } catch (e) {
+                print("Erreur lors de la conversion d'un élément: $e");
+                print("Élément problématique: $item");
+                return null;
+              }
+            })
+            .where((item) => item != null)
+            .cast<Subcategory>()
+            .toList();
+
+        print("Sous-catégories chargées: ${_subcategories.length}");
+      } else {
+        print(
+            "Erreur lors du chargement des sous-catégories: ${response.statusCode}");
+      }
+    } catch (error) {
+      print('Error fetching all subcategories: $error');
+      print('Stack trace: ${StackTrace.current}');
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -1,134 +1,173 @@
+// lib/ui/widgets/service_card.dart
+
 import 'package:flutter/material.dart';
 import '../../core/models/service.dart';
 
 class ServiceCard extends StatelessWidget {
   final Service service;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const ServiceCard({
     Key? key,
     required this.service,
-    required this.onTap,
+    this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 100,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          children: [
-            // Image du service
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                service.imageUrl,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                  );
-                },
-              ),
-            ),
-            
-            // Informations du service
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Titre du service
-                    Text(
-                      service.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Image du service - carré de 80x80
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.network(
+                      service.imageUrl.isNotEmpty
+                          ? service.imageUrl
+                          : 'https://via.placeholder.com/80',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 80,
+                          height: 80,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image, color: Colors.grey),
+                        );
+                      },
                     ),
-                    
-                    const SizedBox(height: 4),
-                    
-                    // Étoiles et note
+                  ),
+                ),
+                
+                // Espace entre l'image et le contenu
+                const SizedBox(width: 12),
+                
+                // Contenu (titre et description)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Titre du service
+                      Text(
+                        service.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      // Espace entre titre et description
+                      const SizedBox(height: 4),
+                      
+                      // Description du service
+                      Text(
+                        'Entreprise de ${service.businessType.toLowerCase()}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Partie droite (étoiles et bouton)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Étoiles
                     Row(
                       children: [
-                        // Étoiles jaunes
-                        Row(
-                          children: List.generate(5, (index) {
-                            return Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 14,
-                            );
-                          }),
-                        ),
-                        
-                        const SizedBox(width: 4),
+                        // 5 étoiles jaunes
+                        for (int i = 0; i < 5; i++)
+                          Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 16,
+                          ),
                         
                         // Nombre d'avis
+                        const SizedBox(width: 4),
                         Text(
-                          '(${service.reviewCount})',
-                          style: TextStyle(
+                          "(${service.reviewCount})",
+                          style: const TextStyle(
+                            color: Colors.amber,
                             fontSize: 12,
-                            color: Colors.grey[600],
                           ),
                         ),
                       ],
                     ),
                     
-                    const SizedBox(height: 8),
+                    // Espace entre étoiles et bouton
+                    const SizedBox(height: 10),
                     
-                    // Description
-                    Text(
-                      service.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    const SizedBox(height: 4),
-                    
-                    // Bouton "Voir" placé à droite
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        height: 28,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF142FE2),
-                          borderRadius: BorderRadius.circular(20),
+                    // Bouton "Voir"
+                    Container(
+                      margin: const EdgeInsets.only(right: 16),
+                      child: ElevatedButton(
+                        onPressed: onTap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF142FE2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          minimumSize: const Size(60, 30),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
-                        child: Center(
-                          child: Text(
-                            'Voir',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        child: const Text(
+                          'Voir',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
+                
+                // Léger padding à droite
+                const SizedBox(width: 4),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

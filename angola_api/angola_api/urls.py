@@ -23,6 +23,8 @@ from rest_framework_simplejwt.views import (
     
 )
 from operation import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = DefaultRouter()
 router.register(r'api/users', views.UserViewSet)
@@ -38,6 +40,8 @@ router.register(r'api/conversations', views.ConversationViewSet)
 router.register(r'api/disputes', views.DisputeViewSet)
 router.register(r'api/notifications', views.NotificationViewSet)
 router.register(r'api/reports', views.ReportViewSet)
+# router.register(r'reports', views.ReportViewSet)
+router.register(r'api/quote-requests', views.QuoteRequestViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -54,6 +58,8 @@ urlpatterns = [
     path('notifications/count/', views.get_notification_count, name='notification-count'),
     path('notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # urlpatterns = [
     
 # ]

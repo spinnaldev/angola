@@ -10,6 +10,7 @@ class CategoryCard extends StatelessWidget {
     Key? key, 
     required this.category,
     this.serviceCount = 0,
+    
   }) : super(key: key);
 
   @override

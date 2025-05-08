@@ -93,13 +93,17 @@ class ProviderService(TimeStampMixin):
         ('fixed', 'Prix fixe'),
         ('hourly', 'Prix horaire'),
         ('daily', 'Prix journalier'),
-        ('negotiable', 'Prix négociable')
-    ], default='fixed')
+        ('negotiable', 'Prix négociable'),
+        ('quote', 'Sur devis')
+    ], default='quote')
     is_available = models.BooleanField(default=True)
+    
+    # Ajout du champ pour stocker l'image principale du service
+    image = models.ImageField(upload_to='service_images/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.title} - {self.provider.user.username}"
-
+    
 class Portfolio(TimeStampMixin):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='portfolio')
     title = models.CharField(max_length=100)
@@ -109,6 +113,25 @@ class Portfolio(TimeStampMixin):
     def __str__(self):
         return f"{self.title} - {self.provider.user.username}"
 
+class QuoteRequest(TimeStampMixin):
+    STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('accepted', 'Accepté'),
+        ('rejected', 'Rejeté'),
+        ('completed', 'Complété'),
+    )
+    
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quote_requests')
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='quote_requests')
+    service = models.ForeignKey(ProviderService, on_delete=models.CASCADE, related_name='quote_requests', null=True, blank=True)
+    subject = models.CharField(max_length=200)
+    budget = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    def __str__(self):
+        return f"Demande de devis {self.id}: {self.subject} - {self.client.username} à {self.provider.user.username}"
+    
 class Certificate(TimeStampMixin):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='certificates')
     title = models.CharField(max_length=100)

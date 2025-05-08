@@ -13,7 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
-from .models import ResetPasswordCode
+from .models import QuoteRequest, ResetPasswordCode
 from rest_framework.views import APIView
 from django.core.mail import send_mail
 import random
@@ -30,7 +30,7 @@ from .models import (
     Message, Attachment, Dispute, DisputeEvidence, Notification, Report
 )
 from .serializers import (
-    UserSerializer, UserUpdateSerializer, CategorySerializer, SubCategorySerializer,
+    QuoteRequestSerializer, UserSerializer, UserUpdateSerializer, CategorySerializer, SubCategorySerializer,
     ProviderListSerializer, ProviderDetailSerializer, ProviderServiceSerializer,
     PortfolioSerializer, CertificateSerializer, ReviewSerializer,
     FavoriteSerializer, ConversationSerializer, MessageSerializer,
@@ -506,12 +506,19 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
     filterset_fields = ['subcategory', 'is_available', 'price_type']
     search_fields = ['title', 'description']
     
+    def get_serializer_context(self):
+        """
+        Ajoute la requête HTTP au contexte du sérialiseur pour générer l'URL absolue des images.
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def get_queryset(self):
         provider_id = self.request.query_params.get('provider_id')
         if provider_id:
             return ProviderService.objects.filter(provider_id=provider_id)
         return ProviderService.objects.all()
-    
     # def get_permissions(self):
     #     if self.action == 'list' or self.action == 'retrieve':
     #         return [AllowAny()]
@@ -562,7 +569,8 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
                 subcategory__category_id=category_id, 
                 is_available=True
             ).count()
-            
+            print("La catégorie est:" + str(category_id))
+            print("Le nombre est:" + str(count))
             return Response({"count": count})
         except Exception as e:
             return Response(
@@ -1111,3 +1119,39 @@ class ReportViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(report)
         return Response(serializer.data)
+    
+class QuoteRequestViewSet(viewsets.ModelViewSet):
+    queryset = QuoteRequest.objects.all()
+    serializer_class = QuoteRequestSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return QuoteRequest.objects.all()
+        elif hasattr(user, 'provider_profile'):
+            return QuoteRequest.objects.filter(provider=user.provider_profile)
+        else:
+            return QuoteRequest.objects.filter(client=user)
+    
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        quote_request = self.get_object()
+        status_value = request.data.get('status')
+        
+        if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
+            return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier que l'utilisateur est autorisé à modifier le statut
+        user = request.user
+        if hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile:
+            quote_request.status = status_value
+            quote_request.save()
+            serializer = self.get_serializer(quote_request)
+            return Response(serializer.data)
+        else:
+            return Response({"detail": "You are not authorized to update this quote request"}, 
+                           status=status.HTTP_403_FORBIDDEN)

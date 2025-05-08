@@ -15,7 +15,7 @@ class Subcategory {
     return Subcategory(
       id: json['id'],
       name: json['name'],
-      categoryId: json['category_id'],
+      categoryId: json['category'],
       description: json['description'] ?? '',
     );
   }

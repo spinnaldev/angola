@@ -8,8 +8,11 @@ import '../ui/screens/auth/reset_password_screen.dart';
 import '../ui/screens/home/home_screen.dart';
 import '../ui/screens/messaging/messages_screen.dart';
 import '../ui/screens/profile_selector_screen.dart';
-
-
+import '../ui/screens/provider_detail_screen.dart';
+import '../ui/screens/service_detail_screen.dart';
+import '../ui/screens/provider/service_management_screen.dart';
+import '../ui/screens/provider/quote_requests_screen.dart';
+import '../ui/screens/client/my_quote_requests_screen.dart';
 class AppRoutes {
   static const String home = '/home';
   static const String login = '/login';
@@ -20,6 +23,12 @@ class AppRoutes {
   static const String profileSelector = '/profile-selector';
   static const String explore = '/explore';
   static const String messages = '/messages';
+  static const String providerDetail = '/provider-detail';
+   static const String serviceDetail = '/service-detail';
+  static const String serviceManagement = '/service-management';
+  static const String quoteRequests = '/quote-requests';
+  static const String myQuoteRequests = '/my-quote-requests';
+
   static Map<String, WidgetBuilder> get routes => {
     login: (context) => const LoginScreen(),
     signup: (context) => const SignupScreen(),
@@ -30,6 +39,9 @@ class AppRoutes {
     profileSelector: (context) => const ProfileSelectorScreen(),
     explore: (context) => const ExploreScreen(),
     messages: (context) => const MessagesScreen(),
+    serviceManagement: (context) => const ServiceManagementScreen(),
+    quoteRequests: (context) => const QuoteRequestsScreen(),
+    myQuoteRequests: (context) => const MyQuoteRequestsScreen(),
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -53,6 +65,22 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case explore:
         return MaterialPageRoute(builder: (_) => const ExploreScreen());
+      case serviceManagement:
+        return MaterialPageRoute(builder: (_) => const ServiceManagementScreen());
+      case quoteRequests:
+        return MaterialPageRoute(builder: (_) => const QuoteRequestsScreen());
+      case myQuoteRequests:
+        return MaterialPageRoute(builder: (_) => const MyQuoteRequestsScreen());
+      case serviceDetail:
+        final serviceId = settings.arguments as int;
+        return MaterialPageRoute(
+          builder: (_) => ServiceDetailScreen(serviceId: serviceId),
+        );
+      case providerDetail:
+        final providerId = settings.arguments as int;
+        return MaterialPageRoute(
+          builder: (_) => ProviderDetailScreen(providerId: providerId),
+        );
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

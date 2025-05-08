@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from .models import (
-    Category, SubCategory, Provider, ProviderService, Portfolio, 
+    Category, QuoteRequest, SubCategory, Provider, ProviderService, Portfolio, 
     Certificate, Review, ReviewImage, Favorite, Conversation, 
     Message, Attachment, Dispute, DisputeEvidence, Notification, Report
 )
@@ -46,17 +46,34 @@ class SubCategorySerializer(serializers.ModelSerializer):
 class ProviderServiceSerializer(serializers.ModelSerializer):
     subcategory_name = serializers.StringRelatedField(source='subcategory.name', read_only=True)
     category_name = serializers.StringRelatedField(source='subcategory.category.name', read_only=True)
+    category_id = serializers.SerializerMethodField()
     avg_rating = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ProviderService
         fields = ('id', 'title', 'description', 'price', 'price_type', 'is_available',
-                 'subcategory', 'subcategory_name', 'category_name', 'avg_rating')
+                 'subcategory', 'subcategory_name', 'category_name','category_id' ,'avg_rating','image', 'image_url')
         read_only_fields = ('provider',)
     
     def get_avg_rating(self, obj):
         return obj.reviews.aggregate(avg=Avg('overall_rating')).get('avg') or 0
 
+    def get_category_id(self, obj):
+        """
+        Renvoie l'ID de la catégorie à laquelle appartient la sous-catégorie du service
+        """
+        if obj.subcategory and obj.subcategory.category:
+            return obj.subcategory.category.id
+        return None
+    
+    def get_image_url(self, obj):
+        if obj.image:
+            # Construire l'URL complète de l'image
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return ""
+    
 class PortfolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
@@ -250,7 +267,20 @@ class ConversationSerializer(serializers.ModelSerializer):
         # Simuler un statut en ligne
         # À remplacer par une vraie logique de statut en ligne dans une application de production
         return random.choice([True, False])
+
+class QuoteRequestSerializer(serializers.ModelSerializer):
+    client_name = serializers.StringRelatedField(source='client.username', read_only=True)
+    provider_name = serializers.StringRelatedField(source='provider.user.username', read_only=True)
+    service_name = serializers.StringRelatedField(source='service.title', read_only=True)
     
+    class Meta:
+        model = QuoteRequest
+        fields = ('id', 'client', 'client_name', 'provider', 'provider_name', 
+                 'service', 'service_name', 'subject', 'budget', 'description', 
+                 'status', 'created_at')
+        read_only_fields = ('client', 'status')   
+
+        
 class DisputeEvidenceSerializer(serializers.ModelSerializer):
     user_name = serializers.StringRelatedField(source='user.username', read_only=True)
     

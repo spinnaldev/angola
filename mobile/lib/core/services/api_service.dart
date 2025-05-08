@@ -26,14 +26,14 @@ class ApiService {
   }
 
   // Créer les en-têtes avec authentification si nécessaire
-  Future<Map<String, String>> _getHeaders({bool requireAuth = true}) async {
+  Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {
     Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
     if (requireAuth) {
-      final token = await _getToken();
+      final token = await _secureStorage.read(key: 'access_token');
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -45,7 +45,7 @@ class ApiService {
   // Obtenir le profil utilisateur courant
   Future<User> getCurrentUser() async {
     try {
-      final headers = await _getHeaders();
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/users/me/'),
         headers: headers,
@@ -68,7 +68,7 @@ class ApiService {
   // Obtenir les projets de l'utilisateur
   Future<List<Project>> getUserProjects() async {
     try {
-      final headers = await _getHeaders();
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/projects/user/'),
         headers: headers,
@@ -584,12 +584,12 @@ Future<bool> markAllNotificationsAsRead() async {
         return data.map((item) => Review.fromJson(item)).toList();
       } else {
         // En cas d'erreur, retourner des données de test
-        return _getMockReviews();
+        return [];
       }
     } catch (e) {
       print('Error in getProviderReviews: $e');
       // En cas d'exception, retourner des données de test
-      return _getMockReviews();
+      return [];
     }
   }
 
@@ -745,6 +745,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 4.5,
         reviewCount: 27,
         providerId: 1,
+        categoryId:1,
         businessType: 'Entreprise',
         price: 80.0,
       ),
@@ -756,6 +757,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 3.8,
         reviewCount: 15,
         providerId: 2,
+        categoryId:1,
         businessType: 'Entreprise',
         price: 75.0,
       ),
@@ -767,6 +769,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 5.0,
         reviewCount: 21,
         providerId: 3,
+        categoryId:1,
         businessType: 'Entreprise',
         price: 120.0,
       ),
@@ -778,6 +781,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 4.2,
         reviewCount: 18,
         providerId: 4,
+        categoryId:1,
         businessType: 'Entreprise',
         price: 90.0,
       ),
@@ -789,6 +793,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 3.5,
         reviewCount: 12,
         providerId: 5,
+        categoryId:1,
         businessType: 'Freelance',
         price: 65.0,
       ),
@@ -805,6 +810,7 @@ Future<bool> markAllNotificationsAsRead() async {
       rating: 4.5,
       reviewCount: 27,
       providerId: 1,
+      categoryId:1,
       businessType: 'Entreprise',
       price: 80.0,
     );
@@ -873,37 +879,37 @@ Future<bool> markAllNotificationsAsRead() async {
     );
   }
 
-  List<Review> _getMockReviews() {
-    return [
-      Review(
-        id: 1,
-        userName: 'Jean Dupont',
-        userImageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-        rating: 5.0,
-        comment:
-            'Excellent travail, je suis très satisfait du résultat. L\'équipe était professionnelle et ponctuelle.',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Review(
-        id: 2,
-        userName: 'Marie Leclerc',
-        userImageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
-        rating: 4.0,
-        comment:
-            'Bon travail dans l\'ensemble, quelques petits détails à améliorer mais je recommande.',
-        date: DateTime.now().subtract(const Duration(days: 15)),
-      ),
-      Review(
-        id: 3,
-        userName: 'Pierre Martin',
-        userImageUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-        rating: 5.0,
-        comment:
-            'Très professionnel, travail soigné et dans les délais. Je recommande vivement !',
-        date: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-    ];
-  }
+  // List<Review> _getMockReviews() {
+  //   return [
+  //     Review(
+  //       id: 1,
+  //       userName: 'Jean Dupont',
+  //       userImageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
+  //       rating: 5.0,
+  //       comment:
+  //           'Excellent travail, je suis très satisfait du résultat. L\'équipe était professionnelle et ponctuelle.',
+  //       date: DateTime.now().subtract(const Duration(days: 2)),
+  //     ),
+  //     Review(
+  //       id: 2,
+  //       userName: 'Marie Leclerc',
+  //       userImageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
+  //       rating: 4.0,
+  //       comment:
+  //           'Bon travail dans l\'ensemble, quelques petits détails à améliorer mais je recommande.',
+  //       date: DateTime.now().subtract(const Duration(days: 15)),
+  //     ),
+  //     Review(
+  //       id: 3,
+  //       userName: 'Pierre Martin',
+  //       userImageUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
+  //       rating: 5.0,
+  //       comment:
+  //           'Très professionnel, travail soigné et dans les délais. Je recommande vivement !',
+  //       date: DateTime.now().subtract(const Duration(days: 30)),
+  //     ),
+  //   ];
+  // }
 }
 
 List<Subcategory> _getMockSubcategories(int categoryId) {

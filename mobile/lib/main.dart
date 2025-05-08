@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:w3_loc/core/api/api_client.dart';
 import 'core/services/api_service.dart';
-import 'providers/category_provider.dart';
-import 'providers/messaging_provider.dart';
-import 'providers/notification_provider.dart';
-import 'providers/subcategory_provider.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/quote_service.dart';
+import 'core/services/review_service.dart';
+import 'providers/auth_provider.dart';
+import 'providers/category_provider.dart';
+import 'providers/subcategory_provider.dart';
 import 'providers/service_provider.dart';
 import 'providers/provider_detail_provider.dart';
+import 'providers/notification_provider.dart';
+import 'providers/messaging_provider.dart';
 import 'providers/filter_provider.dart';
-import 'providers/auth_provider.dart';
 import 'providers/project_provider.dart';
-import 'ui/screens/explore_screen.dart';
+import 'providers/quote_provider.dart';
+import 'providers/review_provider.dart';
+import 'config/routes.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'ui/screens/profile_selector_screen.dart';
-import 'config/routes.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -31,8 +35,10 @@ class MyApp extends StatelessWidget {
       apiKey: 'your_api_key_here',
     );
     final apiClient = ApiClient(baseUrl:'http://10.0.2.2:8001/api');
-    // final authService = AuthService(apiService);
     final authService = AuthService(apiClient);
+    final quoteService = QuoteService(apiService);
+    final reviewService = ReviewService(apiService);
+    // final authService = AuthService(apiService);
     return MultiProvider(
       providers: [
         // Fournisseurs de données
@@ -47,6 +53,15 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => SubcategoryProvider(apiService),
+        ),
+         ChangeNotifierProvider(
+          create: (_) => ProviderDetailProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => QuoteProvider(quoteService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ReviewProvider(reviewService),
         ),
         ChangeNotifierProvider(
           create: (_) => ServiceProvider(apiService),
