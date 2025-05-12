@@ -129,6 +129,39 @@ class SubcategoryProvider with ChangeNotifier {
     }
   }
 
+  Future<List<Subcategory>> fetchSubcategoriesForCategory(int categoryId) async {
+    _isLoading = true;
+    _selectedCategoryId = categoryId;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/subcategories/?category_id=$categoryId'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        
+        final subcategories = data.map((item) => Subcategory.fromJson(item)).toList();
+        
+        _isLoading = false;
+        notifyListeners();
+        
+        return subcategories;
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        throw Exception('Erreur lors du chargement des sous-catégories');
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      throw e;
+    }
+  }
+
   // Méthode mock pour fournir des sous-catégories de test
   List<Subcategory> _getMockSubcategories(int categoryId) {
     if (categoryId == 1) {

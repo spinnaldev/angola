@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../core/models/category.dart';
 import '../core/models/service.dart';
 import '../core/services/api_service.dart';
 import 'package:http/http.dart' as http;
@@ -13,6 +14,9 @@ class ServiceProvider with ChangeNotifier {
   List<Service> _services = [];
   List<Service> _myServices = []; // Services du prestataire connecté
   Service? _currentService;
+  // List<Service> _myServices = []; // Services du prestataire connecté
+  List<Service> recentServices = []; // Services récents
+  List<Service> nearbyServices = [];
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -23,9 +27,50 @@ class ServiceProvider with ChangeNotifier {
   Service? get currentService => _currentService;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-
+  List<Category> _categories = [];
+  Map<int, Category> _categoriesMap = {};
+  List<int> _expertiseCategories = [];
+  List<int> get expertiseCategories => _expertiseCategories;
   // Méthodes existantes...
+  // Méthode pour récupérer les services récents
+  // Future<void> fetchRecentServices() async {
+  //   _isLoading = true;
+  //   _errorMessage = null;
+  //   notifyListeners();
 
+  //   try {
+  //     final fetchedServices = await _apiService.getRecentServices();
+  //     _recentServices = fetchedServices;
+  //   } catch (error) {
+  //     print('Error fetching recent services: $error');
+  //     // Générer des données de démonstration en cas d'erreur
+  //     _recentServices = _generateMockServices(6);
+  //     _errorMessage = error.toString();
+  //   } finally {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
+
+  // Méthode pour récupérer les services à proximité
+  // Future<void> fetchNearbyServices() async {
+  //   _isLoading = true;
+  //   _errorMessage = null;
+  //   notifyListeners();
+
+  //   try {
+  //     final fetchedServices = await _apiService.getNearbyServices();
+  //     _nearbyServices = fetchedServices;
+  //   } catch (error) {
+  //     print('Error fetching nearby services: $error');
+  //     // Générer des données de démonstration en cas d'erreur
+  //     _nearbyServices = _generateMockServices(6, offset: 100);
+  //     _errorMessage = error.toString();
+  //   } finally {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
   // Récupérer les services du prestataire connecté
   Future<void> fetchMyServices() async {
     _isLoading = true;
@@ -132,6 +177,76 @@ class ServiceProvider with ChangeNotifier {
     }
   }
 
+  // Récupérer les catégories d'expertise du prestataire
+  Future<List<int>> getProviderExpertiseCategories() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Récupérer les catégories d'expertise depuis l'API
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/providers/me/expertise_categories/'),
+        headers: await _apiService.getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) ?? [];
+        
+        // Convertir les IDs de catégories en int
+        _expertiseCategories = data.map<int>((item) => item['id'] as int).toList();
+        
+        // S'il n'y a pas encore de catégories, récupérer toutes les catégories
+        if (_categories.isEmpty) {
+          await fetchCategories();
+        }
+        
+        _isLoading = false;
+        notifyListeners();
+        return _expertiseCategories;
+      } else {
+        throw Exception('Erreur lors de la récupération des catégories d\'expertise');
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      throw e;
+    }
+  }
+  
+  // Récupérer toutes les catégories pour référence
+  Future<void> fetchCategories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/categories/'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        
+        _categories = data.map((item) => Category.fromJson(item)).toList();
+        
+        // Créer une carte pour un accès rapide par ID
+        _categoriesMap = {};
+        for (var category in _categories) {
+          _categoriesMap[category.id] = category;
+        }
+      } else {
+        throw Exception('Erreur lors de la récupération des catégories');
+      }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      throw e;
+    }
+  }
+  
+  // Récupérer une catégorie par ID
+  Category? getCategoryById(int id) {
+    return _categoriesMap[id];
+  }
   // Ajouter un nouveau service
   Future<void> addService(
     String title,

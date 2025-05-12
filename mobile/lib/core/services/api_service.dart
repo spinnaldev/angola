@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math' as math;
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import '../models/category.dart';
 import '../models/conversation.dart';
@@ -64,7 +66,163 @@ class ApiService {
       return _getMockUser();
     }
   }
+  // Récupérer les services récents
+  Future<List<Service>> getRecentServices() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/services/recent/'),
+        headers: await getHeaders(requireAuth: false),
+      );
 
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        return data.map((item) => Service.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load recent services');
+      }
+    } catch (e) {
+      print('Error in getRecentServices: $e');
+      // Retourner des données de test en cas d'erreur
+      return _getMockServices();
+    }
+  }
+
+  // Récupérer les services à proximité
+  Future<List<Service>> getNearbyServices() async {
+    try {
+      // Si l'utilisateur a fourni sa localisation, on l'utilise pour obtenir les services à proximité
+      final position = await _getCurrentPosition();
+      
+      String url = '$baseUrl/services/nearby/';
+      if (position != null) {
+        url += '?latitude=${position.latitude}&longitude=${position.longitude}';
+      }
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: await getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        return data.map((item) => Service.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load nearby services');
+      }
+    } catch (e) {
+      print('Error in getNearbyServices: $e');
+      // Retourner des données de test en cas d'erreur
+      return _getMockServices();
+    }
+  }
+
+  // Méthode pour obtenir la position actuelle de l'utilisateur (à implémenter avec un package de géolocalisation)
+  Future<Position?> _getCurrentPosition() async {
+    try {
+      // Implémenter avec package geolocator
+      return null;
+    } catch (e) {
+      print('Error getting current position: $e');
+      return null;
+    }
+  }
+
+  // Méthodes pour les prestataires
+  Future<List<ProviderModel>> getProviders() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/providers/'),
+        headers: await getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => ProviderModel.fromJson(item)).toList();
+      } else {
+        // En cas d'erreur, retourner des données de test
+        return _getMockProviders();
+      }
+    } catch (e) {
+      print('Erreur getProviders: $e');
+      // En cas d'erreur, retourner des données de test
+      return _getMockProviders();
+    }
+  }
+
+  Future<List<ProviderModel>> getProvidersByCategory(int categoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/providers/by_category/?category_id=$categoryId'),
+        headers: await getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => ProviderModel.fromJson(item)).toList();
+      } else {
+        // En cas d'erreur, retourner des données de test filtrées
+        return _getMockProviders().where((p) => p.id % 5 == categoryId % 5).toList();
+      }
+    } catch (e) {
+      print('Erreur getProvidersByCategory: $e');
+      // En cas d'erreur, retourner des données de test filtrées
+      return _getMockProviders().where((p) => p.id % 5 == categoryId % 5).toList();
+    }
+  }
+
+  Future<List<ProviderModel>> getProvidersBySubcategory(int subcategoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/providers/by_subcategory/?subcategory_id=$subcategoryId'),
+        headers: await getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => ProviderModel.fromJson(item)).toList();
+      } else {
+        // En cas d'erreur, retourner des données de test filtrées
+        return _getMockProviders().where((p) => p.id % 10 == subcategoryId % 10).toList();
+      }
+    } catch (e) {
+      print('Erreur getProvidersBySubcategory: $e');
+      // En cas d'erreur, retourner des données de test filtrées
+      return _getMockProviders().where((p) => p.id % 10 == subcategoryId % 10).toList();
+    }
+  }
+
+  Future<List<ProviderModel>> getNearbyProviders(double latitude, double longitude, {double radius = 10.0}) async {
+    try {
+      final queryParams = {
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'radius': radius.toString(),
+      };
+      
+      final uri = Uri.parse('$baseUrl/providers/nearby/').replace(queryParameters: queryParams);
+      
+      final response = await http.get(
+        uri,
+        headers: await getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => ProviderModel.fromJson(item)).toList();
+      } else {
+        // En cas d'erreur, retourner des données de test avec coordonnées aléatoires
+        return _getMockProvidersWithCoordinates(latitude, longitude);
+      }
+    } catch (e) {
+      print('Erreur getNearbyProviders: $e');
+      // En cas d'erreur, retourner des données de test
+      return _getMockProvidersWithCoordinates(latitude, longitude);
+    }
+  }
   // Obtenir les projets de l'utilisateur
   Future<List<Project>> getUserProjects() async {
     try {
@@ -87,7 +245,53 @@ class ApiService {
       return _getMockProjects();
     }
   }
+  // Méthodes pour générer des données de test
+  List<ProviderModel> _getMockProviders() {
+    return List.generate(10, (index) {
+      return ProviderModel(
+        id: index + 1,
+        name: 'Prestataire ${index + 1}',
+        businessType: index % 2 == 0 ? 'Entreprise' : 'Freelance',
+        profileImageUrl: 'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
+        rating: 3.0 + (index % 5) * 0.5,
+        reviewCount: 5 + index * 3,
+        description: 'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
+        services: List.generate(3, (i) => ServiceItem(
+          id: i + 1,
+          title: 'Service ${i + 1}',
+          priceType: i % 2 == 0 ? 'fixed' : 'quote',
+        )),
+      );
+    });
+  }
 
+  List<ProviderModel> _getMockProvidersWithCoordinates(double centerLatitude, double centerLongitude) {
+    final random = math.Random();
+    
+    return List.generate(10, (index) {
+      // Générer des coordonnées aléatoires dans un rayon de 5km
+      final latOffset = (random.nextDouble() - 0.5) * 0.1; // ~5km
+      final lngOffset = (random.nextDouble() - 0.5) * 0.1; // ~5km
+      
+      return ProviderModel(
+        id: index + 1,
+        name: 'Prestataire ${index + 1}',
+        businessType: index % 2 == 0 ? 'Entreprise' : 'Freelance',
+        profileImageUrl: 'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
+        rating: 3.0 + (index % 5) * 0.5,
+        reviewCount: 5 + index * 3,
+        description: 'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
+        services: List.generate(3, (i) => ServiceItem(
+          id: i + 1,
+          title: 'Service ${i + 1}',
+          priceType: i % 2 == 0 ? 'fixed' : 'quote',
+        )),
+        latitude: centerLatitude + latOffset,
+        longitude: centerLongitude + lngOffset,
+        address: 'Adresse du prestataire ${index + 1}, Cotonou',
+      );
+    });
+  }
   // Méthodes de mock pour données de test
   User _getMockUser() {
     return User(

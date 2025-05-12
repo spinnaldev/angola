@@ -84,6 +84,64 @@ class AuthService {
     }
   }
 
+  Future<User?> registerWithCategories(
+    String username,
+    String email,
+    String password,
+    String firstName,
+    String lastName,
+    String phoneNumber,
+    String role,
+    List<int> selectedCategories
+  ) async {
+    try {
+      // Construire le payload de la requête
+      final Map<String, dynamic> data = {
+        'username': username,
+        'email': email,
+        'password': password,
+        'password2': password, // Si l'API nécessite une confirmation
+        'first_name': firstName,
+        'last_name': lastName,
+        'phone_number': phoneNumber,
+        'role': role,
+        'categories': selectedCategories, // Les catégories sélectionnées
+      };
+      
+      // Envoi de la requête au backend
+      final response = await _apiClient.post(
+        'auth/register/',
+        data: data,
+        requireAuth: false,
+      );
+      
+      // Si la réponse contient directement les données utilisateur
+      if (response != null && response['user'] != null) {
+        // Créer l'utilisateur à partir de la réponse
+        final user = User.fromJson(response['user']);
+        
+        // Sauvegarder les tokens si présents dans la réponse
+        if (response['access'] != null && response['refresh'] != null) {
+          await _secureStorage.write(key: 'access_token', value: response['access']);
+          await _secureStorage.write(key: 'refresh_token', value: response['refresh']);
+        }
+        
+        // Sauvegarder l'utilisateur dans les préférences
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('user_data', User.toJsonString(user));
+        
+        return user;
+      }
+      
+      // Si la réponse ne contient pas directement les données utilisateur,
+      // tenter de se connecter avec les identifiants fournis
+      return await login(email, password);
+    } catch (e) {
+      print('Erreur d\'inscription avec catégories: $e');
+      rethrow;
+    }
+  }
+
   Future<bool> resetPassword(String email) async {
     try {
       await _apiClient.post(

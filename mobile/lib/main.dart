@@ -1,6 +1,8 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:w3_loc/core/api/api_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'core/api/api_client.dart';
 import 'core/services/api_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/quote_service.dart';
@@ -17,10 +19,20 @@ import 'providers/project_provider.dart';
 import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
 import 'config/routes.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'ui/screens/profile_selector_screen.dart';
+import 'ui/screens/home_screen.dart';  // Nouvelle page d'accueil
 
-void main() {
+void main() async {
+  // Assurer que les liaisons Flutter sont initialisées
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Charger les variables d'environnement si nécessaire
+  try {
+    await dotenv.load(fileName: "lib/.env");
+  } catch (e) {
+    print('Erreur lors du chargement des variables d\'environnement: $e');
+    // Continue even if .env file is not found
+  }
+  
   runApp(const MyApp());
 }
 
@@ -31,14 +43,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialiser le service API
     final apiService = ApiService(
-      baseUrl:'http://10.0.2.2:8001/api',
+      baseUrl: 'http://10.0.2.2:8001/api',
       apiKey: 'your_api_key_here',
     );
-    final apiClient = ApiClient(baseUrl:'http://10.0.2.2:8001/api');
+    final apiClient = ApiClient(baseUrl: 'http://10.0.2.2:8001/api');
     final authService = AuthService(apiClient);
     final quoteService = QuoteService(apiService);
     final reviewService = ReviewService(apiService);
-    // final authService = AuthService(apiService);
+    
     return MultiProvider(
       providers: [
         // Fournisseurs de données
@@ -101,13 +113,19 @@ class MyApp extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF142FE2),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
         ),
-        // home: const ExploreScreen(),
-        home: const ProfileSelectorScreen(),
-        routes: AppRoutes.routes,  // Utilisez les routes définies dans AppRoutes
-        // OU utilisez onGenerateRoute au lieu de routes:
-        // onGenerateRoute: AppRoutes.generateRoute,
-        // initialRoute: AppRoutes.profileSelector,
+        home: const HomeScreen(), // Utiliser notre nouvelle page d'accueil comme écran principal
+        routes: AppRoutes.routes,
+        onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,
       ),
     );

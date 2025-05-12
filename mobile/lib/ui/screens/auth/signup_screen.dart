@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../common/app_button.dart';
 import '../../common/app_textfield.dart';
+import 'signup_categories_screen.dart'; // Importer le nouvel écran
 
 class SignupScreen extends StatefulWidget {
   final String? initialRole;
@@ -48,36 +49,62 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  Future<void> _register() async {
+  Future<void> _proceedToNextStep() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.register(
-        _usernameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text,
-        _firstNameController.text.trim(),
-        _lastNameController.text.trim(),
-        _phoneController.text.trim(),
-        _selectedRole,
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (success) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(authProvider.errorMessage ?? 'Erreur d\'inscription')),
+      if (_selectedRole == 'client') {
+        // Pour les clients, continuer avec le processus d'inscription normal
+        await _register();
+      } else {
+        // Pour les prestataires, passer à l'étape de sélection des catégories
+        Map<String, dynamic> userData = {
+          'username': _usernameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+          'phoneNumber': _phoneController.text.trim(),
+          'role': _selectedRole,
+        };
+        
+        // Naviguer vers l'écran de sélection des catégories
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SignupCategoriesScreen(userData: userData),
+          ),
         );
       }
+    }
+  }
+
+  Future<void> _register() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.register(
+      _usernameController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text,
+      _firstNameController.text.trim(),
+      _lastNameController.text.trim(),
+      _phoneController.text.trim(),
+      _selectedRole,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (success) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text(authProvider.errorMessage ?? 'Erreur d\'inscription')),
+      );
     }
   }
 
@@ -298,7 +325,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
+                          onPressed: _isLoading ? null : _proceedToNextStep,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF142FE2),
                             foregroundColor: Colors.white,
@@ -309,9 +336,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: _isLoading
                               ? const CircularProgressIndicator(
                                   color: Colors.white)
-                              : const Text(
-                                  'S\'INSCRIRE',
-                                  style: TextStyle(
+                              : Text(
+                                  _selectedRole == 'client' ? 'S\'INSCRIRE' : 'SUIVANT',
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),

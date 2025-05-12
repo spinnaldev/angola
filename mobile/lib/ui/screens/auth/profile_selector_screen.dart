@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screens/auth/login_screen.dart';
-import '../screens/auth/signup_screen.dart';
+import 'login_screen.dart';
+import 'signup_screen.dart';
 
 class ProfileSelectorScreen extends StatelessWidget {
   const ProfileSelectorScreen({Key? key}) : super(key: key);

@@ -125,6 +125,48 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+   // Méthode pour enregistrer un prestataire avec ses catégories
+  Future<bool> registerWithCategories(
+    String username,
+    String email,
+    String password,
+    String firstName,
+    String lastName,
+    String phoneNumber,
+    String role,
+    List<int> selectedCategories
+  ) async {
+    try {
+      _errorMessage = null;
+      final user = await _authService.registerWithCategories(
+        username,
+        email,
+        password,
+        firstName,
+        lastName,
+        phoneNumber,
+        role,
+        selectedCategories
+      );
+      
+      if (user != null) {
+        _currentUser = user;
+        _status = AuthStatus.authenticated;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Échec de l'inscription. Veuillez réessayer.";
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return false;
+    }
+  }
   // Méthodes existantes pour le reset de mot de passe
   Future<bool> requestPasswordReset(String email) async {
     try {

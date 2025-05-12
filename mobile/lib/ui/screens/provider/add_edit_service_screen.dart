@@ -1,13 +1,14 @@
 // lib/ui/screens/provider/add_edit_service_screen.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../providers/service_provider.dart';
 import '../../../providers/subcategory_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../core/models/service.dart';
 import '../../../core/models/subcategory.dart';
+import '../../../core/models/user.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../common/app_button.dart';
 import '../../common/app_textfield.dart';
@@ -27,10 +28,15 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   
+  int? _selectedCategoryId;
   int? _selectedSubcategoryId;
   String _priceType = 'quote'; // Default to 'Sur devis'
   File? _imageFile;
   bool _isLoading = false;
+  bool _isFetchingSubcategories = false;
+
+  List<Subcategory> _availableSubcategories = [];
+  List<int> _expertiseCategories = []; // IDs des catégories d'expertise du prestataire
 
   final List<Map<String, dynamic>> _priceTypes = [
     {'value': 'fixed', 'label': 'Prix fixe'},
@@ -42,26 +48,94 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
   @override
   void initState() {
-
     super.initState();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SubcategoryProvider>(context, listen: false).fetchAllSubcategories();
-      
-      // Debug pour voir si ça fonctionne
-      print("Chargement des sous-catégories...");
-    });
+    
+    // Récupérer les catégories d'expertise du prestataire
+    _loadProviderExpertiseCategories();
+    
     // Remplir le formulaire si en mode édition
     if (widget.serviceToEdit != null) {
       _titleController.text = widget.serviceToEdit!.title;
       _descriptionController.text = widget.serviceToEdit!.description;
       _priceType = widget.serviceToEdit!.priceType;
+      _selectedCategoryId = widget.serviceToEdit!.categoryId;
+      _selectedSubcategoryId = widget.serviceToEdit!.subcategoryId;
       
       if (widget.serviceToEdit!.price > 0) {
         _priceController.text = widget.serviceToEdit!.price.toString();
       }
       
-      // L'ID de la sous-catégorie sera défini lors du chargement des données
-      _selectedSubcategoryId = widget.serviceToEdit!.subcategoryId;
+      // Charger les sous-catégories de cette catégorie
+      if (_selectedCategoryId != null) {
+        _loadSubcategoriesForCategory(_selectedCategoryId!);
+      }
+    }
+  }
+
+  Future<void> _loadProviderExpertiseCategories() async {
+    try {
+      // Récupérer les catégories d'expertise depuis l'API
+      final expertiseCategories = await Provider.of<ServiceProvider>(context, listen: false).getProviderExpertiseCategories();
+      
+      setState(() {
+        _expertiseCategories = expertiseCategories;
+      });
+      
+      // Si nous sommes en mode édition, nous avons déjà chargé les sous-catégories
+      if (widget.serviceToEdit == null && _expertiseCategories.isNotEmpty) {
+        // Par défaut, sélectionner la première catégorie d'expertise
+        setState(() {
+          _selectedCategoryId = _expertiseCategories.first;
+        });
+        
+        // Charger les sous-catégories pour cette catégorie
+        _loadSubcategoriesForCategory(_expertiseCategories.first);
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des catégories d\'expertise: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement de vos catégories d\'expertise'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadSubcategoriesForCategory(int categoryId) async {
+    setState(() {
+      _isFetchingSubcategories = true;
+      _selectedSubcategoryId = null; // Réinitialiser la sous-catégorie sélectionnée
+    });
+
+    try {
+      // Récupérer les sous-catégories pour cette catégorie
+      final subcategories = await Provider.of<SubcategoryProvider>(context, listen: false).fetchSubcategoriesForCategory(categoryId);
+      
+      setState(() {
+        _availableSubcategories = subcategories;
+        _isFetchingSubcategories = false;
+      });
+      
+      // Si nous sommes en mode édition et que la sous-catégorie appartient à cette catégorie, la sélectionner
+      if (widget.serviceToEdit != null && 
+          _availableSubcategories.any((subcategory) => subcategory.id == widget.serviceToEdit!.subcategoryId)) {
+        setState(() {
+          _selectedSubcategoryId = widget.serviceToEdit!.subcategoryId;
+        });
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des sous-catégories: $e');
+      setState(() {
+        _isFetchingSubcategories = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement des sous-catégories'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -89,9 +163,22 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
       return;
     }
     
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Veuillez sélectionner une catégorie'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
     if (_selectedSubcategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Veuillez sélectionner une sous-catégorie')),
+        SnackBar(
+          content: Text('Veuillez sélectionner une sous-catégorie'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -101,10 +188,6 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     });
 
     try {
-
-    print("Début de la sauvegarde du service");
-    print("Image sélectionnée: ${_imageFile != null ? 'Oui' : 'Non'}");
-    
       final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
       final double price = _priceController.text.isEmpty ? 0.0 : double.parse(_priceController.text);
       
@@ -159,12 +242,9 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final subcategoryProvider = Provider.of<SubcategoryProvider>(context);
-    final isEditing = widget.serviceToEdit != null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Modifier le service' : 'Ajouter un service'),
+        title: Text(widget.serviceToEdit != null ? 'Modifier le service' : 'Ajouter un service'),
         elevation: 0,
       ),
       body: _isLoading
@@ -195,7 +275,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                               fit: BoxFit.cover,
                             ),
                           )
-                        : isEditing && widget.serviceToEdit!.imageUrl.isNotEmpty
+                        : widget.serviceToEdit != null && widget.serviceToEdit!.imageUrl.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.network(
@@ -237,11 +317,58 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                   ),
                   SizedBox(height: 16),
                   
+                  // Sélection de catégorie
+                  Text('Catégorie'),
+                  SizedBox(height: 8),
+                  Consumer<ServiceProvider>(
+                    builder: (context, serviceProvider, child) {
+                      // S'il n'y a pas de catégories d'expertise, afficher un message
+                      if (_expertiseCategories.isEmpty) {
+                        return Text(
+                          'Vous n\'avez pas encore sélectionné de catégories d\'expertise',
+                          style: TextStyle(color: Colors.red),
+                        );
+                      }
+                      
+                      return DropdownButtonFormField<int>(
+                        value: _selectedCategoryId,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        hint: Text('Sélectionner une catégorie'),
+                        isExpanded: true,
+                        items: _expertiseCategories.map((categoryId) {
+                          final category = serviceProvider.getCategoryById(categoryId);
+                          return DropdownMenuItem<int>(
+                            value: categoryId,
+                            child: Text(category?.name ?? 'Catégorie $categoryId'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategoryId = value;
+                          });
+                          
+                          if (value != null) {
+                            _loadSubcategoriesForCategory(value);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  
                   // Sélection de sous-catégorie
                   Text('Sous-catégorie'),
                   SizedBox(height: 8),
-                  subcategoryProvider.isLoading
-                    ? LoadingIndicator(size: 24)
+                  _isFetchingSubcategories
+                    ? Center(child: CircularProgressIndicator())
                     : DropdownButtonFormField<int>(
                         value: _selectedSubcategoryId,
                         decoration: InputDecoration(
@@ -255,8 +382,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         ),
                         hint: Text('Sélectionner une sous-catégorie'),
                         isExpanded: true,
-                        
-                        items: subcategoryProvider.subcategories.map((subcategory) {
+                        items: _availableSubcategories.map((subcategory) {
                           return DropdownMenuItem<int>(
                             value: subcategory.id,
                             child: Text(subcategory.name),
@@ -275,7 +401,6 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     label: 'Description',
                     controller: _descriptionController,
                     keyboardType: TextInputType.multiline,
-                    // maxLines: 5,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Veuillez entrer une description';
@@ -343,7 +468,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                   
                   // Bouton de sauvegarde
                   AppButton(
-                    text: isEditing ? 'Mettre à jour' : 'Ajouter le service',
+                    text: widget.serviceToEdit != null ? 'Mettre à jour' : 'Ajouter le service',
                     onPressed: _saveService,
                     isLoading: _isLoading,
                   ),

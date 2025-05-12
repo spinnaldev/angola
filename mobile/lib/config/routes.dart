@@ -5,9 +5,9 @@ import '../ui/screens/auth/signup_screen.dart';
 import '../ui/screens/auth/forgot_password_screen.dart';
 import '../ui/screens/auth/verify_code_screen.dart';
 import '../ui/screens/auth/reset_password_screen.dart';
-import '../ui/screens/home/home_screen.dart';
+import '../ui/screens/home_screen.dart'; 
 import '../ui/screens/messaging/messages_screen.dart';
-import '../ui/screens/profile_selector_screen.dart';
+import '../ui/screens/auth/profile_selector_screen.dart';
 import '../ui/screens/provider_detail_screen.dart';
 import '../ui/screens/service_detail_screen.dart';
 import '../ui/screens/provider/service_management_screen.dart';
@@ -30,12 +30,12 @@ class AppRoutes {
   static const String myQuoteRequests = '/my-quote-requests';
 
   static Map<String, WidgetBuilder> get routes => {
+    home: (context) => const HomeScreen(), 
     login: (context) => const LoginScreen(),
     signup: (context) => const SignupScreen(),
     forgotPassword: (context) => const ForgotPasswordScreen(),
     verifyCode: (context) => const VerifyCodeScreen(),
     resetPassword: (context) => const ResetPasswordScreen(),
-    home: (context) => const HomeScreen(),
     profileSelector: (context) => const ProfileSelectorScreen(),
     explore: (context) => const ExploreScreen(),
     messages: (context) => const MessagesScreen(),
@@ -92,6 +92,6 @@ class AppRoutes {
     }
   }
   static Widget getHomeScreen() {
-    return const HomeScreen();
+    return const HomeScreen();  // Retourner la nouvelle page d'accueil
   }
 }

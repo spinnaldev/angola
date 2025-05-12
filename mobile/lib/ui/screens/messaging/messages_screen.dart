@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/messaging_provider.dart';
+import '../base_screen.dart';
 import 'conversation_detail_screen.dart';
 import '../../../core/models/conversation.dart';
 import '../../widgets/app_bottom_navigation.dart';
@@ -39,6 +40,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return BaseScreen(
+      currentIndex: 2, // messaging est sélectionné
+      body: _buildMessagingContent(),
+    );
+  }
+  Widget _buildMessagingContent() {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -142,19 +149,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: 1, // Index "Messages"
-        onTap: (index) {
-          if (index != 1) {
-            // Naviguer vers l'écran correspondant
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/explore');
-            } else if (index == 2) {
-              Navigator.pushReplacementNamed(context, '/profile');
-            }
-          }
-        },
       ),
     );
   }

@@ -30,6 +30,7 @@ class AppBottomNavigation extends StatelessWidget {
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
+        onTap: onTap,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.transparent,
@@ -47,7 +48,13 @@ class AppBottomNavigation extends StatelessWidget {
         ),
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Accueil',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search_outlined),
+            activeIcon: Icon(Icons.search),
             label: 'Explorer',
           ),
           BottomNavigationBarItem(
@@ -88,14 +95,15 @@ class AppBottomNavigation extends StatelessWidget {
                 ),
               ],
             ),
+            activeIcon: const Icon(Icons.chat_bubble),
             label: 'Messages',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Profil',
           ),
         ],
-        onTap: onTap,
       ),
     );
   }
