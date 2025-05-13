@@ -376,6 +376,17 @@ class ProviderViewSet(viewsets.ModelViewSet):
     filterset_fields = ['is_verified', 'is_featured']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'company_name']
     
+
+    def get_queryset(self):
+        queryset = Provider.objects.all().order_by('user__username')
+        
+        # Filtrage par catégorie
+        category_id = self.request.query_params.get('category_id')
+        if category_id:
+            queryset = queryset.filter(expertise_categories__id=category_id)
+            
+        return queryset
+    
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return ProviderDetailSerializer
@@ -398,6 +409,39 @@ class ProviderViewSet(viewsets.ModelViewSet):
         serializer = ProviderDetailSerializer(provider, context={'request': request})
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'])
+    def expertise_categories(self, request):
+        user = request.user
+        if not hasattr(user, 'provider_profile'):
+            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        provider = user.provider_profile
+        categories = provider.expertise_categories.all() # Ajustez l'import selon votre structure
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['put'])
+    def update_expertise_categories(self, request):
+        user = request.user
+        if not hasattr(user, 'provider_profile'):
+            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        provider = user.provider_profile
+        category_ids = request.data.get('categories', [])
+        
+        if not isinstance(category_ids, list):
+            return Response({"detail": "categories field must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Mise à jour des catégories
+        from django.apps import apps
+        Category = apps.get_model('categories', 'Category')  # Ajustez selon votre modèle
+        categories = Category.objects.filter(id__in=category_ids)
+        provider.expertise_categories.set(categories)
+        
+        # Retourner les catégories mises à jour
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['put'])
     def update_me(self, request):
         user = request.user
@@ -447,6 +491,22 @@ class ProviderViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         
         serializer = self.get_serializer(providers, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def expertise_categories(self, request):
+        """
+        Récupère les catégories d'expertise du prestataire connecté
+        """
+        user = request.user
+        if not hasattr(user, 'provider_profile'):
+            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        provider = user.provider_profile
+        categories = provider.expertise_categories.all()
+        
+        # Nous utilisons une version simplifiée du serializer pour les catégories
+        serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
@@ -519,16 +579,93 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         if provider_id:
             return ProviderService.objects.filter(provider_id=provider_id)
         return ProviderService.objects.all()
-    # def get_permissions(self):
-    #     if self.action == 'list' or self.action == 'retrieve':
-    #         return [AllowAny()]
-    #     return [IsAuthenticated()]
     
     def perform_create(self, serializer):
-        # Make sure the logged-in user is a provider
-        if not hasattr(self.request.user, 'provider_profile'):
-            raise ValidationError("Only providers can create services")
+        """
+        Sets the provider to the current user when creating a service.
+        """
+        print(self.request.user)
         serializer.save(provider=self.request.user.provider_profile)
+
+    def create(self, request, *args, **kwargs):
+        # Extraire les données des fichiers et du formulaire
+        gallery_images = []
+        options_data = []
+        
+        # Traiter les images de galerie
+        gallery_images_count = int(request.data.get('gallery_images_count', 0))
+        for i in range(gallery_images_count):
+            prefix = f'gallery_image_{i}_'
+            if f'{prefix}image' in request.FILES:
+                gallery_images.append({
+                    'image': request.FILES[f'{prefix}image'],
+                    'caption': request.data.get(f'{prefix}caption', ''),
+                    'order': i
+                })
+        
+        # Traiter les options
+        options_count = int(request.data.get('options_count', 0))
+        for i in range(options_count):
+            prefix = f'option_{i}_'
+            name = request.data.get(f'{prefix}name')
+            if name:
+                options_data.append({
+                    'name': name,
+                    'description': request.data.get(f'{prefix}description', ''),
+                    'price': request.data.get(f'{prefix}price') or None,
+                    'is_included': request.data.get(f'{prefix}is_included', 'true').lower() == 'true'
+                })
+        
+        # Validation des images
+        if gallery_images_count > 10:
+            return Response(
+                {'error': 'Vous ne pouvez pas ajouter plus de 10 images'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Créer le service avec le sérialiseur
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Ajouter les données au contexte
+        serializer.context['gallery_images'] = gallery_images
+        serializer.context['options'] = options_data
+        
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def update(self, request, *args, **kwargs):
+        # Code similaire à la méthode create pour traiter les images et options
+        # ...
+        
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+        serializer.is_valid(raise_exception=True)
+        
+        serializer.context['gallery_images'] = gallery_images
+        serializer.context['options'] = options_data
+        
+        self.perform_update(serializer)
+        return Response(serializer.data)
+    # def perform_create(self, serializer):
+    #     # Vérifier que l'utilisateur est un prestataire
+    #     if not hasattr(self.request.user, 'provider_profile'):
+    #         raise ValidationError("Only providers can create services")
+        
+    #     provider = self.request.user.provider_profile
+        
+    #     # Récupérer la sous-catégorie
+    #     subcategory_id = self.request.data.get('subcategory')
+    #     if subcategory_id:
+    #         subcategory = get_object_or_404(SubCategory, id=subcategory_id)
+            
+    #         # Vérifier si la catégorie de la sous-catégorie fait partie des catégories d'expertise
+    #         if not provider.expertise_categories.filter(id=subcategory.category.id).exists():
+    #             raise ValidationError("You can only add services in your expertise categories")
+        
+    #     # Sauvegarder le service
+    #     serializer.save(provider=provider)
     
     @action(detail=False, methods=['get'])
     def my_services(self, request):
@@ -1123,10 +1260,11 @@ class ReportViewSet(viewsets.ModelViewSet):
 class QuoteRequestViewSet(viewsets.ModelViewSet):
     queryset = QuoteRequest.objects.all()
     serializer_class = QuoteRequestSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         user = self.request.user
+        print("Le user est:" + str(user))
         if user.is_staff:
             return QuoteRequest.objects.all()
         elif hasattr(user, 'provider_profile'):
@@ -1155,3 +1293,72 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         else:
             return Response({"detail": "You are not authorized to update this quote request"}, 
                            status=status.HTTP_403_FORBIDDEN)
+        
+class ProviderByCategoryView(generics.ListAPIView):
+    serializer_class = ProviderListSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        category_id = self.request.query_params.get('category_id')
+        if not category_id:
+            return Provider.objects.none()
+            
+        # Récupérer les prestataires qui ont des services dans cette catégorie
+        return Provider.objects.filter(
+            provider_services__subcategory__category_id=category_id
+        ).distinct()
+
+class ProviderBySubcategoryView(generics.ListAPIView):
+    serializer_class = ProviderListSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        subcategory_id = self.request.query_params.get('subcategory_id')
+        if not subcategory_id:
+            return Provider.objects.none()
+            
+        return Provider.objects.filter(
+            provider_services__subcategory_id=subcategory_id
+        ).distinct()
+
+class NearbyProvidersView(generics.ListAPIView):
+    serializer_class = ProviderListSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        latitude = self.request.query_params.get('latitude')
+        longitude = self.request.query_params.get('longitude')
+        radius = self.request.query_params.get('radius', 10.0)
+        
+        if not latitude or not longitude:
+            return Provider.objects.none()
+            
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            radius = float(radius)
+        except (ValueError, TypeError):
+            return Provider.objects.none()
+        
+        # Si vous utilisez PostgreSQL avec PostGIS, vous pouvez utiliser une requête géospatiale.
+        # Sinon, vous pouvez faire une approximation avec des calculs sur les coordonnées.
+        
+        # Filtrer les prestataires avec latitude et longitude non nulles
+        providers = Provider.objects.filter(
+            longitude__isnull=False,
+            latitude__isnull=False
+        )
+        
+        # Calculer une zone approximative basée sur le rayon (approche simplifiée)
+        # 1 degré de latitude ≈ 111 km
+        # 1 degré de longitude ≈ 111 km * cos(latitude)
+        import math
+        lat_radius = radius / 111.0
+        lng_radius = radius / (111.0 * math.cos(math.radians(latitude)))
+        
+        return providers.filter(
+            latitude__gte=latitude - lat_radius,
+            latitude__lte=latitude + lat_radius,
+            longitude__gte=longitude - lng_radius,
+            longitude__lte=longitude + lng_radius
+        )

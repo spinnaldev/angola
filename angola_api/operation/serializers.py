@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from .models import (
-    Category, QuoteRequest, SubCategory, Provider, ProviderService, Portfolio, 
+    Category, QuoteRequest, ServiceGalleryImage, ServiceOption, SubCategory, Provider, ProviderService, Portfolio, 
     Certificate, Review, ReviewImage, Favorite, Conversation, 
     Message, Attachment, Dispute, DisputeEvidence, Notification, Report
 )
@@ -43,36 +43,100 @@ class SubCategorySerializer(serializers.ModelSerializer):
         model = SubCategory
         fields = ('id', 'name', 'description', 'icon', 'category', 'category_name')
 
+class ServiceOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceOption
+        fields = ('id', 'name', 'description', 'price', 'is_included')
+
+class ServiceGalleryImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ServiceGalleryImage
+        fields = ('id', 'image', 'image_url', 'caption', 'order')
+    
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return ""
+    
 class ProviderServiceSerializer(serializers.ModelSerializer):
     subcategory_name = serializers.StringRelatedField(source='subcategory.name', read_only=True)
     category_name = serializers.StringRelatedField(source='subcategory.category.name', read_only=True)
     category_id = serializers.SerializerMethodField()
     avg_rating = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
-    
+    gallery_images = ServiceGalleryImageSerializer(many=True, read_only=True)
+    options = ServiceOptionSerializer(many=True, read_only=True)
+    is_available = serializers.BooleanField(default=True)
+
     class Meta:
         model = ProviderService
         fields = ('id', 'title', 'description', 'price', 'price_type', 'is_available',
-                 'subcategory', 'subcategory_name', 'category_name','category_id' ,'avg_rating','image', 'image_url')
-        read_only_fields = ('provider',)
+                 'subcategory', 'subcategory_name', 'category_name', 'category_id',
+                 'avg_rating', 'image', 'image_url', 'gallery_images', 'options')
+        # read_only_fields = ('provider',)
     
     def get_avg_rating(self, obj):
         return obj.reviews.aggregate(avg=Avg('overall_rating')).get('avg') or 0
 
     def get_category_id(self, obj):
-        """
-        Renvoie l'ID de la catégorie à laquelle appartient la sous-catégorie du service
-        """
         if obj.subcategory and obj.subcategory.category:
             return obj.subcategory.category.id
         return None
     
     def get_image_url(self, obj):
         if obj.image:
-            # Construire l'URL complète de l'image
             request = self.context.get('request')
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
         return ""
+    
+    
+
+    def create(self, validated_data):
+        # Créer le service
+        service = ProviderService.objects.create(**validated_data)
+        
+        # Traiter les images de galerie
+        gallery_data = self.context.get('gallery_images', [])
+        for img_data in gallery_data:
+            ServiceGalleryImage.objects.create(service=service, **img_data)
+            
+        # Traiter les options
+        options_data = self.context.get('options', [])
+        for opt_data in options_data:
+            ServiceOption.objects.create(service=service, **opt_data)
+            
+        return service
+        
+    def update(self, instance, validated_data):
+        # Mettre à jour les champs de base
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Mettre à jour les images de galerie
+        gallery_data = self.context.get('gallery_images')
+        if gallery_data is not None:
+            # Supprimer les images existantes
+            instance.gallery_images.all().delete()
+            # Créer les nouvelles images
+            for img_data in gallery_data:
+                ServiceGalleryImage.objects.create(service=instance, **img_data)
+                
+        # Mettre à jour les options
+        options_data = self.context.get('options')
+        if options_data is not None:
+            # Supprimer les options existantes
+            instance.options.all().delete()
+            # Créer les nouvelles options
+            for opt_data in options_data:
+                ServiceOption.objects.create(service=instance, **opt_data)
+                
+        return instance
+    
+
     
 class PortfolioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -328,25 +392,25 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    # password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    categories = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True
+    )
     
     class Meta:
         model = User
         fields = ('username', 'password',  'email', 'first_name', 'last_name', 
-                 'phone_number', 'role', 'location')
+                 'phone_number', 'role', 'location' ,'categories')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
             'email': {'required': True}
         }
-    
-    # def validate(self, attrs):
-    #     if attrs['password'] != attrs['password2']:
-    #         raise serializers.ValidationError({"password": "Password fields didn't match."})
-    #     return attrs
-    
     def create(self, validated_data):
-        # validated_data.pop('password2')
+        # Extraire les catégories (si présentes)
+        categories = validated_data.pop('categories', [])
+        print(categories)
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -359,8 +423,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         
-        # Create provider profile if role is provider
+        # Créer un profil prestataire si le rôle est provider
         if validated_data.get('role') == 'provider':
-            Provider.objects.create(user=user)
+            provider = Provider.objects.create(user=user)
+            
+            # Ajouter les catégories d'expertise
+            if categories:
+                category_objects = Category.objects.filter(id__in=categories)
+                provider.expertise_categories.set(category_objects)
         
         return user
+    # def validate(self, attrs):
+    #     if attrs['password'] != attrs['password2']:
+    #         raise serializers.ValidationError({"password": "Password fields didn't match."})
+    #     return attrs
+    

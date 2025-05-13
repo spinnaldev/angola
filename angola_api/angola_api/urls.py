@@ -57,6 +57,11 @@ urlpatterns = [
     path('api/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('notifications/count/', views.get_notification_count, name='notification-count'),
     path('notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
+
+    # path('providers/', views.ProviderViewSet.as_view(), name='provider-list'),
+    path('providers/by_category/', views.ProviderByCategoryView.as_view(), name='provider-by-category'),
+    path('providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
+    path('providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

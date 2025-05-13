@@ -74,6 +74,7 @@ class Provider(TimeStampMixin):
     is_verified = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
     avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    expertise_categories = models.ManyToManyField(Category, related_name='providers_with_expertise')
     trust_score = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
     verification_documents = models.FileField(upload_to='verification_docs/', blank=True, null=True)
     address = models.CharField(max_length=255, blank=True)
@@ -104,6 +105,26 @@ class ProviderService(TimeStampMixin):
     def __str__(self):
         return f"{self.title} - {self.provider.user.username}"
     
+
+class ServiceGalleryImage(models.Model):
+    service = models.ForeignKey(ProviderService, related_name='gallery_images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='services/gallery/')
+    caption = models.CharField(max_length=255, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+
+class ServiceOption(models.Model):
+    service = models.ForeignKey(ProviderService, related_name='options', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    is_included = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['id']
+        
 class Portfolio(TimeStampMixin):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='portfolio')
     title = models.CharField(max_length=100)
