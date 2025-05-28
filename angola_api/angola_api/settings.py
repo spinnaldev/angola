@@ -163,6 +163,14 @@ DATABASES = {
             'client_encoding': 'UTF8',
         },
     }
+    # {
+    #     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
+    #     "NAME": "angola_api",
+    #     "USER": "postgres",
+    #     "HOST": "localhost",
+    #     "PORT": "5432",
+    #     "PASS": "#!@dm1n!#"
+    # }
 }
 
 
