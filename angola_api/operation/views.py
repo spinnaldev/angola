@@ -299,13 +299,131 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
+    # @action(detail=False, methods=['put'])
+    # def update_me(self, request):
+    #     serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['put'])
     def update_me(self, request):
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        """
+        Mettre à jour le profil de l'utilisateur connecté
+        """
+        print("mise à jour")
+        user = request.user
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+        
         if serializer.is_valid():
+            # Si une image de profil est fournie
+            if 'profile_picture' in request.FILES:
+                # Supprimer l'ancienne image si elle existe
+                if user.profile_picture:
+                    try:
+                        user.profile_picture.delete(save=False)
+                    except:
+                        pass
+                user.profile_picture = request.FILES['profile_picture']
+            
             serializer.save()
-            return Response(serializer.data)
+            
+            # Retourner les données complètes de l'utilisateur
+            response_serializer = UserSerializer(user)
+            return Response(response_serializer.data)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['patch'])
+    def update_profile(self, request, pk=None):
+        """
+        Mettre à jour le profil utilisateur avec possibilité d'upload d'image
+        """
+        user = self.get_object()
+        print("mise à jour")
+        # Vérifier que l'utilisateur peut modifier ce profil
+        if request.user != user and not request.user.is_staff:
+            return Response(
+                {"detail": "Vous n'êtes pas autorisé à modifier ce profil"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Traiter les données du formulaire
+        data = request.data.copy()
+        
+        # Gérer l'upload de l'image de profil
+        if 'profile_picture' in request.FILES:
+            # Supprimer l'ancienne image si elle existe
+            if user.profile_picture:
+                try:
+                    os.remove(user.profile_picture.path)
+                except:
+                    pass
+            
+            user.profile_picture = request.FILES['profile_picture']
+        
+        # Mettre à jour les autres champs
+        serializer = UserUpdateSerializer(user, data=data, partial=True)
+        print(serializer)
+        if serializer.is_valid():
+            print("serialiser pas valid")
+            serializer.save()
+            print("on a enregistré vraiement")
+            # Si c'est un prestataire et qu'il y a un company_name
+            if hasattr(user, 'provider_profile') and 'company_name' in data:
+                provider = user.provider_profile
+                provider.company_name = data['company_name']
+                provider.save()
+            
+            # Retourner les données utilisateur mises à jour
+            user_serializer = UserSerializer(user)
+            return Response(user_serializer.data)
+        else:
+            print("serialiser pas valid")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_profile_stats(request):
+    """
+    Récupérer les statistiques du profil utilisateur
+    """
+    user = request.user
+    
+    if user.role == 'provider':
+        # Statistiques pour prestataire
+        provider = user.provider_profile
+        services_count = provider.provider_services.count()
+        reviews_count = provider.reviews_received.count()
+        avg_rating = provider.avg_rating
+        total_quotes = provider.quote_requests.count()
+        pending_quotes = provider.quote_requests.filter(status='pending').count()
+        
+        stats = {
+            'user_type': 'provider',
+            'services_count': services_count,
+            'reviews_count': reviews_count,
+            'avg_rating': float(avg_rating),
+            'total_quotes': total_quotes,
+            'pending_quotes': pending_quotes,
+        }
+    else:
+        # Statistiques pour client
+        total_projects = user.quote_requests.count()
+        pending_projects = user.quote_requests.filter(status='pending').count()
+        completed_projects = user.quote_requests.filter(status='completed').count()
+        reviews_given = user.reviews_given.count()
+        
+        stats = {
+            'user_type': 'client',
+            'total_projects': total_projects,
+            'pending_projects': pending_projects,
+            'completed_projects': completed_projects,
+            'reviews_given': reviews_given,
+        }
+    
+    return Response(stats)
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -444,15 +562,23 @@ class ProviderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['put'])
     def update_me(self, request):
+        """
+        Mettre à jour le profil prestataire de l'utilisateur connecté
+        """
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Vous n'êtes pas un prestataire"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         provider = user.provider_profile
-        serializer = ProviderDetailSerializer(provider, data=request.data, partial=True, context={'request': request})
+        serializer = ProviderDetailSerializer(provider, data=request.data, partial=True)
+        
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])
@@ -575,10 +701,24 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         return context
 
     def get_queryset(self):
+        queryset = ProviderService.objects.all()
+        
+        # Filtrer par provider_id si présent
         provider_id = self.request.query_params.get('provider_id')
         if provider_id:
-            return ProviderService.objects.filter(provider_id=provider_id)
-        return ProviderService.objects.all()
+            queryset = queryset.filter(provider_id=provider_id)
+        
+        # Filtrer par category_id si présent
+        category_id = self.request.query_params.get('category_id')
+        if category_id:
+            queryset = queryset.filter(subcategory__category_id=category_id)
+            
+        # Filtrer par subcategory_id si présent
+        subcategory_id = self.request.query_params.get('subcategory_id')
+        if subcategory_id:
+            queryset = queryset.filter(subcategory_id=subcategory_id)
+        
+        return queryset
     
     def perform_create(self, serializer):
         """
@@ -648,24 +788,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         
         self.perform_update(serializer)
         return Response(serializer.data)
-    # def perform_create(self, serializer):
-    #     # Vérifier que l'utilisateur est un prestataire
-    #     if not hasattr(self.request.user, 'provider_profile'):
-    #         raise ValidationError("Only providers can create services")
-        
-    #     provider = self.request.user.provider_profile
-        
-    #     # Récupérer la sous-catégorie
-    #     subcategory_id = self.request.data.get('subcategory')
-    #     if subcategory_id:
-    #         subcategory = get_object_or_404(SubCategory, id=subcategory_id)
-            
-    #         # Vérifier si la catégorie de la sous-catégorie fait partie des catégories d'expertise
-    #         if not provider.expertise_categories.filter(id=subcategory.category.id).exists():
-    #             raise ValidationError("You can only add services in your expertise categories")
-        
-    #     # Sauvegarder le service
-    #     serializer.save(provider=provider)
+    
     
     @action(detail=False, methods=['get'])
     def my_services(self, request):
@@ -745,6 +868,69 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
                 {"detail": f"Error counting services: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Endpoint pour récupérer les services les plus récents"""
+        queryset = ProviderService.objects.filter(is_available=True).order_by('-created_at')[:10]
+        serializer = self.get_serializer(queryset, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def top_rated(self, request):
+        """Endpoint pour récupérer les services les mieux notés"""
+        # Récupérer les services qui ont des avis et les trier par note moyenne
+        from django.db.models import Avg
+        queryset = ProviderService.objects.annotate(
+            avg_rating=Avg('reviews__overall_rating')
+        ).filter(
+            is_available=True, 
+            avg_rating__isnull=False
+        ).order_by('-avg_rating')[:10]
+        
+        serializer = self.get_serializer(queryset, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def nearby(self, request):
+        """Endpoint pour récupérer les services à proximité"""
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+        radius = request.query_params.get('radius', 10.0)  # Rayon par défaut: 10km
+        
+        if not (latitude and longitude):
+            # Si pas de coordonnées, renvoyer simplement les services récents
+            return self.recent(request)
+        
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            radius = float(radius)
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Coordonnées invalides"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Calcul simple de distance
+        import math
+        lat_radius = radius / 111.0
+        lng_radius = radius / (111.0 * math.cos(math.radians(latitude)))
+        
+        queryset = ProviderService.objects.filter(
+            is_available=True,
+            provider__latitude__isnull=False,
+            provider__longitude__isnull=False,
+            provider__latitude__gte=latitude - lat_radius,
+            provider__latitude__lte=latitude + lat_radius,
+            provider__longitude__gte=longitude - lng_radius,
+            provider__longitude__lte=longitude + lng_radius
+        )[:10]
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
         
 class PortfolioViewSet(viewsets.ModelViewSet):
     queryset = Portfolio.objects.all()
@@ -851,6 +1037,31 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(reviews, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    
+    def top_reviews(self, request):
+        """Endpoint pour récupérer les avis les mieux notés"""
+        from django.db.models import Q
+        queryset = Review.objects.filter(
+            Q(overall_rating__gte=4.0) & Q(is_verified=True)
+        ).order_by('-overall_rating', '-created_at')[:10]
+        
+        serializer = self.get_serializer(queryset, many=True)
+        print("les reviews sont:")
+        print(serializer.data)
+        return Response(serializer.data)
+
+    # @action(detail=False, methods=['get'])
+    # def top_reviews(self, request):
+    #     """Endpoint pour récupérer les avis les mieux notés"""
+    #     from django.db.models import Q
+    #     queryset = Review.objects.filter(
+    #         Q(overall_rating__gte=4.0) & Q(is_verified=True)
+    #     ).order_by('-created_at')[:10]
+        
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
@@ -1268,6 +1479,9 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return QuoteRequest.objects.all()
         elif hasattr(user, 'provider_profile'):
+            print('oui')
+            print(user.id)
+            print(user.provider_profile)
             return QuoteRequest.objects.filter(provider=user.provider_profile)
         else:
             return QuoteRequest.objects.filter(client=user)

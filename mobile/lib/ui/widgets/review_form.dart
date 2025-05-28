@@ -76,9 +76,10 @@ class _ReviewFormState extends State<ReviewForm> {
       
       final success = await reviewProvider.createReview(
         widget.providerId,
-        _rating.toDouble(),
+        _rating,
         _reviewController.text,
         _selectedImages,
+        null
       );
 
       if (mounted) {

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../core/models/category.dart';
 import '../core/models/service.dart';
+import '../core/models/service_option.dart';
 import '../core/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -15,10 +16,17 @@ class ServiceProvider with ChangeNotifier {
   List<Service> _myServices = []; // Services du prestataire connecté
   Service? _currentService;
   // List<Service> _myServices = []; // Services du prestataire connecté
-  List<Service> recentServices = []; // Services récents
-  List<Service> nearbyServices = [];
+
   bool _isLoading = false;
   String? _errorMessage;
+  List<Service> _recentServices = [];
+  List<Service> _topRatedServices = [];
+  List<Service> _nearbyServices = [];
+
+  // Getters
+  List<Service> get recentServices => _recentServices;
+  List<Service> get topRatedServices => _topRatedServices;
+  List<Service> get nearbyServices => _nearbyServices;
 
   ServiceProvider(this._apiService);
 
@@ -31,46 +39,90 @@ class ServiceProvider with ChangeNotifier {
   Map<int, Category> _categoriesMap = {};
   List<int> _expertiseCategories = [];
   List<int> get expertiseCategories => _expertiseCategories;
-  // Méthodes existantes...
-  // Méthode pour récupérer les services récents
-  // Future<void> fetchRecentServices() async {
-  //   _isLoading = true;
-  //   _errorMessage = null;
-  //   notifyListeners();
 
-  //   try {
-  //     final fetchedServices = await _apiService.getRecentServices();
-  //     _recentServices = fetchedServices;
-  //   } catch (error) {
-  //     print('Error fetching recent services: $error');
-  //     // Générer des données de démonstration en cas d'erreur
-  //     _recentServices = _generateMockServices(6);
-  //     _errorMessage = error.toString();
-  //   } finally {
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
+  // Méthode pour récupérer les services récents
+  Future<void> fetchRecentServices() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/services/recent/'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _recentServices = data.map((item) => Service.fromJson(item)).toList();
+        print(_recentServices);
+      } else {
+        _errorMessage = 'Erreur lors du chargement des services récents';
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Méthode pour récupérer les services les mieux notés
+  Future<void> fetchTopRatedServices() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${_apiService.baseUrl}/services/top_rated/'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _topRatedServices = data.map((item) => Service.fromJson(item)).toList();
+        print("Les tops avis sont:");
+        print(_topRatedServices);
+      } else {
+        _errorMessage = 'Erreur lors du chargement des meilleurs services';
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Méthode pour récupérer les services à proximité
-  // Future<void> fetchNearbyServices() async {
-  //   _isLoading = true;
-  //   _errorMessage = null;
-  //   notifyListeners();
+  Future<void> fetchNearbyServices(double latitude, double longitude,
+      {double radius = 10.0}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
 
-  //   try {
-  //     final fetchedServices = await _apiService.getNearbyServices();
-  //     _nearbyServices = fetchedServices;
-  //   } catch (error) {
-  //     print('Error fetching nearby services: $error');
-  //     // Générer des données de démonstration en cas d'erreur
-  //     _nearbyServices = _generateMockServices(6, offset: 100);
-  //     _errorMessage = error.toString();
-  //   } finally {
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '${_apiService.baseUrl}/services/nearby/?latitude=$latitude&longitude=$longitude&radius=$radius'),
+        headers: await _apiService.getHeaders(requireAuth: false),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _nearbyServices = data.map((item) => Service.fromJson(item)).toList();
+      } else {
+        _errorMessage = 'Erreur lors du chargement des services à proximité';
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Récupérer les services du prestataire connecté
   Future<void> fetchMyServices() async {
     _isLoading = true;
@@ -109,14 +161,22 @@ class ServiceProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+
+        // Assurez-vous de réinitialiser _services avant d'ajouter les nouveaux services
+        _services = [];
         _services = data.map((item) => Service.fromJson(item)).toList();
+
+        print('Fetched ${_services.length} services for category $categoryId');
       } else {
         _errorMessage =
             'Erreur lors du chargement des services de la catégorie';
+        print('Error status: ${response.statusCode}, body: ${response.body}');
       }
     } catch (e) {
       _errorMessage = e.toString();
+      print('Exception in fetchServicesByCategory: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -186,26 +246,28 @@ class ServiceProvider with ChangeNotifier {
     try {
       // Récupérer les catégories d'expertise depuis l'API
       final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/providers/me/expertise_categories/'),
+        Uri.parse('${_apiService.baseUrl}/providers/expertise_categories/'),
         headers: await _apiService.getHeaders(),
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) ?? [];
-        
+
         // Convertir les IDs de catégories en int
-        _expertiseCategories = data.map<int>((item) => item['id'] as int).toList();
-        
+        _expertiseCategories =
+            data.map<int>((item) => item['id'] as int).toList();
+
         // S'il n'y a pas encore de catégories, récupérer toutes les catégories
         if (_categories.isEmpty) {
           await fetchCategories();
         }
-        
+
         _isLoading = false;
         notifyListeners();
         return _expertiseCategories;
       } else {
-        throw Exception('Erreur lors de la récupération des catégories d\'expertise');
+        throw Exception(
+            'Erreur lors de la récupération des catégories d\'expertise');
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -214,7 +276,7 @@ class ServiceProvider with ChangeNotifier {
       throw e;
     }
   }
-  
+
   // Récupérer toutes les catégories pour référence
   Future<void> fetchCategories() async {
     try {
@@ -226,9 +288,9 @@ class ServiceProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> data = responseData['results'] ?? [];
-        
+
         _categories = data.map((item) => Category.fromJson(item)).toList();
-        
+
         // Créer une carte pour un accès rapide par ID
         _categoriesMap = {};
         for (var category in _categories) {
@@ -242,11 +304,42 @@ class ServiceProvider with ChangeNotifier {
       throw e;
     }
   }
-  
+
+  Future<void> fetchProviderServices(int providerId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Récupération des services via le service API
+      // Utiliser soit directement l'API service, soit un service dédié aux services
+      final ApiService apiService =
+          ApiService(baseUrl: 'votre_base_url', apiKey: 'votre_api_key');
+
+      // Si vous avez un ServiceService
+      // final serviceService = ServiceService(apiService);
+      // _services = await serviceService.getProviderServices(providerId);
+
+      // Ou directement avec l'API service
+      _services = await apiService.getProviderServices(providerId);
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      _services = [];
+      notifyListeners();
+
+      print('Error fetching provider services: $e');
+    }
+  }
+
   // Récupérer une catégorie par ID
   Category? getCategoryById(int id) {
     return _categoriesMap[id];
   }
+
   // Ajouter un nouveau service
   Future<void> addService(
     String title,
@@ -254,7 +347,11 @@ class ServiceProvider with ChangeNotifier {
     int subcategoryId,
     double price,
     String priceType,
-    File? imageFile,
+    // File? imageFile,
+    File? mainImage,
+    List<File> galleryImages,
+    List<String> imageCaptions,
+    List<ServiceOption> options,
   ) async {
     _isLoading = true;
     _errorMessage = null;
@@ -281,24 +378,38 @@ class ServiceProvider with ChangeNotifier {
         request.fields['price'] = price.toString();
       }
 
-      // Ajouter l'image si elle existe
-      if (imageFile != null) {
-        print("Ajout de l'image au formulaire: ${imageFile.path}");
-        final fileName = imageFile.path.split('/').last;
-        final fileExtension = fileName.split('.').last.toLowerCase();
-        
-        request.files.add(
-          http.MultipartFile(
-            'image',
-            imageFile.readAsBytes().asStream(),
-            imageFile.lengthSync(),
-            filename: fileName,
-            contentType: MediaType('image', fileExtension),
-          ),
+      // Ajouter l'image principale
+      if (mainImage != null) {
+        final mainImageFile = await http.MultipartFile.fromPath(
+          'image',
+          mainImage.path,
         );
-        print("Image ajoutée à la requête");
-      } else {
-        print("Aucune image à ajouter");
+        request.files.add(mainImageFile);
+      }
+
+      // Ajouter les images de galerie
+      request.fields['gallery_images_count'] = galleryImages.length.toString();
+      for (int i = 0; i < galleryImages.length; i++) {
+        final file = galleryImages[i];
+        final multipartFile = await http.MultipartFile.fromPath(
+          'gallery_image_${i}_image',
+          file.path,
+        );
+        request.files.add(multipartFile);
+        request.fields['gallery_image_${i}_caption'] = imageCaptions[i];
+      }
+
+      // Ajouter les options
+      request.fields['options_count'] = options.length.toString();
+      for (int i = 0; i < options.length; i++) {
+        final option = options[i];
+        request.fields['option_${i}_name'] = option.name;
+        request.fields['option_${i}_description'] = option.description;
+        if (option.price != null) {
+          request.fields['option_${i}_price'] = option.price.toString();
+        }
+        request.fields['option_${i}_is_included'] =
+            option.isIncluded.toString();
       }
 
       // Envoyer la requête
@@ -330,7 +441,10 @@ class ServiceProvider with ChangeNotifier {
     int subcategoryId,
     double price,
     String priceType,
-    File? imageFile,
+    File? mainImage,
+    List<File> galleryImages,
+    List<String> imageCaptions,
+    List<ServiceOption> options,
   ) async {
     _isLoading = true;
     _errorMessage = null;
@@ -357,22 +471,6 @@ class ServiceProvider with ChangeNotifier {
         request.fields['price'] = price.toString();
       }
 
-      // Ajouter l'image si elle existe
-      if (imageFile != null) {
-        final fileName = imageFile.path.split('/').last;
-        final fileExtension = fileName.split('.').last.toLowerCase();
-
-        request.files.add(
-          http.MultipartFile(
-            'image',
-            imageFile.readAsBytes().asStream(),
-            imageFile.lengthSync(),
-            filename: fileName,
-            contentType: MediaType('image', fileExtension),
-          ),
-        );
-      }
-
       // Envoyer la requête
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -393,16 +491,20 @@ class ServiceProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   int getServiceCountForCategory(int categoryId) {
     // Si les services ont déjà été chargés, comptez-les
     if (!_isLoading && _services.isNotEmpty) {
-      return _services.where((service) => service.categoryId == categoryId).length;
+      return _services
+          .where((service) => service.categoryId == categoryId)
+          .length;
     }
-    
+
     // Sinon, il faut faire un appel API (implémentation simplifiée)
     // Dans une implémentation réelle, vous feriez probablement un appel API asynchrone
-    return 0;  // Par défaut, retourne 0
+    return 0; // Par défaut, retourne 0
   }
+
   // Mettre à jour la disponibilité d'un service
   Future<void> updateServiceAvailability(
       int serviceId, bool isAvailable) async {
@@ -427,7 +529,7 @@ class ServiceProvider with ChangeNotifier {
             imageUrl: _myServices[index].imageUrl,
             rating: _myServices[index].rating,
             reviewCount: _myServices[index].reviewCount,
-            providerId: _myServices[index].providerId,
+            provider_id: _myServices[index].provider_id,
             businessType: _myServices[index].businessType,
             price: _myServices[index].price,
             priceType: _myServices[index].priceType,

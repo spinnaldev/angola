@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/dispute_provider.dart';
 import '../../../providers/service_provider.dart';
+import '../../../providers/provider_list_provider.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../../core/models/service.dart';
+import '../../../core/models/provider_model.dart';
 
 class CreateDisputeScreen extends StatefulWidget {
   final int? providerId;
@@ -22,23 +24,54 @@ class CreateDisputeScreen extends StatefulWidget {
 
 class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   final _formKey = GlobalKey<FormState>();
+  
+  // Contrôleurs pour les champs de texte
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _isSubmitting = false;
   int? _selectedProviderId;
   int? _selectedServiceId;
   List<Service> _services = [];
+  List<ProviderModel> _providers = [];
   bool _loadingServices = false;
+  bool _loadingProviders = false;
+
+  // Liste des raisons courantes pour un litige
+  final List<String> _commonReasons = [
+    'Service non conforme à la description',
+    'Retard important dans l\'exécution',
+    'Travail de mauvaise qualité',
+    'Facturation incorrecte ou injustifiée',
+    'Comportement impoli ou non professionnel',
+    'Non-respect des conditions convenues',
+    'Autre problème',
+  ];
+
+  String? _selectedReason;
 
   @override
   void initState() {
     super.initState();
-    _selectedProviderId = widget.providerId;
-    _selectedServiceId = widget.serviceId;
-    
-    if (_selectedProviderId != null) {
-      _loadServices();
-    }
+    // First load providers
+    _loadProviders().then((_) {
+      // After providers are loaded, set selected provider if valid
+      if (widget.providerId != null && 
+          _providers.any((p) => p.id == widget.providerId)) {
+        setState(() {
+          _selectedProviderId = widget.providerId;
+        });
+        // Then load services for this provider
+        _loadServices().then((_) {
+          // Only set selected service if it exists in loaded services
+          if (widget.serviceId != null &&
+              _services.any((s) => s.id == widget.serviceId)) {
+            setState(() {
+              _selectedServiceId = widget.serviceId;
+            });
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -47,7 +80,42 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     _descriptionController.dispose();
     super.dispose();
   }
+  
+  // Charger la liste des prestataires depuis l'API
+  Future<void> _loadProviders() async {
+    setState(() {
+      _loadingProviders = true;
+    });
+    
+    try {
+      final providerListProvider = Provider.of<ProviderListProvider>(
+        context, 
+        listen: false
+      );
+      
+      await providerListProvider.fetchProviders();
+      
+      setState(() {
+        _providers = providerListProvider.providers;
+        _loadingProviders = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingProviders = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du chargement des prestataires: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
+  // Charger les services d'un prestataire depuis l'API
   Future<void> _loadServices() async {
     if (_selectedProviderId == null) return;
     
@@ -56,48 +124,30 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     });
 
     try {
-      // Dans un cas réel, récupérer la liste des services du prestataire
-      // Ici, on utilise une liste fictive pour la démonstration
-      await Future.delayed(const Duration(milliseconds: 500));
+      final serviceProvider = Provider.of<ServiceProvider>(
+        context, 
+        listen: false
+      );
+      
+      await serviceProvider.fetchProviderServices(_selectedProviderId!);
+      
       setState(() {
-        _services = [
-          Service(
-            id: 1,
-            title: 'Plomberie',
-            description: 'Services de plomberie',
-            imageUrl: '',
-            rating: 4.5,
-            reviewCount: 15,
-            providerId: _selectedProviderId!,
-            businessType: 'Entreprise',
-            price: 0,
-            categoryId: 1,
-          ),
-          Service(
-            id: 2,
-            title: 'Électricité',
-            description: 'Services d\'électricité',
-            imageUrl: '',
-            rating: 4.2,
-            reviewCount: 12,
-            providerId: _selectedProviderId!,
-            businessType: 'Entreprise',
-            price: 0,
-            categoryId: 1,
-          ),
-        ];
+        _services = serviceProvider.services;
         _loadingServices = false;
       });
     } catch (e) {
       setState(() {
         _loadingServices = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors du chargement des services: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du chargement des services: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -163,16 +213,22 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     }
   }
 
-  void _selectProvider() async {
-    // Dans un cas réel, ouvrir un écran de sélection de prestataire
-    // Ici, on simule la sélection d'un prestataire
-    await Future.delayed(const Duration(milliseconds: 500));
+  void _selectProvider(int providerId) {
     setState(() {
-      _selectedProviderId = 1; // Prestataire fictif pour la démonstration
+      _selectedProviderId = providerId;
       _services = []; // Réinitialiser les services
       _selectedServiceId = null;
     });
     _loadServices();
+  }
+
+  void _selectReason(String? reason) {
+    setState(() {
+      _selectedReason = reason;
+      if (reason != null && reason != 'Autre problème') {
+        _titleController.text = reason;
+      }
+    });
   }
 
   @override
@@ -187,122 +243,274 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Sélection du prestataire
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _selectProvider,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      _selectedProviderId == null
-                          ? 'Sélectionner un prestataire'
-                          : 'Prestataire sélectionné',
-                      style: TextStyle(
-                        color: _selectedProviderId == null
-                            ? Colors.grey[700]
-                            : Theme.of(context).primaryColor,
-                        fontWeight:
-                            _selectedProviderId == null ? null : FontWeight.bold,
-                      ),
+            // Information générale
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Qu\'est-ce qu\'un litige?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.blue,
                     ),
                   ),
-                ),
-                if (_selectedProviderId != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[100],
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.green,
-                      size: 16,
-                    ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Un litige est un désaccord entre vous et un prestataire concernant un service. Nous sommes là pour vous aider à résoudre ce problème de manière équitable.',
+                    style: TextStyle(fontSize: 14),
                   ),
                 ],
-              ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Sélection du prestataire
+            Card(
+              elevation: 2,
+              color: Colors.white, // Couleur de carte blanche
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Étape 1: Sélectionner un prestataire',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    if (_loadingProviders)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_providers.isEmpty)
+                      const Text('Aucun prestataire disponible')
+                    else
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                        hint: const Text('Sélectionnez un prestataire'),
+                        isExpanded: true,
+                        value: _selectedProviderId,
+                        items: _providers.map((provider) {
+                          return DropdownMenuItem<int>(
+                            value: provider.id,
+                            child: Text(provider.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            _selectProvider(value);
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Veuillez sélectionner un prestataire';
+                          }
+                          return null;
+                        },
+                      ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             
             // Sélection du service (si prestataire sélectionné)
-            if (_selectedProviderId != null) ...[
-              const Text(
-                'Service concerné',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+            if (_selectedProviderId != null)
+              Card(
+                elevation: 2,
+                color: Colors.white, // Couleur de carte blanche
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Étape 2: Sélectionner un service (optionnel)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      _loadingServices
+                          ? const Center(
+                              child: CircularProgressIndicator(),
+                            )
+                          : _services.isEmpty
+                              ? const Text('Aucun service disponible pour ce prestataire')
+                              : DropdownButtonFormField<int>(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  hint: const Text('Sélectionnez un service (optionnel)'),
+                                  isExpanded: true,
+                                  value: _selectedServiceId,
+                                  items: _services.map((service) {
+                                    return DropdownMenuItem<int>(
+                                      value: service.id,
+                                      child: Text(service.title),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedServiceId = value;
+                                    });
+                                  },
+                                ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              _loadingServices
-                  ? const Center(child: LoadingIndicator(size: 24))
-                  : _services.isEmpty
-                      ? const Text('Aucun service disponible pour ce prestataire')
-                      : DropdownButtonFormField<int>(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                          ),
-                          hint: const Text('Sélectionnez un service (optionnel)'),
-                          isExpanded: true,
-                          value: _selectedServiceId,
-                          items: _services.map((service) {
-                            return DropdownMenuItem<int>(
-                              value: service.id,
-                              child: Text(service.title),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedServiceId = value;
-                            });
-                          },
-                        ),
-              const SizedBox(height: 16),
-            ],
+            const SizedBox(height: 16),
             
-            // Titre du litige
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Titre du litige',
-                border: OutlineInputBorder(),
+            // Sélection de la raison courante
+            Card(
+              elevation: 2,
+              color: Colors.white, // Couleur de carte blanche
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez entrer un titre';
-                }
-                return null;
-              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Étape 3: Type de problème',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      hint: const Text('Sélectionnez la raison principale'),
+                      isExpanded: true,
+                      value: _selectedReason,
+                      items: _commonReasons.map((reason) {
+                        return DropdownMenuItem<String>(
+                          value: reason,
+                          child: Text(reason),
+                        );
+                      }).toList(),
+                      onChanged: _selectReason,
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Veuillez sélectionner une raison';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             
-            // Description du litige
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description du problème',
-                hintText: 'Décrivez le problème rencontré en détail',
-                border: OutlineInputBorder(),
+            // Détails du litige
+            Card(
+              elevation: 2,
+              color: Colors.white, // Couleur de carte blanche
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              maxLines: 6,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez entrer une description';
-                }
-                if (value.length < 20) {
-                  return 'La description doit comporter au moins 20 caractères';
-                }
-                return null;
-              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Étape 4: Détails du litige',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Titre du litige
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        labelText: 'Titre du litige',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez entrer un titre';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Description du litige
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Description du problème',
+                        hintText: 'Décrivez le problème rencontré en détail',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      maxLines: 6,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez entrer une description';
+                        }
+                        if (value.length < 20) {
+                          return 'La description doit comporter au moins 20 caractères';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             
@@ -314,9 +522,19 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isSubmitting
-                    ? const LoadingIndicator(size: 24)
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : const Text(
                         'Soumettre le litige',
                         style: TextStyle(fontSize: 16),
@@ -333,6 +551,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

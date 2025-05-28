@@ -171,32 +171,83 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 4,
+                'id': 4,  # Assurez-vous que cet ID n'existe pas déjà
+                'name': 'Location de lieux',
+                'description': 'Location d\'espaces pour mariages, anniversaires et événements privés',
+                'icon': 'location_on',
+                'image_url': 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?ixlib=rb-4.0.3',
+                'subcategories': [
+                    {
+                        'id': 23,  # Continuez la numérotation après la dernière sous-catégorie existante
+                        'name': 'Salles de mariage',
+                        'description': 'Espaces dédiés aux cérémonies et réceptions de mariage',
+                        'icon': 'celebration'
+                    },
+                    {
+                        'id': 24,
+                        'name': 'Salles de réception',
+                        'description': 'Salles polyvalentes pour anniversaires, baptêmes, communions',
+                        'icon': 'party_mode'
+                    },
+                    {
+                        'id': 25,
+                        'name': 'Espaces événementiels',
+                        'description': 'Lieux pour événements corporate, séminaires, conférences',
+                        'icon': 'business_center'
+                    },
+                    {
+                        'id': 26,
+                        'name': 'Jardins & Terrasses',
+                        'description': 'Espaces extérieurs avec jardins pour événements en plein air',
+                        'icon': 'park'
+                    },
+                    {
+                        'id': 27,
+                        'name': 'Villas & Résidences privées',
+                        'description': 'Location de villas complètes pour événements intimes',
+                        'icon': 'house'
+                    },
+                    {
+                        'id': 28,
+                        'name': 'Salles communautaires',
+                        'description': 'Centres communautaires, salles paroissiales',
+                        'icon': 'people'
+                    },
+                    {
+                        'id': 29,
+                        'name': 'Espaces thématiques',
+                        'description': 'Lieux avec décoration spécifique (beach club, rooftop, etc.)',
+                        'icon': 'palette'
+                    }
+                ]
+            },
+            {
+                'id': 5,
                 'name': 'Transport & Logistique',
                 'description': 'Services de transport de personnes et marchandises',
                 'icon': 'local_shipping',
                 'image_url': 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 23,
+                        'id': 30,
                         'name': 'Chauffeurs & VTC',
                         'description': 'Uber, Bolt, chauffeurs privés',
                         'icon': 'directions_car'
                     },
                     {
-                        'id': 24,
+                        'id': 31,
                         'name': 'Déménagement & Livraison',
                         'description': 'Transport de meubles, marchandises, courses à domicile',
                         'icon': 'move_to_inbox'
                     },
                     {
-                        'id': 25,
+                        'id': 32,
                         'name': 'Mécaniciens & Réparateurs automobiles',
                         'description': 'Réparation, dépannage, maintenance',
                         'icon': 'build'
                     },
                     {
-                        'id': 26,
+                        'id': 33,
                         'name': 'Lavage Auto',
                         'description': 'Services à domicile ou en station',
                         'icon': 'local_car_wash'
@@ -204,26 +255,26 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 5,
+                'id': 6,
                 'name': 'Santé & Bien-être',
                 'description': 'Services liés à la santé et au bien-être',
                 'icon': 'favorite',
                 'image_url': 'https://images.unsplash.com/photo-1579684288361-5c1a2957cc38?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 27,
+                        'id': 34,
                         'name': 'Infirmiers & Soins à domicile',
                         'description': 'Soins aux personnes âgées, perfusions',
                         'icon': 'health_and_safety'
                     },
                     {
-                        'id': 28,
+                        'id': 35,
                         'name': 'Psychologues & Thérapeutes',
                         'description': 'Consultations privées, gestion du stress',
                         'icon': 'psychology'
                     },
                     {
-                        'id': 29,
+                        'id': 36,
                         'name': 'Orthophonistes & Kinésithérapeutes',
                         'description': 'Rééducation, thérapie du langage',
                         'icon': 'accessibility'
@@ -231,38 +282,38 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 6,
+                'id': 7,
                 'name': 'Services Professionnels & Formation',
                 'description': 'Services professionnels et formations diverses',
                 'icon': 'work',
                 'image_url': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 30,
+                        'id': 37,
                         'name': 'Avocats & Conseillers juridiques',
                         'description': 'Droits des affaires, immobilier, divorce',
                         'icon': 'gavel'
                     },
                     {
-                        'id': 31,
+                        'id': 38,
                         'name': 'Comptables & Fiscalistes',
                         'description': 'Gestion d\'impôts, comptabilité d\'entreprise',
                         'icon': 'calculate'
                     },
                     {
-                        'id': 32,
+                        'id': 39,
                         'name': 'Consultants & Coachs de carrière',
                         'description': 'Business consulting, développement personnel',
                         'icon': 'person'
                     },
                     {
-                        'id': 33,
+                        'id': 40,
                         'name': 'Traduction & Interprétation',
                         'description': 'Portugais-français-anglais, etc.',
                         'icon': 'translate'
                     },
                     {
-                        'id': 34,
+                        'id': 41,
                         'name': 'Formations & Cours particuliers',
                         'description': 'Langues, informatique, musique, soutien scolaire',
                         'icon': 'school'
@@ -270,32 +321,32 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 7,
+                'id': 8,
                 'name': 'Services Numériques & Technologiques',
                 'description': 'Services liés au numérique et aux technologies',
                 'icon': 'computer',
                 'image_url': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 35,
+                        'id': 42,
                         'name': 'Développement Web & Mobile',
                         'description': 'Création de sites, applications',
                         'icon': 'code'
                     },
                     {
-                        'id': 36,
+                        'id': 43,
                         'name': 'Graphisme & Design',
                         'description': 'Logos, flyers, design UX/UI',
                         'icon': 'brush'
                     },
                     {
-                        'id': 37,
+                        'id': 44,
                         'name': 'Marketing Digital & Réseaux sociaux',
                         'description': 'Community management, publicité en ligne',
                         'icon': 'trending_up'
                     },
                     {
-                        'id': 38,
+                        'id': 45,
                         'name': 'Support Informatique & Réparation',
                         'description': 'Dépannage PC, installation de logiciels',
                         'icon': 'build_circle'
@@ -303,26 +354,26 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 8,
+                'id': 9,
                 'name': 'Services pour Animaux',
                 'description': 'Services de soins et garde d\'animaux',
                 'icon': 'pets',
                 'image_url': 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 39,
+                        'id': 46,
                         'name': 'Vétérinaires & Soins pour animaux',
                         'description': 'Vaccins, consultations',
                         'icon': 'medical_services'
                     },
                     {
-                        'id': 40,
+                        'id': 47,
                         'name': 'Toilettage pour animaux',
                         'description': 'Bains, coupes, soins spécialisés',
                         'icon': 'shower'
                     },
                     {
-                        'id': 41,
+                        'id': 48,
                         'name': 'Dresseurs & Garde d\'animaux',
                         'description': 'Dog-sitting, dressage',
                         'icon': 'pets'
@@ -330,26 +381,26 @@ class Migration(migrations.Migration):
                 ]
             },
             {
-                'id': 9,
+                'id': 10,
                 'name': 'Services Divers',
                 'description': 'Autres services spécialisés',
                 'icon': 'miscellaneous_services',
                 'image_url': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3',
                 'subcategories': [
                     {
-                        'id': 42,
+                        'id': 49,
                         'name': 'Agents de sécurité & Gardiennage',
                         'description': 'Sécurité privée, surveillance',
                         'icon': 'security'
                     },
                     {
-                        'id': 43,
+                        'id': 50,
                         'name': 'Conciergerie & Services à domicile',
                         'description': 'Courses, gestion de propriétés',
                         'icon': 'room_service'
                     },
                     {
-                        'id': 44,
+                        'id': 51,
                         'name': 'Fabrication & Vente sur mesure',
                         'description': 'Couturiers, tailleurs, cordonniers',
                         'icon': 'shopping_basket'

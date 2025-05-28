@@ -83,6 +83,13 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/logo1.png
+  android_12:
+    image: assets/images/logo1.png
+    color: "#FFFFFF"
+
 flutter:
 
   # The following line ensures that the Material Icons font is

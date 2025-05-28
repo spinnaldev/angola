@@ -1,3 +1,4 @@
+// lib/ui/screens/service_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/service.dart';
@@ -5,6 +6,7 @@ import '../../core/models/subcategory.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/subcategory_provider.dart';
 import '../common/bottom_navigation.dart';
+import 'base_screen.dart';
 import 'filter_screen.dart';
 import 'service_detail_screen.dart';
 import 'profile_screen.dart';
@@ -33,6 +35,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
   void initState() {
     super.initState();
     _tabScrollController = ScrollController();
+    _selectedSubcategoryIndex = -1; // -1 représente "Tous"
     
     // Charger les sous-catégories et services au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -51,25 +54,18 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
     super.dispose();
   }
 
-  void _handleNavigation(int index) {
-    if (index == 0) {
-      // Explorer - Déjà sur cet écran
-    } else if (index == 1) {
-      // Navigation vers Messages
-    } else if (index == 2) {
-      // Navigation vers Profil
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfileScreen()),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    return BaseScreen(
+      currentIndex: 1, // Explorer est sélectionné
+      body: _buildServiceListContent(),
+    );
     
-    return Scaffold(
+  }
+  
+  Widget _buildServiceListContent(){
+    final screenWidth = MediaQuery.of(context).size.width;
+     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
@@ -143,10 +139,45 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                     controller: _tabScrollController,
                     physics: const BouncingScrollPhysics(),
                     child: Row(
-                      children: List.generate(subcategories.length, (index) {
-                        final subcategory = subcategories[index];
-                        return _buildSubcategoryTab(subcategory, index);
-                      }),
+                      children: [
+                        // Ajouter l'option "Tous" comme premier élément
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedSubcategoryIndex = -1; // -1 pour "Tous"
+                            });
+                            
+                            // Charger tous les services de la catégorie
+                            final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
+                            serviceProvider.fetchServicesByCategory(widget.categoryId);
+                          },
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: _selectedSubcategoryIndex == -1 ? const Color(0xFF142FE2) : Colors.transparent,
+                                  width: 2.0,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              "Tous",
+                              style: TextStyle(
+                                color: _selectedSubcategoryIndex == -1 ? const Color(0xFF142FE2) : Colors.black,
+                                fontWeight: _selectedSubcategoryIndex == -1 ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Ensuite, afficher les sous-catégories existantes
+                        ...List.generate(subcategories.length, (index) {
+                          final subcategory = subcategories[index];
+                          return _buildSubcategoryTab(subcategory, index);
+                        }),
+                      ],
                     ),
                   ),
                 );
@@ -233,26 +264,55 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Aucun service disponible',
+                            'Aucun service disponible dans cette catégorie',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[500],
                             ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Revenez plus tard ou essayez une autre catégorie',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[400],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     );
                   }
                   
-                  // Liste des services en affichage liste (comme sur l'image 1)
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: services.length,
-                    itemBuilder: (context, index) {
-                      final service = services[index];
-                      return _buildServiceListItem(service, screenWidth);
-                    },
-                  );
+                  // Liste des services en affichage liste ou grille selon _isListView
+                  if (_isListView) {
+                    // Affichage en liste
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      itemCount: services.length,
+                      itemBuilder: (context, index) {
+                        final service = services[index];
+                        return _buildServiceListItem(service, screenWidth);
+                      },
+                    );
+                  } else {
+                    // Affichage en grille
+                    return GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.7,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: services.length,
+                      itemBuilder: (context, index) {
+                        final service = services[index];
+                        return _buildServiceGridItem(service);
+                      },
+                    );
+                  }
                 },
               ),
             ),
@@ -260,14 +320,8 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
         ),
       ),
       
-      // Utilisation du composant BottomNavigationBar
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: 0, // Explorer (index 0)
-        onTap: _handleNavigation,
-      ),
     );
   }
-  
   // Style exact des onglets de sous-catégories comme sur l'image 1
   Widget _buildSubcategoryTab(Subcategory subcategory, int index) {
     final bool isSelected = _selectedSubcategoryIndex == index;
@@ -305,7 +359,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
     );
   }
   
-  // Élément de liste pour les services (exactement comme sur l'image 1)
+  // Élément de liste pour les services
   Widget _buildServiceListItem(Service service, double screenWidth) {
     return ServiceCard(
       service: service,
@@ -315,10 +369,127 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           MaterialPageRoute(
             builder: (context) => ServiceDetailScreen(
               serviceId: service.id,
+              providerId: service.provider_id,
             ),
           ),
         );
       },
+    );
+  }
+  
+  // Élément de grille pour les services
+  Widget _buildServiceGridItem(Service service) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceDetailScreen(
+              serviceId: service.id,
+              providerId: service.provider_id,            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Image.network(
+                service.imageUrl,
+                width: double.infinity,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 100,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image, color: Colors.grey),
+                  );
+                },
+              ),
+            ),
+            
+            // Info
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    service.businessType,
+                    style: TextStyle(
+                      fontSize: 12, 
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        service.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "(${service.reviewCount})",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    service.priceType == 'quote' 
+                      ? 'Sur devis' 
+                      : '${service.price.toInt()} FCFA',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF142FE2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

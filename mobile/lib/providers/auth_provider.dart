@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../core/services/auth_service.dart';
 import '../core/models/user.dart';
+import 'dart:io';
 
 enum AuthStatus {
   uninitialized,
@@ -59,6 +60,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  
   // Nouvelle méthode: Récupérer explicitement les informations utilisateur
   Future<void> getCurrentUser() async {
     try {
@@ -267,6 +269,51 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       }
       return success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? bio,
+    String? location,
+    String? companyName,
+    File? profileImage,
+  }) async {
+    try {
+      _errorMessage = null;
+      
+      if (_currentUser == null) {
+        _errorMessage = "Aucun utilisateur connecté";
+        notifyListeners();
+        return false;
+      }
+      
+      final updatedUser = await _authService.updateProfile(
+        userId: _currentUser!.id,
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        bio: bio,
+        location: location,
+        companyName: companyName,
+        profileImage: profileImage,
+      );
+      
+      if (updatedUser != null) {
+        _currentUser = updatedUser;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Échec de la mise à jour du profil";
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();

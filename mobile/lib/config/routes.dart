@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:w3_loc/ui/screens/edit_profile_screen.dart';
 import 'package:w3_loc/ui/screens/explore_screen.dart';
+import 'package:w3_loc/ui/screens/profile_screen.dart';
 import '../ui/screens/auth/login_screen.dart';
 import '../ui/screens/auth/signup_screen.dart';
 import '../ui/screens/auth/forgot_password_screen.dart';
@@ -28,6 +30,8 @@ class AppRoutes {
   static const String serviceManagement = '/service-management';
   static const String quoteRequests = '/quote-requests';
   static const String myQuoteRequests = '/my-quote-requests';
+  static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const HomeScreen(), 
@@ -42,6 +46,8 @@ class AppRoutes {
     serviceManagement: (context) => const ServiceManagementScreen(),
     quoteRequests: (context) => const QuoteRequestsScreen(),
     myQuoteRequests: (context) => const MyQuoteRequestsScreen(),
+    profile: (context) => const ProfileScreen(),
+    editProfile: (context) => const EditProfileScreen(),
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -71,10 +77,15 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const QuoteRequestsScreen());
       case myQuoteRequests:
         return MaterialPageRoute(builder: (_) => const MyQuoteRequestsScreen());
+      case profile:
+        return MaterialPageRoute(builder: (context) => const ProfileScreen());
+      case editProfile:
+        return MaterialPageRoute(builder: (context) => const EditProfileScreen());
       case serviceDetail:
         final serviceId = settings.arguments as int;
+        final providerId = settings.arguments as int;
         return MaterialPageRoute(
-          builder: (_) => ServiceDetailScreen(serviceId: serviceId),
+          builder: (_) => ServiceDetailScreen(serviceId: serviceId ,providerId: providerId),
         );
       case providerDetail:
         final providerId = settings.arguments as int;

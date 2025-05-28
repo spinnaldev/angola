@@ -14,6 +14,8 @@ import json
 import os
 from pathlib import Path
 
+from django.forms import ValidationError
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -135,7 +138,6 @@ SIMPLE_JWT = {
 # Configuration CORS
 CORS_ALLOW_ALL_ORIGINS = True  # Pour le développement uniquement, limitez en production
 CORS_ALLOW_CREDENTIALS = True
-
 # Configuration du modèle utilisateur personnalisé
 # AUTH_USER_MODEL = 'api.User'
 
@@ -208,6 +210,33 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+# Taille maximale des fichiers uploadés
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
+
+# Types de fichiers autorisés pour les images de profil
+ALLOWED_IMAGE_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+]
+
+
+# Fonction utilitaire pour valider les images
+def validate_image(image):
+    """
+    Valider qu'un fichier uploadé est une image valide
+    """
+    if image.content_type not in ALLOWED_IMAGE_TYPES:
+        raise ValidationError('Type de fichier non autorisé')
+    
+    if image.size > 5 * 1024 * 1024:  # 5MB max
+        raise ValidationError('Fichier trop volumineux (max 5MB)')
+    
+    return image
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

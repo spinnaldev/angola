@@ -1,5 +1,8 @@
 // lib/providers/provider_list_provider.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../core/models/provider_model.dart';
 import '../core/services/api_service.dart';
 
@@ -17,12 +20,62 @@ class ProviderListProvider with ChangeNotifier {
   bool get hasError => _hasError;
   String get errorMessage => _errorMessage;
 
+  // Future<void> fetchProviders() async {
+  //   _isLoading = true;
+  //   _errorMessage = '';
+  //   notifyListeners();
+  //   print('Les fournisseurs sont en cours de chargmenent:');
+
+  //   try {
+  //     // Utilisez un try-catch pour capturer les erreurs
+  //     final headers = await _apiService.getHeaders();
+
+  //     // Ajoutez des logs de débogage
+  //     print(
+  //         'Fetching providers from endpoint: ${_apiService.baseUrl}/providers/');
+  //     print('Headers: $headers');
+
+  //     final response = await http.get(
+  //       Uri.parse('${_apiService.baseUrl}/providers/'),
+  //       headers: headers,
+  //     );
+
+  //     print('Response status code: ${response.statusCode}');
+  //     print('Response body: ${response.body}');
+
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+
+  //       if (data['results'] != null) {
+  //         final List<dynamic> results = data['results'];
+  //         _providers =
+  //             results.map((item) => ProviderModel.fromJson(item)).toList();
+
+  //         print('Providers loaded: ${_providers.length}');
+  //       } else {
+  //         print('No results field found in response');
+  //         _providers = [];
+  //       }
+  //     } else {
+  //       print('Error response: ${response.body}');
+  //       _errorMessage = 'Failed to load providers: ${response.statusCode}';
+  //       _providers = [];
+  //     }
+  //   } catch (e) {
+  //     print('Exception during fetchProviders: $e');
+  //     _errorMessage = e.toString();
+  //     _providers = [];
+  //   } finally {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
   Future<void> fetchProviders() async {
     _isLoading = true;
     _hasError = false;
     _errorMessage = '';
     notifyListeners();
-
+    print('Les fournisseurs sont en cours de chargmenent:');
     try {
       final fetchedProviders = await _apiService.getProviders();
       _providers = fetchedProviders;
@@ -43,7 +96,8 @@ class ProviderListProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedProviders = await _apiService.getProvidersByCategory(categoryId);
+      final fetchedProviders =
+          await _apiService.getProvidersByCategory(categoryId);
       _providers = fetchedProviders;
       _isLoading = false;
       notifyListeners();
@@ -62,7 +116,8 @@ class ProviderListProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedProviders = await _apiService.getProvidersBySubcategory(subcategoryId);
+      final fetchedProviders =
+          await _apiService.getProvidersBySubcategory(subcategoryId);
       _providers = fetchedProviders;
       _isLoading = false;
       notifyListeners();
@@ -73,15 +128,17 @@ class ProviderListProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
-  Future<void> fetchNearbyProviders(double latitude, double longitude, {double radius = 10.0}) async {
+
+  Future<void> fetchNearbyProviders(double latitude, double longitude,
+      {double radius = 10.0}) async {
     _isLoading = true;
     _hasError = false;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      final fetchedProviders = await _apiService.getNearbyProviders(latitude, longitude, radius: radius);
+      final fetchedProviders = await _apiService
+          .getNearbyProviders(latitude, longitude, radius: radius);
       _providers = fetchedProviders;
       _isLoading = false;
       notifyListeners();
@@ -107,9 +164,10 @@ class ProviderListProvider with ChangeNotifier {
       // Ne pas filtrer
       return;
     }
-    
+
     // Filtrer les prestataires qui ont une note supérieure ou égale à minRating
-    _providers = _providers.where((provider) => provider.rating >= minRating).toList();
+    _providers =
+        _providers.where((provider) => provider.rating >= minRating).toList();
     notifyListeners();
   }
 
@@ -119,9 +177,12 @@ class ProviderListProvider with ChangeNotifier {
       // Ne pas filtrer
       return;
     }
-    
+
     // Filtrer les prestataires par type
-    _providers = _providers.where((provider) => provider.businessType.toLowerCase() == type.toLowerCase()).toList();
+    _providers = _providers
+        .where((provider) =>
+            provider.businessType.toLowerCase() == type.toLowerCase())
+        .toList();
     notifyListeners();
   }
 
@@ -131,12 +192,13 @@ class ProviderListProvider with ChangeNotifier {
       // Ne pas filtrer
       return;
     }
-    
+
     // Filtrer les prestataires par localisation
-    _providers = _providers.where((provider) => 
-      provider.address != null && 
-      provider.address!.toLowerCase().contains(location.toLowerCase())
-    ).toList();
+    _providers = _providers
+        .where((provider) =>
+            provider.address != null &&
+            provider.address!.toLowerCase().contains(location.toLowerCase()))
+        .toList();
     notifyListeners();
   }
 

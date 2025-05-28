@@ -5,10 +5,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/api/api_client.dart';
 import 'core/services/api_service.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/dispute_service.dart';
 import 'core/services/quote_service.dart';
 import 'core/services/review_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/category_provider.dart';
+import 'providers/provider_list_provider.dart';
 import 'providers/subcategory_provider.dart';
 import 'providers/service_provider.dart';
 import 'providers/provider_detail_provider.dart';
@@ -20,11 +22,14 @@ import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
 import 'config/routes.dart';
 import 'ui/screens/home_screen.dart';  // Nouvelle page d'accueil
+import 'providers/dispute_provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
   
+  await initializeDateFormatting('fr_FR', null); // AJOUT
   // Charger les variables d'environnement si nécessaire
   try {
     await dotenv.load(fileName: "lib/.env");
@@ -79,6 +84,9 @@ class MyApp extends StatelessWidget {
           create: (_) => ServiceProvider(apiService),
         ),
         ChangeNotifierProvider(
+          create: (_) => ProviderListProvider(apiService),
+        ),
+        ChangeNotifierProvider(
           create: (_) => ProviderDetailProvider(apiService),
         ),
         ChangeNotifierProvider(
@@ -92,6 +100,11 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => MessagingProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DisputeProvider(
+            DisputeService(apiService),
+          ),
         ),
       ],
       child: MaterialApp(

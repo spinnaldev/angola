@@ -1,30 +1,29 @@
 // lib/ui/widgets/service_card.dart
-
 import 'package:flutter/material.dart';
 import '../../core/models/service.dart';
 
 class ServiceCard extends StatelessWidget {
   final Service service;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const ServiceCard({
     Key? key,
     required this.service,
-    this.onTap,
+    required this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.grey.withOpacity(0.2),
             spreadRadius: 1,
-            blurRadius: 2,
+            blurRadius: 3,
             offset: const Offset(0, 1),
           ),
         ],
@@ -32,139 +31,111 @@ class ServiceCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image du service - carré de 80x80
+                // Image du service
                 ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
-                  ),
-                  child: SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: Image.network(
-                      service.imageUrl.isNotEmpty
-                          ? service.imageUrl
-                          : 'https://via.placeholder.com/80',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        );
-                      },
-                    ),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    service.imageUrl,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 90,
+                        height: 90,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image, color: Colors.grey),
+                      );
+                    },
                   ),
                 ),
+                const SizedBox(width: 16),
                 
-                // Espace entre l'image et le contenu
-                const SizedBox(width: 12),
-                
-                // Contenu (titre et description)
+                // Colonne principale pour le contenu
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Partie supérieure avec notation
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: List.generate(5, (index) => Icon(
+                              index < service.rating.floor() 
+                                  ? Icons.star 
+                                  : (index < service.rating 
+                                      ? Icons.star_half 
+                                      : Icons.star_border),
+                              color: Colors.amber,
+                              size: 16,
+                            )),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "(${service.reviewCount})",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      
                       // Titre du service
                       Text(
                         service.title,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      
-                      // Espace entre titre et description
                       const SizedBox(height: 4),
                       
-                      // Description du service
+                      // Type d'entreprise
                       Text(
-                        'Entreprise de ${service.businessType.toLowerCase()}',
+                        service.businessType,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Bouton Voir (maintenant en bas à droite)
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: ElevatedButton(
+                          onPressed: onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF142FE2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          ),
+                          child: const Text(
+                            'Voir',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                
-                // Partie droite (étoiles et bouton)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Étoiles
-                    Row(
-                      children: [
-                        // 5 étoiles jaunes
-                        for (int i = 0; i < 5; i++)
-                          Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
-                          ),
-                        
-                        // Nombre d'avis
-                        const SizedBox(width: 4),
-                        Text(
-                          "(${service.reviewCount})",
-                          style: const TextStyle(
-                            color: Colors.amber,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Espace entre étoiles et bouton
-                    const SizedBox(height: 10),
-                    
-                    // Bouton "Voir"
-                    Container(
-                      margin: const EdgeInsets.only(right: 16),
-                      child: ElevatedButton(
-                        onPressed: onTap,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF142FE2),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          minimumSize: const Size(60, 30),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text(
-                          'Voir',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Léger padding à droite
-                const SizedBox(width: 4),
               ],
             ),
           ),

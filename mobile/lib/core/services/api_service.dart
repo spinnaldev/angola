@@ -29,20 +29,21 @@ class ApiService {
 
   // Créer les en-têtes avec authentification si nécessaire
   Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+  Map<String, String> headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Accept': 'application/json',
+  };
 
-    if (requireAuth) {
-      final token = await _secureStorage.read(key: 'access_token');
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
-      }
+  if (requireAuth) {
+    final token = await _secureStorage.read(key: 'access_token');
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
     }
-
-    return headers;
   }
+
+  return headers;
+}
+
 
   // Obtenir le profil utilisateur courant
   Future<User> getCurrentUser() async {
@@ -370,7 +371,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes))['results'] ?? [];
         print('Les données recuperes sont : $data');
         return data.map((item) => Subcategory.fromJson(item)).toList();
       } else {
@@ -791,6 +792,8 @@ Future<bool> markAllNotificationsAsRead() async {
         return [];
       }
     } catch (e) {
+      print("non non l'erreur vient d'ici");
+
       print('Error in getProviderReviews: $e');
       // En cas d'exception, retourner des données de test
       return [];
@@ -948,7 +951,7 @@ Future<bool> markAllNotificationsAsRead() async {
         imageUrl: 'https://picsum.photos/id/1029/300/200',
         rating: 4.5,
         reviewCount: 27,
-        providerId: 1,
+        provider_id: 1,
         categoryId:1,
         businessType: 'Entreprise',
         price: 80.0,
@@ -960,7 +963,7 @@ Future<bool> markAllNotificationsAsRead() async {
         imageUrl: 'https://picsum.photos/id/1040/300/200',
         rating: 3.8,
         reviewCount: 15,
-        providerId: 2,
+        provider_id: 2,
         categoryId:1,
         businessType: 'Entreprise',
         price: 75.0,
@@ -972,7 +975,7 @@ Future<bool> markAllNotificationsAsRead() async {
         imageUrl: 'https://picsum.photos/id/1076/300/200',
         rating: 5.0,
         reviewCount: 21,
-        providerId: 3,
+        provider_id: 3,
         categoryId:1,
         businessType: 'Entreprise',
         price: 120.0,
@@ -984,7 +987,7 @@ Future<bool> markAllNotificationsAsRead() async {
         imageUrl: 'https://picsum.photos/id/1079/300/200',
         rating: 4.2,
         reviewCount: 18,
-        providerId: 4,
+        provider_id: 4,
         categoryId:1,
         businessType: 'Entreprise',
         price: 90.0,
@@ -996,7 +999,7 @@ Future<bool> markAllNotificationsAsRead() async {
         imageUrl: 'https://picsum.photos/id/1082/300/200',
         rating: 3.5,
         reviewCount: 12,
-        providerId: 5,
+        provider_id: 5,
         categoryId:1,
         businessType: 'Freelance',
         price: 65.0,
@@ -1013,7 +1016,7 @@ Future<bool> markAllNotificationsAsRead() async {
       imageUrl: 'https://picsum.photos/id/1029/600/400',
       rating: 4.5,
       reviewCount: 27,
-      providerId: 1,
+      provider_id: 1,
       categoryId:1,
       businessType: 'Entreprise',
       price: 80.0,
@@ -1081,6 +1084,27 @@ Future<bool> markAllNotificationsAsRead() async {
         ),
       ],
     );
+  }
+
+  Future<List<Service>> getProviderServices(int providerId) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('${baseUrl}/services/?provider_id=$providerId'),
+        headers: headers,
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        return data.map((item) => Service.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load provider services: ${response.body}');
+      }
+    } catch (e) {
+      print('Error in getProviderServices: $e');
+      // En cas d'échec, retourner une liste vide ou autre gestion d'erreur
+      return [];
+    }
   }
 
   // List<Review> _getMockReviews() {

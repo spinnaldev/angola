@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Cette méthode remplace l'écran actuel et supprime tous les écrans précédents
           Navigator.pushNamedAndRemoveUntil(
             context, 
-            AppRoutes.explore,  // Utilisez les constantes de AppRoutes
+            AppRoutes.home,  // Utilisez les constantes de AppRoutes
             (route) => false,  // Supprime toute la pile
           );
         }

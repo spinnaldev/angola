@@ -5,7 +5,7 @@ class QuoteRequest {
   final String subject;
   final double budget;
   final String description;
-  final String status;  // 'pending', 'accepted', 'rejected', 'completed'
+  final String status; // 'pending', 'accepted', 'rejected', 'completed'
   final DateTime createdAt;
 
   QuoteRequest({

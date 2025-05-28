@@ -26,32 +26,37 @@ class Migration(migrations.Migration):
                 'image_url': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3'
             },
             {
-                'id': 4,
+                'id': 4,  # Assurez-vous que cet ID n'existe pas déjà
+                'name': 'Location de lieux',
+                'image_url': 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?ixlib=rb-4.0.3',
+            },
+            {
+                'id': 5,
                 'name': 'Transport & Logistique',
                 'image_url': 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?ixlib=rb-4.0.3'
             },
             {
-                'id': 5,
+                'id': 6,
                 'name': 'Santé & Bien-être',
                 'image_url': 'https://images.unsplash.com/photo-1579684288361-5c1a2957cc38?ixlib=rb-4.0.3'
             },
             {
-                'id': 6,
+                'id': 7,
                 'name': 'Services Professionnels & Formation',
                 'image_url': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3'
             },
             {
-                'id': 7,
+                'id': 8,
                 'name': 'Services Numériques & Technologiques',
                 'image_url': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3'
             },
             {
-                'id': 8,
+                'id': 9,
                 'name': 'Services pour Animaux',
                 'image_url': 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?ixlib=rb-4.0.3'
             },
             {
-                'id': 9,
+                'id': 10,
                 'name': 'Services Divers',
                 'image_url': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3'
             }

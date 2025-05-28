@@ -40,14 +40,39 @@ class ProviderModel {
         json['services'].map((service) => ServiceItem.fromJson(service))
       );
     }
+    // Parse rating avec validation
+    double parseRating(dynamic ratingValue) {
+      if (ratingValue == null) return 0.0;
+      if (ratingValue is double) return ratingValue;
+      if (ratingValue is int) return ratingValue.toDouble();
+      if (ratingValue is String) {
+        final parsed = double.tryParse(ratingValue);
+        return parsed ?? 0.0;
+      }
+      return 0.0;
+    }
+    
+    // Parse review count avec validation
+    int parseReviewCount(dynamic countValue) {
+      if (countValue == null) return 0;
+      if (countValue is int) return countValue;
+      if (countValue is double) return countValue.round();
+      if (countValue is String) {
+        final parsed = int.tryParse(countValue);
+        return parsed ?? 0;
+      }
+      return 0;
+    }
     
     return ProviderModel(
       id: json['id'],
       name: json['name'],
       businessType: json['business_type'] ?? 'Entreprise',
       profileImageUrl: json['profile_image_url'] ?? '',
-      rating: (json['rating'] ?? 0.0).toDouble(),
-      reviewCount: json['review_count'] ?? 0,
+      rating: parseRating(json['rating'] ?? json['average_rating']),
+      reviewCount: parseReviewCount(json['review_count'] ?? 
+                                  json['reviews_count'] ?? 
+                                  json['total_reviews']),
       description: json['description'] ?? '',
       services: servicesList,
       address: json['address'],

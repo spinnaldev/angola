@@ -1,6 +1,6 @@
-// lib/ui/screens/explore_screen.dart (mise à jour pour utiliser BaseScreen)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/category_provider.dart';
 import '../widgets/category_card.dart';
 import 'service_list_screen.dart';
@@ -53,6 +53,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               Image.asset(
                 'assets/images/logo.png',
                 height: 40,
+                width: 80,
                 errorBuilder: (context, error, stackTrace) => const Text(
                   'LOGO',
                   style: TextStyle(
@@ -104,7 +105,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ),
 
-        // Grille des catégories
+        // Grille des catégories en mosaïque
         Expanded(
           child: Consumer<CategoryProvider>(
             builder: (context, categoryProvider, child) {
@@ -118,18 +119,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
               
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.0,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
+                child: MasonryGridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
                   itemCount: categoryProvider.categories.length,
                   itemBuilder: (context, index) {
                     final category = categoryProvider.categories[index];
                     // Récupérer le nombre de services pour cette catégorie
                     final serviceCount = categoryProvider.getServiceCount(category.id);
+                    
+                    // Déterminer la hauteur en fonction de l'index pour créer un effet mosaïque
+                    final double height = _getCategoryHeight(index);
                     
                     return GestureDetector(
                       onTap: () {
@@ -143,9 +144,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ),
                         );
                       },
-                      child: CategoryCard(
-                        category: category,
-                        serviceCount: serviceCount,
+                      child: SizedBox(
+                        height: height,
+                        child: CategoryCard(
+                          category: category,
+                          serviceCount: serviceCount,
+                        ),
                       ),
                     );
                   },
@@ -156,5 +160,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
       ],
     );
+  }
+  
+  // Méthode pour calculer la hauteur de chaque catégorie en fonction de l'index
+  double _getCategoryHeight(int index) {
+    // Alternance de hauteurs pour créer un effet mosaïque comme dans l'image 1
+    // Pattern basé sur la première capture d'écran
+    switch (index % 6) {
+      case 0: return 250.0; // Premier élément (Maison & Construction)
+      case 1: return 210.0; // Deuxième élément (Bien-être & Beauté)
+      case 2: return 210.0; // Troisième élément (Événements & Artistiques)
+      case 3: return 290.0; // Quatrième élément (Transports & Logistiques)
+      case 4: return 230.0; // Cinquième élément
+      case 5: return 250.0; // Sixième élément
+      default: return 180.0;
+    }
   }
 }

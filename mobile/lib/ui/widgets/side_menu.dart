@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/models/user.dart';
+import '../screens/disputes/disputes_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/provider/service_management_screen.dart';
 import '../screens/provider/quote_requests_screen.dart';
@@ -18,106 +19,58 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final User? user = authProvider.currentUser;
-        final bool isLoggedIn = user != null;
-        
-        if (isLoggedIn) {
-          return _buildUserMenu(context, user, authProvider);
-        } else {
-          return _buildGuestMenu(context);
-        }
-      },
+    // Utiliser MediaQuery pour obtenir la largeur de l'écran
+    final screenWidth = MediaQuery.of(context).size.width;
+    final menuWidth = screenWidth * 0.85; // 85% de la largeur d'écran
+
+    return Container(
+      width: menuWidth, // Définir explicitement la largeur
+      color: Colors.white,
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          final User? user = authProvider.currentUser;
+          final bool isLoggedIn = user != null;
+          
+          if (isLoggedIn) {
+            return _buildUserMenu(context, user, authProvider);
+          } else {
+            return _buildGuestMenu(context);
+          }
+        },
+      ),
     );
   }
   
   // Menu pour les utilisateurs connectés
   Widget _buildUserMenu(BuildContext context, User user, AuthProvider authProvider) {
-    return Container(
-      color: Colors.white,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // En-tête avec bouton de fermeture
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Connecté',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: onClose,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Profil utilisateur avec photo décalée à gauche
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Photo de profil
-                  Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Cercle de fond
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            shape: BoxShape.circle,
-                          ),
-                          child: user.profilePicture != null && user.profilePicture!.isNotEmpty
-                            ? null
-                            : Center(
-                                child: Text(
-                                  user.firstName.isNotEmpty ? user.firstName[0] : 'U',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ),
-                        ),
-                        
-                        // Image de profil si disponible
-                        if (user.profilePicture != null && user.profilePicture!.isNotEmpty)
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(user.profilePicture!),
-                          ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Email uniquement
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+    return SafeArea(
+      bottom: false, // Permettre au contenu de déborder en bas
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête avec bouton de fermeture et image de profil
+          Stack(
+            clipBehavior: Clip.none, // Important pour permettre au cercle de déborder
+            children: [
+              // En-tête avec bouton de fermeture
+              Padding(
+                padding: const EdgeInsets.fromLTRB(65.0, 16.0, 16.0, 16.0), // Plus de padding à gauche pour l'avatar
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 4),
                           Text(
                             user.username.toUpperCase(),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             user.email,
@@ -125,279 +78,337 @@ class SideMenu extends StatelessWidget {
                               fontSize: 14,
                               color: Colors.grey[600],
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: onClose,
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Photo de profil positionnée à moitié en dehors
+              Positioned(
+                left: -25, // Position négative pour déborder sur la gauche
+                top: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(3), // Bordure blanche externe
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
-            ),
-            
-            // Options du menu - première section
-            _buildMenuItem(
-              context,
-              icon: Icons.home_outlined,
-              text: 'Accueil',
-              onTap: () {
-                onClose();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.search_outlined,
-              text: 'Explorer',
-              onTap: () {
-                onClose();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ExploreScreen()),
-                );
-              },
-            ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.person_outline,
-              text: 'Mon profil',
-              onTap: () {
-                onClose();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                );
-              },
-            ),
-            _buildMenuItem(
-              context,
-              icon: Icons.chat_bubble_outline,
-              text: 'Message',
-              onTap: () {
-                onClose();
-                Navigator.pushNamed(context, '/messages');
-              },
-            ),
-            
-            // Options spécifiques selon le rôle
-            if (user.role == 'provider') ...[
-              _buildMenuItem(
-                context,
-                icon: Icons.home_repair_service_outlined,
-                text: 'Mes services',
-                onTap: () {
-                  onClose();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ServiceManagementScreen()),
-                  );
-                },
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.receipt_long_outlined,
-                text: 'Demandes de devis',
-                onTap: () {
-                  onClose();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
-                  );
-                },
+                  child: Container(
+                    padding: const EdgeInsets.all(2), // Bordure bleue interne
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF142FE2), // Couleur bleue primaire
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
+                        ? NetworkImage(user.profilePicture!)
+                        : null,
+                      child: user.profilePicture == null || user.profilePicture!.isEmpty
+                        ? Text(
+                            user.username.isNotEmpty ? user.username[0].toUpperCase() : 'P',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black54,
+                            ),
+                          )
+                        : null,
+                    ),
+                  ),
+                ),
               ),
             ],
-            
-            if (user.role == 'client')
-              _buildMenuItem(
+          ),
+          
+          const Divider(height: 1), // Ligne de séparation après l'en-tête
+          
+          // Options du menu - première section
+          _buildMenuItem(
+            context,
+            icon: Icons.home_outlined,
+            text: 'Accueil',
+            onTap: () {
+              onClose();
+              Navigator.pushAndRemoveUntil(
                 context,
-                icon: Icons.receipt_long_outlined,
-                text: 'Demandes de devis',
-                onTap: () {
-                  onClose();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MyQuoteRequestsScreen()),
-                  );
-                },
-              ),
-            
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+          ),
+          
+          _buildMenuItem(
+            context,
+            icon: Icons.search_outlined,
+            text: 'Explorer',
+            onTap: () {
+              onClose();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ExploreScreen()),
+              );
+            },
+          ),
+          
+          _buildMenuItem(
+            context,
+            icon: Icons.person_outline,
+            text: 'Mon profil',
+            onTap: () {
+              onClose();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.chat_bubble_outline,
+            text: 'Message',
+            onTap: () {
+              onClose();
+              Navigator.pushNamed(context, '/messages');
+            },
+          ),
+          
+          // Options spécifiques selon le rôle
+          if (user.role == 'provider') ...[
             _buildMenuItem(
               context,
-              icon: Icons.notifications_none,
-              text: 'Notifications',
+              icon: Icons.home_repair_service_outlined,
+              text: 'Mes services',
               onTap: () {
                 onClose();
-                // Navigation vers notifications
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ServiceManagementScreen()),
+                );
               },
             ),
-            
-            const Spacer(),
-            
-            // Options de bas de page
             _buildMenuItem(
               context,
-              icon: Icons.settings_outlined,
-              text: 'Paramètres',
+              icon: Icons.receipt_long_outlined,
+              text: 'Demandes de devis',
               onTap: () {
                 onClose();
-                // Navigation vers paramètres
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
+                );
               },
             ),
-            _buildMenuItem(
-              context,
-              icon: Icons.help_outline,
-              text: 'Aide et FAQ',
-              onTap: () {
-                onClose();
-                // Navigation vers aide
-              },
-            ),
-            _buildMenuItem(
-              context,
-              icon: Icons.logout,
-              text: 'Déconnexion',
-              onTap: () async {
-                onClose();
-                await authProvider.logout();
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/home',
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            
-            const SizedBox(height: 16),
           ],
-        ),
+          
+          if (user.role == 'client')
+            _buildMenuItem(
+              context,
+              icon: Icons.receipt_long_outlined,
+              text: 'Demandes de devis',
+              onTap: () {
+                onClose();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyQuoteRequestsScreen()),
+                );
+              },
+            ),
+          
+          _buildMenuItem(
+            context,
+            icon: Icons.gavel,
+            text: 'Mes litiges',
+            onTap: () {
+              onClose();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DisputesScreen(),
+                ),
+              );
+            },
+          ),
+
+          _buildMenuItem(
+            context,
+            icon: Icons.notifications_none,
+            text: 'Notifications',
+            onTap: () {
+              onClose();
+              // Navigation vers notifications
+            },
+          ),
+          
+          const Spacer(),
+          
+          // Options de bas de page
+          _buildMenuItem(
+            context,
+            icon: Icons.settings_outlined,
+            text: 'Paramètres',
+            onTap: () {
+              onClose();
+              // Navigation vers paramètres
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.help_outline,
+            text: 'Aide et FAQ',
+            onTap: () {
+              onClose();
+              // Navigation vers aide
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.logout,
+            text: 'Déconnexion',
+            onTap: () async {
+              onClose();
+              await authProvider.logout();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/home',
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          
+          const SizedBox(height: 24), // Plus d'espace en bas
+        ],
       ),
     );
   }
   
   // Menu pour les utilisateurs non connectés
   Widget _buildGuestMenu(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // En-tête avec bouton de fermeture
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Menu',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+    return SafeArea(
+      bottom: false, // Permettre au contenu de déborder en bas
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête avec bouton de fermeture
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Menu',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: onClose,
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: onClose,
+                ),
+              ],
             ),
-            
-            const Divider(),
-            
-            // Options de menu pour les invités
-            _buildMenuItem(
-              context,
-              icon: Icons.home_outlined,
-              text: 'Accueil',
-              onTap: () {
-                onClose();
-                Navigator.pushNamedAndRemoveUntil(
-                  context, 
-                  '/home', 
-                  (route) => false
-                );
-              },
-            ),
-            _buildMenuItem(
-              context,
-              icon: Icons.search,
-              text: 'Explorer',
-              onTap: () {
-                onClose();
-                Navigator.pushNamed(context, '/explore');
-              },
-            ),
-            
-            const Spacer(),
-            
-            // Boutons de connexion et inscription
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        onClose();
-                        Navigator.pushNamed(context, '/login');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF142FE2),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Se connecter',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+          ),
+          
+          const Divider(height: 1),
+          
+          // Options de menu pour les invités
+          _buildMenuItem(
+            context,
+            icon: Icons.home_outlined,
+            text: 'Accueil',
+            onTap: () {
+              onClose();
+              Navigator.pushNamedAndRemoveUntil(
+                context, 
+                '/home', 
+                (route) => false
+              );
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.search,
+            text: 'Explorer',
+            onTap: () {
+              onClose();
+              Navigator.pushNamed(context, '/explore');
+            },
+          ),
+          
+          const Spacer(),
+          
+          // Boutons de connexion et inscription
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      onClose();
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF142FE2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        onClose();
-                        Navigator.pushNamed(context, '/profile-selector');
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF142FE2),
-                        side: const BorderSide(color: Color(0xFF142FE2)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'S\'inscrire',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    child: const Text(
+                      'Se connecter',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      onClose();
+                      Navigator.pushNamed(context, '/profile-selector');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF142FE2),
+                      side: const BorderSide(color: Color(0xFF142FE2)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      'S\'inscrire',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }

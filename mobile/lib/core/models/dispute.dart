@@ -1,68 +1,64 @@
 // lib/core/models/dispute.dart
+import 'dart:convert';
+
 class Dispute {
   final int? id;
-  final int clientId;
   final int providerId;
+  final String providerName;
   final int? serviceId;
+  final String? serviceName;
   final String title;
   final String description;
-  final String status; // 'open', 'under_review', 'resolved', 'closed'
-  final String? resolutionNote;
+  final String status;
   final DateTime createdAt;
+  final String? resolutionNote;
   final List<DisputeEvidence> evidence;
-  
-  // Propriétés calculées pour faciliter l'affichage
   final String clientName;
-  final String providerName;
-  final String? serviceName;
 
   Dispute({
     this.id,
-    required this.clientId,
     required this.providerId,
+    required this.providerName,
     this.serviceId,
+    this.serviceName,
     required this.title,
     required this.description,
     this.status = 'open',
-    this.resolutionNote,
     DateTime? createdAt,
-    this.evidence = const [],
-    this.clientName = '',
-    this.providerName = '',
-    this.serviceName,
-  }) : this.createdAt = createdAt ?? DateTime.now();
+    this.resolutionNote,
+    List<DisputeEvidence>? evidence,
+    required this.clientName,
+  }) : 
+    this.createdAt = createdAt ?? DateTime.now(),
+    this.evidence = evidence ?? [];
 
   factory Dispute.fromJson(Map<String, dynamic> json) {
-    // Traiter la liste des preuves
-    List<DisputeEvidence> evidenceList = [];
-    if (json['evidence'] != null) {
-      evidenceList = (json['evidence'] as List)
-          .map((item) => DisputeEvidence.fromJson(item))
-          .toList();
-    }
-
     return Dispute(
       id: json['id'],
-      clientId: json['client'],
-      providerId: json['provider'],
-      serviceId: json['service'],
+      providerId: json['provider_id'],
+      providerName: json['provider_name'] ?? 'Inconnu',
+      serviceId: json['service_id'],
+      serviceName: json['service_name'],
       title: json['title'],
       description: json['description'],
-      status: json['status'],
+      status: json['status'] ?? 'open',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
       resolutionNote: json['resolution_note'],
-      createdAt: DateTime.parse(json['created_at']),
-      evidence: evidenceList,
-      clientName: json['client_name'] ?? '',
-      providerName: json['provider_name'] ?? '',
-      serviceName: json['service_title'],
+      evidence: json['evidence'] != null 
+          ? (json['evidence'] as List)
+              .map((e) => DisputeEvidence.fromJson(e))
+              .toList() 
+          : [],
+      clientName: json['client_name'] ?? 'Client',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'client': clientId,
-      'provider': providerId,
-      'service': serviceId,
+      'provider_id': providerId,
+      'service_id': serviceId,
       'title': title,
       'description': description,
     };
@@ -71,36 +67,38 @@ class Dispute {
 
 class DisputeEvidence {
   final int? id;
-  final int userId;
+  final int disputeId;
   final String description;
   final String fileUrl;
-  final DateTime createdAt;
   final String userName;
+  final DateTime createdAt;
 
   DisputeEvidence({
     this.id,
-    required this.userId,
+    required this.disputeId,
     required this.description,
     required this.fileUrl,
+    required this.userName,
     DateTime? createdAt,
-    this.userName = '',
   }) : this.createdAt = createdAt ?? DateTime.now();
 
   factory DisputeEvidence.fromJson(Map<String, dynamic> json) {
     return DisputeEvidence(
       id: json['id'],
-      userId: json['user'],
+      disputeId: json['dispute_id'],
       description: json['description'],
-      fileUrl: json['file'],
-      createdAt: DateTime.parse(json['created_at']),
-      userName: json['user_name'] ?? '',
+      fileUrl: json['file_url'],
+      userName: json['user_name'] ?? 'Utilisateur',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'dispute_id': disputeId,
       'description': description,
-      'file': fileUrl,
     };
   }
 }

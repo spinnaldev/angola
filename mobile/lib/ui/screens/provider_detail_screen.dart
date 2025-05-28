@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/models/provider_model.dart';
 import '../../../../providers/provider_detail_provider.dart';
+import '../../../../providers/auth_provider.dart';
 import '../widgets/rating_stars.dart';
 // import '../../../widgets/review_card.dart';
 import '../widgets/review_card.dart';
@@ -43,7 +44,47 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
     _tabController.dispose();
     super.dispose();
   }
-
+  void _checkAuthAndProceed(Function action) {
+    // Récupérer le provider d'authentification
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.isAuthenticated) {
+      action();
+    } else {
+      // Sinon, afficher une boîte de dialogue pour l'inviter à se connecter
+      _showLoginDialog();
+    }
+  }
+  
+  // Méthode pour afficher la boîte de dialogue de connexion
+  void _showLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Connexion requise'),
+          content: const Text('Vous devez être connecté pour effectuer cette action.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Rediriger vers la page de connexion
+                Navigator.pushNamed(context, '/login');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF142FE2),
+              ),
+              child: const Text('Se connecter'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   void _openQuoteRequestForm() {
     setState(() {
       _isQuoteRequestOpen = true;
@@ -223,7 +264,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _openQuoteRequestForm,
+                        onPressed: () => _checkAuthAndProceed(_openQuoteRequestForm),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF142FE2),
                           shape: RoundedRectangleBorder(
@@ -409,7 +450,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: OutlinedButton.icon(
-              onPressed: _openReviewForm,
+              onPressed: () => _checkAuthAndProceed(_openReviewForm),
               icon: const Icon(Icons.rate_review),
               label: const Text('Écrire un avis'),
               style: OutlinedButton.styleFrom(
@@ -493,7 +534,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () => _checkAuthAndProceed(_openReviewForm),
                     child: Text('Écrire un avis'),
                     style: TextButton.styleFrom(
                       backgroundColor: Color(0xFF142FE2),

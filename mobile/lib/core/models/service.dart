@@ -1,5 +1,7 @@
 // lib/core/models/service.dart - Mettre à jour pour inclure priceType et subcategoryId
 
+import 'package:w3_loc/core/models/service_option.dart';
+
 class Service {
   final int id;
   final String title;
@@ -7,14 +9,16 @@ class Service {
   final String imageUrl;
   final double rating;
   final int reviewCount;
-  final int providerId;
+  final int provider_id;
   final String businessType;
   final double price;
   final String priceType;
   final int subcategoryId;
   final int categoryId;  
   final bool isAvailable;
-
+  final List<GalleryImage> galleryImages;
+  final List<ServiceOption> options;
+  
   Service({
     required this.id,
     required this.title,
@@ -22,30 +26,72 @@ class Service {
     required this.imageUrl,
     required this.rating,
     required this.reviewCount,
-    required this.providerId,
+    required this.provider_id,
     required this.businessType,
     required this.price,
     required this.categoryId, 
     this.priceType = 'quote',
     this.subcategoryId = 0,
     this.isAvailable = true,
+    this.galleryImages = const [],
+    this.options = const [],
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
+    List<GalleryImage> galleryImages = [];
+      if (json['gallery_images'] != null) {
+        galleryImages = (json['gallery_images'] as List)
+            .map((x) => GalleryImage.fromJson(x))
+            .toList();
+      }
+      
+      List<ServiceOption> options = [];
+      if (json['options'] != null) {
+        options = (json['options'] as List)
+            .map((x) => ServiceOption.fromJson(x))
+            .toList();
+      }
+
+      // Parse rating avec validation
+      double parseRating(dynamic ratingValue) {
+        if (ratingValue == null) return 0.0;
+        if (ratingValue is double) return ratingValue;
+        if (ratingValue is int) return ratingValue.toDouble();
+        if (ratingValue is String) {
+          final parsed = double.tryParse(ratingValue);
+          return parsed ?? 0.0;
+        }
+        return 0.0;
+      }
+      
+      // Parse review count avec validation
+      int parseReviewCount(dynamic countValue) {
+        if (countValue == null) return 0;
+        if (countValue is int) return countValue;
+        if (countValue is double) return countValue.round();
+        if (countValue is String) {
+          final parsed = int.tryParse(countValue);
+          return parsed ?? 0;
+        }
+        return 0;
+      }
     return Service(
       id: json['id'],
       title: json['title'],
       description: json['description'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      rating: (json['rating'] ?? 0.0).toDouble(),
-      reviewCount: json['review_count'] ?? 0,
-      providerId: json['provider_id'] ?? 0,
+      rating: parseRating(json['rating'] ?? json['average_rating']),
+      reviewCount: parseReviewCount(json['review_count'] ?? json['reviews_count'] ?? json['total_reviews']),
+      provider_id: json['provider_id'] ?? 0,
       businessType: json['business_type'] ?? 'Entreprise',
       price: (json['price'] ?? 0.0).toDouble(),
       priceType: json['price_type'] ?? 'quote',
       subcategoryId: json['subcategory'] ?? 0,
       categoryId: json['category_id'] ?? 0, 
       isAvailable: json['is_available'] ?? true,
+      galleryImages: galleryImages,
+      options: options,
+      
     );
   }
 
@@ -57,7 +103,7 @@ class Service {
       'image_url': imageUrl,
       'rating': rating,
       'review_count': reviewCount,
-      'provider_id': providerId,
+      'provider_id': provider_id,
       'business_type': businessType,
       'price': price,
       'price_type': priceType,

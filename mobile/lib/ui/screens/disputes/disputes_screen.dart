@@ -69,6 +69,7 @@ class _DisputesScreenState extends State<DisputesScreen> with SingleTickerProvid
           return TabBarView(
             controller: _tabController,
             children: [
+              _buildStatusSummary(disputeProvider),
               // Onglet Tous
               _buildDisputesList(allDisputes),
               
@@ -248,4 +249,65 @@ class _DisputesScreenState extends State<DisputesScreen> with SingleTickerProvid
       ),
     );
   }
+  Widget _buildStatusSummary(DisputeProvider disputeProvider) {
+  final openCount = disputeProvider.getDisputesByStatus('open').length;
+  final underReviewCount = disputeProvider.getDisputesByStatus('under_review').length;
+  final resolvedCount = disputeProvider.getDisputesByStatus('resolved').length +
+      disputeProvider.getDisputesByStatus('closed').length;
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildStatusCounter('Ouverts', openCount, Colors.orange),
+        _buildStatusCounter('En examen', underReviewCount, Colors.blue),
+        _buildStatusCounter('Résolus', resolvedCount, Colors.green),
+      ],
+    ),
+  );
+}
+
+Widget _buildStatusCounter(String label, int count, Color color) {
+  return Column(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          count.toString(),
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        style: TextStyle(
+          color: Colors.grey[700],
+          fontSize: 12,
+        ),
+      ),
+    ],
+  );
+}
 }

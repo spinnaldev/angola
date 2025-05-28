@@ -62,6 +62,7 @@ urlpatterns = [
     path('providers/by_category/', views.ProviderByCategoryView.as_view(), name='provider-by-category'),
     path('providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
     path('providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
+    path('profile/stats/', views.get_profile_stats, name='profile-stats'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

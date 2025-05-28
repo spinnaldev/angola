@@ -11,12 +11,32 @@ from .models import (
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 
                  'bio', 'profile_picture', 'role', 'is_verified', 'location', 'date_joined')
         read_only_fields = ('date_joined', 'is_verified')
         extra_kwargs = {'password': {'write_only': True}}
+    
+    def get_profile_picture(self, obj):
+        """
+        Retourne l'URL complète de l'image de profil
+        """
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                # Construire l'URL complète avec le domaine
+                print(request.build_absolute_uri(obj.profile_picture.url))
+                return request.build_absolute_uri(obj.profile_picture.url)
+            else:
+                # Fallback si pas de request dans le contexte
+                # Remplacez par votre domaine de production
+                base_url = "http://10.0.2.2:8001"  # Pour l'émulateur Android
+                # base_url = "https://votre-domaine.com"  # Pour la production
+                return f"{base_url}{obj.profile_picture.url}"
+        return None
     
     def create(self, validated_data):
         password = validated_data.pop('password', None)
@@ -26,11 +46,46 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
         return user
 
+# class UserUpdateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ['first_name', 'last_name', 'phone_number', 'bio', 'location', 'profile_picture']
+        
+    
+    
 class UserUpdateSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(required=False)
+    
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'phone_number', 'bio', 'profile_picture', 'location')
-
+        fields = ('first_name', 'last_name', 'phone_number', 'bio', 'location', 'profile_picture')
+        
+    def update(self, instance, validated_data):
+        # Gérer l'upload de l'image de profil
+        profile_picture = validated_data.pop('profile_picture', None)
+        
+        # Mettre à jour les autres champs
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        
+        # Traiter l'image de profil
+        if profile_picture:
+            # Supprimer l'ancienne image
+            if instance.profile_picture:
+                try:
+                    instance.profile_picture.delete(save=False)
+                except:
+                    pass
+            instance.profile_picture = profile_picture
+        
+        instance.save()
+        print("on enregistre")
+        print(instance)
+        return instance
+    # def validate_phone_number(self, value):
+    #     if value and len(value) < 8:
+    #         raise serializers.ValidationError("Le numéro de téléphone doit contenir au moins 8 caractères")
+    #     return value
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -75,7 +130,7 @@ class ProviderServiceSerializer(serializers.ModelSerializer):
         model = ProviderService
         fields = ('id', 'title', 'description', 'price', 'price_type', 'is_available',
                  'subcategory', 'subcategory_name', 'category_name', 'category_id',
-                 'avg_rating', 'image', 'image_url', 'gallery_images', 'options')
+                 'avg_rating', 'image', 'image_url', 'provider_id','gallery_images', 'options')
         # read_only_fields = ('provider',)
     
     def get_avg_rating(self, obj):
@@ -236,6 +291,13 @@ class ProviderDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.favorited_by.filter(user=request.user).exists()
         return False
+        
+    def update(self, instance, validated_data):
+        # Permettre la mise à jour de company_name
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance
 
 class FavoriteSerializer(serializers.ModelSerializer):
     provider_details = ProviderListSerializer(source='provider', read_only=True)

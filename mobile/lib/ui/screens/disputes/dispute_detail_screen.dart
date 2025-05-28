@@ -1,13 +1,11 @@
-// TODO Implement this library.
 // lib/ui/screens/disputes/dispute_detail_screen.dart
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../providers/dispute_provider.dart';
 import '../../../core/models/dispute.dart';
 import '../../widgets/loading_indicator.dart';
+import '../../widgets/dispute_comment_form.dart';
 import 'add_evidence_screen.dart';
 
 class DisputeDetailScreen extends StatefulWidget {
@@ -61,6 +59,11 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Carte d'information d'état
+                  _buildStatusCard(dispute),
+                  
+                  const SizedBox(height: 16),
+                  
                   // En-tête avec titre et statut
                   Row(
                     children: [
@@ -297,11 +300,99 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                         );
                       },
                     ),
+                  
+                  // Espace supplémentaire au bas de l'écran pour éviter que le contenu
+                  // ne soit caché par le formulaire de commentaire
+                  if (dispute.status != 'closed' && dispute.status != 'resolved')
+                    const SizedBox(height: 100),
                 ],
               ),
             ),
           );
         },
+      ),
+      // Ici nous ajoutons le composant DisputeCommentForm en tant que bottomSheet
+      // qui apparaît uniquement si le litige n'est pas fermé ou résolu
+      bottomSheet: Consumer<DisputeProvider>(
+        builder: (context, disputeProvider, _) {
+          final dispute = disputeProvider.currentDispute;
+          
+          // Si le litige est nul ou fermé/résolu, ne pas afficher le formulaire
+          if (dispute == null || 
+              dispute.status == 'closed' || 
+              dispute.status == 'resolved') {
+            // return null;
+          }
+          
+          // Sinon, afficher le formulaire de commentaire
+          return DisputeCommentForm(
+            disputeId: widget.disputeId,
+            onCommentAdded: _loadDispute,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(Dispute dispute) {
+    Color backgroundColor;
+    Color textColor;
+    String statusMessage;
+    IconData statusIcon;
+
+    switch (dispute.status) {
+      case 'open':
+        backgroundColor = Colors.orange[50]!;
+        textColor = Colors.orange[800]!;
+        statusMessage = 'Votre litige a été ouvert. Notre équipe va l\'examiner prochainement.';
+        statusIcon = Icons.hourglass_empty;
+        break;
+      case 'under_review':
+        backgroundColor = Colors.blue[50]!;
+        textColor = Colors.blue[800]!;
+        statusMessage = 'Votre litige est en cours d\'examen par notre équipe.';
+        statusIcon = Icons.search;
+        break;
+      case 'resolved':
+        backgroundColor = Colors.green[50]!;
+        textColor = Colors.green[800]!;
+        statusMessage = 'Votre litige a été résolu. Merci pour votre patience.';
+        statusIcon = Icons.check_circle;
+        break;
+      case 'closed':
+        backgroundColor = Colors.grey[100]!;
+        textColor = Colors.grey[800]!;
+        statusMessage = 'Ce litige a été fermé.';
+        statusIcon = Icons.cancel;
+        break;
+      default:
+        backgroundColor = Colors.grey[100]!;
+        textColor = Colors.grey[800]!;
+        statusMessage = 'Statut inconnu';
+        statusIcon = Icons.help;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(statusIcon, color: textColor),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              statusMessage,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

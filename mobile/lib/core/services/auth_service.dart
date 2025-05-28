@@ -2,6 +2,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 import '../models/user.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 
 class AuthService {
   final ApiClient _apiClient;
@@ -39,7 +43,6 @@ class AuthService {
       rethrow;
     }
   }
-
   Future<bool> verifyResetCode(String email, String code) async {
     try {
       return await _apiClient.verifyResetCode(email, code);
@@ -208,6 +211,74 @@ class AuthService {
     } catch (e) {
       print('Erreur de récupération d\'utilisateur: $e');
       return null;
+    }
+  }
+
+  Future<User?> updateProfile({
+    required int userId,
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? bio,
+    String? location,
+    String? companyName,
+    File? profileImage,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('${_apiClient.baseUrl}/users/$userId/update_profile/'),
+      );
+      
+      // Ajouter les headers d'authentification
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      // Ajouter les champs de données
+      if (firstName != null) request.fields['first_name'] = firstName;
+      if (lastName != null) request.fields['last_name'] = lastName;
+      if (phoneNumber != null) request.fields['phone_number'] = phoneNumber;
+      if (bio != null) request.fields['bio'] = bio;
+      if (location != null) request.fields['location'] = location;
+      if (companyName != null) request.fields['company_name'] = companyName;
+      
+      // Ajouter l'image de profil si présente
+      if (profileImage != null) {
+        final fileName = profileImage.path.split('/').last;
+        final fileExtension = fileName.split('.').last.toLowerCase();
+        
+        request.files.add(
+          http.MultipartFile(
+            'profile_picture',
+            profileImage.readAsBytes().asStream(),
+            profileImage.lengthSync(),
+            filename: fileName,
+            contentType: MediaType('image', fileExtension),
+          ),
+        );
+      }
+      
+      // Envoyer la requête
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final user = User.fromJson(data);
+        
+        // Mettre à jour le cache local
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('user_data', User.toJsonString(user));
+        
+        return user;
+      } else {
+        throw Exception('Erreur lors de la mise à jour du profil: ${response.body}');
+      }
+    } catch (e) {
+      print('Erreur updateProfile: $e');
+      rethrow;
     }
   }
 
