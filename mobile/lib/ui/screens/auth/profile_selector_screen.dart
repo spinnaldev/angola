@@ -24,8 +24,8 @@ class ProfileSelectorScreen extends StatelessWidget {
                 const Spacer(),
                 Image.asset(
                   'assets/images/logo.png',
-                  height: 40,
-                  width: 80,
+                  height: 80,
+                  width: 120,
                   errorBuilder: (context, error, stackTrace) => const Text(
                     'LOGO',
                     style: TextStyle(
