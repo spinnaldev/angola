@@ -1,4 +1,6 @@
 // lib/main.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,14 +23,15 @@ import 'providers/project_provider.dart';
 import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
 import 'config/routes.dart';
-import 'ui/screens/home_screen.dart';  // Nouvelle page d'accueil
+import 'ui/screens/home_screen.dart'; // Nouvelle page d'accueil
 import 'providers/dispute_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'providers/location_provider.dart';
 
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await initializeDateFormatting('fr_FR', null); // AJOUT
   // Charger les variables d'environnement si nécessaire
   try {
@@ -37,7 +40,7 @@ void main() async {
     print('Erreur lors du chargement des variables d\'environnement: $e');
     // Continue even if .env file is not found
   }
-  
+
   runApp(const MyApp());
 }
 
@@ -48,19 +51,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialiser le service API
     final apiService = ApiService(
-      baseUrl: 'http://10.0.2.2:8001/api',
+      // baseUrl: 'http://10.0.2.2:8001/api',
+      baseUrl: "https://angola.onrender.com/api",
       apiKey: 'your_api_key_here',
     );
-    final apiClient = ApiClient(baseUrl: 'http://10.0.2.2:8001/api');
+    // final apiClient = ApiClient(baseUrl: 'http://10.0.2.2:8001/api');
+    final apiClient = ApiClient(baseUrl: apiService.baseUrl);
     final authService = AuthService(apiClient);
     final quoteService = QuoteService(apiService);
     final reviewService = ReviewService(apiService);
-    
+
     return MultiProvider(
       providers: [
         // Fournisseurs de données
         Provider<ApiService>.value(value: apiService),
-        
+
         // Providers d'état
         ChangeNotifierProvider(
           create: (_) => AuthProvider(authService),
@@ -71,7 +76,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SubcategoryProvider(apiService),
         ),
-         ChangeNotifierProvider(
+        ChangeNotifierProvider(
           create: (_) => ProviderDetailProvider(apiService),
         ),
         ChangeNotifierProvider(
@@ -100,6 +105,10 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => MessagingProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              LocationProvider(), // Nouveau provider pour la localisation
         ),
         ChangeNotifierProvider(
           create: (_) => DisputeProvider(
@@ -136,7 +145,8 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const HomeScreen(), // Utiliser notre nouvelle page d'accueil comme écran principal
+        home:
+            const HomeScreen(), // Utiliser notre nouvelle page d'accueil comme écran principal
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,

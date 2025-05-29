@@ -10,21 +10,21 @@ import 'dart:convert';
 class AuthService {
   final ApiClient _apiClient;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  
+
   AuthService(this._apiClient);
 
   Future<User?> login(String email, String password) async {
     try {
       final response = await _apiClient.login(email, password);
-      
+
       if (response != null && response['user'] != null) {
         // Utiliser directement les données utilisateur de la réponse
         final user = User.fromJson(response['user']);
-        
+
         // Sauvegarder le user dans les préférences
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('user_data', User.toJsonString(user));
-        
+
         return user;
       }
       return null;
@@ -43,6 +43,7 @@ class AuthService {
       rethrow;
     }
   }
+
   Future<bool> verifyResetCode(String email, String code) async {
     try {
       return await _apiClient.verifyResetCode(email, code);
@@ -52,7 +53,8 @@ class AuthService {
     }
   }
 
-  Future<bool> resetPasswordConfirm(String email, String code, String newPassword) async {
+  Future<bool> resetPasswordConfirm(
+      String email, String code, String newPassword) async {
     try {
       return await _apiClient.resetPasswordConfirm(email, code, newPassword);
     } catch (e) {
@@ -61,8 +63,14 @@ class AuthService {
     }
   }
 
-  Future<User?> register(String username, String email, String password, String firstName, 
-      String lastName, String phoneNumber, String role) async {
+  Future<User?> register(
+      String username,
+      String email,
+      String password,
+      String firstName,
+      String lastName,
+      String phoneNumber,
+      String role) async {
     try {
       final response = await _apiClient.post(
         'auth/register/',
@@ -78,7 +86,7 @@ class AuthService {
         },
         requireAuth: false,
       );
-      
+
       // Après l'inscription, connecter l'utilisateur
       // return await login(username, password);
     } catch (e) {
@@ -88,15 +96,14 @@ class AuthService {
   }
 
   Future<User?> registerWithCategories(
-    String username,
-    String email,
-    String password,
-    String firstName,
-    String lastName,
-    String phoneNumber,
-    String role,
-    List<int> selectedCategories
-  ) async {
+      String username,
+      String email,
+      String password,
+      String firstName,
+      String lastName,
+      String phoneNumber,
+      String role,
+      List<int> selectedCategories) async {
     try {
       // Construire le payload de la requête
       final Map<String, dynamic> data = {
@@ -110,32 +117,34 @@ class AuthService {
         'role': role,
         'categories': selectedCategories, // Les catégories sélectionnées
       };
-      
+
       // Envoi de la requête au backend
       final response = await _apiClient.post(
         'auth/register/',
         data: data,
         requireAuth: false,
       );
-      
+
       // Si la réponse contient directement les données utilisateur
       if (response != null && response['user'] != null) {
         // Créer l'utilisateur à partir de la réponse
         final user = User.fromJson(response['user']);
-        
+        print("Notre useur final nous l'avons");
         // Sauvegarder les tokens si présents dans la réponse
         if (response['access'] != null && response['refresh'] != null) {
-          await _secureStorage.write(key: 'access_token', value: response['access']);
-          await _secureStorage.write(key: 'refresh_token', value: response['refresh']);
+          await _secureStorage.write(
+              key: 'access_token', value: response['access']);
+          await _secureStorage.write(
+              key: 'refresh_token', value: response['refresh']);
         }
-        
+
         // Sauvegarder l'utilisateur dans les préférences
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('user_data', User.toJsonString(user));
-        
+
         return user;
       }
-      
+
       // Si la réponse ne contient pas directement les données utilisateur,
       // tenter de se connecter avec les identifiants fournis
       return await login(email, password);
@@ -147,11 +156,8 @@ class AuthService {
 
   Future<bool> resetPassword(String email) async {
     try {
-      await _apiClient.post(
-        'auth/password-reset/',
-        data: {'email': email},
-        requireAuth: false
-      );
+      await _apiClient.post('auth/password-reset/',
+          data: {'email': email}, requireAuth: false);
       return true;
     } catch (e) {
       print('Erreur de réinitialisation de mot de passe: $e');
@@ -164,11 +170,11 @@ class AuthService {
       // Supprimer les tokens
       await _secureStorage.delete(key: 'access_token');
       await _secureStorage.delete(key: 'refresh_token');
-      
+
       // Supprimer les données utilisateur locales
       final prefs = await SharedPreferences.getInstance();
       prefs.remove('user_data');
-      
+
       return true;
     } catch (e) {
       print('Erreur de déconnexion: $e');
@@ -181,11 +187,11 @@ class AuthService {
       // Vérifier si un token existe
       final token = await _secureStorage.read(key: 'access_token');
       if (token == null) return null;
-      
+
       // Récupérer les données utilisateur depuis les préférences
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString('user_data');
-      
+
       if (userData != null) {
         try {
           return User.fromJsonString(userData);
@@ -193,15 +199,15 @@ class AuthService {
           // En cas d'erreur de parsing, on continue pour rafraîchir depuis l'API
         }
       }
-      
+
       // Si pas en cache ou erreur de parsing, récupérer depuis l'API
       try {
         final apiData = await _apiClient.get('users/me/');
         final user = User.fromJson(apiData);
-        
+
         // Mettre en cache
         prefs.setString('user_data', User.toJsonString(user));
-        
+
         return user;
       } catch (e) {
         // En cas d'erreur API (token expiré par exemple), déconnexion
@@ -229,13 +235,13 @@ class AuthService {
         'PATCH',
         Uri.parse('${_apiClient.baseUrl}/users/$userId/update_profile/'),
       );
-      
+
       // Ajouter les headers d'authentification
       final token = await _secureStorage.read(key: 'access_token');
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      
+
       // Ajouter les champs de données
       if (firstName != null) request.fields['first_name'] = firstName;
       if (lastName != null) request.fields['last_name'] = lastName;
@@ -243,12 +249,12 @@ class AuthService {
       if (bio != null) request.fields['bio'] = bio;
       if (location != null) request.fields['location'] = location;
       if (companyName != null) request.fields['company_name'] = companyName;
-      
+
       // Ajouter l'image de profil si présente
       if (profileImage != null) {
         final fileName = profileImage.path.split('/').last;
         final fileExtension = fileName.split('.').last.toLowerCase();
-        
+
         request.files.add(
           http.MultipartFile(
             'profile_picture',
@@ -259,22 +265,23 @@ class AuthService {
           ),
         );
       }
-      
+
       // Envoyer la requête
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final user = User.fromJson(data);
-        
+
         // Mettre à jour le cache local
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('user_data', User.toJsonString(user));
-        
+
         return user;
       } else {
-        throw Exception('Erreur lors de la mise à jour du profil: ${response.body}');
+        throw Exception(
+            'Erreur lors de la mise à jour du profil: ${response.body}');
       }
     } catch (e) {
       print('Erreur updateProfile: $e');

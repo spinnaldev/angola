@@ -105,7 +105,17 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
-
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Créer l'utilisateur
+        user = serializer.save()
+        
+        # Le serializer s'occupe déjà de retourner le bon format
+        response_data = serializer.to_representation(user)
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
 class PasswordResetRequestView(APIView):
     """
     Vue pour demander un code de réinitialisation de mot de passe

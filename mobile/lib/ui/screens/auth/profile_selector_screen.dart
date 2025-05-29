@@ -22,15 +22,20 @@ class ProfileSelectorScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                const Center(
-                  child: Text(
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 40,
+                  width: 80,
+                  errorBuilder: (context, error, stackTrace) => const Text(
                     'LOGO',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,  // Couleur du texte adaptée à votre image
                     ),
                   ),
+                ),
+                const Center(
+                  
                 ),
                 const Spacer(),
                 const Text(

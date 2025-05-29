@@ -459,11 +459,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True
     )
-    
+    # Champs de réponse
+    access = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
+    user = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = ('username', 'password',  'email', 'first_name', 'last_name', 
-                 'phone_number', 'role', 'location' ,'categories')
+                 'phone_number', 'role', 'location' ,'categories','access', 'refresh', 'user')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
@@ -495,6 +498,21 @@ class RegisterSerializer(serializers.ModelSerializer):
                 provider.expertise_categories.set(category_objects)
         
         return user
+    
+    def get_user(self, obj):
+        """Retourne les données utilisateur sérialisées"""
+        return UserSerializer(obj).data
+    
+    def to_representation(self, instance):
+        """Personnalise la réponse pour inclure les tokens et les données utilisateur"""
+        # Générer les tokens
+        refresh = RefreshToken.for_user(instance)
+        
+        return {
+            'user': UserSerializer(instance).data,
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }
     # def validate(self, attrs):
     #     if attrs['password'] != attrs['password2']:
     #         raise serializers.ValidationError({"password": "Password fields didn't match."})
