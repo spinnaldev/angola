@@ -7,6 +7,7 @@ from .models import (
     Certificate, Review, ReviewImage, Favorite, Conversation, 
     Message, Attachment, Dispute, DisputeEvidence, Notification, Report
 )
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 

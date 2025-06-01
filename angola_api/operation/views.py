@@ -1497,7 +1497,12 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
             return QuoteRequest.objects.filter(client=user)
     
     def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
+        provider_id = self.request.data.get('provider')
+        try:
+            provider = Provider.objects.get(id=provider_id)
+            serializer.save(client=self.request.user, provider=provider)
+        except Provider.DoesNotExist:
+            raise ValidationError("Provider not found")
     
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
