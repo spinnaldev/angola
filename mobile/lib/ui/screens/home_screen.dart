@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
 
           // Catégories
-          _buildCategories(),
+          // _buildCategories(),
 
           // Meilleurs prestations de la semaine
           _buildSectionTitle('Meilleurs prestations de la semaine'),
@@ -373,33 +373,35 @@ class _HomeScreenState extends State<HomeScreen>
           _buildSectionTitle('Meilleurs avis'),
           _buildReviewsSection(),
 
-          // Services à proximité
-          _buildSectionTitle('À proximité de vous'),
-          _buildVerticalServicesList(
-              _nearbyServices, 3, 'Aucun service disponible dans votre région'),
+          //================== Services à proximité===================================
+          // _buildSectionTitle('À proximité de vous'),
+          // _buildVerticalServicesList(
+          //     _nearbyServices, 3, 'Aucun service disponible dans votre région'),
 
+
+          //================== tous les services ===================================
           // Voir tous les services
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/explore');
-                },
-                icon: const Icon(Icons.explore),
-                label: const Text('Explorer tous les services'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF142FE2),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Center(
+          //   child: Padding(
+          //     padding: const EdgeInsets.symmetric(vertical: 16),
+          //     child: ElevatedButton.icon(
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, '/explore');
+          //       },
+          //       icon: const Icon(Icons.explore),
+          //       label: const Text('Explorer tous les services'),
+          //       style: ElevatedButton.styleFrom(
+          //         backgroundColor: const Color(0xFF142FE2),
+          //         foregroundColor: Colors.white,
+          //         padding:
+          //             const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          //         shape: RoundedRectangleBorder(
+          //           borderRadius: BorderRadius.circular(20),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
 
           // Espace au fond
           const SizedBox(height: 20),
@@ -979,7 +981,7 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (context, reviewProvider, child) {
         // Load reviews if they're empty and not already loading
         if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
-          reviewProvider.fetchTopReviews();
+          // reviewProvider.fetchTopReviews();
         }
 
         final reviews = reviewProvider.topReviews;

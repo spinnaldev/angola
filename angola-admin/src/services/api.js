@@ -60,23 +60,184 @@ const authService = {
   }
 };
 
+// Service pour la gestion des utilisateurs
 const userService = {
-  getAll: async (page = 1, limit = 10) => {
-    return api.get(`/users/?page=${page}&page_size=${limit}`);
+  // Récupérer tous les utilisateurs avec pagination
+  getAll: async (page = 1, pageSize = 10, search = '') => {
+    try {
+      const params = {
+        page,
+        page_size: pageSize,
+      };
+      
+      if (search) {
+        params.search = search;
+      }
+      
+      const response = await api.get('/users/', { params });
+      return response;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des utilisateurs:', error);
+      throw error;
+    }
   },
-  
+
+  // Récupérer un utilisateur par ID
   getById: async (id) => {
-    return api.get(`/users/${id}/`);
+    try {
+      const response = await api.get(`/users/${id}/`);
+      return response;
+    } catch (error) {
+      console.error(`Erreur lors de la récupération de l'utilisateur ${id}:`, error);
+      throw error;
+    }
   },
-  
-  update: async (id, data) => {
-    return api.put(`/users/${id}/`, data);
+
+  // Créer un nouvel utilisateur
+  create: async (userData) => {
+    try {
+      const formData = new FormData();
+      
+      // Ajouter les données utilisateur
+      Object.keys(userData).forEach(key => {
+        if (userData[key] !== null && userData[key] !== undefined) {
+          if (key === 'profile_picture' && userData[key] instanceof File) {
+            formData.append(key, userData[key]);
+          } else {
+            formData.append(key, userData[key]);
+          }
+        }
+      });
+
+      const response = await api.post('/users/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'utilisateur:', error);
+      throw error;
+    }
   },
-  
+
+  // Mettre à jour un utilisateur
+  update: async (id, userData) => {
+    try {
+      const formData = new FormData();
+      
+      // Ajouter les données utilisateur
+      Object.keys(userData).forEach(key => {
+        if (userData[key] !== null && userData[key] !== undefined) {
+          if (key === 'profile_picture' && userData[key] instanceof File) {
+            formData.append(key, userData[key]);
+          } else {
+            formData.append(key, userData[key]);
+          }
+        }
+      });
+
+      const response = await api.patch(`/users/${id}/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error(`Erreur lors de la mise à jour de l'utilisateur ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Supprimer un utilisateur
   delete: async (id) => {
-    return api.delete(`/users/${id}/`);
-  }
+    try {
+      const response = await api.delete(`/users/${id}/`);
+      return response;
+    } catch (error) {
+      console.error(`Erreur lors de la suppression de l'utilisateur ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Activer/désactiver un utilisateur
+  toggleStatus: async (id) => {
+    try {
+      const response = await api.patch(`/users/${id}/toggle_status/`);
+      return response;
+    } catch (error) {
+      console.error(`Erreur lors du changement de statut de l'utilisateur ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Vérifier/dévérifier un utilisateur
+  toggleVerification: async (id) => {
+    try {
+      const response = await api.patch(`/users/${id}/toggle_verification/`);
+      return response;
+    } catch (error) {
+      console.error(`Erreur lors du changement de vérification de l'utilisateur ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Récupérer le profil de l'utilisateur connecté
+  getProfile: async () => {
+    try {
+      const response = await api.get('/users/me/');
+      return response;
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil:', error);
+      throw error;
+    }
+  },
+
+  // Mettre à jour le profil de l'utilisateur connecté
+  updateProfile: async (userData) => {
+    try {
+      const formData = new FormData();
+      
+      Object.keys(userData).forEach(key => {
+        if (userData[key] !== null && userData[key] !== undefined) {
+          if (key === 'profile_picture' && userData[key] instanceof File) {
+            formData.append(key, userData[key]);
+          } else {
+            formData.append(key, userData[key]);
+          }
+        }
+      });
+
+      const response = await api.put('/users/update_me/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      throw error;
+    }
+  },
 };
+
+// const userService = {
+//   getAll: async (page = 1, limit = 10) => {
+//     return api.get(`/users/?page=${page}&page_size=${limit}`);
+//   },
+  
+//   getById: async (id) => {
+//     return api.get(`/users/${id}/`);
+//   },
+  
+//   update: async (id, data) => {
+//     return api.put(`/users/${id}/`, data);
+//   },
+  
+//   delete: async (id) => {
+//     return api.delete(`/users/${id}/`);
+//   }
+// };
 
 const providerService = {
   getAll: async (page = 1, limit = 10) => {

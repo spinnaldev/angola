@@ -20,6 +20,7 @@ import random
 import string
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db import transaction
 # from django.contrib.gis.geos import Point
 # from django.contrib.gis.measure import D
 # from django.contrib.gis.db.models.functions import Distance
@@ -116,6 +117,7 @@ class RegisterView(generics.CreateAPIView):
         response_data = serializer.to_representation(user)
         
         return Response(response_data, status=status.HTTP_201_CREATED)
+    
 class PasswordResetRequestView(APIView):
     """
     Vue pour demander un code de réinitialisation de mot de passe
@@ -287,17 +289,18 @@ class PasswordResetConfirmView(APIView):
             {"detail": "Mot de passe réinitialisé avec succès"}, 
             status=status.HTTP_200_OK
         )
+    
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
-    def get_permissions(self):
-        if self.action == 'create':
-            return [AllowAny()]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsOwnerOrReadOnly()]
-        return [IsAuthenticated()]
+    # def get_permissions(self):
+    #     if self.action == 'create':
+    #         return [AllowAny()]
+    #     elif self.action in ['update', 'partial_update', 'destroy']:
+    #         return [IsOwnerOrReadOnly()]
+    #     return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
@@ -306,34 +309,24 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def me(self, request):
+        """Récupérer le profil de l'utilisateur connecté"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
-    # @action(detail=False, methods=['put'])
-    # def update_me(self, request):
-    #     serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['put'])
+    @action(detail=False, methods=['put', 'patch'])
     def update_me(self, request):
-        """
-        Mettre à jour le profil de l'utilisateur connecté
-        """
-        print("mise à jour")
+        """Mettre à jour le profil de l'utilisateur connecté"""
         user = request.user
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
         
         if serializer.is_valid():
-            # Si une image de profil est fournie
+            # Gérer l'upload de l'image de profil
             if 'profile_picture' in request.FILES:
                 # Supprimer l'ancienne image si elle existe
                 if user.profile_picture:
                     try:
                         user.profile_picture.delete(save=False)
-                    except:
+                    except Exception:
                         pass
                 user.profile_picture = request.FILES['profile_picture']
             
@@ -345,53 +338,147 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['patch'])
-    def update_profile(self, request, pk=None):
-        """
-        Mettre à jour le profil utilisateur avec possibilité d'upload d'image
-        """
-        user = self.get_object()
-        print("mise à jour")
-        # Vérifier que l'utilisateur peut modifier ce profil
-        if request.user != user and not request.user.is_staff:
+    def update(self, request, *args, **kwargs):
+        """Mise à jour complète d'un utilisateur (PUT)"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Vérifier les permissions
+        if not (request.user.is_staff or request.user == instance):
             return Response(
-                {"detail": "Vous n'êtes pas autorisé à modifier ce profil"}, 
+                {"detail": "Vous n'êtes pas autorisé à modifier cet utilisateur"}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Traiter les données du formulaire
-        data = request.data.copy()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         
-        # Gérer l'upload de l'image de profil
-        if 'profile_picture' in request.FILES:
-            # Supprimer l'ancienne image si elle existe
-            if user.profile_picture:
-                try:
-                    os.remove(user.profile_picture.path)
-                except:
-                    pass
-            
-            user.profile_picture = request.FILES['profile_picture']
-        
-        # Mettre à jour les autres champs
-        serializer = UserUpdateSerializer(user, data=data, partial=True)
-        print(serializer)
         if serializer.is_valid():
-            print("serialiser pas valid")
-            serializer.save()
-            print("on a enregistré vraiement")
+            # Gérer l'upload de l'image de profil
+            if 'profile_picture' in request.FILES:
+                # Supprimer l'ancienne image si elle existe
+                if instance.profile_picture:
+                    try:
+                        instance.profile_picture.delete(save=False)
+                    except Exception:
+                        pass
+                instance.profile_picture = request.FILES['profile_picture']
+            
+            self.perform_update(serializer)
+            
             # Si c'est un prestataire et qu'il y a un company_name
-            if hasattr(user, 'provider_profile') and 'company_name' in data:
-                provider = user.provider_profile
-                provider.company_name = data['company_name']
+            if hasattr(instance, 'provider_profile') and 'company_name' in request.data:
+                provider = instance.provider_profile
+                provider.company_name = request.data['company_name']
                 provider.save()
             
             # Retourner les données utilisateur mises à jour
-            user_serializer = UserSerializer(user)
-            return Response(user_serializer.data)
-        else:
-            print("serialiser pas valid")
+            response_serializer = UserSerializer(instance)
+            return Response(response_serializer.data)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """Mise à jour partielle d'un utilisateur (PATCH)"""
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Supprimer un utilisateur"""
+        instance = self.get_object()
+        
+        # Vérifier les permissions - seuls les admins peuvent supprimer
+        # if not request.user.is_staff:
+        #     return Response(
+        #         {"detail": "Seuls les administrateurs peuvent supprimer des utilisateurs"}, 
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
+        
+        # Empêcher la suppression de son propre compte
+        if request.user == instance:
+            return Response(
+                {"detail": "Vous ne pouvez pas supprimer votre propre compte"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            with transaction.atomic():
+                # Supprimer l'image de profil si elle existe
+                if instance.profile_picture:
+                    try:
+                        instance.profile_picture.delete(save=False)
+                    except Exception:
+                        pass
+                
+                # Marquer comme inactif au lieu de supprimer définitivement
+                # (recommandé pour l'intégrité des données)
+                # instance.is_active = False
+                # instance.email =str(instance.email) + "_deleted"
+                # instance.username = str(instance.username) + "_deleted"
+                # instance.save()
+                
+                # Ou supprimer définitivement si vraiment nécessaire
+                instance.delete()
+                
+                return Response(
+                    {"detail": "Utilisateur supprimé avec succès"}, 
+                    status=status.HTTP_204_NO_CONTENT
+                )
+        
+        except Exception as e:
+            return Response(
+                {"detail": f"Erreur lors de la suppression: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['patch'])
+    def toggle_status(self, request, pk=None):
+        """Activer/désactiver un utilisateur"""
+        user = self.get_object()
+        
+        # Vérifier les permissions
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "Seuls les administrateurs peuvent modifier le statut"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Empêcher la désactivation de son propre compte
+        if request.user == user:
+            return Response(
+                {"detail": "Vous ne pouvez pas modifier le statut de votre propre compte"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user.is_active = not user.is_active
+        user.save()
+        
+        response_serializer = UserSerializer(user)
+        return Response({
+            "detail": f"Utilisateur {'activé' if user.is_active else 'désactivé'} avec succès",
+            "user": response_serializer.data
+        })
+    
+    @action(detail=True, methods=['patch'])
+    def toggle_verification(self, request, pk=None):
+        """Vérifier/dévérifier un utilisateur"""
+        user = self.get_object()
+        
+        # Vérifier les permissions
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "Seuls les administrateurs peuvent modifier la vérification"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        user.is_verified = not user.is_verified
+        user.save()
+        
+        response_serializer = UserSerializer(user)
+        return Response({
+            "detail": f"Utilisateur {'vérifié' if user.is_verified else 'non vérifié'} avec succès",
+            "user": response_serializer.data
+        })
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1532,7 +1619,7 @@ class ProviderByCategoryView(generics.ListAPIView):
         if not category_id:
             return Provider.objects.none()
             
-        # Récupérer les prestataires qui ont des services dans cette catégorie
+        # Récupérer les prestataires qui ont des services dans cette catégorieCategorieEpi
         return Provider.objects.filter(
             provider_services__subcategory__category_id=category_id
         ).distinct()

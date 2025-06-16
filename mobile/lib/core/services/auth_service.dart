@@ -88,7 +88,28 @@ class AuthService {
       );
 
       // Après l'inscription, connecter l'utilisateur
-      // return await login(username, password);
+      if (response != null && response['user'] != null) {
+        // Créer l'utilisateur à partir de la réponse
+        final user = User.fromJson(response['user']);
+        print("Notre useur final nous l'avons");
+        // Sauvegarder les tokens si présents dans la réponse
+        if (response['access'] != null && response['refresh'] != null) {
+          await _secureStorage.write(
+              key: 'access_token', value: response['access']);
+          await _secureStorage.write(
+              key: 'refresh_token', value: response['refresh']);
+        }
+
+        // Sauvegarder l'utilisateur dans les préférences
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('user_data', User.toJsonString(user));
+
+        return user;
+      }
+
+      // Si la réponse ne contient pas directement les données utilisateur,
+      // tenter de se connecter avec les identifiants fournis
+      return await login(email, password);
     } catch (e) {
       print('Erreur d\'inscription: $e');
       rethrow; // Propager l'erreur pour un meilleur traitement dans le Provider
