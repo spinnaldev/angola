@@ -42,6 +42,16 @@ class Category {
       serviceCount: json['service_count'] ?? 0,
     );
   }
+  Map<String, dynamic> toJson() {
+  return {
+    'id': id,
+    'name': name,
+    'image_url': imageUrl,
+    'description': description,
+    'icon': icon,
+    'service_count': serviceCount,
+  };
+}
   static List<Category> getDefaultCategories() {
     return [
       Category(

@@ -2,11 +2,7 @@ import random
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
-from .models import (
-    Category, QuoteRequest, ServiceGalleryImage, ServiceOption, SubCategory, Provider, ProviderService, Portfolio, 
-    Certificate, Review, ReviewImage, Favorite, Conversation, 
-    Message, Attachment, Dispute, DisputeEvidence, Notification, Report
-)
+from .models import *
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
@@ -518,4 +514,237 @@ class RegisterSerializer(serializers.ModelSerializer):
     #     if attrs['password'] != attrs['password2']:
     #         raise serializers.ValidationError({"password": "Password fields didn't match."})
     #     return attrs
+
+class ProviderSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderSkill
+        fields = ['id', 'name', 'level', 'years_experience']
+
+class ProjectSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectSkill
+        fields = ['id', 'name', 'is_required']
+
+class ClientProjectListSerializer(serializers.ModelSerializer):
+    """Serializer pour la liste des projets (vue d'ensemble)"""
+    client_name = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
+    offers_count = serializers.IntegerField(read_only=True)
+    budget_display = serializers.CharField(read_only=True)
+    time_since_posted = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ClientProject
+        fields = [
+            'id', 'title', 'description', 'client_name', 'category_name', 
+            'subcategory_name', 'budget_range', 'budget_display', 'location',
+            'urgency', 'status', 'offers_count', 'views_count', 'created_at',
+            'time_since_posted', 'deadline', 'remote_possible'
+        ]
+    
+    def get_client_name(self, obj):
+        """Masquer le nom du client pour les utilisateurs non authentifiés"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.client.first_name or obj.client.username
+        return "Client anonyme"
+    
+    def get_time_since_posted(self, obj):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
+        else:
+            return "À l'instant"
+
+class ClientProjectDetailSerializer(serializers.ModelSerializer):
+    """Serializer détaillé pour un projet spécifique"""
+    client = UserSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
+    subcategory = SubCategorySerializer(read_only=True)
+    required_skills = ProjectSkillSerializer(many=True, read_only=True)
+    offers_count = serializers.SerializerMethodField()
+    budget_display = serializers.CharField(read_only=True)
+    is_favorited = serializers.SerializerMethodField()
+    has_user_offered = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ClientProject
+        fields = [
+            'id', 'title', 'description', 'client', 'category', 'subcategory',
+            'budget_range', 'min_budget', 'max_budget', 'budget_display',
+            'location', 'remote_possible', 'deadline', 'urgency', 'status',
+            'contact_via_platform', 'show_email', 'show_phone',
+            'required_skills', 'offers_count', 'views_count', 'created_at',
+            'is_favorited', 'has_user_offered', 'attachment1', 'attachment2', 'attachment3'
+        ]
+    
+    def get_is_favorited(self, obj):
+        """Vérifie si le projet est en favori pour l'utilisateur actuel"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and hasattr(request.user, 'provider_profile'):
+            return ProjectFavorite.objects.filter(
+                project=obj, 
+                provider=request.user.provider_profile
+            ).exists()
+        return False
+    
+    def get_offers_count(self, obj):
+        return getattr(obj, 'total_offers', obj.offers_count)
+
+    def get_has_user_offered(self, obj):
+        """Vérifie si l'utilisateur actuel a déjà fait une offre"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and hasattr(request.user, 'provider_profile'):
+            return ProjectOffer.objects.filter(
+                project=obj, 
+                provider=request.user.provider_profile
+            ).exists()
+        return False
+
+class ClientProjectCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour la création d'un projet"""
+    required_skills = ProjectSkillSerializer(many=True, required=False)
+    
+    class Meta:
+        model = ClientProject
+        fields = [
+            'title', 'description', 'category', 'subcategory',
+            'budget_range', 'min_budget', 'max_budget', 'location',
+            'remote_possible', 'deadline', 'urgency',
+            'contact_via_platform', 'show_email', 'show_phone',
+            'required_skills', 'attachment1', 'attachment2', 'attachment3'
+        ]
+    
+    def create(self, validated_data):
+        skills_data = validated_data.pop('required_skills', [])
+        request = self.context.get('request')
+        validated_data['client'] = request.user
+        
+        project = ClientProject.objects.create(**validated_data)
+        
+        # Créer les compétences requises
+        for skill_data in skills_data:
+            ProjectSkill.objects.create(project=project, **skill_data)
+        
+        return project
+
+class ProjectOfferSerializer(serializers.ModelSerializer):
+    """Serializer pour les offres sur les projets"""
+    provider_name = serializers.CharField(source='provider.user.get_full_name', read_only=True)
+    provider_business_type = serializers.CharField(source='provider.business_type', read_only=True)
+    provider_rating = serializers.SerializerMethodField()
+    provider_avatar = serializers.SerializerMethodField()
+    provider_location = serializers.CharField(source='provider.user.location', read_only=True)
+    provider_verified = serializers.BooleanField(source='provider.is_verified', read_only=True)
+    project_title = serializers.CharField(source='project.title', read_only=True)
+    
+    class Meta:
+        model = ProjectOffer
+        fields = [
+            'id', 'project', 'project_title', 'provider', 'provider_name',
+            'provider_business_type', 'provider_rating', 'provider_avatar',
+            'provider_location', 'provider_verified', 'proposed_price',
+            'delivery_time', 'message', 'includes_materials', 'warranty_period',
+            'travel_costs_included', 'status', 'viewed_by_client', 'created_at'
+        ]
+        read_only_fields = ['provider', 'viewed_by_client']
+    
+    def get_provider_rating(self, obj):
+        """Calculer la note moyenne du prestataire"""
+        from django.db.models import Avg
+        avg_rating = obj.provider.reviews_received.aggregate(
+            avg_rating=Avg('rating')
+        )['avg_rating']
+        return round(avg_rating, 1) if avg_rating else 0
+    
+    def get_provider_avatar(self, obj):
+        """Obtenir l'avatar du prestataire"""
+        if obj.provider.user.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.provider.user.profile_picture.url)
+        return None
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        provider = request.user.provider_profile
+        validated_data['provider'] = provider
+        return super().create(validated_data)
+
+class ProjectOfferCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour créer une offre"""
+    class Meta:
+        model = ProjectOffer
+        fields = [
+            'project', 'proposed_price', 'delivery_time', 'message',
+            'includes_materials', 'warranty_period', 'travel_costs_included'
+        ]
+    
+    def validate(self, data):
+        """Validation personnalisée"""
+        request = self.context.get('request')
+        provider = request.user.provider_profile
+        project = data['project']
+        
+        # Vérifier si le prestataire a déjà fait une offre
+        if ProjectOffer.objects.filter(project=project, provider=provider).exists():
+            raise serializers.ValidationError(
+                "Vous avez déjà fait une offre pour ce projet."
+            )
+        
+        # Vérifier si le projet est encore ouvert
+        if project.status != 'open':
+            raise serializers.ValidationError(
+                "Ce projet n'accepte plus d'offres."
+            )
+        
+        return data
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        provider = request.user.provider_profile
+        validated_data['provider'] = provider
+        return super().create(validated_data)
+
+class ProjectFavoriteSerializer(serializers.ModelSerializer):
+    """Serializer pour les projets favoris"""
+    project = ClientProjectListSerializer(read_only=True)
+    
+    class Meta:
+        model = ProjectFavorite
+        fields = ['id', 'project', 'created_at']
+
+# Serializer pour les statistiques des projets
+class ProjectStatsSerializer(serializers.Serializer):
+    """Statistiques pour le dashboard client"""
+    total_projects = serializers.IntegerField()
+    open_projects = serializers.IntegerField()
+    completed_projects = serializers.IntegerField()
+    total_offers = serializers.IntegerField()
+    average_offers_per_project = serializers.FloatField()
+
+# Serializer pour les filtres de recherche
+class ProjectFilterSerializer(serializers.Serializer):
+    """Filtres pour la recherche de projets"""
+    category = serializers.IntegerField(required=False)
+    subcategory = serializers.IntegerField(required=False)
+    budget_min = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    budget_max = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    location = serializers.CharField(max_length=255, required=False)
+    remote_only = serializers.BooleanField(required=False)
+    urgency = serializers.ChoiceField(choices=ClientProject.URGENCY_CHOICES, required=False)
+    posted_within_days = serializers.IntegerField(required=False, min_value=1, max_value=365)
+    search = serializers.CharField(max_length=255, required=False)
     

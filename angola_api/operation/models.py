@@ -324,3 +324,189 @@ class Report(TimeStampMixin):
     
     def __str__(self):
         return f"Report #{self.id} - {self.type}"
+    
+
+
+class ClientProject(TimeStampMixin):
+    """Modèle pour les projets postés par les clients"""
+    BUDGET_CHOICES = (
+        ('moins_500', 'Moins de 500 €'),
+        ('500_1000', '500 à 1000 €'),
+        ('1000_10000', '1000 à 10 000 €'),
+        ('10000_plus', '10 000 € et plus'),
+        ('sur_devis', 'Demande de devis'),
+    )
+    
+    STATUS_CHOICES = (
+        ('open', 'Ouvert'),
+        ('in_progress', 'En cours'),
+        ('completed', 'Terminé'),
+        ('cancelled', 'Annulé'),
+    )
+    
+    URGENCY_CHOICES = (
+        ('low', 'Pas urgent'),
+        ('medium', 'Modérément urgent'),
+        ('high', 'Urgent'),
+        ('very_high', 'Très urgent'),
+    )
+    
+    # Informations de base
+    title = models.CharField(max_length=200, verbose_name="Titre du projet")
+    description = models.TextField(verbose_name="Description détaillée")
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_projects')
+    
+    # Catégorisation
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='client_projects')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='client_projects')
+    
+    # Budget et délais
+    budget_range = models.CharField(max_length=20, choices=BUDGET_CHOICES)
+    min_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    max_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Localisation
+    location = models.CharField(max_length=255, verbose_name="Lieu d'intervention")
+    remote_possible = models.BooleanField(default=False, verbose_name="Télétravail possible")
+    
+    # Délais et urgence
+    deadline = models.DateField(null=True, blank=True, verbose_name="Date limite souhaitée")
+    urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default='medium')
+    
+    # Statut et gestion
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    is_featured = models.BooleanField(default=False, verbose_name="Projet mis en avant")
+    views_count = models.PositiveIntegerField(default=0)
+    
+    # Préférences de contact
+    contact_via_platform = models.BooleanField(default=True, verbose_name="Contact via la plateforme")
+    show_email = models.BooleanField(default=False, verbose_name="Afficher l'email")
+    show_phone = models.BooleanField(default=False, verbose_name="Afficher le téléphone")
+    
+    # Fichiers joints (optionnel)
+    attachment1 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
+    attachment2 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
+    attachment3 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Projet Client"
+        verbose_name_plural = "Projets Clients"
+    
+    def __str__(self):
+        return f"{self.title} - {self.client.username}"
+    
+    @property
+    def offers_count(self):
+        return self.project_offers.count()
+    
+    @property
+    def budget_display(self):
+        """Affichage formaté du budget"""
+        if self.budget_range == 'sur_devis':
+            return "Sur devis"
+        elif self.min_budget and self.max_budget:
+            return f"{self.min_budget}€ - {self.max_budget}€"
+        return dict(self.BUDGET_CHOICES).get(self.budget_range, "Non précisé")
+
+
+class ProjectOffer(TimeStampMixin):
+    """Modèle pour les offres des prestataires sur les projets"""
+    STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('accepted', 'Acceptée'),
+        ('rejected', 'Rejetée'),
+        ('withdrawn', 'Retirée'),
+    )
+    
+    # Relations
+    project = models.ForeignKey(ClientProject, on_delete=models.CASCADE, related_name='project_offers')
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='project_offers')
+    
+    # Détails de l'offre
+    proposed_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix proposé")
+    delivery_time = models.PositiveIntegerField(verbose_name="Délai de livraison (en jours)")
+    message = models.TextField(verbose_name="Message d'accompagnement")
+    
+    # Options et garanties
+    includes_materials = models.BooleanField(default=False, verbose_name="Matériaux inclus")
+    warranty_period = models.PositiveIntegerField(null=True, blank=True, verbose_name="Période de garantie (mois)")
+    travel_costs_included = models.BooleanField(default=True, verbose_name="Frais de déplacement inclus")
+    
+    # Statut
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Métadonnées
+    viewed_by_client = models.BooleanField(default=False)
+    client_notes = models.TextField(blank=True, verbose_name="Notes du client")
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('project', 'provider')  # Un prestataire ne peut faire qu'une offre par projet
+        verbose_name = "Offre de Prestataire"
+        verbose_name_plural = "Offres de Prestataires"
+    
+    def __str__(self):
+        return f"Offre de {self.provider.user.username} pour {self.project.title}"
+
+
+class ProjectSkill(TimeStampMixin):
+    """Compétences requises pour un projet"""
+    project = models.ForeignKey(ClientProject, on_delete=models.CASCADE, related_name='required_skills')
+    name = models.CharField(max_length=100, verbose_name="Nom de la compétence")
+    is_required = models.BooleanField(default=True, verbose_name="Compétence obligatoire")
+    
+    class Meta:
+        verbose_name = "Compétence Projet"
+        verbose_name_plural = "Compétences Projets"
+    
+    def __str__(self):
+        return f"{self.name} ({'Obligatoire' if self.is_required else 'Optionnelle'})"
+
+
+class ProjectView(TimeStampMixin):
+    """Suivi des vues des projets"""
+    project = models.ForeignKey(ClientProject, on_delete=models.CASCADE, related_name='project_views')
+    viewer = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(blank=True)
+    
+    class Meta:
+        unique_together = ('project', 'viewer', 'ip_address')
+        verbose_name = "Vue Projet"
+        verbose_name_plural = "Vues Projets"
+
+
+class ProjectFavorite(TimeStampMixin):
+    """Projets favoris des prestataires"""
+    project = models.ForeignKey(ClientProject, on_delete=models.CASCADE, related_name='favorites')
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='favorite_projects')
+    
+    class Meta:
+        unique_together = ('project', 'provider')
+        verbose_name = "Projet Favori"
+        verbose_name_plural = "Projets Favoris"
+    
+    def __str__(self):
+        return f"{self.provider.user.username} - {self.project.title}"
+
+
+class ProviderSkill(TimeStampMixin):
+    """Compétences des prestataires"""
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='skills')
+    name = models.CharField(max_length=100, verbose_name="Nom de la compétence")
+    level = models.CharField(max_length=20, choices=(
+        ('beginner', 'Débutant'),
+        ('intermediate', 'Intermédiaire'),
+        ('advanced', 'Avancé'),
+        ('expert', 'Expert'),
+    ), default='intermediate')
+    years_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name="Années d'expérience")
+    
+    class Meta:
+        unique_together = ('provider', 'name')
+        verbose_name = "Compétence Prestataire"
+        verbose_name_plural = "Compétences Prestataires"
+    
+    def __str__(self):
+        return f"{self.provider.user.username} - {self.name} ({self.level})"

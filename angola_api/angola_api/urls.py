@@ -43,6 +43,16 @@ router.register(r'api/reports', views.ReportViewSet)
 # router.register(r'reports', views.ReportViewSet)
 router.register(r'api/quote-requests', views.QuoteRequestViewSet)
 
+# Projets clients
+router.register(r'api/projects', views.ClientProjectViewSet, basename='clientproject')
+
+# Offres sur projets
+router.register(r'api/project-offers', views.ProjectOfferViewSet, basename='projectoffer')
+
+# Favoris projets
+router.register(r'api/project-favorites', views.ProjectFavoriteViewSet, basename='projectfavorite')
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
@@ -63,6 +73,10 @@ urlpatterns = [
     path('providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
     path('providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
     path('profile/stats/', views.get_profile_stats, name='profile-stats'),
+
+    path('projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
+    
+    path('projects/categories/<int:category_id>/', views.ClientProjectViewSet.as_view({'get': 'list'}),name='projects-by-category'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,7 @@
 from django.forms import ValidationError
 from django.shortcuts import render
 import math
+from django.core.exceptions import PermissionDenied
 # Create your views here.
 from rest_framework import viewsets, generics, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
@@ -13,7 +14,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
-from .models import QuoteRequest, ResetPasswordCode
+from .models import *
 from rest_framework.views import APIView
 from django.core.mail import send_mail
 import random
@@ -25,19 +26,7 @@ from django.db import transaction
 # from django.contrib.gis.measure import D
 # from django.contrib.gis.db.models.functions import Distance
 
-from .models import (
-    Category, SubCategory, Provider, ProviderService, Portfolio, 
-    Certificate, Review, ReviewImage, Favorite, Conversation, 
-    Message, Attachment, Dispute, DisputeEvidence, Notification, Report
-)
-from .serializers import (
-    QuoteRequestSerializer, UserSerializer, UserUpdateSerializer, CategorySerializer, SubCategorySerializer,
-    ProviderListSerializer, ProviderDetailSerializer, ProviderServiceSerializer,
-    PortfolioSerializer, CertificateSerializer, ReviewSerializer,
-    FavoriteSerializer, ConversationSerializer, MessageSerializer,
-    DisputeSerializer, DisputeEvidenceSerializer, NotificationSerializer,
-    ReportSerializer, RegisterSerializer
-)
+from .serializers import *
 from .permissions import IsOwnerOrReadOnly, IsProviderOwner, IsClientOrProviderOwner
 
 User = get_user_model()
@@ -1678,3 +1667,358 @@ class NearbyProvidersView(generics.ListAPIView):
             longitude__gte=longitude - lng_radius,
             longitude__lte=longitude + lng_radius
         )
+ 
+class ClientProjectViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des projets clients"""
+    serializer_class = ClientProjectListSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'description', 'location']
+    ordering_fields = ['created_at', 'deadline', 'budget_range']
+    ordering = ['-created_at']
+    
+    def get_permissions(self):
+        """
+        Définir les permissions selon l'action
+        """
+        if self.action in ['list', 'retrieve']:
+            # Lecture publique pour la liste et le détail des projets
+            permission_classes = [AllowAny]
+        else:
+            # Authentification requise pour création, modification, suppression
+            permission_classes = [IsAuthenticated]
+        
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        queryset = ClientProject.objects.select_related(
+            'client', 'category', 'subcategory'
+        ).prefetch_related('required_skills').annotate(
+            total_offers=Count('project_offers')
+        )
+        
+        # Pour les utilisateurs non authentifiés, masquer certaines informations sensibles
+        if not self.request.user.is_authenticated:
+            # On peut ajouter des filtres pour ne montrer que les projets ouverts
+            queryset = queryset.filter(status='open')
+        
+        # Filtrage basé sur les paramètres de requête
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+        
+        subcategory = self.request.query_params.get('subcategory')
+        if subcategory:
+            queryset = queryset.filter(subcategory_id=subcategory)
+        
+        budget_min = self.request.query_params.get('budget_min')
+        budget_max = self.request.query_params.get('budget_max')
+        if budget_min:
+            queryset = queryset.filter(
+                Q(min_budget__gte=budget_min) | Q(budget_range='sur_devis')
+            )
+        if budget_max:
+            queryset = queryset.filter(
+                Q(max_budget__lte=budget_max) | Q(budget_range='sur_devis')
+            )
+        
+        location = self.request.query_params.get('location')
+        if location:
+            queryset = queryset.filter(
+                Q(location__icontains=location) | Q(remote_possible=True)
+            )
+        
+        remote_only = self.request.query_params.get('remote_only')
+        if remote_only and remote_only.lower() == 'true':
+            queryset = queryset.filter(remote_possible=True)
+        
+        urgency = self.request.query_params.get('urgency')
+        if urgency:
+            queryset = queryset.filter(urgency=urgency)
+        
+        posted_within_days = self.request.query_params.get('posted_within_days')
+        if posted_within_days:
+            cutoff_date = timezone.now() - timedelta(days=int(posted_within_days))
+            queryset = queryset.filter(created_at__gte=cutoff_date)
+        
+        # Filtrage pour les projets ouverts par défaut pour les non-authentifiés
+        if not self.request.user.is_authenticated:
+            show_all = self.request.query_params.get('show_all')
+            if not show_all or show_all.lower() != 'true':
+                queryset = queryset.filter(status='open')
+        
+        return queryset
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ClientProjectCreateSerializer
+        elif self.action == 'retrieve':
+            return ClientProjectDetailSerializer
+        return ClientProjectListSerializer
+    
+    def perform_create(self, serializer):
+        # La création nécessite toujours une authentification
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied("Authentification requise pour créer un projet")
+        serializer.save(client=self.request.user)
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Récupération d'un projet avec comptage des vues"""
+        instance = self.get_object()
+        
+        # Incrémenter le compteur de vues
+        ClientProject.objects.filter(pk=instance.pk).update(
+            views_count=models.F('views_count') + 1
+        )
+        
+        # Enregistrer la vue pour les statistiques (seulement si authentifié)
+        if request.user.is_authenticated:
+            ProjectView.objects.get_or_create(
+                project=instance,
+                viewer=request.user,
+                ip_address=self.get_client_ip(request),
+                defaults={'user_agent': request.META.get('HTTP_USER_AGENT', '')}
+            )
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+    def get_client_ip(self, request):
+        """Obtenir l'IP du client"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_projects(self, request):
+        """Récupérer les projets de l'utilisateur connecté"""
+        queryset = self.get_queryset().filter(client=request.user)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def stats(self, request):
+        """Statistiques des projets pour le dashboard client"""
+        user_projects = ClientProject.objects.filter(client=request.user)
+        
+        stats = {
+            'total_projects': user_projects.count(),
+            'open_projects': user_projects.filter(status='open').count(),
+            'completed_projects': user_projects.filter(status='completed').count(),
+            'total_offers': ProjectOffer.objects.filter(project__client=request.user).count(),
+        }
+        
+        # Calculer la moyenne d'offres par projet
+        projects_with_offers = user_projects.annotate(
+            offers_count=Count('project_offers')
+        ).aggregate(avg_offers=Avg('offers_count'))
+        
+        stats['average_offers_per_project'] = round(
+            projects_with_offers['avg_offers'] or 0, 1
+        )
+        
+        return Response(stats)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def toggle_favorite(self, request, pk=None):
+        """Ajouter/retirer un projet des favoris"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response(
+                {'error': 'Seuls les prestataires peuvent mettre des projets en favori'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        project = self.get_object()
+        provider = request.user.provider_profile
+        
+        favorite, created = ProjectFavorite.objects.get_or_create(
+            project=project,
+            provider=provider
+        )
+        
+        if not created:
+            favorite.delete()
+            return Response({'favorited': False})
+        else:
+            return Response({'favorited': True})
+
+
+class ProjectOfferViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des offres sur les projets"""
+    serializer_class = ProjectOfferSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = ProjectOffer.objects.select_related(
+            'project', 'provider__user'
+        ).prefetch_related('provider__reviews_received')
+        
+        # Filtrage basé sur le rôle de l'utilisateur
+        if hasattr(self.request.user, 'provider_profile'):
+            # Prestataire : voir ses propres offres
+            queryset = queryset.filter(provider=self.request.user.provider_profile)
+        else:
+            # Client : voir les offres sur ses projets
+            queryset = queryset.filter(project__client=self.request.user)
+        
+        return queryset
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ProjectOfferCreateSerializer
+        return ProjectOfferSerializer
+    
+    @action(detail=False, methods=['get'])
+    def by_project(self, request):
+        """Récupérer les offres pour un projet spécifique"""
+        project_id = request.query_params.get('project_id')
+        if not project_id:
+            return Response(
+                {'error': 'project_id requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            project = ClientProject.objects.get(id=project_id)
+        except ClientProject.DoesNotExist:
+            return Response(
+                {'error': 'Projet non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Vérifier les permissions
+        if project.client != request.user and not hasattr(request.user, 'provider_profile'):
+            return Response(
+                {'error': 'Permission refusée'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        queryset = self.get_queryset().filter(project=project)
+        
+        # Marquer les offres comme vues si c'est le client
+        if project.client == request.user:
+            queryset.update(viewed_by_client=True)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        """Mettre à jour le statut d'une offre (accepter/rejeter)"""
+        offer = self.get_object()
+        
+        # Seul le client propriétaire du projet peut modifier le statut
+        if offer.project.client != request.user:
+            return Response(
+                {'error': 'Permission refusée'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        new_status = request.data.get('status')
+        if new_status not in ['accepted', 'rejected']:
+            return Response(
+                {'error': 'Statut invalide. Utilisez "accepted" ou "rejected"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        with transaction.atomic():
+            # Si l'offre est acceptée, rejeter toutes les autres offres du projet
+            if new_status == 'accepted':
+                ProjectOffer.objects.filter(
+                    project=offer.project
+                ).exclude(id=offer.id).update(status='rejected')
+                
+                # Mettre le projet en cours
+                offer.project.status = 'in_progress'
+                offer.project.save()
+        
+            offer.status = new_status
+            offer.client_notes = request.data.get('notes', '')
+            offer.save()
+        
+        serializer = self.get_serializer(offer)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['delete'])
+    def withdraw(self, request, pk=None):
+        """Retirer une offre (prestataire uniquement)"""
+        offer = self.get_object()
+        
+        # Seul le prestataire peut retirer son offre
+        if offer.provider != request.user.provider_profile:
+            return Response(
+                {'error': 'Permission refusée'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # On ne peut retirer une offre que si elle est en attente
+        if offer.status != 'pending':
+            return Response(
+                {'error': 'Impossible de retirer une offre déjà traitée'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        offer.status = 'withdrawn'
+        offer.save()
+        
+        return Response({'message': 'Offre retirée avec succès'})
+
+
+class ProjectFavoriteViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des projets favoris"""
+    serializer_class = ProjectFavoriteSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
+    
+    def get_queryset(self):
+        if not hasattr(self.request.user, 'provider_profile'):
+            return ProjectFavorite.objects.none()
+        
+        return ProjectFavorite.objects.filter(
+            provider=self.request.user.provider_profile
+        ).select_related('project__client', 'project__category')
+    
+    def create(self, request, *args, **kwargs):
+        """Ajouter un projet aux favoris"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response(
+                {'error': 'Seuls les prestataires peuvent avoir des favoris'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        project_id = request.data.get('project_id')
+        if not project_id:
+            return Response(
+                {'error': 'project_id requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            project = ClientProject.objects.get(id=project_id)
+        except ClientProject.DoesNotExist:
+            return Response(
+                {'error': 'Projet non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        favorite, created = ProjectFavorite.objects.get_or_create(
+            project=project,
+            provider=request.user.provider_profile
+        )
+        
+        if created:
+            serializer = self.get_serializer(favorite)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {'message': 'Projet déjà en favoris'},
+                status=status.HTTP_200_OK
+            )

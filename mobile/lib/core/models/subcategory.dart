@@ -19,4 +19,13 @@ class Subcategory {
       description: json['description'] ?? '',
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'category': categoryId,
+      'description': description,
+      // 'icon': icon,
+    };
+  }
 }

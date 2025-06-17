@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +13,11 @@ import '../models/review.dart';
 import '../models/user.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/project.dart';
+import '../models/client_project.dart';
+import '../models/project.dart';
+import '../models/project_offer.dart';
+import '../models/project_skill.dart';
+import '../models/project_stats.dart';
 
 class ApiService {
   final String baseUrl;
@@ -29,21 +35,20 @@ class ApiService {
 
   // Créer les en-têtes avec authentification si nécessaire
   Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {
-  Map<String, String> headers = {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Accept': 'application/json',
-  };
+    Map<String, String> headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Accept': 'application/json',
+    };
 
-  if (requireAuth) {
-    final token = await _secureStorage.read(key: 'access_token');
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
+    if (requireAuth) {
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
     }
+
+    return headers;
   }
-
-  return headers;
-}
-
 
   // Obtenir le profil utilisateur courant
   Future<User> getCurrentUser() async {
@@ -67,38 +72,39 @@ class ApiService {
       return _getMockUser();
     }
   }
-  // Récupérer les services récents
-  Future<List<Service>> getRecentServices() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/services/recent/'),
-        headers: await getHeaders(requireAuth: false),
-      );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
-        return data.map((item) => Service.fromJson(item)).toList();
-      } else {
-        throw Exception('Failed to load recent services');
-      }
-    } catch (e) {
-      print('Error in getRecentServices: $e');
-      // Retourner des données de test en cas d'erreur
-      return _getMockServices();
-    }
-  }
+  // Récupérer les services récents
+  // Future<List<Service>> getRecentServices() async {
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/services/recent/'),
+  //       headers: await getHeaders(requireAuth: false),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+  //       return data.map((item) => Service.fromJson(item)).toList();
+  //     } else {
+  //       throw Exception('Failed to load recent services');
+  //     }
+  //   } catch (e) {
+  //     print('Error in getRecentServices: $e');
+  //     // Retourner des données de test en cas d'erreur
+  //     return _getMockServices();
+  //   }
+  // }
 
   // Récupérer les services à proximité
   Future<List<Service>> getNearbyServices() async {
     try {
       // Si l'utilisateur a fourni sa localisation, on l'utilise pour obtenir les services à proximité
       final position = await _getCurrentPosition();
-      
+
       String url = '$baseUrl/services/nearby/';
       if (position != null) {
         url += '?latitude=${position.latitude}&longitude=${position.longitude}';
       }
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: await getHeaders(requireAuth: false),
@@ -164,19 +170,25 @@ class ApiService {
         return data.map((item) => ProviderModel.fromJson(item)).toList();
       } else {
         // En cas d'erreur, retourner des données de test filtrées
-        return _getMockProviders().where((p) => p.id % 5 == categoryId % 5).toList();
+        return _getMockProviders()
+            .where((p) => p.id % 5 == categoryId % 5)
+            .toList();
       }
     } catch (e) {
       print('Erreur getProvidersByCategory: $e');
       // En cas d'erreur, retourner des données de test filtrées
-      return _getMockProviders().where((p) => p.id % 5 == categoryId % 5).toList();
+      return _getMockProviders()
+          .where((p) => p.id % 5 == categoryId % 5)
+          .toList();
     }
   }
 
-  Future<List<ProviderModel>> getProvidersBySubcategory(int subcategoryId) async {
+  Future<List<ProviderModel>> getProvidersBySubcategory(
+      int subcategoryId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/providers/by_subcategory/?subcategory_id=$subcategoryId'),
+        Uri.parse(
+            '$baseUrl/providers/by_subcategory/?subcategory_id=$subcategoryId'),
         headers: await getHeaders(requireAuth: false),
       );
 
@@ -186,25 +198,32 @@ class ApiService {
         return data.map((item) => ProviderModel.fromJson(item)).toList();
       } else {
         // En cas d'erreur, retourner des données de test filtrées
-        return _getMockProviders().where((p) => p.id % 10 == subcategoryId % 10).toList();
+        return _getMockProviders()
+            .where((p) => p.id % 10 == subcategoryId % 10)
+            .toList();
       }
     } catch (e) {
       print('Erreur getProvidersBySubcategory: $e');
       // En cas d'erreur, retourner des données de test filtrées
-      return _getMockProviders().where((p) => p.id % 10 == subcategoryId % 10).toList();
+      return _getMockProviders()
+          .where((p) => p.id % 10 == subcategoryId % 10)
+          .toList();
     }
   }
 
-  Future<List<ProviderModel>> getNearbyProviders(double latitude, double longitude, {double radius = 10.0}) async {
+  Future<List<ProviderModel>> getNearbyProviders(
+      double latitude, double longitude,
+      {double radius = 10.0}) async {
     try {
       final queryParams = {
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
         'radius': radius.toString(),
       };
-      
-      final uri = Uri.parse('$baseUrl/providers/nearby/').replace(queryParameters: queryParams);
-      
+
+      final uri = Uri.parse('$baseUrl/providers/nearby/')
+          .replace(queryParameters: queryParams);
+
       final response = await http.get(
         uri,
         headers: await getHeaders(requireAuth: false),
@@ -224,6 +243,7 @@ class ApiService {
       return _getMockProvidersWithCoordinates(latitude, longitude);
     }
   }
+
   // Obtenir les projets de l'utilisateur
   Future<List<Project>> getUserProjects() async {
     try {
@@ -246,6 +266,7 @@ class ApiService {
       return _getMockProjects();
     }
   }
+
   // Méthodes pour générer des données de test
   List<ProviderModel> _getMockProviders() {
     return List.generate(10, (index) {
@@ -253,46 +274,56 @@ class ApiService {
         id: index + 1,
         name: 'Prestataire ${index + 1}',
         businessType: index % 2 == 0 ? 'Entreprise' : 'Freelance',
-        profileImageUrl: 'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
+        profileImageUrl:
+            'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
         rating: 3.0 + (index % 5) * 0.5,
         reviewCount: 5 + index * 3,
-        description: 'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
-        services: List.generate(3, (i) => ServiceItem(
-          id: i + 1,
-          title: 'Service ${i + 1}',
-          priceType: i % 2 == 0 ? 'fixed' : 'quote',
-        )),
+        description:
+            'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
+        services: List.generate(
+            3,
+            (i) => ServiceItem(
+                  id: i + 1,
+                  title: 'Service ${i + 1}',
+                  priceType: i % 2 == 0 ? 'fixed' : 'quote',
+                )),
       );
     });
   }
 
-  List<ProviderModel> _getMockProvidersWithCoordinates(double centerLatitude, double centerLongitude) {
+  List<ProviderModel> _getMockProvidersWithCoordinates(
+      double centerLatitude, double centerLongitude) {
     final random = math.Random();
-    
+
     return List.generate(10, (index) {
       // Générer des coordonnées aléatoires dans un rayon de 5km
       final latOffset = (random.nextDouble() - 0.5) * 0.1; // ~5km
       final lngOffset = (random.nextDouble() - 0.5) * 0.1; // ~5km
-      
+
       return ProviderModel(
         id: index + 1,
         name: 'Prestataire ${index + 1}',
         businessType: index % 2 == 0 ? 'Entreprise' : 'Freelance',
-        profileImageUrl: 'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
+        profileImageUrl:
+            'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${index + 1}.jpg',
         rating: 3.0 + (index % 5) * 0.5,
         reviewCount: 5 + index * 3,
-        description: 'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
-        services: List.generate(3, (i) => ServiceItem(
-          id: i + 1,
-          title: 'Service ${i + 1}',
-          priceType: i % 2 == 0 ? 'fixed' : 'quote',
-        )),
+        description:
+            'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
+        services: List.generate(
+            3,
+            (i) => ServiceItem(
+                  id: i + 1,
+                  title: 'Service ${i + 1}',
+                  priceType: i % 2 == 0 ? 'fixed' : 'quote',
+                )),
         latitude: centerLatitude + latOffset,
         longitude: centerLongitude + lngOffset,
         address: 'Adresse du prestataire ${index + 1}, Cotonou',
       );
     });
   }
+
   // Méthodes de mock pour données de test
   User _getMockUser() {
     return User(
@@ -370,8 +401,8 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        
-        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes))['results'] ?? [];
+        final List<dynamic> data =
+            json.decode(utf8.decode(response.bodyBytes))['results'] ?? [];
         print('Les données recuperes sont : $data');
         return data.map((item) => Subcategory.fromJson(item)).toList();
       } else {
@@ -410,225 +441,227 @@ class ApiService {
   }
 
   Future<int> getCurrentUserId() async {
-  try {
-    // Récupérer l'utilisateur courant depuis le stockage local
-    final user = await getCurrentUser();
-    if (user != null) {
-      return user.id;
+    try {
+      // Récupérer l'utilisateur courant depuis le stockage local
+      final user = await getCurrentUser();
+      if (user != null) {
+        return user.id;
+      }
+
+      // Si l'utilisateur n'est pas disponible localement
+      throw Exception("Utilisateur non connecté");
+    } catch (e) {
+      print('Error in getCurrentUserId: $e');
+      throw e;
     }
-    
-    // Si l'utilisateur n'est pas disponible localement
-    throw Exception("Utilisateur non connecté");
-  } catch (e) {
-    print('Error in getCurrentUserId: $e');
-    throw e;
   }
-}
 
-Future<List<Conversation>> getConversations() async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.get(
-      Uri.parse('$baseUrl/conversations/?user_id=$userId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    );
+  Future<List<Conversation>> getConversations() async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      final List<dynamic> data = responseData['results'] ?? [];
-      return data.map((item) => Conversation.fromJson(item, userId)).toList();
-    } else {
-      print('Error response: ${response.body}');
-      throw Exception('Failed to load conversations: ${response.statusCode}');
+      final response = await http.get(
+        Uri.parse('$baseUrl/conversations/?user_id=$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => Conversation.fromJson(item, userId)).toList();
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to load conversations: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getConversations: $e');
+      return []; // Retourner une liste vide en cas d'erreur
     }
-  } catch (e) {
-    print('Error in getConversations: $e');
-    return []; // Retourner une liste vide en cas d'erreur
   }
-}
 
-Future<List<Message>> getMessages(int conversationId) async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.get(
-      Uri.parse('$baseUrl/conversations/$conversationId/messages/?user_id=$userId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    );
+  Future<List<Message>> getMessages(int conversationId) async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      final List<dynamic> data = responseData['results'] ?? [];
-      return data.map((item) => Message.fromJson(item, userId)).toList();
-    } else {
-      print('Error response: ${response.body}');
-      throw Exception('Failed to load messages: ${response.statusCode}');
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/conversations/$conversationId/messages/?user_id=$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['results'] ?? [];
+        return data.map((item) => Message.fromJson(item, userId)).toList();
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to load messages: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getMessages: $e');
+      return []; // Retourner une liste vide en cas d'erreur
     }
-  } catch (e) {
-    print('Error in getMessages: $e');
-    return []; // Retourner une liste vide en cas d'erreur
   }
-}
 
-Future<Message> sendMessage(int conversationId, String content) async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.post(
-      Uri.parse('$baseUrl/conversations/$conversationId/send_message/'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: json.encode({
+  Future<Message> sendMessage(int conversationId, String content) async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/conversations/$conversationId/send_message/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'user_id': userId,
+          'content': content,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return Message.fromJson(data, userId);
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to send message: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in sendMessage: $e');
+      throw e;
+    }
+  }
+
+  Future<Conversation> startConversation(
+      int providerId, String? initialMessage) async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
+
+      final Map<String, dynamic> data = {
         'user_id': userId,
-        'content': content,
-      }),
-    );
+        'provider_id': providerId,
+      };
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = json.decode(response.body);
-      return Message.fromJson(data, userId);
-    } else {
-      print('Error response: ${response.body}');
-      throw Exception('Failed to send message: ${response.statusCode}');
+      if (initialMessage != null && initialMessage.isNotEmpty) {
+        data['message'] = initialMessage;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/conversations/start/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(data),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        return Conversation.fromJson(responseData, userId);
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to start conversation: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in startConversation: $e');
+      throw e;
     }
-  } catch (e) {
-    print('Error in sendMessage: $e');
-    throw e;
   }
-}
 
-Future<Conversation> startConversation(int providerId, String? initialMessage) async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final Map<String, dynamic> data = {
-      'user_id': userId,
-      'provider_id': providerId,
-    };
-    
-    if (initialMessage != null && initialMessage.isNotEmpty) {
-      data['message'] = initialMessage;
+  Future<Message?> getInitialMessage(int conversationId) async {
+    try {
+      final messages = await getMessages(conversationId);
+      if (messages.isNotEmpty) {
+        return messages.first;
+      }
+      return null;
+    } catch (e) {
+      print('Error in getInitialMessage: $e');
+      return null;
     }
-    
-    final response = await http.post(
-      Uri.parse('$baseUrl/conversations/start/'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: json.encode(data),
-    );
+  }
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final responseData = json.decode(response.body);
-      return Conversation.fromJson(responseData, userId);
-    } else {
-      print('Error response: ${response.body}');
-      throw Exception('Failed to start conversation: ${response.statusCode}');
+  Future<bool> markMessagesAsRead(int conversationId) async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/conversations/$conversationId/mark_read/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'user_id': userId,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error in markMessagesAsRead: $e');
+      return false;
     }
-  } catch (e) {
-    print('Error in startConversation: $e');
-    throw e;
   }
-}
 
-Future<Message?> getInitialMessage(int conversationId) async {
-  try {
-    final messages = await getMessages(conversationId);
-    if (messages.isNotEmpty) {
-      return messages.first;
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/notifications/count/?user_id=$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['count'] ?? 0;
+      } else {
+        print('Error response: ${response.body}');
+        return 0;
+      }
+    } catch (e) {
+      print('Error in getUnreadNotificationCount: $e');
+      return 0; // En cas d'erreur, retourner 0 comme valeur par défaut
     }
-    return null;
-  } catch (e) {
-    print('Error in getInitialMessage: $e');
-    return null;
   }
-}
 
-Future<bool> markMessagesAsRead(int conversationId) async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.post(
-      Uri.parse('$baseUrl/conversations/$conversationId/mark_read/'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: json.encode({
-        'user_id': userId,
-      }),
-    );
+  Future<bool> markAllNotificationsAsRead() async {
+    try {
+      // Récupérer l'ID de l'utilisateur courant
+      final userId = await getCurrentUserId();
 
-    return response.statusCode == 200;
-  } catch (e) {
-    print('Error in markMessagesAsRead: $e');
-    return false;
-  }
-}
-Future<int> getUnreadNotificationCount() async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.get(
-      Uri.parse('$baseUrl/notifications/count/?user_id=$userId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    );
+      final response = await http.post(
+        Uri.parse('$baseUrl/notifications/mark_all_read/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'user_id': userId,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['count'] ?? 0;
-    } else {
-      print('Error response: ${response.body}');
-      return 0;
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error in markAllNotificationsAsRead: $e');
+      return false;
     }
-  } catch (e) {
-    print('Error in getUnreadNotificationCount: $e');
-    return 0; // En cas d'erreur, retourner 0 comme valeur par défaut
   }
-}
-
-Future<bool> markAllNotificationsAsRead() async {
-  try {
-    // Récupérer l'ID de l'utilisateur courant
-    final userId = await getCurrentUserId();
-    
-    final response = await http.post(
-      Uri.parse('$baseUrl/notifications/mark_all_read/'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: json.encode({
-        'user_id': userId,
-      }),
-    );
-
-    return response.statusCode == 200;
-  } catch (e) {
-    print('Error in markAllNotificationsAsRead: $e');
-    return false;
-  }
-}
-
 
 // Méthode mock pour fournir des nombres fictifs en cas d'erreur
   int _getMockServiceCountByCategory(int categoryId) {
@@ -952,7 +985,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 4.5,
         reviewCount: 27,
         provider_id: 1,
-        categoryId:1,
+        categoryId: 1,
         businessType: 'Entreprise',
         price: 80.0,
       ),
@@ -964,7 +997,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 3.8,
         reviewCount: 15,
         provider_id: 2,
-        categoryId:1,
+        categoryId: 1,
         businessType: 'Entreprise',
         price: 75.0,
       ),
@@ -976,7 +1009,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 5.0,
         reviewCount: 21,
         provider_id: 3,
-        categoryId:1,
+        categoryId: 1,
         businessType: 'Entreprise',
         price: 120.0,
       ),
@@ -988,7 +1021,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 4.2,
         reviewCount: 18,
         provider_id: 4,
-        categoryId:1,
+        categoryId: 1,
         businessType: 'Entreprise',
         price: 90.0,
       ),
@@ -1000,7 +1033,7 @@ Future<bool> markAllNotificationsAsRead() async {
         rating: 3.5,
         reviewCount: 12,
         provider_id: 5,
-        categoryId:1,
+        categoryId: 1,
         businessType: 'Freelance',
         price: 65.0,
       ),
@@ -1017,7 +1050,7 @@ Future<bool> markAllNotificationsAsRead() async {
       rating: 4.5,
       reviewCount: 27,
       provider_id: 1,
-      categoryId:1,
+      categoryId: 1,
       businessType: 'Entreprise',
       price: 80.0,
     );
@@ -1093,7 +1126,7 @@ Future<bool> markAllNotificationsAsRead() async {
         Uri.parse('${baseUrl}/services/?provider_id=$providerId'),
         headers: headers,
       );
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body)['results'] ?? [];
         return data.map((item) => Service.fromJson(item)).toList();
@@ -1105,6 +1138,519 @@ Future<bool> markAllNotificationsAsRead() async {
       // En cas d'échec, retourner une liste vide ou autre gestion d'erreur
       return [];
     }
+  }
+
+  /// Récupérer la liste des projets avec filtres
+  // Future<Map<String, dynamic>> getProjects(
+  //     [Map<String, dynamic>? filters]) async {
+  //   try {
+  //     var uri = Uri.parse('$baseUrl/projects/');
+
+  //     if (filters != null && filters.isNotEmpty) {
+  //       uri = uri.replace(
+  //           queryParameters:
+  //               filters.map((key, value) => MapEntry(key, value.toString())));
+  //     }
+
+  //     final response = await http.get(
+  //       uri,
+  //       headers: await getHeaders(requireAuth: false),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       final projects = (data['results'] as List<dynamic>?)
+  //               ?.map((item) => ClientProject.fromJson(item))
+  //               .toList() ??
+  //           [];
+
+  //       return {
+  //         'projects': projects,
+  //         'hasMore': data['next'] != null,
+  //         'total': data['count'] ?? 0,
+  //       };
+  //     } else {
+  //       throw Exception('Failed to load projects: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Error in getProjects: $e');
+  //     // Retourner des données de test en cas d'erreur
+  //     return {
+  //       'projects': _getMockProjects(),
+  //       'hasMore': false,
+  //       'total': 1,
+  //     };
+  //   }
+  // }
+
+  /// Récupérer les projets par catégorie
+  Future<Map<String, dynamic>> getProjectsByCategory(int categoryId,
+      [Map<String, dynamic>? filters]) async {
+    final allFilters = filters ?? {};
+    allFilters['category'] = categoryId;
+    return getProjects(allFilters);
+  }
+
+  /// Récupérer un projet spécifique
+  Future<ClientProject> getProject(int projectId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/projects/$projectId/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ClientProject.fromJson(data);
+      } else {
+        throw Exception('Failed to load project: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProject: $e');
+      throw e;
+    }
+  }
+
+  /// Créer un nouveau projet
+  Future<ClientProject> createProject(
+      Map<String, dynamic> projectData, List<File?> attachments) async {
+    try {
+      var request =
+          http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
+
+      // Ajouter les headers d'authentification
+      final headers = await getHeaders();
+      request.headers.addAll(headers);
+
+      // Ajouter les données du projet
+      projectData.forEach((key, value) {
+        if (value != null) {
+          if (value is List) {
+            // Pour les compétences requises
+            request.fields[key] = json.encode(value);
+          } else {
+            request.fields[key] = value.toString();
+          }
+        }
+      });
+
+      // Ajouter les fichiers joints
+      for (int i = 0; i < attachments.length; i++) {
+        final file = attachments[i];
+        if (file != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'attachment${i + 1}',
+              file.path,
+            ),
+          );
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return ClientProject.fromJson(data);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(
+            'Failed to create project: ${errorData['detail'] ?? response.body}');
+      }
+    } catch (e) {
+      print('Error in createProject: $e');
+      throw e;
+    }
+  }
+
+  /// Récupérer les projets de l'utilisateur connecté
+  Future<List<ClientProject>> getMyProjects() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/projects/my_projects/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return (data['results'] as List<dynamic>?)
+                ?.map((item) => ClientProject.fromJson(item))
+                .toList() ??
+            [];
+      } else {
+        throw Exception('Failed to load my projects: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getMyProjects: $e');
+      return [];
+    }
+  }
+
+  /// Récupérer les statistiques des projets pour le client
+  Future<ProjectStats> getProjectStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/projects/stats/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ProjectStats.fromJson(data);
+      } else {
+        throw Exception('Failed to load project stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProjectStats: $e');
+      // Retourner des stats par défaut
+      return ProjectStats(
+        totalProjects: 0,
+        openProjects: 0,
+        completedProjects: 0,
+        totalOffers: 0,
+        averageOffersPerProject: 0.0,
+      );
+    }
+  }
+
+  /// Basculer un projet en favori (prestataires uniquement)
+  Future<bool> toggleProjectFavorite(int projectId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/projects/$projectId/toggle_favorite/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['favorited'] ?? false;
+      } else {
+        throw Exception('Failed to toggle favorite: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in toggleProjectFavorite: $e');
+      throw e;
+    }
+  }
+
+// === MÉTHODES POUR LES OFFRES ===
+
+  /// Créer une offre sur un projet
+  Future<ProjectOffer> createProjectOffer(
+      Map<String, dynamic> offerData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/project-offers/'),
+        headers: await getHeaders(),
+        body: json.encode(offerData),
+      );
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return ProjectOffer.fromJson(data);
+      } else {
+        final errorData = json.decode(response.body);
+        String errorMessage = 'Failed to create offer';
+
+        if (errorData['non_field_errors'] != null) {
+          errorMessage = errorData['non_field_errors'][0];
+        } else if (errorData['detail'] != null) {
+          errorMessage = errorData['detail'];
+        }
+
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('Error in createProjectOffer: $e');
+      throw e;
+    }
+  }
+
+  /// Récupérer les offres pour un projet (client)
+  Future<List<ProjectOffer>> getProjectOffers(int projectId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/project-offers/by_project/?project_id=$projectId'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return (data as List<dynamic>?)
+                ?.map((item) => ProjectOffer.fromJson(item))
+                .toList() ??
+            [];
+      } else {
+        throw Exception(
+            'Failed to load project offers: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProjectOffers: $e');
+      return [];
+    }
+  }
+
+  /// Récupérer les offres du prestataire connecté
+  Future<List<ProjectOffer>> getMyOffers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/project-offers/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return (data['results'] as List<dynamic>?)
+                ?.map((item) => ProjectOffer.fromJson(item))
+                .toList() ??
+            [];
+      } else {
+        throw Exception('Failed to load my offers: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getMyOffers: $e');
+      return [];
+    }
+  }
+
+  /// Mettre à jour le statut d'une offre (accepter/rejeter)
+  Future<ProjectOffer> updateOfferStatus(int offerId, String status,
+      {String? notes}) async {
+    try {
+      final data = {
+        'status': status,
+        if (notes != null) 'notes': notes,
+      };
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/project-offers/$offerId/update_status/'),
+        headers: await getHeaders(),
+        body: json.encode(data),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return ProjectOffer.fromJson(responseData);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to update offer status');
+      }
+    } catch (e) {
+      print('Error in updateOfferStatus: $e');
+      throw e;
+    }
+  }
+
+  /// Retirer une offre (prestataire uniquement)
+  Future<void> withdrawOffer(int offerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/project-offers/$offerId/withdraw/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to withdraw offer');
+      }
+    } catch (e) {
+      print('Error in withdrawOffer: $e');
+      throw e;
+    }
+  }
+
+  /// Récupérer les projets favoris du prestataire
+  Future<List<ClientProject>> getFavoriteProjects() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/project-favorites/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return (data['results'] as List<dynamic>?)
+                ?.map((item) => ClientProject.fromJson(item['project']))
+                .toList() ??
+            [];
+      } else {
+        throw Exception(
+            'Failed to load favorite projects: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getFavoriteProjects: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getProjects([Map<String, dynamic>? filters]) async {
+    try {
+      var uri = Uri.parse('$baseUrl/projects/');
+      
+      if (filters != null && filters.isNotEmpty) {
+        uri = uri.replace(queryParameters: 
+          filters.map((key, value) => MapEntry(key, value.toString()))
+        );
+      }
+      
+      // Appel SANS authentification requise pour permettre l'accès public
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final projects = (data['results'] as List<dynamic>?)
+            ?.map((item) => ClientProject.fromJson(item))
+            .toList() ?? [];
+        
+        return {
+          'projects': projects,
+          'hasMore': data['next'] != null,
+          'total': data['count'] ?? 0,
+        };
+      } else if (response.statusCode == 401) {
+        // Si l'endpoint nécessite une authentification, retourner des données publiques limitées
+        print('Endpoint nécessite une authentification, utilisation des données mock');
+        return {
+          'projects': [],
+          'hasMore': false,
+          'total':0,
+        };
+      } else {
+        throw Exception('Failed to load projects: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProjects: $e');
+      // En cas d'erreur, retourner des données de test
+      return {
+        'projects': [],
+        'hasMore': false,
+        'total': [].length,
+      };
+    }
+  }
+
+  /// Récupérer les services récents (accessible sans authentification)
+  Future<List<Service>> getRecentServices() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/services/recent/'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+        return data.map((item) => Service.fromJson(item)).toList();
+      } else if (response.statusCode == 401) {
+        // Retourner des services publics limités
+        return [];
+      } else {
+        throw Exception('Failed to load recent services: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getRecentServices: $e');
+      return [];
+    }
+  }
+// === MÉTHODES MOCK POUR LES TESTS ===
+
+  List<ClientProject> _getMockClientProjects() {
+    return [
+      ClientProject(
+        id: 1,
+        title: 'Création d\'un site web e-commerce',
+        description:
+            'Je recherche un développeur pour créer un site e-commerce complet avec gestion des stocks, paiements sécurisés et interface d\'administration.',
+        clientName: 'Marie Dubois',
+        categoryName: 'Développement web',
+        budgetRange: '1000_10000',
+        budgetDisplay: '3000€ - 8000€',
+        location: 'Paris',
+        remotePossible: true,
+        urgency: 'medium',
+        status: 'open',
+        contactViaPlatform: true,
+        showEmail: false,
+        showPhone: false,
+        requiredSkills: [
+          ProjectSkill(id: 1, name: 'PHP', isRequired: true),
+          ProjectSkill(id: 2, name: 'JavaScript', isRequired: true),
+          ProjectSkill(id: 3, name: 'MySQL', isRequired: true),
+          ProjectSkill(id: 4, name: 'E-commerce', isRequired: false),
+        ],
+        offersCount: 12,
+        viewsCount: 45,
+        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+        timeSincePosted: 'Il y a 6 heures',
+        isFavorited: false,
+        hasUserOffered: false,
+      ),
+      ClientProject(
+        id: 2,
+        title: 'Design d\'une application mobile',
+        description:
+            'Recherche un designer UX/UI pour concevoir l\'interface d\'une application mobile de fitness avec suivi d\'activités et coaching personnalisé.',
+        clientName: 'Thomas Martin',
+        categoryName: 'Design graphique',
+        budgetRange: 'sur_devis',
+        budgetDisplay: 'Sur devis',
+        location: 'Lyon',
+        remotePossible: true,
+        urgency: 'high',
+        status: 'open',
+        contactViaPlatform: true,
+        showEmail: true,
+        showPhone: false,
+        requiredSkills: [
+          ProjectSkill(id: 5, name: 'UI/UX Design', isRequired: true),
+          ProjectSkill(id: 6, name: 'Figma', isRequired: true),
+          ProjectSkill(id: 7, name: 'Prototypage', isRequired: false),
+        ],
+        offersCount: 8,
+        viewsCount: 32,
+        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        timeSincePosted: 'Il y a 2 jours',
+        isFavorited: true,
+        hasUserOffered: false,
+      ),
+      ClientProject(
+        id: 3,
+        title: 'Rénovation d\'appartement',
+        description:
+            'Rénovation complète d\'un appartement de 80m² : peinture, parquet, salle de bain, cuisine. Travaux à prévoir sur 6 semaines.',
+        clientName: 'Sophie Laurent',
+        categoryName: 'Rénovation',
+        budgetRange: '10000_plus',
+        budgetDisplay: '15000€ - 25000€',
+        location: 'Marseille',
+        remotePossible: false,
+        urgency: 'low',
+        status: 'open',
+        contactViaPlatform: true,
+        showEmail: false,
+        showPhone: true,
+        requiredSkills: [
+          ProjectSkill(id: 8, name: 'Peinture', isRequired: true),
+          ProjectSkill(id: 9, name: 'Carrelage', isRequired: true),
+          ProjectSkill(id: 10, name: 'Plomberie', isRequired: false),
+        ],
+        offersCount: 5,
+        viewsCount: 18,
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        timeSincePosted: 'Il y a 1 jour',
+        isFavorited: false,
+        hasUserOffered: true,
+      ),
+    ];
   }
 
   // List<Review> _getMockReviews() {

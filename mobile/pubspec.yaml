@@ -37,7 +37,7 @@ dependencies:
   gap: ^3.0.1
   flutter_dotenv: ^5.0.2
   get_it: ^8.0.3
-  # file_picker: ^5.2.4
+  file_picker: ^10.2.0
   intl: ^0.18.1
   # flutter_image_compress: ^1.1.0
   path_provider: ^2.0.15

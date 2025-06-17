@@ -30,7 +30,7 @@ class SideMenu extends StatelessWidget {
         builder: (context, authProvider, _) {
           final User? user = authProvider.currentUser;
           final bool isLoggedIn = user != null;
-          
+
           if (isLoggedIn) {
             return _buildUserMenu(context, user, authProvider);
           } else {
@@ -40,9 +40,10 @@ class SideMenu extends StatelessWidget {
       ),
     );
   }
-  
+
   // Menu pour les utilisateurs connectés
-  Widget _buildUserMenu(BuildContext context, User user, AuthProvider authProvider) {
+  Widget _buildUserMenu(
+      BuildContext context, User user, AuthProvider authProvider) {
     return SafeArea(
       bottom: false, // Permettre au contenu de déborder en bas
       child: Column(
@@ -50,11 +51,13 @@ class SideMenu extends StatelessWidget {
         children: [
           // En-tête avec bouton de fermeture et image de profil
           Stack(
-            clipBehavior: Clip.none, // Important pour permettre au cercle de déborder
+            clipBehavior:
+                Clip.none, // Important pour permettre au cercle de déborder
             children: [
               // En-tête avec bouton de fermeture
               Padding(
-                padding: const EdgeInsets.fromLTRB(65.0, 16.0, 16.0, 16.0), // Plus de padding à gauche pour l'avatar
+                padding: const EdgeInsets.fromLTRB(65.0, 16.0, 16.0,
+                    16.0), // Plus de padding à gauche pour l'avatar
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -91,7 +94,7 @@ class SideMenu extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Photo de profil positionnée à moitié en dehors
               Positioned(
                 left: -25, // Position négative pour déborder sur la gauche
@@ -111,28 +114,32 @@ class SideMenu extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 25,
                       backgroundColor: Colors.grey[200],
-                      backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
-                        ? NetworkImage(user.profilePicture!)
-                        : null,
-                      child: user.profilePicture == null || user.profilePicture!.isEmpty
-                        ? Text(
-                            user.username.isNotEmpty ? user.username[0].toUpperCase() : 'P',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black54,
-                            ),
-                          )
-                        : null,
+                      backgroundImage: user.profilePicture != null &&
+                              user.profilePicture!.isNotEmpty
+                          ? NetworkImage(user.profilePicture!)
+                          : null,
+                      child: user.profilePicture == null ||
+                              user.profilePicture!.isEmpty
+                          ? Text(
+                              user.username.isNotEmpty
+                                  ? user.username[0].toUpperCase()
+                                  : 'P',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          
+
           const Divider(height: 1), // Ligne de séparation après l'en-tête
-          
+
           // Options du menu - première section
           _buildMenuItem(
             context,
@@ -147,7 +154,7 @@ class SideMenu extends StatelessWidget {
               );
             },
           ),
-          
+
           _buildMenuItem(
             context,
             icon: Icons.search_outlined,
@@ -160,7 +167,7 @@ class SideMenu extends StatelessWidget {
               );
             },
           ),
-          
+
           _buildMenuItem(
             context,
             icon: Icons.person_outline,
@@ -182,7 +189,7 @@ class SideMenu extends StatelessWidget {
               Navigator.pushNamed(context, '/messages');
             },
           ),
-          
+
           // Options spécifiques selon le rôle
           if (user.role == 'provider') ...[
             _buildMenuItem(
@@ -193,38 +200,41 @@ class SideMenu extends StatelessWidget {
                 onClose();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ServiceManagementScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const ServiceManagementScreen()),
                 );
               },
             ),
             _buildMenuItem(
               context,
               icon: Icons.receipt_long_outlined,
-              text: 'Demandes de devis',
+              text: 'Devis',
               onTap: () {
                 onClose();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const QuoteRequestsScreen()),
                 );
               },
             ),
           ],
-          
+
           if (user.role == 'client')
             _buildMenuItem(
               context,
               icon: Icons.receipt_long_outlined,
-              text: 'Demandes de devis',
+              text: 'Devis',
               onTap: () {
                 onClose();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const MyQuoteRequestsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const MyQuoteRequestsScreen()),
                 );
               },
             ),
-          
+
           _buildMenuItem(
             context,
             icon: Icons.gavel,
@@ -249,9 +259,9 @@ class SideMenu extends StatelessWidget {
               // Navigation vers notifications
             },
           ),
-          
+
           const Spacer(),
-          
+
           // Options de bas de page
           _buildMenuItem(
             context,
@@ -287,13 +297,13 @@ class SideMenu extends StatelessWidget {
               }
             },
           ),
-          
+
           const SizedBox(height: 24), // Plus d'espace en bas
         ],
       ),
     );
   }
-  
+
   // Menu pour les utilisateurs non connectés
   Widget _buildGuestMenu(BuildContext context) {
     return SafeArea(
@@ -321,9 +331,9 @@ class SideMenu extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
-          
+
           // Options de menu pour les invités
           _buildMenuItem(
             context,
@@ -332,10 +342,7 @@ class SideMenu extends StatelessWidget {
             onTap: () {
               onClose();
               Navigator.pushNamedAndRemoveUntil(
-                context, 
-                '/home', 
-                (route) => false
-              );
+                  context, '/home', (route) => false);
             },
           ),
           _buildMenuItem(
@@ -347,9 +354,9 @@ class SideMenu extends StatelessWidget {
               Navigator.pushNamed(context, '/explore');
             },
           ),
-          
+
           const Spacer(),
-          
+
           // Boutons de connexion et inscription
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -412,7 +419,7 @@ class SideMenu extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildMenuItem(
     BuildContext context, {
     required IconData icon,
