@@ -1,8 +1,9 @@
+// lib/core/models/client_project.dart - Version améliorée avec copyWith
 import 'user.dart';
 import 'category.dart';
 import 'project_skill.dart';
 import 'subcategory.dart';
-// import 'dart:convert';
+
 class ClientProject {
   final int id;
   final String title;
@@ -25,7 +26,7 @@ class ClientProject {
   final bool contactViaPlatform;
   final bool showEmail;
   final bool showPhone;
-  final List<ProjectSkill> requiredSkills;
+  final List<String> requiredSkills; // Simplifié pour les mock data
   final int offersCount;
   final int viewsCount;
   final DateTime createdAt;
@@ -35,6 +36,7 @@ class ClientProject {
   final String? attachment1;
   final String? attachment2;
   final String? attachment3;
+  final List<Map<String, String>>? attachments; // Liste des attachments
 
   ClientProject({
     required this.id,
@@ -68,43 +70,169 @@ class ClientProject {
     this.attachment1,
     this.attachment2,
     this.attachment3,
+    this.attachments,
   });
 
-  factory ClientProject.fromJson(Map<String, dynamic> json) {
+  // Méthode copyWith pour créer une copie modifiée
+  ClientProject copyWith({
+    int? id,
+    String? title,
+    String? description,
+    User? client,
+    String? clientName,
+    Category? category,
+    String? categoryName,
+    Subcategory? subcategory,
+    String? subcategoryName,
+    String? budgetRange,
+    double? minBudget,
+    double? maxBudget,
+    String? budgetDisplay,
+    String? location,
+    bool? remotePossible,
+    DateTime? deadline,
+    String? urgency,
+    String? status,
+    bool? contactViaPlatform,
+    bool? showEmail,
+    bool? showPhone,
+    List<String>? requiredSkills,
+    int? offersCount,
+    int? viewsCount,
+    DateTime? createdAt,
+    String? timeSincePosted,
+    bool? isFavorited,
+    bool? hasUserOffered,
+    String? attachment1,
+    String? attachment2,
+    String? attachment3,
+    List<Map<String, String>>? attachments,
+  }) {
     return ClientProject(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      client: client ?? this.client,
+      clientName: clientName ?? this.clientName,
+      category: category ?? this.category,
+      categoryName: categoryName ?? this.categoryName,
+      subcategory: subcategory ?? this.subcategory,
+      subcategoryName: subcategoryName ?? this.subcategoryName,
+      budgetRange: budgetRange ?? this.budgetRange,
+      minBudget: minBudget ?? this.minBudget,
+      maxBudget: maxBudget ?? this.maxBudget,
+      budgetDisplay: budgetDisplay ?? this.budgetDisplay,
+      location: location ?? this.location,
+      remotePossible: remotePossible ?? this.remotePossible,
+      deadline: deadline ?? this.deadline,
+      urgency: urgency ?? this.urgency,
+      status: status ?? this.status,
+      contactViaPlatform: contactViaPlatform ?? this.contactViaPlatform,
+      showEmail: showEmail ?? this.showEmail,
+      showPhone: showPhone ?? this.showPhone,
+      requiredSkills: requiredSkills ?? this.requiredSkills,
+      offersCount: offersCount ?? this.offersCount,
+      viewsCount: viewsCount ?? this.viewsCount,
+      createdAt: createdAt ?? this.createdAt,
+      timeSincePosted: timeSincePosted ?? this.timeSincePosted,
+      isFavorited: isFavorited ?? this.isFavorited,
+      hasUserOffered: hasUserOffered ?? this.hasUserOffered,
+      attachment1: attachment1 ?? this.attachment1,
+      attachment2: attachment2 ?? this.attachment2,
+      attachment3: attachment3 ?? this.attachment3,
+      attachments: attachments ?? this.attachments,
+    );
+  }
+
+  factory ClientProject.fromJson(Map<String, dynamic> json) {
+    // Gestion des compétences requises
+    List<String> skillsList = [];
+    if (json['required_skills'] != null) {
+      if (json['required_skills'] is List) {
+        skillsList = List<String>.from(
+          json['required_skills'].map((skill) {
+            if (skill is Map<String, dynamic>) {
+              return skill['name']?.toString() ?? '';
+            } else {
+              return skill.toString();
+            }
+          }).where((skill) => skill.isNotEmpty),
+        );
+      }
+    }
+
+    // Gestion des attachments
+    List<Map<String, String>>? attachmentsList;
+    if (json['attachments'] != null && json['attachments'] is List) {
+      attachmentsList = List<Map<String, String>>.from(
+        json['attachments'].map((attachment) {
+          if (attachment is Map<String, dynamic>) {
+            return {
+              'name': attachment['name']?.toString() ?? 'Fichier',
+              'url': attachment['url']?.toString() ?? '',
+            };
+          }
+          return <String, String>{};
+        }).where((attachment) => attachment.isNotEmpty),
+      );
+    } else {
+      // Créer la liste à partir des champs individuels si disponibles
+      attachmentsList = <Map<String, String>>[];
+      if (json['attachment1'] != null) {
+        attachmentsList.add({
+          'name': 'Fichier 1',
+          'url': json['attachment1'].toString(),
+        });
+      }
+      if (json['attachment2'] != null) {
+        attachmentsList.add({
+          'name': 'Fichier 2',
+          'url': json['attachment2'].toString(),
+        });
+      }
+      if (json['attachment3'] != null) {
+        attachmentsList.add({
+          'name': 'Fichier 3',
+          'url': json['attachment3'].toString(),
+        });
+      }
+    }
+
+    return ClientProject(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
       client: json['client'] != null ? User.fromJson(json['client']) : null,
-      clientName: json['client_name'] ?? '',
+      clientName: json['client_name'] ?? 'Client anonyme',
       category: json['category'] != null ? Category.fromJson(json['category']) : null,
       categoryName: json['category_name'] ?? '',
       subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
       subcategoryName: json['subcategory_name'],
-      budgetRange: json['budget_range'],
-      minBudget: json['min_budget'] != null ? double.parse(json['min_budget'].toString()) : null,
-      maxBudget: json['max_budget'] != null ? double.parse(json['max_budget'].toString()) : null,
+      budgetRange: json['budget_range'] ?? '',
+      minBudget: json['min_budget'] != null ? double.tryParse(json['min_budget'].toString()) : null,
+      maxBudget: json['max_budget'] != null ? double.tryParse(json['max_budget'].toString()) : null,
       budgetDisplay: json['budget_display'] ?? '',
-      location: json['location'],
+      location: json['location'] ?? '',
       remotePossible: json['remote_possible'] ?? false,
-      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
-      urgency: json['urgency'],
-      status: json['status'],
+      deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'].toString()) : null,
+      urgency: json['urgency'] ?? 'medium',
+      status: json['status'] ?? 'open',
       contactViaPlatform: json['contact_via_platform'] ?? true,
       showEmail: json['show_email'] ?? false,
       showPhone: json['show_phone'] ?? false,
-      requiredSkills: (json['required_skills'] as List<dynamic>?)
-          ?.map((skill) => ProjectSkill.fromJson(skill))
-          .toList() ?? [],
+      requiredSkills: skillsList,
       offersCount: json['offers_count'] ?? 0,
       viewsCount: json['views_count'] ?? 0,
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: json['created_at'] != null 
+          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       timeSincePosted: json['time_since_posted'],
       isFavorited: json['is_favorited'],
       hasUserOffered: json['has_user_offered'],
       attachment1: json['attachment1'],
       attachment2: json['attachment2'],
       attachment3: json['attachment3'],
+      attachments: attachmentsList,
     );
   }
 
@@ -131,7 +259,7 @@ class ClientProject {
       'contact_via_platform': contactViaPlatform,
       'show_email': showEmail,
       'show_phone': showPhone,
-      'required_skills': requiredSkills.map((skill) => skill.toJson()).toList(),
+      'required_skills': requiredSkills,
       'offers_count': offersCount,
       'views_count': viewsCount,
       'created_at': createdAt.toIso8601String(),
@@ -141,26 +269,44 @@ class ClientProject {
       'attachment1': attachment1,
       'attachment2': attachment2,
       'attachment3': attachment3,
+      'attachments': attachments,
     };
   }
 
-  // Getters utilitaires
-  String get urgencyLabel {
-    switch (urgency) {
-      case 'low':
-        return 'Pas urgent';
-      case 'medium':
-        return 'Modérément urgent';
-      case 'high':
-        return 'Urgent';
-      case 'very_high':
-        return 'Très urgent';
-      default:
-        return urgency;
-    }
+  @override
+  String toString() {
+    return 'ClientProject(id: $id, title: $title, status: $status, clientName: $clientName)';
   }
 
-  String get statusLabel {
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    
+    return other is ClientProject &&
+        other.id == id &&
+        other.title == title &&
+        other.status == status;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^ title.hashCode ^ status.hashCode;
+  }
+
+  // Méthodes utilitaires
+  bool get isOpen => status == 'open';
+  bool get isInProgress => status == 'in_progress';
+  bool get isCompleted => status == 'completed';
+  bool get isClosed => status == 'closed';
+  
+  bool get isUrgent => urgency == 'high';
+  bool get hasDeadline => deadline != null;
+  bool get hasAttachments => (attachments?.isNotEmpty ?? false) || 
+                            attachment1 != null || 
+                            attachment2 != null || 
+                            attachment3 != null;
+  
+  String get statusDisplay {
     switch (status) {
       case 'open':
         return 'Ouvert';
@@ -168,14 +314,28 @@ class ClientProject {
         return 'En cours';
       case 'completed':
         return 'Terminé';
-      case 'cancelled':
-        return 'Annulé';
+      case 'closed':
+        return 'Fermé';
+      case 'paused':
+        return 'En pause';
       default:
         return status;
     }
   }
 
-  bool get isOpen => status == 'open';
-  bool get hasDeadline => deadline != null;
-  bool get hasAttachments => attachment1 != null || attachment2 != null || attachment3 != null;
+  String get urgencyDisplay {
+    switch (urgency) {
+      case 'high':
+        return 'Urgent';
+      case 'medium':
+        return 'Modéré';
+      case 'low':
+        return 'Pas pressé';
+      default:
+        return urgency;
+    }
+  }
+
+  // Alias pour compatibilité
+  String get urgencyLabel => urgencyDisplay;
 }

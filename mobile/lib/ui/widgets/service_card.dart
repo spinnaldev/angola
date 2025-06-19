@@ -31,15 +31,16 @@ class ServiceCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                image: service.imageUrl.isNotEmpty 
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
+                image: service.imageUrl.isNotEmpty
                     ? DecorationImage(
                         image: NetworkImage(service.imageUrl),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
-              child: service.imageUrl.isEmpty 
+              child: service.imageUrl.isEmpty
                   ? const Icon(
                       Icons.work_outline,
                       size: 40,
@@ -47,7 +48,7 @@ class ServiceCard extends StatelessWidget {
                     )
                   : null,
             ),
-            
+
             // Contenu du service
             Expanded(
               child: Padding(
@@ -67,7 +68,7 @@ class ServiceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Description
                     Text(
                       service.description,
@@ -79,7 +80,7 @@ class ServiceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Note et avis
                     Row(
                       children: [
@@ -107,27 +108,28 @@ class ServiceCard extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
-                    
+
                     // Prix
                     Row(
                       children: [
                         Text(
-                          service.priceType == 'fixed' 
+                          service.priceType == 'fixed'
                               ? '${service.price.toInt()}€'
                               : 'Sur devis',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: service.priceType == 'fixed' 
-                                ? Colors.green 
+                            color: service.priceType == 'fixed'
+                                ? Colors.green
                                 : Colors.orange,
                           ),
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            color: const Color(0xFF142FE2).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(

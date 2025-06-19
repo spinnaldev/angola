@@ -94,6 +94,37 @@ class ApiService {
   //   }
   // }
 
+  // ===============================
+  // MÉTHODES POUR LES STATISTIQUES PRESTATAIRE
+  // ===============================
+
+  Future<Map<String, dynamic>> getProviderStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/profile_stats/'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('Failed to load provider stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProviderStats: $e');
+      // Retourner des données mock en cas d'erreur
+      return {
+        'prestations_completed_this_month': 0,
+        'prestations_in_progress': 0,
+        'unread_messages': 0,
+        'total_earnings_this_month': 0,
+        'avg_rating': 0,
+        'total_reviews': 0,
+      };
+    }
+  }
+  
   // Récupérer les services à proximité
   Future<List<Service>> getNearbyServices() async {
     try {
@@ -244,28 +275,81 @@ class ApiService {
     }
   }
 
+   // ===============================
+  // MÉTHODES POUR LES OFFRES
+  // ===============================
+
+  // Future<void> submitOffer(int projectId, Map<String, dynamic> offerData) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/projects/$projectId/offers/'),
+  //       headers: await getHeaders(),
+  //       body: json.encode(offerData),
+  //     );
+
+  //     if (response.statusCode != 201) {
+  //       final errorData = json.decode(response.body);
+  //       throw Exception(errorData['detail'] ?? 'Erreur lors de l\'envoi de l\'offre');
+  //     }
+  //   } catch (e) {
+  //     print('Error in submitOffer: $e');
+  //     throw e;
+  //   }
+  // }
+
   // Obtenir les projets de l'utilisateur
-  Future<List<Project>> getUserProjects() async {
+  // Future<List<Project>> getUserProjects() async {
+  //   try {
+  //     final headers = await getHeaders();
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/projects/user/'),
+  //       headers: headers,
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> data = json.decode(response.body)['results'] ?? [];
+  //       return data.map((item) => Project.fromJson(item)).toList();
+  //     } else {
+  //       // En cas d'erreur, retourner des données de test
+  //       return _getMockProjects();
+  //     }
+  //   } catch (e) {
+  //     print('Error in getUserProjects: $e');
+  //     // En cas d'exception, retourner des données de test
+  //     return _getMockProjects();
+  //   }
+  // }
+  Future<Map<String, dynamic>> getUserProjects() async {
     try {
-      final headers = await getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/projects/user/'),
-        headers: headers,
+        Uri.parse('$baseUrl/projects/my_projects/'),
+        headers: await getHeaders(),
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
-        return data.map((item) => Project.fromJson(item)).toList();
+        final data = json.decode(response.body);
+        final List<dynamic> projectsJson = data['results'] ?? [];
+        
+        final projects = projectsJson.map((item) {
+          return ClientProject.fromJson(item);
+        }).toList();
+
+        return {
+          'projects': projects,
+          'count': data['count'] ?? 0,
+        };
+      } else if (response.statusCode == 401) {
+        // Token expiré ou invalide
+        throw Exception('Unauthorized');
       } else {
-        // En cas d'erreur, retourner des données de test
-        return _getMockProjects();
+        throw Exception('Failed to load user projects: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getUserProjects: $e');
-      // En cas d'exception, retourner des données de test
-      return _getMockProjects();
+      throw e;
     }
   }
+
 
   // Méthodes pour générer des données de test
   List<ProviderModel> _getMockProviders() {
@@ -1334,32 +1418,59 @@ class ApiService {
     }
   }
 
-// === MÉTHODES POUR LES OFFRES ===
+//  // ===============================
+  // MÉTHODES POUR LES OFFRES
+  // ===============================
 
-  /// Créer une offre sur un projet
-  Future<ProjectOffer> createProjectOffer(
-      Map<String, dynamic> offerData) async {
+  Future<void> submitOffer(int projectId, Map<String, dynamic> offerData) async {
     try {
       final response = await http.post(
+        Uri.parse('$baseUrl/projects/$projectId/offers/'),
+        headers: await getHeaders(),
+        body: json.encode(offerData),
+      );
+
+      if (response.statusCode != 201) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Erreur lors de l\'envoi de l\'offre');
+      }
+    } catch (e) {
+      print('Error in submitOffer: $e');
+      throw e;
+    }
+  }
+
+  Future<void> createProjectOffer(Map<String, dynamic> offerData) async {
+    try {
+      // Essayer d'abord l'endpoint /project-offers/
+      var response = await http.post(
         Uri.parse('$baseUrl/project-offers/'),
         headers: await getHeaders(),
         body: json.encode(offerData),
       );
 
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return ProjectOffer.fromJson(data);
-      } else {
+      // Si 404, essayer l'endpoint alternatif
+      if (response.statusCode == 404) {
+        final projectId = offerData['project'];
+        response = await http.post(
+          Uri.parse('$baseUrl/projects/$projectId/offers/'),
+          headers: await getHeaders(),
+          body: json.encode(offerData),
+        );
+      }
+
+      // Si encore 404, essayer l'endpoint offers/ directement
+      if (response.statusCode == 404) {
+        response = await http.post(
+          Uri.parse('$baseUrl/offers/'),
+          headers: await getHeaders(),
+          body: json.encode(offerData),
+        );
+      }
+
+      if (response.statusCode != 201) {
         final errorData = json.decode(response.body);
-        String errorMessage = 'Failed to create offer';
-
-        if (errorData['non_field_errors'] != null) {
-          errorMessage = errorData['non_field_errors'][0];
-        } else if (errorData['detail'] != null) {
-          errorMessage = errorData['detail'];
-        }
-
-        throw Exception(errorMessage);
+        throw Exception(errorData['detail'] ?? 'Erreur lors de l\'envoi de l\'offre');
       }
     } catch (e) {
       print('Error in createProjectOffer: $e');
@@ -1367,27 +1478,22 @@ class ApiService {
     }
   }
 
-  /// Récupérer les offres pour un projet (client)
-  Future<List<ProjectOffer>> getProjectOffers(int projectId) async {
+  Future<List<dynamic>> getProjectOffers(int projectId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/project-offers/by_project/?project_id=$projectId'),
+        Uri.parse('$baseUrl/projects/$projectId/offers/'),
         headers: await getHeaders(),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return (data as List<dynamic>?)
-                ?.map((item) => ProjectOffer.fromJson(item))
-                .toList() ??
-            [];
+        return data['results'] ?? [];
       } else {
-        throw Exception(
-            'Failed to load project offers: ${response.statusCode}');
+        throw Exception('Failed to load project offers: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getProjectOffers: $e');
-      return [];
+      throw e;
     }
   }
 
@@ -1484,58 +1590,99 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getProjects([Map<String, dynamic>? filters]) async {
+  // Future<Map<String, dynamic>> getProjects([Map<String, dynamic>? filters]) async {
+  //   try {
+  //     var uri = Uri.parse('$baseUrl/projects/');
+      
+  //     if (filters != null && filters.isNotEmpty) {
+  //       uri = uri.replace(queryParameters: 
+  //         filters.map((key, value) => MapEntry(key, value.toString()))
+  //       );
+  //     }
+      
+  //     // Appel SANS authentification requise pour permettre l'accès public
+  //     final response = await http.get(
+  //       uri,
+  //       headers: {
+  //         'Content-Type': 'application/json; charset=utf-8',
+  //         'Accept': 'application/json',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       final projects = (data['results'] as List<dynamic>?)
+  //           ?.map((item) => ClientProject.fromJson(item))
+  //           .toList() ?? [];
+        
+  //       return {
+  //         'projects': projects,
+  //         'hasMore': data['next'] != null,
+  //         'total': data['count'] ?? 0,
+  //       };
+  //     } else if (response.statusCode == 401) {
+  //       // Si l'endpoint nécessite une authentification, retourner des données publiques limitées
+  //       print('Endpoint nécessite une authentification, utilisation des données mock');
+  //       return {
+  //         'projects': [],
+  //         'hasMore': false,
+  //         'total':0,
+  //       };
+  //     } else {
+  //       throw Exception('Failed to load projects: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Error in getProjects: $e');
+  //     // En cas d'erreur, retourner des données de test
+  //     return {
+  //       'projects': [],
+  //       'hasMore': false,
+  //       'total': [].length,
+  //     };
+  //   }
+  // }
+  Future<Map<String, dynamic>> getProjects(Map<String, dynamic> filters) async {
     try {
-      var uri = Uri.parse('$baseUrl/projects/');
+      // Construire les paramètres de requête
+      final queryParams = <String, String>{};
       
-      if (filters != null && filters.isNotEmpty) {
-        uri = uri.replace(queryParameters: 
-          filters.map((key, value) => MapEntry(key, value.toString()))
-        );
-      }
-      
-      // Appel SANS authentification requise pour permettre l'accès public
+      filters.forEach((key, value) {
+        if (value != null) {
+          queryParams[key] = value.toString();
+        }
+      });
+
+      final uri = Uri.parse('$baseUrl/projects/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
       final response = await http.get(
         uri,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Accept': 'application/json',
-        },
+        headers: await getHeaders(requireAuth: false),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final projects = (data['results'] as List<dynamic>?)
-            ?.map((item) => ClientProject.fromJson(item))
-            .toList() ?? [];
+        final List<dynamic> projectsJson = data['results'] ?? [];
         
+        final projects = projectsJson.map((item) {
+          return ClientProject.fromJson(item);
+        }).toList();
+
         return {
           'projects': projects,
-          'hasMore': data['next'] != null,
-          'total': data['count'] ?? 0,
-        };
-      } else if (response.statusCode == 401) {
-        // Si l'endpoint nécessite une authentification, retourner des données publiques limitées
-        print('Endpoint nécessite une authentification, utilisation des données mock');
-        return {
-          'projects': [],
-          'hasMore': false,
-          'total':0,
+          'count': data['count'] ?? 0,
+          'next': data['next'],
+          'previous': data['previous'],
         };
       } else {
         throw Exception('Failed to load projects: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getProjects: $e');
-      // En cas d'erreur, retourner des données de test
-      return {
-        'projects': [],
-        'hasMore': false,
-        'total': [].length,
-      };
+      throw e;
     }
   }
-
   /// Récupérer les services récents (accessible sans authentification)
   Future<List<Service>> getRecentServices() async {
     try {
@@ -1563,95 +1710,95 @@ class ApiService {
   }
 // === MÉTHODES MOCK POUR LES TESTS ===
 
-  List<ClientProject> _getMockClientProjects() {
-    return [
-      ClientProject(
-        id: 1,
-        title: 'Création d\'un site web e-commerce',
-        description:
-            'Je recherche un développeur pour créer un site e-commerce complet avec gestion des stocks, paiements sécurisés et interface d\'administration.',
-        clientName: 'Marie Dubois',
-        categoryName: 'Développement web',
-        budgetRange: '1000_10000',
-        budgetDisplay: '3000€ - 8000€',
-        location: 'Paris',
-        remotePossible: true,
-        urgency: 'medium',
-        status: 'open',
-        contactViaPlatform: true,
-        showEmail: false,
-        showPhone: false,
-        requiredSkills: [
-          ProjectSkill(id: 1, name: 'PHP', isRequired: true),
-          ProjectSkill(id: 2, name: 'JavaScript', isRequired: true),
-          ProjectSkill(id: 3, name: 'MySQL', isRequired: true),
-          ProjectSkill(id: 4, name: 'E-commerce', isRequired: false),
-        ],
-        offersCount: 12,
-        viewsCount: 45,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        timeSincePosted: 'Il y a 6 heures',
-        isFavorited: false,
-        hasUserOffered: false,
-      ),
-      ClientProject(
-        id: 2,
-        title: 'Design d\'une application mobile',
-        description:
-            'Recherche un designer UX/UI pour concevoir l\'interface d\'une application mobile de fitness avec suivi d\'activités et coaching personnalisé.',
-        clientName: 'Thomas Martin',
-        categoryName: 'Design graphique',
-        budgetRange: 'sur_devis',
-        budgetDisplay: 'Sur devis',
-        location: 'Lyon',
-        remotePossible: true,
-        urgency: 'high',
-        status: 'open',
-        contactViaPlatform: true,
-        showEmail: true,
-        showPhone: false,
-        requiredSkills: [
-          ProjectSkill(id: 5, name: 'UI/UX Design', isRequired: true),
-          ProjectSkill(id: 6, name: 'Figma', isRequired: true),
-          ProjectSkill(id: 7, name: 'Prototypage', isRequired: false),
-        ],
-        offersCount: 8,
-        viewsCount: 32,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        timeSincePosted: 'Il y a 2 jours',
-        isFavorited: true,
-        hasUserOffered: false,
-      ),
-      ClientProject(
-        id: 3,
-        title: 'Rénovation d\'appartement',
-        description:
-            'Rénovation complète d\'un appartement de 80m² : peinture, parquet, salle de bain, cuisine. Travaux à prévoir sur 6 semaines.',
-        clientName: 'Sophie Laurent',
-        categoryName: 'Rénovation',
-        budgetRange: '10000_plus',
-        budgetDisplay: '15000€ - 25000€',
-        location: 'Marseille',
-        remotePossible: false,
-        urgency: 'low',
-        status: 'open',
-        contactViaPlatform: true,
-        showEmail: false,
-        showPhone: true,
-        requiredSkills: [
-          ProjectSkill(id: 8, name: 'Peinture', isRequired: true),
-          ProjectSkill(id: 9, name: 'Carrelage', isRequired: true),
-          ProjectSkill(id: 10, name: 'Plomberie', isRequired: false),
-        ],
-        offersCount: 5,
-        viewsCount: 18,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        timeSincePosted: 'Il y a 1 jour',
-        isFavorited: false,
-        hasUserOffered: true,
-      ),
-    ];
-  }
+  // List<ClientProject> _getMockClientProjects() {
+  //   return [
+  //     ClientProject(
+  //       id: 1,
+  //       title: 'Création d\'un site web e-commerce',
+  //       description:
+  //           'Je recherche un développeur pour créer un site e-commerce complet avec gestion des stocks, paiements sécurisés et interface d\'administration.',
+  //       clientName: 'Marie Dubois',
+  //       categoryName: 'Développement web',
+  //       budgetRange: '1000_10000',
+  //       budgetDisplay: '3000€ - 8000€',
+  //       location: 'Paris',
+  //       remotePossible: true,
+  //       urgency: 'medium',
+  //       status: 'open',
+  //       contactViaPlatform: true,
+  //       showEmail: false,
+  //       showPhone: false,
+  //       requiredSkills: [
+  //         ProjectSkill(id: 1, name: 'PHP', isRequired: true),
+  //         ProjectSkill(id: 2, name: 'JavaScript', isRequired: true),
+  //         ProjectSkill(id: 3, name: 'MySQL', isRequired: true),
+  //         ProjectSkill(id: 4, name: 'E-commerce', isRequired: false),
+  //       ],
+  //       offersCount: 12,
+  //       viewsCount: 45,
+  //       createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+  //       timeSincePosted: 'Il y a 6 heures',
+  //       isFavorited: false,
+  //       hasUserOffered: false,
+  //     ),
+  //     ClientProject(
+  //       id: 2,
+  //       title: 'Design d\'une application mobile',
+  //       description:
+  //           'Recherche un designer UX/UI pour concevoir l\'interface d\'une application mobile de fitness avec suivi d\'activités et coaching personnalisé.',
+  //       clientName: 'Thomas Martin',
+  //       categoryName: 'Design graphique',
+  //       budgetRange: 'sur_devis',
+  //       budgetDisplay: 'Sur devis',
+  //       location: 'Lyon',
+  //       remotePossible: true,
+  //       urgency: 'high',
+  //       status: 'open',
+  //       contactViaPlatform: true,
+  //       showEmail: true,
+  //       showPhone: false,
+  //       requiredSkills: [
+  //         ProjectSkill(id: 5, name: 'UI/UX Design', isRequired: true),
+  //         ProjectSkill(id: 6, name: 'Figma', isRequired: true),
+  //         ProjectSkill(id: 7, name: 'Prototypage', isRequired: false),
+  //       ],
+  //       offersCount: 8,
+  //       viewsCount: 32,
+  //       createdAt: DateTime.now().subtract(const Duration(days: 2)),
+  //       timeSincePosted: 'Il y a 2 jours',
+  //       isFavorited: true,
+  //       hasUserOffered: false,
+  //     ),
+  //     ClientProject(
+  //       id: 3,
+  //       title: 'Rénovation d\'appartement',
+  //       description:
+  //           'Rénovation complète d\'un appartement de 80m² : peinture, parquet, salle de bain, cuisine. Travaux à prévoir sur 6 semaines.',
+  //       clientName: 'Sophie Laurent',
+  //       categoryName: 'Rénovation',
+  //       budgetRange: '10000_plus',
+  //       budgetDisplay: '15000€ - 25000€',
+  //       location: 'Marseille',
+  //       remotePossible: false,
+  //       urgency: 'low',
+  //       status: 'open',
+  //       contactViaPlatform: true,
+  //       showEmail: false,
+  //       showPhone: true,
+  //       requiredSkills: [
+  //         ProjectSkill(id: 8, name: 'Peinture', isRequired: true),
+  //         ProjectSkill(id: 9, name: 'Carrelage', isRequired: true),
+  //         ProjectSkill(id: 10, name: 'Plomberie', isRequired: false),
+  //       ],
+  //       offersCount: 5,
+  //       viewsCount: 18,
+  //       createdAt: DateTime.now().subtract(const Duration(days: 1)),
+  //       timeSincePosted: 'Il y a 1 jour',
+  //       isFavorited: false,
+  //       hasUserOffered: true,
+  //     ),
+  //   ];
+  // }
 
   // List<Review> _getMockReviews() {
   //   return [

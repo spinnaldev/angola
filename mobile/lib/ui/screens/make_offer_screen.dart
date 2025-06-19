@@ -1,4 +1,4 @@
-// mobile/lib/ui/screens/make_offer_screen.dart
+// mobile/lib/ui/screens/make_offer_screen.dart - Version corrigée
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/client_project.dart';
@@ -45,9 +45,6 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     }
     // Estimation du délai basée sur l'urgence
     switch (widget.project.urgency) {
-      case 'very_high':
-        _deliveryTimeController.text = '3';
-        break;
       case 'high':
         _deliveryTimeController.text = '7';
         break;
@@ -57,6 +54,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       case 'low':
         _deliveryTimeController.text = '30';
         break;
+      default:
+        _deliveryTimeController.text = '14';
     }
   }
 
@@ -97,9 +96,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF6366F1).withOpacity(0.05),
+        color:const Color(0xFF142FE2).withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF142FE2).withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +161,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
               children: [
                 Icon(
                   Icons.priority_high,
-                  color: widget.project.urgency == 'very_high' 
+                  color: widget.project.urgency == 'high' 
                       ? Colors.red 
                       : Colors.orange,
                   size: 16,
@@ -171,7 +170,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                 Text(
                   widget.project.urgencyLabel,
                   style: TextStyle(
-                    color: widget.project.urgency == 'very_high' 
+                    color: widget.project.urgency == 'high' 
                         ? Colors.red 
                         : Colors.orange,
                     fontWeight: FontWeight.w500,
@@ -426,7 +425,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       children: [
         Row(
           children: [
-            Icon(icon, color: const Color(0xFF6366F1), size: 20),
+            Icon(icon, color: const Color(0xFF142FE2), size: 20),
             const SizedBox(width: 8),
             Text(
               title,
@@ -464,7 +463,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submitOffer,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -525,33 +524,39 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
       await apiService.createProjectOffer(offerData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Offre envoyée avec succès !'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Offre envoyée avec succès !'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      Navigator.of(context).pop(true);
-      
-    } catch (e) {
-      String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
-      if (e.toString().contains('déjà fait une offre')) {
-        errorMessage = 'Vous avez déjà fait une offre pour ce projet';
-      } else if (e.toString().contains('plus d\'offres')) {
-        errorMessage = 'Ce projet n\'accepte plus d\'offres';
+        Navigator.of(context).pop(true);
       }
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
+        if (e.toString().contains('déjà fait une offre')) {
+          errorMessage = 'Vous avez déjà fait une offre pour ce projet';
+        } else if (e.toString().contains('plus d\'offres')) {
+          errorMessage = 'Ce projet n\'accepte plus d\'offres';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

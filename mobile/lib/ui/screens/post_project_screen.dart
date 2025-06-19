@@ -11,7 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
 import 'dart:io';
 import '../../core/models/subcategory.dart';
-  
+
 class PostProjectScreen extends StatefulWidget {
   const PostProjectScreen({Key? key}) : super(key: key);
 
@@ -22,14 +22,14 @@ class PostProjectScreen extends StatefulWidget {
 class _PostProjectScreenState extends State<PostProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
-  
+
   // Contrôleurs de texte
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _minBudgetController = TextEditingController();
   final _maxBudgetController = TextEditingController();
-  
+
   // Variables de state
   Category? _selectedCategory;
   Subcategory? _selectedSubcategory;
@@ -40,16 +40,16 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   bool _showEmail = false;
   bool _showPhone = false;
   DateTime? _selectedDeadline;
-  
+
   // Fichiers
   File? _attachment1;
   File? _attachment2;
   File? _attachment3;
-  
+
   // Compétences
   final List<String> _requiredSkills = [];
   final _skillController = TextEditingController();
-  
+
   bool _isLoading = false;
 
   @override
@@ -59,7 +59,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    final categoryProvider =
+        Provider.of<CategoryProvider>(context, listen: false);
     await categoryProvider.fetchCategories();
   }
 
@@ -134,9 +135,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF6366F1).withOpacity(0.1),
+        color: const Color(0xFF142FE2).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF142FE2).withOpacity(0.2)),
       ),
       child: Row(
         children: [
@@ -284,9 +285,12 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
           items: const [
             DropdownMenuItem(value: 'moins_500', child: Text('Moins de 500 €')),
             DropdownMenuItem(value: '500_1000', child: Text('500 à 1000 €')),
-            DropdownMenuItem(value: '1000_10000', child: Text('1000 à 10 000 €')),
-            DropdownMenuItem(value: '10000_plus', child: Text('10 000 € et plus')),
-            DropdownMenuItem(value: 'sur_devis', child: Text('Demande de devis')),
+            DropdownMenuItem(
+                value: '1000_10000', child: Text('1000 à 10 000 €')),
+            DropdownMenuItem(
+                value: '10000_plus', child: Text('10 000 € et plus')),
+            DropdownMenuItem(
+                value: 'sur_devis', child: Text('Demande de devis')),
           ],
           onChanged: (String? value) {
             setState(() {
@@ -411,7 +415,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
                   ? '${_selectedDeadline!.year}-${_selectedDeadline!.month}-${_selectedDeadline!.day}'
                   : 'Choisir une date',
               style: TextStyle(
-                color: _selectedDeadline != null ? Colors.black87 : Colors.grey[600],
+                color: _selectedDeadline != null
+                    ? Colors.black87
+                    : Colors.grey[600],
               ),
             ),
           ),
@@ -441,9 +447,10 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
             ElevatedButton(
               onPressed: () => _addSkill(_skillController.text),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
+                backgroundColor: const Color(0xFF142FE2),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
               child: const Text('Ajouter'),
             ),
@@ -459,8 +466,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
                 label: Text(skill),
                 deleteIcon: const Icon(Icons.close, size: 18),
                 onDeleted: () => _removeSkill(skill),
-                backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
-                deleteIconColor: const Color(0xFF6366F1),
+                backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+                deleteIconColor: const Color(0xFF142FE2),
               );
             }).toList(),
           ),
@@ -492,16 +499,20 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 14),
         ),
         const SizedBox(height: 16),
-        _buildAttachmentTile('Fichier 1', _attachment1, (file) => _attachment1 = file),
+        _buildAttachmentTile(
+            'Fichier 1', _attachment1, (file) => _attachment1 = file),
         const SizedBox(height: 8),
-        _buildAttachmentTile('Fichier 2', _attachment2, (file) => _attachment2 = file),
+        _buildAttachmentTile(
+            'Fichier 2', _attachment2, (file) => _attachment2 = file),
         const SizedBox(height: 8),
-        _buildAttachmentTile('Fichier 3', _attachment3, (file) => _attachment3 = file),
+        _buildAttachmentTile(
+            'Fichier 3', _attachment3, (file) => _attachment3 = file),
       ],
     );
   }
 
-  Widget _buildAttachmentTile(String label, File? file, Function(File?) onFileSelected) {
+  Widget _buildAttachmentTile(
+      String label, File? file, Function(File?) onFileSelected) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -512,7 +523,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         children: [
           Icon(
             file != null ? Icons.attach_file : Icons.add,
-            color: const Color(0xFF6366F1),
+            color: const Color(0xFF142FE2),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -584,7 +595,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
+  Widget _buildSection(
+      {required String title, required List<Widget> children}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -603,7 +615,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Future<void> _loadSubcategories(int categoryId) async {
-    final subcategoryProvider = Provider.of<SubcategoryProvider>(context, listen: false);
+    final subcategoryProvider =
+        Provider.of<SubcategoryProvider>(context, listen: false);
     await subcategoryProvider.fetchSubcategoriesForCategory(categoryId);
   }
 
@@ -673,7 +686,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      
+
       // Préparer les données du projet
       final projectData = {
         'title': _titleController.text.trim(),
@@ -681,11 +694,11 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         'category': _selectedCategory!.id,
         'subcategory': _selectedSubcategory?.id,
         'budget_range': _selectedBudgetRange,
-        'min_budget': _minBudgetController.text.isNotEmpty 
-            ? double.parse(_minBudgetController.text) 
+        'min_budget': _minBudgetController.text.isNotEmpty
+            ? double.parse(_minBudgetController.text)
             : null,
-        'max_budget': _maxBudgetController.text.isNotEmpty 
-            ? double.parse(_maxBudgetController.text) 
+        'max_budget': _maxBudgetController.text.isNotEmpty
+            ? double.parse(_maxBudgetController.text)
             : null,
         'location': _locationController.text.trim(),
         'remote_possible': _remotePossible,
@@ -694,16 +707,19 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         'contact_via_platform': _contactViaPlatform,
         'show_email': _showEmail,
         'show_phone': _showPhone,
-        'required_skills': _requiredSkills.map((skill) => {
-          'name': skill,
-          'is_required': true,
-        }).toList(),
+        'required_skills': _requiredSkills
+            .map((skill) => {
+                  'name': skill,
+                  'is_required': true,
+                })
+            .toList(),
       };
 
-       // Ajouter la date limite si sélectionnée
+      // Ajouter la date limite si sélectionnée
       if (_selectedDeadline != null) {
         // Format correct YYYY-MM-DD demandé par l'API
-        projectData['deadline'] = DateFormat('yyyy-MM-dd').format(_selectedDeadline!);
+        projectData['deadline'] =
+            DateFormat('yyyy-MM-dd').format(_selectedDeadline!);
       }
 
       // Créer le projet
@@ -723,7 +739,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
       // Retourner à l'écran précédent
       Navigator.of(context).pop(true);
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

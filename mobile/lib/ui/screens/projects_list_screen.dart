@@ -228,9 +228,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
         Tab(text: 'Tous les projets'),
         // Tab(text: 'Mes favoris'),
       ],
-      labelColor: const Color(0xFF6366F1),
+      labelColor: const Color(0xFF142FE2),
       unselectedLabelColor: Colors.grey,
-      indicatorColor: const Color(0xFF6366F1),
+      indicatorColor: const Color(0xFF142FE2),
     );
   }
 
@@ -323,7 +323,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
           ElevatedButton(
             onPressed: _clearFilters,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
             ),
             child: const Text('Réinitialiser les filtres'),
@@ -489,7 +489,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
                       _loadProjects(refresh: true);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF142FE2),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),

@@ -1,27 +1,40 @@
+// lib/core/models/project_skill.dart - Version simplifiée
 class ProjectSkill {
-  final int id;
+  final int? id;
   final String name;
   final bool isRequired;
 
   ProjectSkill({
-    required this.id,
+    this.id,
     required this.name,
-    required this.isRequired,
+    this.isRequired = true,
   });
 
   factory ProjectSkill.fromJson(Map<String, dynamic> json) {
     return ProjectSkill(
       id: json['id'],
-      name: json['name'],
+      name: json['name'] ?? '',
       isRequired: json['is_required'] ?? true,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'name': name,
       'is_required': isRequired,
     };
   }
+
+  @override
+  String toString() => name;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ProjectSkill && other.name == name;
+  }
+
+  @override
+  int get hashCode => name.hashCode;
 }

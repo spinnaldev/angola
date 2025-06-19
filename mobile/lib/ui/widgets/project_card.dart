@@ -1,4 +1,4 @@
-// mobile/lib/ui/widgets/project_card.dart
+// mobile/lib/ui/widgets/project_card.dart - Version corrigée
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/client_project.dart';
@@ -23,6 +23,7 @@ class ProjectCard extends StatelessWidget {
 
     return Card(
       elevation: 2,
+      shadowColor: Colors.grey.withOpacity(0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -54,27 +55,27 @@ class ProjectCard extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF6366F1).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: const Color(0xFF142FE2).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             project.categoryName,
             style: const TextStyle(
               color: Color(0xFF6366F1),
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
         const Spacer(),
         if (project.urgency != 'low') ...[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: _getUrgencyColor().withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -90,7 +91,7 @@ class ProjectCard extends StatelessWidget {
                   style: TextStyle(
                     color: _getUrgencyColor(),
                     fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -105,12 +106,11 @@ class ProjectCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(4),
               child: Icon(
-                project.isFavorited == true 
-                    ? Icons.favorite 
+                project.isFavorited == true
+                    ? Icons.favorite
                     : Icons.favorite_border,
-                color: project.isFavorited == true 
-                    ? Colors.red 
-                    : Colors.grey,
+                color:
+                    project.isFavorited == true ? Colors.red : Colors.grey[600],
                 size: 20,
               ),
             ),
@@ -118,26 +118,26 @@ class ProjectCard extends StatelessWidget {
         ],
         if (project.hasUserOffered == true) ...[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle,
                   color: Colors.green,
                   size: 12,
                 ),
-                const SizedBox(width: 4),
-                const Text(
+                SizedBox(width: 4),
+                Text(
                   'Offre envoyée',
                   style: TextStyle(
                     color: Colors.green,
                     fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -153,7 +153,7 @@ class ProjectCard extends StatelessWidget {
       project.title,
       style: const TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
         color: Colors.black87,
         height: 1.3,
       ),
@@ -165,9 +165,9 @@ class ProjectCard extends StatelessWidget {
   Widget _buildDescription() {
     return Text(
       project.description,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
-        color: Colors.grey,
+        color: Colors.grey[600],
         height: 1.4,
       ),
       maxLines: 3,
@@ -188,27 +188,28 @@ class ProjectCard extends StatelessWidget {
       spacing: 6,
       runSpacing: 6,
       children: [
+        // Correction : utiliser directement skill au lieu de skill.name
         ...displaySkills.map((skill) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Text(
-            skill.name,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black87,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        )),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Text(
+                skill, // skill est déjà une String
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )),
         if (hasMore) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
+              color: const Color(0xFF142FE2).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -216,7 +217,7 @@ class ProjectCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 11,
                 color: Color(0xFF6366F1),
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -230,6 +231,7 @@ class ProjectCard extends StatelessWidget {
       children: [
         // Informations sur le budget
         Expanded(
+          flex: 2,
           child: Row(
             children: [
               const Icon(
@@ -242,7 +244,7 @@ class ProjectCard extends StatelessWidget {
                 child: Text(
                   project.budgetDisplay,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     color: Colors.green,
                     fontSize: 14,
                   ),
@@ -252,26 +254,25 @@ class ProjectCard extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Localisation
         if (project.location.isNotEmpty) ...[
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
+            flex: 2,
             child: Row(
               children: [
                 Icon(
-                  project.remotePossible 
-                      ? Icons.computer 
-                      : Icons.location_on,
+                  project.remotePossible ? Icons.computer : Icons.location_on,
                   color: Colors.grey[600],
-                  size: 16,
+                  size: 14,
                 ),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     project.remotePossible && project.location.isNotEmpty
                         ? 'Remote / ${project.location}'
-                        : project.remotePossible 
+                        : project.remotePossible
                             ? 'Remote'
                             : project.location,
                     style: TextStyle(
@@ -285,41 +286,71 @@ class ProjectCard extends StatelessWidget {
             ),
           ),
         ],
-        
+
         // Informations sur les offres et le temps
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.person_outline,
-                  color: Colors.grey,
-                  size: 14,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${project.offersCount} offre${project.offersCount > 1 ? 's' : ''}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+        Expanded(
+          flex: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    color: Colors.grey[600],
+                    size: 14,
                   ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '${project.offersCount}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility,
+                    color: Colors.grey[600],
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '${project.viewsCount}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              if (project.timeSincePosted != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  project.timeSincePosted!,
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 11,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-            ),
-            const SizedBox(height: 4),
-            if (project.timeSincePosted != null) ...[
-              Text(
-                project.timeSincePosted!,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 11,
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ],
     );
@@ -327,12 +358,10 @@ class ProjectCard extends StatelessWidget {
 
   Color _getUrgencyColor() {
     switch (project.urgency) {
-      case 'very_high':
-        return Colors.red;
       case 'high':
-        return Colors.orange;
+        return Colors.red;
       case 'medium':
-        return Colors.amber;
+        return Colors.orange;
       case 'low':
         return Colors.green;
       default:
