@@ -464,43 +464,89 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildAppBar(BuildContext context, bool isProvider) {
     return SliverAppBar(
-      expandedHeight: 100,
+      expandedHeight: 80, // Réduire la hauteur de 100 à 80
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF142FE2),
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+      elevation: 4, // Ajouter une élévation pour l'effet shadow
+      shadowColor: const Color(0xFF142FE2).withOpacity(0.3), // Couleur du shadow
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+          padding: EdgeInsets.zero,
+        ),
       ),
       actions: [
-        if (isProvider) ...[
-          IconButton(
-            onPressed: _toggleFavorite,
-            icon: Icon(
-              _isFavorited ? Icons.favorite : Icons.favorite_border,
-              color: _isFavorited ? Colors.red : Colors.white,
-            ),
+        // Conteneur pour organiser les actions sur une ligne
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isProvider) ...[
+                // Bouton favori avec background semi-transparent
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: _toggleFavorite,
+                    icon: Icon(
+                      _isFavorited ? Icons.favorite : Icons.favorite_border,
+                      color: _isFavorited ? Colors.red : Colors.white,
+                      size: 20,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                  ),
+                ),
+              ],
+              // Bouton partage avec background semi-transparent
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  onPressed: _shareProject,
+                  icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-        IconButton(
-          onPressed: _shareProject,
-          icon: const Icon(Icons.share, color: Colors.white),
         ),
-        const SizedBox(width: 8),
       ],
-      flexibleSpace: const FlexibleSpaceBar(
-        title: Text(
+      flexibleSpace: FlexibleSpaceBar(
+        title: const Text(
           'Détails du projet',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
+            fontSize: 18, // Taille légèrement plus petite
           ),
         ),
-        titlePadding: EdgeInsets.only(left: 16, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 56, bottom: 12), // Ajuster pour le nouveau bouton back
+        centerTitle: false, // Aligner à gauche
       ),
     );
   }
-
   Widget _buildProjectHeader() {
     return Container(
       padding: const EdgeInsets.all(20),

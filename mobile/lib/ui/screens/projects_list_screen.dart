@@ -26,18 +26,20 @@ class ProjectsListScreen extends StatefulWidget {
   State<ProjectsListScreen> createState() => _ProjectsListScreenState();
 }
 
-class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProviderStateMixin {
-  late TabController _tabController;
+class _ProjectsListScreenState extends State<ProjectsListScreen>
+    with TickerProviderStateMixin {
+  // late TabController _tabController;
+  // TabController? _tabController;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<ClientProject> _projects = [];
   List<Category> _categories = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   int _currentPage = 1;
   bool _hasMore = true;
-  
+
   // Filtres
   Category? _selectedCategory;
   String _selectedBudget = '';
@@ -60,7 +62,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
 
   Future<void> _loadCategories() async {
     try {
-      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+      final categoryProvider =
+          Provider.of<CategoryProvider>(context, listen: false);
       await categoryProvider.fetchCategories();
       setState(() {
         _categories = categoryProvider.categories;
@@ -92,13 +95,13 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      
+
       // Construire les paramètres de filtrage
       final filters = <String, dynamic>{
         'page': _currentPage,
         'page_size': 10,
       };
-      
+
       if (_selectedCategory != null) {
         filters['category'] = _selectedCategory!.id;
       }
@@ -114,9 +117,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
       if (_searchQuery.isNotEmpty) {
         filters['search'] = _searchQuery;
       }
-      
+
       final result = await apiService.getProjects(filters);
-      
+
       setState(() {
         if (refresh) {
           _projects = result['projects'];
@@ -126,7 +129,6 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
         _hasMore = result['hasMore'];
         _currentPage++;
       });
-      
     } catch (e) {
       print('Erreur lors du chargement des projets: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +143,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore && _hasMore) {
         _loadProjects();
@@ -209,7 +211,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
           ),
           filled: true,
           fillColor: Colors.grey[100],
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
         onSubmitted: (value) {
           setState(() {
@@ -221,27 +224,28 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
     );
   }
 
-  Widget _buildTabBar() {
-    return TabBar(
-      controller: _tabController,
-      tabs: const [
-        Tab(text: 'Tous les projets'),
-        // Tab(text: 'Mes favoris'),
-      ],
-      labelColor: const Color(0xFF142FE2),
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: const Color(0xFF142FE2),
-    );
-  }
+  // Widget _buildTabBar() {
+  //   return TabBar(
+  //     controller: _tabController,
+  //     tabs: const [
+  //       Tab(text: 'Tous les projets'),
+  //       // Tab(text: 'Mes favoris'),
+  //     ],
+  //     labelColor: const Color(0xFF142FE2),
+  //     unselectedLabelColor: Colors.grey,
+  //     indicatorColor: const Color(0xFF142FE2),
+  //   );
+  // }
 
   Widget _buildProviderView() {
-    return TabBarView(
-      controller: _tabController,
-      children: [
-        _buildProjectsList(),
-        // _buildFavoriteProjects(),
-      ],
-    );
+    // return TabBarView(
+    //   controller: _tabController,
+    //   children: [
+    //     _buildProjectsList(),
+    //     // _buildFavoriteProjects(),
+    //   ],
+    // );
+    return _buildProjectsList();
   }
 
   Widget _buildClientView() {
@@ -417,18 +421,28 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
                       _buildFilterSection(
                         'Budget',
                         DropdownButtonFormField<String>(
-                          value: _selectedBudget.isEmpty ? null : _selectedBudget,
+                          value:
+                              _selectedBudget.isEmpty ? null : _selectedBudget,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                           ),
                           hint: const Text('Tous les budgets'),
                           items: const [
-                            DropdownMenuItem(value: null, child: Text('Tous les budgets')),
-                            DropdownMenuItem(value: 'moins_500', child: Text('Moins de 500 €')),
-                            DropdownMenuItem(value: '500_1000', child: Text('500 à 1000 €')),
-                            DropdownMenuItem(value: '1000_10000', child: Text('1000 à 10 000 €')),
-                            DropdownMenuItem(value: '10000_plus', child: Text('10 000 € et plus')),
-                            DropdownMenuItem(value: 'sur_devis', child: Text('Sur devis')),
+                            DropdownMenuItem(
+                                value: null, child: Text('Tous les budgets')),
+                            DropdownMenuItem(
+                                value: 'moins_500',
+                                child: Text('Moins de 500 €')),
+                            DropdownMenuItem(
+                                value: '500_1000', child: Text('500 à 1000 €')),
+                            DropdownMenuItem(
+                                value: '1000_10000',
+                                child: Text('1000 à 10 000 €')),
+                            DropdownMenuItem(
+                                value: '10000_plus',
+                                child: Text('10 000 € et plus')),
+                            DropdownMenuItem(
+                                value: 'sur_devis', child: Text('Sur devis')),
                           ],
                           onChanged: (String? value) {
                             setModalState(() {
@@ -441,17 +455,26 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
                       _buildFilterSection(
                         'Urgence',
                         DropdownButtonFormField<String>(
-                          value: _selectedUrgency.isEmpty ? null : _selectedUrgency,
+                          value: _selectedUrgency.isEmpty
+                              ? null
+                              : _selectedUrgency,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                           ),
                           hint: const Text('Toutes les urgences'),
                           items: const [
-                            DropdownMenuItem(value: null, child: Text('Toutes les urgences')),
-                            DropdownMenuItem(value: 'low', child: Text('Pas urgent')),
-                            DropdownMenuItem(value: 'medium', child: Text('Modérément urgent')),
-                            DropdownMenuItem(value: 'high', child: Text('Urgent')),
-                            DropdownMenuItem(value: 'very_high', child: Text('Très urgent')),
+                            DropdownMenuItem(
+                                value: null,
+                                child: Text('Toutes les urgences')),
+                            DropdownMenuItem(
+                                value: 'low', child: Text('Pas urgent')),
+                            DropdownMenuItem(
+                                value: 'medium',
+                                child: Text('Modérément urgent')),
+                            DropdownMenuItem(
+                                value: 'high', child: Text('Urgent')),
+                            DropdownMenuItem(
+                                value: 'very_high', child: Text('Très urgent')),
                           ],
                           onChanged: (String? value) {
                             setModalState(() {
@@ -561,17 +584,15 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> with TickerProv
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       await apiService.toggleProjectFavorite(project.id);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            project.isFavorited ?? false 
-                ? 'Projet retiré des favoris' 
-                : 'Projet ajouté aux favoris'
-          ),
+          content: Text(project.isFavorited ?? false
+              ? 'Projet retiré des favoris'
+              : 'Projet ajouté aux favoris'),
         ),
       );
-      
+
       _loadProjects(refresh: true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
