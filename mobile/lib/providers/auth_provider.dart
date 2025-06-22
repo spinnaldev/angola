@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/services/auth_service.dart';
 import '../core/models/user.dart';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 enum AuthStatus {
   uninitialized,
@@ -28,7 +32,7 @@ class AuthProvider with ChangeNotifier {
   PasswordResetStatus _resetStatus = PasswordResetStatus.initial;
   String? _resetEmail;
   String? _resetCode;
-
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   AuthProvider(this._authService) {
     // Vérifier l'état d'authentification au démarrage
     _checkCurrentUser();
@@ -43,6 +47,94 @@ class AuthProvider with ChangeNotifier {
   PasswordResetStatus get resetStatus => _resetStatus;
   String? get resetEmail => _resetEmail;
   String? get resetCode => _resetCode;
+
+
+  Future<bool> refreshToken() async {
+    try {
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      if (refreshToken == null) {
+        print('❌ Aucun refresh token disponible');
+        await logout();
+        return false;
+      }
+
+      print('🔄 Tentative de rafraîchissement du token...');
+      
+      // Récupérer l'URL de base depuis votre configuration
+      final baseUrl = _getBaseUrl();
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/token/refresh/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'refresh': refreshToken}),
+      );
+
+      print('Réponse refresh token: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final newAccessToken = data['access'];
+        
+        // Sauvegarder le nouveau token d'accès
+        await _secureStorage.write(key: 'access_token', value: newAccessToken);
+        
+        print('✅ Token rafraîchi avec succès');
+        return true;
+      } else {
+        print('❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
+        
+        // Supprimer les tokens invalides
+        await _secureStorage.delete(key: 'access_token');
+        await _secureStorage.delete(key: 'refresh_token');
+        
+        // Mettre à jour le statut d'authentification
+        _status = AuthStatus.unauthenticated;
+        _currentUser = null;
+        notifyListeners();
+        
+        return false;
+      }
+    } catch (e) {
+      print('❌ Erreur lors du rafraîchissement du token: $e');
+      return false;
+    }
+  }
+
+  /// Méthode pour vérifier si le token est valide
+  Future<bool> isTokenValid() async {
+    try {
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token == null) return false;
+
+      final baseUrl = _getBaseUrl();
+      
+      // Faire un appel API simple pour vérifier la validité du token
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/me/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Erreur lors de la vérification du token: $e');
+      return false;
+    }
+  }
+
+  /// Méthode pour valider et éventuellement rafraîchir le token avant les requêtes
+  Future<bool> ensureValidToken() async {
+    if (!await isTokenValid()) {
+      print('Token invalide, tentative de rafraîchissement...');
+      return await refreshToken();
+    }
+    return true;
+  }
 
   // Méthodes pour l'authentification et la vérification du statut
   Future<void> _checkCurrentUser() async {
@@ -262,15 +354,30 @@ class AuthProvider with ChangeNotifier {
   // Méthode de déconnexion améliorée
   Future<bool> logout() async {
     try {
+      // Appel à votre AuthService existant
       final success = await _authService.logout();
-      if (success) {
-        _currentUser = null;
-        _status = AuthStatus.unauthenticated;
-        notifyListeners();
-      }
+      
+      // S'assurer que les tokens sont supprimés
+      await _secureStorage.delete(key: 'access_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      
+      // Mettre à jour l'état
+      _currentUser = null;
+      _status = AuthStatus.unauthenticated;
+      _errorMessage = null;
+      
+      notifyListeners();
       return success;
     } catch (e) {
-      _errorMessage = e.toString();
+      print('Erreur lors de la déconnexion: $e');
+      
+      // Forcer la déconnexion locale même en cas d'erreur
+      await _secureStorage.delete(key: 'access_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      _currentUser = null;
+      _status = AuthStatus.unauthenticated;
+      _errorMessage = null;
+      
       notifyListeners();
       return false;
     }
@@ -324,5 +431,30 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Méthode utilitaire pour débugger l'état d'authentification
+  Future<void> debugAuthState() async {
+    final token = await _secureStorage.read(key: 'access_token');
+    final refreshToken = await _secureStorage.read(key: 'refresh_token');
+    
+    print('=== DEBUG AUTH STATE ===');
+    print('Status: $_status');
+    print('Current User: ${_currentUser?.email ?? 'null'}');
+    print('Access Token: ${token != null ? 'EXISTS (${token.length} chars)' : 'NULL'}');
+    print('Refresh Token: ${refreshToken != null ? 'EXISTS' : 'NULL'}');
+    print('Is Authenticated: $isAuthenticated');
+    print('========================');
+  }
+
+  /// Méthode pour obtenir l'URL de base de votre API
+  String _getBaseUrl() {
+    try {
+      // Si vous avez accès à dotenv
+      return dotenv.env['API_BASE_URL'] ?? 'http://localhost:8003/api';
+      
+    } catch (e) {
+      return 'http://localhost:8003/api';
+    }
   }
 }

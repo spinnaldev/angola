@@ -51,7 +51,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialiser le service API
     final apiService = ApiService(
-      baseUrl: 'http://10.0.2.2:8003/api',
+      baseUrl: dotenv.env['API_BASE_URL'] ?? 'http://localhost:8003/api',
+      // baseUrl: 'http://10.0.2.2:8003/api',
       // baseUrl: "https://angola.onrender.com/api",
       apiKey: 'your_api_key_here',
     );

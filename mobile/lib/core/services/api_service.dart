@@ -320,34 +320,139 @@ class ApiService {
   //   }
   // }
   Future<Map<String, dynamic>> getUserProjects() async {
+    int retryCount = 0;
+    const maxRetries = 2;
+
+    while (retryCount < maxRetries) {
+      try {
+        print('=== Tentative ${retryCount + 1} - Récupération des projets utilisateur ===');
+        
+        final headers = await getHeaders();
+        print('Headers préparés: ${headers.containsKey('Authorization') ? 'Token présent' : 'AUCUN TOKEN'}');
+        
+        final response = await http.get(
+          Uri.parse('$baseUrl/projects/my_projects/'),
+          headers: headers,
+        );
+
+        print('Réponse API getUserProjects: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final List<dynamic> projectsJson = data['results'] ?? [];
+          
+          final projects = projectsJson.map((item) {
+            return ClientProject.fromJson(item);
+          }).toList();
+
+          print('✅ Projets récupérés avec succès: ${projects.length} projets');
+          return {
+            'projects': projects,
+            'count': data['count'] ?? 0,
+          };
+          
+        } else if (response.statusCode == 401) {
+          print('❌ Erreur 401 - Token invalide ou expiré');
+          print('Corps de la réponse: ${response.body}');
+          
+          if (retryCount < maxRetries - 1) {
+            print('🔄 Tentative de rafraîchissement du token...');
+            
+            // Tenter de rafraîchir le token
+            final tokenRefreshed = await _attemptTokenRefresh();
+            if (tokenRefreshed) {
+              print('✅ Token rafraîchi, nouvelle tentative...');
+              retryCount++;
+              continue; // Réessayer avec le nouveau token
+            } else {
+              print('❌ Échec du rafraîchissement du token');
+              throw Exception('Unauthorized');
+            }
+          } else {
+            throw Exception('Unauthorized');
+          }
+          
+        } else {
+          print('❌ Erreur HTTP ${response.statusCode}');
+          print('Corps de la réponse: ${response.body}');
+          throw Exception('Failed to load user projects: ${response.statusCode} - ${response.body}');
+        }
+        
+      } catch (e) {
+        print('Erreur lors de la récupération des projets: $e');
+        
+        if (retryCount == maxRetries - 1) {
+          // Dernière tentative échouée
+          rethrow;
+        } else if (e.toString().contains('Unauthorized')) {
+          // Pour les erreurs 401, essayer de rafraîchir le token
+          retryCount++;
+        } else {
+          // Pour les autres erreurs, relancer immédiatement
+          rethrow;
+        }
+      }
+    }
+    
+    throw Exception('Impossible de récupérer les projets après $maxRetries tentatives');
+  }
+
+  // AJOUTEZ cette nouvelle méthode à votre ApiService :
+  Future<bool> _attemptTokenRefresh() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/projects/my_projects/'),
-        headers: await getHeaders(),
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      if (refreshToken == null) {
+        print('❌ Aucun refresh token disponible');
+        return false;
+      }
+
+      print('🔄 Rafraîchissement du token...');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/token/refresh/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'refresh': refreshToken}),
       );
+
+      print('Réponse refresh token: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List<dynamic> projectsJson = data['results'] ?? [];
+        final newAccessToken = data['access'];
         
-        final projects = projectsJson.map((item) {
-          return ClientProject.fromJson(item);
-        }).toList();
-
-        return {
-          'projects': projects,
-          'count': data['count'] ?? 0,
-        };
-      } else if (response.statusCode == 401) {
-        // Token expiré ou invalide
-        throw Exception('Unauthorized');
+        // Sauvegarder le nouveau token d'accès
+        await _secureStorage.write(key: 'access_token', value: newAccessToken);
+        
+        print('✅ Token rafraîchi et sauvegardé');
+        return true;
       } else {
-        throw Exception('Failed to load user projects: ${response.statusCode}');
+        print('❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
+        
+        // Supprimer les tokens invalides
+        await _secureStorage.delete(key: 'access_token');
+        await _secureStorage.delete(key: 'refresh_token');
+        
+        return false;
       }
     } catch (e) {
-      print('Error in getUserProjects: $e');
-      throw e;
+      print('❌ Erreur lors du rafraîchissement du token: $e');
+      return false;
     }
+  }
+
+  // AJOUTEZ aussi cette méthode de debug (optionnelle) :
+  Future<void> debugTokenState() async {
+    final token = await _secureStorage.read(key: 'access_token');
+    final refreshToken = await _secureStorage.read(key: 'refresh_token');
+    
+    print('=== DEBUG TOKEN STATE ===');
+    print('Access Token: ${token != null ? 'EXISTS (${token.length} chars)' : 'NULL'}');
+    print('Refresh Token: ${refreshToken != null ? 'EXISTS' : 'NULL'}');
+    print('Base URL: $baseUrl');
+    print('========================');
   }
 
 
@@ -1296,57 +1401,170 @@ class ApiService {
   }
 
   /// Créer un nouveau projet
+  // Future<ClientProject> createProject(
+  //     Map<String, dynamic> projectData, List<File?> attachments) async {
+  //   try {
+  //     var request =
+  //         http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
+
+  //     // Ajouter les headers d'authentification
+  //     final headers = await getHeaders();
+  //     request.headers.addAll(headers);
+
+  //     // Ajouter les données du projet
+  //     projectData.forEach((key, value) {
+  //       if (value != null) {
+  //         if (value is List) {
+  //           // Pour les compétences requises
+  //           request.fields[key] = json.encode(value);
+  //         } else {
+  //           request.fields[key] = value.toString();
+  //         }
+  //       }
+  //     });
+
+  //     // Ajouter les fichiers joints
+  //     for (int i = 0; i < attachments.length; i++) {
+  //       final file = attachments[i];
+  //       if (file != null) {
+  //         request.files.add(
+  //           await http.MultipartFile.fromPath(
+  //             'attachment${i + 1}',
+  //             file.path,
+  //           ),
+  //         );
+  //       }
+  //     }
+
+  //     final streamedResponse = await request.send();
+  //     final response = await http.Response.fromStream(streamedResponse);
+
+  //     if (response.statusCode == 201) {
+  //       final data = json.decode(response.body);
+  //       return ClientProject.fromJson(data);
+  //     } else {
+  //       final errorData = json.decode(response.body);
+  //       throw Exception(
+  //           'Failed to create project: ${errorData['detail'] ?? response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('Error in createProject: $e');
+  //     throw e;
+  //   }
+  // }
   Future<ClientProject> createProject(
-      Map<String, dynamic> projectData, List<File?> attachments) async {
+    Map<String, dynamic> projectData, List<File?> attachments) async {
     try {
-      var request =
-          http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
 
       // Ajouter les headers d'authentification
       final headers = await getHeaders();
       request.headers.addAll(headers);
 
-      // Ajouter les données du projet
-      projectData.forEach((key, value) {
+      // CORRECTION: Traitement manuel des champs pour éviter l'erreur forEach
+      // Ajouter les données du projet une par une
+      for (final entry in projectData.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        
         if (value != null) {
           if (value is List) {
-            // Pour les compétences requises
-            request.fields[key] = json.encode(value);
+            // Pour les compétences requises - conversion sécurisée
+            try {
+              request.fields[key] = json.encode(value);
+            } catch (e) {
+              print('Error encoding list for key $key: $e');
+              // Fallback : convertir chaque élément en string
+              final stringList = value.map((item) => item.toString()).toList();
+              request.fields[key] = json.encode(stringList);
+            }
           } else {
+            // Conversion sécurisée en string
             request.fields[key] = value.toString();
           }
         }
-      });
+      }
 
-      // Ajouter les fichiers joints
+      // CORRECTION: Traitement sécurisé des fichiers attachments
+      // Utiliser une boucle for classique avec index explicite
+      final validAttachments = <File>[];
+      
+      // Filtrer les attachments non-null d'abord
       for (int i = 0; i < attachments.length; i++) {
         final file = attachments[i];
-        if (file != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'attachment${i + 1}',
-              file.path,
-            ),
+        if (file != null && file.existsSync()) {
+          validAttachments.add(file);
+        }
+      }
+      
+      // Ajouter les fichiers valides
+      for (int index = 0; index < validAttachments.length && index < 3; index++) {
+        final file = validAttachments[index];
+        try {
+          final multipartFile = await http.MultipartFile.fromPath(
+            'attachment${index + 1}', // attachment1, attachment2, attachment3
+            file.path,
           );
+          request.files.add(multipartFile);
+          print('Added attachment${index + 1}: ${file.path.split('/').last}');
+        } catch (e) {
+          print('Error adding attachment ${index + 1}: $e');
+          // Continuer avec les autres fichiers même si un fichier échoue
         }
       }
 
+      print('Sending project creation request with ${request.fields.length} fields and ${request.files.length} files');
+
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         return ClientProject.fromJson(data);
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(
-            'Failed to create project: ${errorData['detail'] ?? response.body}');
+        // Gestion d'erreur améliorée
+        String errorMessage = 'Failed to create project';
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData is Map<String, dynamic>) {
+            if (errorData.containsKey('detail')) {
+              errorMessage = errorData['detail'].toString();
+            } else if (errorData.containsKey('message')) {
+              errorMessage = errorData['message'].toString();
+            } else {
+              // Afficher les erreurs de validation spécifiques
+              final errors = <String>[];
+              errorData.forEach((key, value) {
+                if (value is List) {
+                  errors.add('$key: ${value.join(', ')}');
+                } else {
+                  errors.add('$key: $value');
+                }
+              });
+              if (errors.isNotEmpty) {
+                errorMessage = errors.join('; ');
+              }
+            }
+          }
+        } catch (e) {
+          errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
+        }
+        
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('Error in createProject: $e');
-      throw e;
+      if (e is Exception) {
+        rethrow;
+      } else {
+        throw Exception('Erreur lors de la création du projet: $e');
+      }
     }
   }
+
 
   /// Récupérer les projets de l'utilisateur connecté
   Future<List<ClientProject>> getMyProjects() async {
@@ -1370,7 +1588,139 @@ class ApiService {
       return [];
     }
   }
+  Future<bool> closeProject(int projectId) async {
+  try {
+    print('🔒 Clôture du projet $projectId...');
+    
+    final response = await http.patch(
+      Uri.parse('$baseUrl/projects/$projectId/close_project/'),
+      headers: await getHeaders(),
+    );
 
+    print('Réponse clôture projet: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('✅ Projet clôturé avec succès');
+      print('Notifications envoyées: ${data['notifications_sent']}');
+      return true;
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Erreur lors de la clôture du projet');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de la clôture du projet: $e');
+    throw e;
+  }
+}
+
+/// Mettre à jour le statut d'un projet
+Future<ClientProject> updateProjectStatus(int projectId, String newStatus) async {
+  try {
+    print('📝 Mise à jour du statut du projet $projectId vers "$newStatus"...');
+    
+    final response = await http.patch(
+      Uri.parse('$baseUrl/projects/$projectId/update_status/'),
+      headers: await getHeaders(),
+      body: json.encode({'status': newStatus}),
+    );
+
+    print('Réponse mise à jour statut: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('✅ Statut mis à jour avec succès');
+      return ClientProject.fromJson(data['project']);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Erreur lors de la mise à jour du statut');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de la mise à jour du statut: $e');
+    throw e;
+  }
+}
+
+/// Incrémenter le compteur de vues d'un projet
+Future<ClientProject> incrementProjectView(int projectId) async {
+  try {
+    print('👁️ Incrémentation des vues pour le projet $projectId...');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/projects/$projectId/increment_view/'),
+      headers: await getHeaders(),
+    );
+
+    print('Réponse incrémentation vue: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('✅ Vue comptabilisée');
+      return ClientProject.fromJson(data);
+    } else {
+      final errorData = json.decode(response.body);
+      print('⚠️ Erreur vue: ${errorData['error']}');
+      // Pour les vues, on peut continuer même en cas d'erreur
+      throw Exception(errorData['error'] ?? 'Erreur lors de l\'incrémentation des vues');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de l\'incrémentation des vues: $e');
+    throw e;
+  }
+}
+
+/// Obtenir les statistiques de vues d'un projet
+Future<Map<String, dynamic>> getProjectStatistics(int projectId) async {
+  try {
+    print('📊 Récupération des statistiques pour le projet $projectId...');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/projects/$projectId/view_statistics/'),
+      headers: await getHeaders(),
+    );
+
+    print('Réponse statistiques: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('✅ Statistiques récupérées');
+      return data;
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Erreur lors de la récupération des statistiques');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de la récupération des statistiques: $e');
+    throw e;
+  }
+}
+
+/// Supprimer un projet
+Future<bool> deleteProject(int projectId) async {
+  try {
+    print('🗑️ Suppression du projet $projectId...');
+    
+    final response = await http.delete(
+      Uri.parse('$baseUrl/projects/$projectId/'),
+      headers: await getHeaders(),
+    );
+
+    print('Réponse suppression: ${response.statusCode}');
+
+    if (response.statusCode == 204) {
+      print('✅ Projet supprimé avec succès');
+      return true;
+    } else {
+      final errorData = response.body.isNotEmpty 
+          ? json.decode(response.body) 
+          : {'error': 'Erreur inconnue'};
+      throw Exception(errorData['error'] ?? 'Erreur lors de la suppression du projet');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de la suppression du projet: $e');
+    throw e;
+  }
+}
   /// Récupérer les statistiques des projets pour le client
   Future<ProjectStats> getProjectStats() async {
     try {
@@ -1424,19 +1774,72 @@ class ApiService {
 
   Future<void> submitOffer(int projectId, Map<String, dynamic> offerData) async {
     try {
+      print('🚀 Soumission d\'offre pour le projet $projectId');
+      print('📝 Données envoyées: $offerData');
+      
+      // Vérifier et formater les données avant envoi
+      final Map<String, dynamic> formattedData = {
+        'project': projectId, // Assurer que l'ID du projet est inclus
+        'proposed_price': _parseToDouble(offerData['proposed_price'] ?? offerData['price']),
+        'delivery_time': _parseToInt(offerData['delivery_time']),
+        'message': (offerData['message'] ?? '').toString().trim(),
+        'includes_materials': offerData['includes_materials'] ?? false,
+        'warranty_period': _parseToInt(offerData['warranty_period']),
+        'travel_costs_included': offerData['travel_costs_included'] ?? false,
+      };
+
+      // Supprimer les champs null ou vides
+      formattedData.removeWhere((key, value) => 
+          value == null || 
+          (value is String && value.isEmpty) ||
+          (value is num && value <= 0 && key != 'warranty_period')
+      );
+
+      print('📦 Données formatées: $formattedData');
+
       final response = await http.post(
         Uri.parse('$baseUrl/projects/$projectId/offers/'),
         headers: await getHeaders(),
-        body: json.encode(offerData),
+        body: json.encode(formattedData),
       );
 
-      if (response.statusCode != 201) {
+      print('📡 Réponse API: ${response.statusCode}');
+      print('📄 Corps de la réponse: ${response.body}');
+
+      if (response.statusCode == 201) {
+        print('✅ Offre créée avec succès');
+      } else {
+        // Analyser l'erreur pour donner un message plus précis
         final errorData = json.decode(response.body);
-        throw Exception(errorData['detail'] ?? 'Erreur lors de l\'envoi de l\'offre');
+        String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
+        
+        if (errorData is Map<String, dynamic>) {
+          if (errorData.containsKey('detail')) {
+            errorMessage = errorData['detail'];
+          } else if (errorData.containsKey('non_field_errors')) {
+            errorMessage = (errorData['non_field_errors'] as List).join(', ');
+          } else {
+            // Collecter toutes les erreurs de validation
+            List<String> errors = [];
+            errorData.forEach((key, value) {
+              if (value is List) {
+                errors.add('$key: ${value.join(', ')}');
+              } else {
+                errors.add('$key: $value');
+              }
+            });
+            if (errors.isNotEmpty) {
+              errorMessage = errors.join('\n');
+            }
+          }
+        }
+        
+        print('❌ Erreur API: $errorMessage');
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      print('Error in submitOffer: $e');
-      throw e;
+      print('💥 Erreur complète: $e');
+      rethrow;
     }
   }
 
@@ -1708,6 +2111,27 @@ class ApiService {
       return [];
     }
   }
+
+  // Méthodes utilitaires pour le parsing sécurisé
+  double? _parseToDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+  int? _parseToInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    return int.tryParse(value);
+  }
+  return null;
+}
+
 // === MÉTHODES MOCK POUR LES TESTS ===
 
   // List<ClientProject> _getMockClientProjects() {

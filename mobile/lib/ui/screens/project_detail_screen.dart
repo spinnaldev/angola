@@ -1,8 +1,8 @@
-// lib/ui/screens/project_detail_screen.dart - Version corrigée
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:w3_loc/providers/project_provider.dart';
 import '../../core/models/client_project.dart';
 import '../../core/models/user.dart';
 import '../../providers/auth_provider.dart';
@@ -28,6 +28,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   bool _isLoadingOffers = false;
   bool _isSubmittingOffer = false;
   List<dynamic> _offers = [];
+  bool _viewCounted = false;
+
+  // VARIABLES MANQUANTES AJOUTÉES
+  bool _includesMaterials = false;
+  bool _travelCostsIncluded = false;
 
   // Controllers pour l'offre
   final TextEditingController _offerMessageController = TextEditingController();
@@ -46,6 +51,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOffers();
     });
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _incrementView();
+    });
+  }
+
+  Future<void> _incrementView() async {
+    if (_viewCounted) return;
+    
+    try {
+      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      await projectProvider.incrementProjectView(widget.project.id);
+      _viewCounted = true;
+    } catch (e) {
+      print('Erreur lors de l\'incrémentation des vues: $e');
+      // Ne pas afficher d'erreur à l'utilisateur
+    }
   }
 
   @override
@@ -99,61 +120,165 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       return;
     }
 
-    if (_offerMessageController.text.trim().isEmpty ||
-        _offerPriceController.text.trim().isEmpty ||
-        _offerDeliveryController.text.trim().isEmpty) {
+    // Validation des champs
+    if (_offerMessageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Veuillez remplir tous les champs'),
+          content: Text('Veuillez saisir un message pour votre offre'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
+    if (_offerPriceController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez indiquer un prix pour votre offre'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_offerDeliveryController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez indiquer un délai de livraison'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validation du format des nombres
+    final double? price = double.tryParse(_offerPriceController.text.trim());
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un prix valide'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final int? deliveryTime = int.tryParse(_offerDeliveryController.text.trim());
+    if (deliveryTime == null || deliveryTime <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un délai valide (en jours)'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Afficher le loader et désactiver les interactions
     setState(() {
       _isSubmittingOffer = true;
     });
 
+    // Préparer les données de l'offre
+    final offerData = {
+      'proposed_price': price,
+      'delivery_time': deliveryTime,
+      'message': _offerMessageController.text.trim(),
+      'includes_materials': _includesMaterials,
+      'travel_costs_included': _travelCostsIncluded,
+    };
+
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       
-      final offerData = {
-        'message': _offerMessageController.text.trim(),
-        'price': double.tryParse(_offerPriceController.text.trim()) ?? 0.0,
-        'delivery_time': int.tryParse(_offerDeliveryController.text.trim()) ?? 1,
-      };
-
+      // Envoyer l'offre
       await apiService.submitOffer(widget.project.id, offerData);
 
       if (mounted) {
-        // Vider les champs
+        // Fermer le bottom sheet avec un délai pour montrer le succès
+        Navigator.pop(context);
+        
+        // Vider les champs pour la prochaine fois
         _offerMessageController.clear();
         _offerPriceController.clear();
         _offerDeliveryController.clear();
+        _includesMaterials = false;
+        _travelCostsIncluded = false;
 
-        // Fermer le modal
-        Navigator.pop(context);
-
-        // Afficher un message de succès
+        // Afficher le message de succès
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Offre envoyée avec succès !'),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Offre envoyée avec succès !'),
+              ],
+            ),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
 
-        // Recharger les offres
+        // Recharger les offres pour afficher la nouvelle
         _loadOffers();
       }
     } catch (e) {
+      print('Erreur lors de l\'envoi de l\'offre: $e');
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Afficher l'erreur dans une snackbar ou un dialog
+        String errorMessage = e.toString();
+        if (errorMessage.startsWith('Exception: ')) {
+          errorMessage = errorMessage.substring(11);
+        }
+
+        // Si l'erreur est longue, l'afficher dans un dialog
+        if (errorMessage.length > 100) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.error, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Erreur'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Text(errorMessage),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // Sinon, utiliser une snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(errorMessage)),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Fermer',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -221,167 +346,188 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     }
   }
 
+  // MÉTHODE RENOMMÉE ET CORRIGÉE
   void _showOfferModal() {
+    _showOfferBottomSheet();
+  }
+
+  void _showOfferBottomSheet() {
+    // Variables locales pour le bottom sheet
+    bool localIncludesMaterials = _includesMaterials;
+    bool localTravelCostsIncluded = _travelCostsIncluded;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      isDismissible: !_isSubmittingOffer, // Empêcher la fermeture pendant l'envoi
+      enableDrag: !_isSubmittingOffer, // Empêcher le drag pendant l'envoi
+      builder: (context) => StatefulBuilder(
+        builder: (context, setBottomSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête avec indicateur et titre
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_isSubmittingOffer)
+                    const Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text('Envoi en cours...', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                ],
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Envoyer une offre',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Message de présentation',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _offerMessageController,
-                              maxLines: 6,
-                              decoration: InputDecoration(
-                                hintText: 'Présentez-vous et expliquez pourquoi vous êtes le bon choix pour ce projet...',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Prix (€)',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextField(
-                                        controller: _offerPriceController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                          hintText: '1000',
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.grey[50],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Délai (jours)',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextField(
-                                        controller: _offerDeliveryController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                          hintText: '30',
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.grey[50],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSubmittingOffer ? null : _submitOffer,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF142FE2),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: _isSubmittingOffer
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text(
-                                'Envoyer l\'offre',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 20),
+              
+              const Text(
+                'Faire une offre',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              // Champ prix
+              TextFormField(
+                controller: _offerPriceController,
+                keyboardType: TextInputType.number,
+                enabled: !_isSubmittingOffer,
+                decoration: const InputDecoration(
+                  labelText: 'Prix proposé (€)',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.euro),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Champ délai
+              TextFormField(
+                controller: _offerDeliveryController,
+                keyboardType: TextInputType.number,
+                enabled: !_isSubmittingOffer,
+                decoration: const InputDecoration(
+                  labelText: 'Délai de livraison (jours)',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.schedule),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Champ message
+              TextFormField(
+                controller: _offerMessageController,
+                maxLines: 4,
+                enabled: !_isSubmittingOffer,
+                decoration: const InputDecoration(
+                  labelText: 'Message pour le client',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Options supplémentaires
+              CheckboxListTile(
+                title: const Text('Matériaux inclus'),
+                value: localIncludesMaterials,
+                onChanged: _isSubmittingOffer ? null : (value) {
+                  setBottomSheetState(() {
+                    localIncludesMaterials = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+
+              CheckboxListTile(
+                title: const Text('Frais de déplacement inclus'),
+                value: localTravelCostsIncluded,
+                onChanged: _isSubmittingOffer ? null : (value) {
+                  setBottomSheetState(() {
+                    localTravelCostsIncluded = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+
+              const SizedBox(height: 20),
+
+              // Bouton d'envoi
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmittingOffer ? null : () {
+                    // Mettre à jour les variables d'état globales
+                    setState(() {
+                      _includesMaterials = localIncludesMaterials;
+                      _travelCostsIncluded = localTravelCostsIncluded;
+                    });
+                    
+                    // Appeler la méthode de soumission
+                    _submitOffer();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF142FE2),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isSubmittingOffer
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Envoi en cours...'),
+                          ],
+                        )
+                      : const Text(
+                          'Envoyer mon offre',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -462,14 +608,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     );
   }
 
+  // ... [Toutes vos autres méthodes _buildAppBar, _buildProjectHeader, etc. restent identiques]
+  // Je vais les inclure pour la complétude:
+
   Widget _buildAppBar(BuildContext context, bool isProvider) {
     return SliverAppBar(
-      expandedHeight: 80, // Réduire la hauteur de 100 à 80
+      expandedHeight: 80,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF142FE2),
-      elevation: 4, // Ajouter une élévation pour l'effet shadow
-      shadowColor: const Color(0xFF142FE2).withOpacity(0.3), // Couleur du shadow
+      elevation: 4,
+      shadowColor: const Color(0xFF142FE2).withOpacity(0.3),
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -483,14 +632,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         ),
       ),
       actions: [
-        // Conteneur pour organiser les actions sur une ligne
         Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isProvider) ...[
-                // Bouton favori avec background semi-transparent
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
@@ -512,7 +659,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   ),
                 ),
               ],
-              // Bouton partage avec background semi-transparent
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
@@ -539,14 +685,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: 18, // Taille légèrement plus petite
+            fontSize: 18,
           ),
         ),
-        titlePadding: const EdgeInsets.only(left: 56, bottom: 12), // Ajuster pour le nouveau bouton back
-        centerTitle: false, // Aligner à gauche
+        titlePadding: const EdgeInsets.only(left: 56, bottom: 12),
+        centerTitle: false,
       ),
     );
   }
+
   Widget _buildProjectHeader() {
     return Container(
       padding: const EdgeInsets.all(20),

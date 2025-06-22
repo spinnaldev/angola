@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:w3_loc/ui/screens/client/client_projects_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/models/user.dart';
 import '../screens/disputes/disputes_screen.dart';
@@ -223,6 +224,20 @@ class SideMenu extends StatelessWidget {
           if (user.role == 'client')
             _buildMenuItem(
               context,
+              icon: Icons.work_outline,
+              text: 'Mes projets',
+              onTap: () {
+                onClose();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ClientProjectsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
               icon: Icons.receipt_long_outlined,
               text: 'Devis',
               onTap: () {
@@ -234,7 +249,7 @@ class SideMenu extends StatelessWidget {
                 );
               },
             ),
-
+          
           _buildMenuItem(
             context,
             icon: Icons.gavel,
