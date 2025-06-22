@@ -1850,6 +1850,228 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
         else:
             return Response({'favorited': True})
 
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated])
+    def close_project(self, request, pk=None):
+        """Clôturer un projet"""
+        try:
+            project = self.get_object()
+            
+            # Vérifier que l'utilisateur est bien le propriétaire du projet
+            if project.client != request.user:
+                return Response(
+                    {'error': 'Vous n\'avez pas les permissions pour clôturer ce projet'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Vérifier que le projet peut être clôturé
+            if project.status in ['closed', 'completed']:
+                return Response(
+                    {'error': 'Ce projet est déjà clôturé ou terminé'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Effectuer la clôture dans une transaction
+            with transaction.atomic():
+                # Mettre à jour le statut
+                project.status = 'closed'
+                project.closed_at = timezone.now()  # Ajouter ce champ au modèle si nécessaire
+                project.save()
+                
+                # Notifier les prestataires qui ont fait des offres
+                active_offers = ProjectOffer.objects.filter(
+                    project=project,
+                    status='pending'
+                )
+                
+                for offer in active_offers:
+                    # Créer une notification pour chaque prestataire
+                    Notification.objects.create(
+                        user=offer.provider.user,
+                        title="Projet clôturé",
+                        message=f"Le projet '{project.title}' a été clôturé par le client.",
+                        notification_type='project_closed',
+                        related_object_id=project.id
+                    )
+                    
+                    # Optionnel : Mettre à jour le statut des offres
+                    offer.status = 'rejected'
+                    offer.save()
+            
+            # Sérialiser et retourner le projet mis à jour
+            serializer = self.get_serializer(project)
+            
+            return Response({
+                'message': 'Projet clôturé avec succès',
+                'project': serializer.data,
+                'notifications_sent': active_offers.count()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la clôture du projet: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated])
+    def update_status(self, request, pk=None):
+        """Mettre à jour le statut d'un projet"""
+        try:
+            project = self.get_object()
+            new_status = request.data.get('status')
+            
+            # Vérifier que l'utilisateur est bien le propriétaire du projet
+            if project.client != request.user:
+                return Response(
+                    {'error': 'Vous n\'avez pas les permissions pour modifier ce projet'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Vérifier que le nouveau statut est valide
+            valid_statuses = [choice[0] for choice in ClientProject.STATUS_CHOICES]
+            if new_status not in valid_statuses:
+                return Response(
+                    {'error': f'Statut invalide. Statuts valides: {valid_statuses}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifications de logique métier
+            if project.status == 'completed' and new_status != 'completed':
+                return Response(
+                    {'error': 'Un projet terminé ne peut pas changer de statut'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Mettre à jour le statut
+            old_status = project.status
+            project.status = new_status
+            
+            # Ajouter des timestamps selon le statut
+            if new_status == 'closed':
+                project.closed_at = timezone.now()
+            elif new_status == 'completed':
+                project.completed_at = timezone.now()
+            elif new_status == 'in_progress':
+                project.started_at = timezone.now()
+            
+            project.save()
+            
+            # Log de l'activité
+            print(f"Projet {project.id} - Statut changé de '{old_status}' vers '{new_status}' par {request.user.email}")
+            
+            serializer = self.get_serializer(project)
+            return Response({
+                'message': f'Statut du projet mis à jour vers "{new_status}"',
+                'project': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la mise à jour: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def increment_view(self, request, pk=None):
+        """Incrémenter le compteur de vues d'un projet"""
+        try:
+            project = self.get_object()
+            
+            # Éviter de compter les vues du propriétaire du projet
+            if project.client == request.user:
+                serializer = self.get_serializer(project)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # Vérifier si l'utilisateur a déjà vu ce projet récemment (dans les dernières 24h)
+            recent_view = ProjectView.objects.filter(
+                project=project,
+                viewer=request.user,
+                created_at__gte=timezone.now() - timezone.timedelta(hours=24)
+            ).first()
+            
+            if not recent_view:
+                # Incrémenter le compteur atomiquement
+                with transaction.atomic():
+                    ClientProject.objects.filter(pk=project.pk).update(
+                        views_count=models.F('views_count') + 1
+                    )
+                    
+                    # Enregistrer la vue pour les statistiques
+                    ProjectView.objects.create(
+                        project=project,
+                        viewer=request.user,
+                        ip_address=self.get_client_ip(request),
+                        user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+                    )
+                
+                # Récupérer le projet mis à jour
+                project.refresh_from_db()
+                
+                print(f"Vue ajoutée pour le projet {project.id} par {request.user.email}")
+            
+            serializer = self.get_serializer(project)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de l\'incrémentation des vues: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def view_statistics(self, request, pk=None):
+        """Obtenir les statistiques de vues d'un projet"""
+        try:
+            project = self.get_object()
+            
+            # Vérifier que l'utilisateur est bien le propriétaire du projet
+            if project.client != request.user:
+                return Response(
+                    {'error': 'Vous n\'avez pas les permissions pour voir ces statistiques'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Statistiques des vues
+            total_views = project.views_count
+            unique_viewers = ProjectView.objects.filter(project=project).values('viewer').distinct().count()
+            
+            # Vues par jour (7 derniers jours)
+            from django.db.models import Count
+            seven_days_ago = timezone.now() - timezone.timedelta(days=7)
+            views_by_day = ProjectView.objects.filter(
+                project=project,
+                created_at__gte=seven_days_ago
+            ).extra({
+                'day': 'date(created_at)'
+            }).values('day').annotate(count=Count('id')).order_by('day')
+            
+            # Top viewers (si applicable)
+            top_viewers = ProjectView.objects.filter(
+                project=project
+            ).values(
+                'viewer__first_name', 
+                'viewer__last_name'
+            ).annotate(
+                view_count=Count('id')
+            ).order_by('-view_count')[:5]
+            
+            return Response({
+                'project_id': project.id,
+                'total_views': total_views,
+                'unique_viewers': unique_viewers,
+                'views_by_day': list(views_by_day),
+                'top_viewers': list(top_viewers),
+                'offers_count': project.project_offers.count(),
+                'created_at': project.created_at,
+                'status': project.status
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la récupération des statistiques: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 
 class ProjectOfferViewSet(viewsets.ModelViewSet):
     """ViewSet pour la gestion des offres sur les projets"""
@@ -1879,7 +2101,9 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_project(self, request):
         """Récupérer les offres pour un projet spécifique"""
+        print("exemple exmepl")
         project_id = request.query_params.get('project_id')
+        print(project_id)
         if not project_id:
             return Response(
                 {'error': 'project_id requis'},

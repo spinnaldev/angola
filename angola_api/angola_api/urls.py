@@ -65,18 +65,18 @@ urlpatterns = [
     path('api/password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('api/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
     path('api/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('notifications/count/', views.get_notification_count, name='notification-count'),
-    path('notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
+    path('api/notifications/count/', views.get_notification_count, name='notification-count'),
+    path('api/notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
 
     # path('providers/', views.ProviderViewSet.as_view(), name='provider-list'),
-    path('providers/by_category/', views.ProviderByCategoryView.as_view(), name='provider-by-category'),
-    path('providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
-    path('providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
-    path('users/profile_stats/', views.get_profile_stats, name='profile-stats'),
+    path('api/providers/by_category/', views.ProviderByCategoryView.as_view(), name='provider-by-category'),
+    path('api/providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
+    path('api/providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
+    path('api/users/profile_stats/', views.get_profile_stats, name='profile-stats'),
 
-    path('projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
+    # path('api/projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
     
-    path('projects/categories/<int:category_id>/', views.ClientProjectViewSet.as_view({'get': 'list'}),name='projects-by-category'),
+    path('api/projects/categories/<int:category_id>/', views.ClientProjectViewSet.as_view({'get': 'list'}),name='projects-by-category'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils import timezone
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -328,7 +328,7 @@ class Report(TimeStampMixin):
 
 
 class ClientProject(TimeStampMixin):
-    """Modèle pour les projets postés par les clients"""
+    """Modèle pour les projets des clients - Version mise à jour"""
     BUDGET_CHOICES = (
         ('moins_500', 'Moins de 500 €'),
         ('500_1000', '500 à 1000 €'),
@@ -337,12 +337,29 @@ class ClientProject(TimeStampMixin):
         ('sur_devis', 'Demande de devis'),
     )
     
+    # STATUS_CHOICES = (
+    #     ('open', 'Ouvert'),
+    #     ('in_progress', 'En cours'),
+    #     ('completed', 'Terminé'),
+    #     ('cancelled', 'Annulé'),
+    # )
     STATUS_CHOICES = (
         ('open', 'Ouvert'),
         ('in_progress', 'En cours'),
         ('completed', 'Terminé'),
+        ('closed', 'Clôturé'),
+        ('paused', 'En pause'),
         ('cancelled', 'Annulé'),
     )
+    
+    # BUDGET_CHOICES = (
+    #     ('sur_devis', 'Sur devis'),
+    #     ('0_500', 'Moins de 500€'),
+    #     ('500_1000', '500€ - 1000€'),
+    #     ('1000_5000', '1000€ - 5000€'),
+    #     ('5000_15000', '5000€ - 15000€'),
+    #     ('15000_plus', 'Plus de 15000€'),
+    # )
     
     URGENCY_CHOICES = (
         ('low', 'Pas urgent'),
@@ -376,7 +393,12 @@ class ClientProject(TimeStampMixin):
     # Statut et gestion
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     is_featured = models.BooleanField(default=False, verbose_name="Projet mis en avant")
-    views_count = models.PositiveIntegerField(default=0)
+    views_count = models.PositiveIntegerField(default=0, verbose_name="Nombre de vues")
+    
+    # NOUVEAUX CHAMPS pour le tracking des statuts
+    started_at = models.DateTimeField(null=True, blank=True, verbose_name="Date de début")
+    closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Date de clôture")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Date de completion")
     
     # Préférences de contact
     contact_via_platform = models.BooleanField(default=True, verbose_name="Contact via la plateforme")
@@ -394,20 +416,51 @@ class ClientProject(TimeStampMixin):
         verbose_name_plural = "Projets Clients"
     
     def __str__(self):
-        return f"{self.title} - {self.client.username}"
+        return f"{self.title} - {self.client.get_full_name()}"
     
     @property
     def offers_count(self):
+        """Retourne le nombre d'offres reçues"""
         return self.project_offers.count()
     
     @property
-    def budget_display(self):
-        """Affichage formaté du budget"""
-        if self.budget_range == 'sur_devis':
-            return "Sur devis"
-        elif self.min_budget and self.max_budget:
-            return f"{self.min_budget}€ - {self.max_budget}€"
-        return dict(self.BUDGET_CHOICES).get(self.budget_range, "Non précisé")
+    def time_since_posted(self):
+        """Retourne le temps écoulé depuis la publication"""
+        now = timezone.now()
+        diff = now - self.created_at
+        
+        if diff.days > 0:
+            return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
+        else:
+            return "À l'instant"
+    
+    @property
+    def is_active(self):
+        """Indique si le projet accepte encore des offres"""
+        return self.status == 'open'
+    
+    @property
+    def can_be_closed(self):
+        """Indique si le projet peut être clôturé"""
+        return self.status in ['open', 'in_progress', 'paused']
+    
+    def close_project(self, user=None):
+        """Méthode pour clôturer le projet"""
+        if self.can_be_closed:
+            self.status = 'closed'
+            self.closed_at = timezone.now()
+            self.save()
+            
+            # Log de l'action
+            if user:
+                print(f"Projet {self.id} clôturé par {user.email} le {self.closed_at}")
+
 
 
 class ProjectOffer(TimeStampMixin):
