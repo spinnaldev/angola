@@ -289,26 +289,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProviderHome(User? user) {
-    return CustomScrollView(
-      slivers: [
-        _buildOriginalHeader(),
-        SliverToBoxAdapter(child: _buildProviderStats()),
-        SliverToBoxAdapter(child: _buildSearchBar()),
-        SliverToBoxAdapter(child: _buildProviderProjectsSection()),
-        SliverToBoxAdapter(child: _buildCategoriesSection()),
-      ],
+    return Container(
+      color: Colors.white, // AJOUT : Background blanc
+      child: CustomScrollView(
+        slivers: [
+          _buildOriginalHeader(),
+          SliverToBoxAdapter(child: _buildProviderStats()),
+          SliverToBoxAdapter(child: _buildSearchBar()),
+          SliverToBoxAdapter(child: _buildProviderProjectsSection()),
+          SliverToBoxAdapter(child: _buildCategoriesSection()),
+        ],
+      ),
     );
   }
 
   Widget _buildClientHome(User? user) {
-    return CustomScrollView(
-      slivers: [
-        _buildOriginalHeader(),
-        SliverToBoxAdapter(child: _buildSearchBar()),
-        SliverToBoxAdapter(child: _buildProjectsSection()),
-        SliverToBoxAdapter(child: _buildServicesSection()),
-        SliverToBoxAdapter(child: _buildCategoriesSection()),
-      ],
+    return Container(
+      color: Colors.white, // AJOUT : Background blanc
+      child: CustomScrollView(
+        slivers: [
+          _buildOriginalHeader(),
+          SliverToBoxAdapter(child: _buildSearchBar()),
+          SliverToBoxAdapter(child: _buildProjectsSection()),
+          SliverToBoxAdapter(child: _buildServicesSection()),
+          SliverToBoxAdapter(child: _buildCategoriesSection()),
+        ],
+      ),
     );
   }
 
@@ -547,6 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProjectFilter(String title, List<ClientProject> projects, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -602,25 +609,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            // ✅ AFFICHAGE EN LISTE VERTICALE comme pour les clients
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: projects.length.clamp(0, 3), // Limiter à 3 projets
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ProjectCard(
-                      project: projects[index],
-                      onTap: () => _navigateToProjectDetail(projects[index]),
-                      onFavoriteToggle: (project) => _toggleProjectFavorite(project),
-                    ),
-                  );
-                },
-              ),
+            Container(
+            color: Colors.white, // AJOUT : Background blanc pour la liste
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: projects.length.clamp(0, 3),
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: ProjectCard(
+                    project: projects[index],
+                    onTap: () => _navigateToProjectDetail(projects[index]),
+                    onFavoriteToggle: (project) => _toggleProjectFavorite(project),
+                  ),
+                );
+              },
             ),
+          ),
         ],
       ),
     );
@@ -648,63 +667,84 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Projets récents',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+    return Container(
+      // AJOUT : Container avec background blanc
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Projets récents',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProjectsListScreen()),
+                  ),
+                  child: const Text('Voir tout'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_isLoadingProjects) ...[
+              const Center(child: CircularProgressIndicator()),
+            ] else if (_recentProjects.isEmpty) ...[
+              _buildEmptyState(
+                icon: Icons.work_outline,
+                title: 'Aucun projet disponible',
+                subtitle: 'Les nouveaux projets apparaîtront ici',
+                buttonText: 'Explorer tous les projets',
+                onButtonPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ProjectsListScreen()),
                 ),
-                child: const Text('Voir tout'),
+              ),
+            ] else ...[
+              // Container blanc pour la liste des projets
+              Container(
+                color: Colors.white,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _recentProjects.length.clamp(0, 3),
+                  itemBuilder: (context, index) {
+                    return Container(
+                      color: Colors.white,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: ProjectCard(
+                        project: _recentProjects[index],
+                        onTap: () => _navigateToProjectDetail(_recentProjects[index]),
+                        onFavoriteToggle: (project) => _toggleProjectFavorite(project),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          if (_isLoadingProjects) ...[
-            const Center(child: CircularProgressIndicator()),
-          ] else if (_recentProjects.isEmpty) ...[
-            _buildEmptyState(
-              icon: Icons.work_outline,
-              title: 'Aucun projet disponible',
-              subtitle: 'Les nouveaux projets apparaîtront ici',
-              buttonText: 'Explorer tous les projets',
-              onButtonPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProjectsListScreen()),
-              ),
-            ),
-          ] else ...[
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _recentProjects.length.clamp(0, 3),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: ProjectCard(
-                    project: _recentProjects[index],
-                    onTap: () => _navigateToProjectDetail(_recentProjects[index]),
-                    onFavoriteToggle: (project) => _toggleProjectFavorite(project),
-                  ),
-                );
-              },
-            ),
           ],
-        ],
+        ),
       ),
     );
   }

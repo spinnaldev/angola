@@ -531,16 +531,19 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     offers_count = serializers.IntegerField(read_only=True)
-    budget_display = serializers.CharField(read_only=True)
     time_since_posted = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
+    has_user_offered = serializers.SerializerMethodField()
+    budget_display = serializers.SerializerMethodField()
+
     class Meta:
         model = ClientProject
         fields = [
             'id', 'title', 'description', 'client_name', 'category_name', 
             'subcategory_name', 'budget_range', 'budget_display', 'location',
             'urgency', 'status', 'offers_count', 'views_count', 'created_at',
-            'time_since_posted', 'deadline', 'remote_possible','is_favorited'
+            'time_since_posted', 'deadline', 'remote_possible', 'is_favorited',
+            'has_user_offered','min_budget', 'max_budget'
         ]
     
     def get_client_name(self, obj):
@@ -550,38 +553,102 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
             return obj.client.first_name or obj.client.username
         return "Client anonyme"
     
+    def get_budget_display(self, obj):
+        """Génère l'affichage formaté du budget"""
+        budget_ranges = {
+            'moins_500': 'Moins de 500 €',
+            '500_1000': '500 à 1 000 €',
+            '1000_10000': '1 000 à 10 000 €',
+            '10000_plus': '10 000 € et plus',
+            'sur_devis': 'Sur devis'
+        }
+        
+        # Si on a des valeurs min/max budget définies
+        if obj.min_budget is not None and obj.max_budget is not None:
+            if obj.min_budget == obj.max_budget:
+                return f"{int(obj.min_budget)} €"
+            else:
+                return f"{int(obj.min_budget)} € - {int(obj.max_budget)} €"
+        
+        # Si on a seulement un budget minimum
+        elif obj.min_budget is not None:
+            return f"À partir de {int(obj.min_budget)} €"
+        
+        # Si on a seulement un budget maximum
+        elif obj.max_budget is not None:
+            return f"Jusqu'à {int(obj.max_budget)} €"
+        
+        # Sinon utiliser la plage prédéfinie
+        return budget_ranges.get(obj.budget_range, 'Budget à discuter')
+    
     def get_is_favorited(self, obj):
+        """Vérifie si le projet est en favori pour l'utilisateur actuel - TOUJOURS retourner un booléen"""
         request = self.context.get('request')
+        
+        # Si pas de requête ou utilisateur non authentifié
         if not request or not request.user.is_authenticated:
             return False
         
-        try:
-            if hasattr(request.user, 'provider_profile'):
-                return ProjectFavorite.objects.filter(
-                    project=obj,
-                    provider=request.user.provider_profile
-                ).exists()
+        # Si l'utilisateur n'est pas un prestataire
+        if not hasattr(request.user, 'provider_profile'):
             return False
-        except Exception:
-            return False 
+            
+        try:
+            # Vérifier si le projet est en favori
+            return ProjectFavorite.objects.filter(
+                project=obj,
+                provider=request.user.provider_profile
+            ).exists()
+        except Exception as e:
+            # En cas d'erreur, toujours retourner False plutôt que None
+            print(f"Erreur dans get_is_favorited: {e}")
+            return False
+    
+    def get_has_user_offered(self, obj):
+        """Vérifie si l'utilisateur actuel a déjà fait une offre - TOUJOURS retourner un booléen"""
+        request = self.context.get('request')
+        
+        # Si pas de requête ou utilisateur non authentifié
+        if not request or not request.user.is_authenticated:
+            return False
+            
+        # Si l'utilisateur n'est pas un prestataire
+        if not hasattr(request.user, 'provider_profile'):
+            return False
+            
+        try:
+            return ProjectOffer.objects.filter(
+                project=obj, 
+                provider=request.user.provider_profile
+            ).exists()
+        except Exception as e:
+            # En cas d'erreur, toujours retourner False plutôt que None
+            print(f"Erreur dans get_has_user_offered: {e}")
+            return False
         
     def get_time_since_posted(self, obj):
+        """Calcul du temps écoulé depuis la publication"""
         from django.utils import timezone
         from datetime import timedelta
         
-        now = timezone.now()
-        diff = now - obj.created_at
-        
-        if diff.days > 0:
-            return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
-        elif diff.seconds > 3600:
-            hours = diff.seconds // 3600
-            return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
-        elif diff.seconds > 60:
-            minutes = diff.seconds // 60
-            return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
-        else:
-            return "À l'instant"
+        try:
+            now = timezone.now()
+            diff = now - obj.created_at
+            
+            if diff.days > 0:
+                return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
+            elif diff.seconds > 3600:
+                hours = diff.seconds // 3600
+                return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
+            elif diff.seconds > 60:
+                minutes = diff.seconds // 60
+                return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
+            else:
+                return "À l'instant"
+        except Exception as e:
+            print(f"Erreur dans get_time_since_posted: {e}")
+            return "Récemment"
+
 
 class ClientProjectDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour un projet spécifique"""
@@ -608,25 +675,46 @@ class ClientProjectDetailSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         """Vérifie si le projet est en favori pour l'utilisateur actuel"""
         request = self.context.get('request')
-        if request and request.user.is_authenticated and hasattr(request.user, 'provider_profile'):
+        if not request or not request.user.is_authenticated:
+            return False
+            
+        if not hasattr(request.user, 'provider_profile'):
+            return False
+            
+        try:
             return ProjectFavorite.objects.filter(
                 project=obj, 
                 provider=request.user.provider_profile
             ).exists()
-        return False
+        except Exception as e:
+            print(f"Erreur dans get_is_favorited (detail): {e}")
+            return False
     
     def get_offers_count(self, obj):
-        return getattr(obj, 'total_offers', obj.offers_count)
-
+        """Compte le nombre d'offres pour ce projet"""
+        try:
+            return getattr(obj, 'total_offers', obj.project_offers.count())
+        except Exception as e:
+            print(f"Erreur dans get_offers_count: {e}")
+            return 0
+    
     def get_has_user_offered(self, obj):
         """Vérifie si l'utilisateur actuel a déjà fait une offre"""
         request = self.context.get('request')
-        if request and request.user.is_authenticated and hasattr(request.user, 'provider_profile'):
+        if not request or not request.user.is_authenticated:
+            return False
+            
+        if not hasattr(request.user, 'provider_profile'):
+            return False
+            
+        try:
             return ProjectOffer.objects.filter(
                 project=obj, 
                 provider=request.user.provider_profile
             ).exists()
-        return False
+        except Exception as e:
+            print(f"Erreur dans get_has_user_offered (detail): {e}")
+            return False
 
 class ClientProjectCreateSerializer(serializers.ModelSerializer):
     """Serializer pour la création d'un projet"""
@@ -659,7 +747,7 @@ class ProjectOfferSerializer(serializers.ModelSerializer):
     """Serializer pour les offres sur les projets"""
     provider_name = serializers.CharField(source='provider.user.get_full_name', read_only=True)
     provider_business_type = serializers.CharField(source='provider.business_type', read_only=True)
-    provider_rating = serializers.SerializerMethodField()
+    # provider_rating = serializers.SerializerMethodField()
     provider_avatar = serializers.SerializerMethodField()
     provider_location = serializers.CharField(source='provider.user.location', read_only=True)
     provider_verified = serializers.BooleanField(source='provider.is_verified', read_only=True)
@@ -669,20 +757,20 @@ class ProjectOfferSerializer(serializers.ModelSerializer):
         model = ProjectOffer
         fields = [
             'id', 'project', 'project_title', 'provider', 'provider_name',
-            'provider_business_type', 'provider_rating', 'provider_avatar',
+            'provider_business_type', 'provider_avatar',
             'provider_location', 'provider_verified', 'proposed_price',
             'delivery_time', 'message', 'includes_materials', 'warranty_period',
             'travel_costs_included', 'status', 'viewed_by_client', 'created_at'
         ]
         read_only_fields = ['provider', 'viewed_by_client']
     
-    def get_provider_rating(self, obj):
-        """Calculer la note moyenne du prestataire"""
-        from django.db.models import Avg
-        avg_rating = obj.provider.reviews_received.aggregate(
-            avg_rating=Avg('rating')
-        )['avg_rating']
-        return round(avg_rating, 1) if avg_rating else 0
+    # def get_provider_rating(self, obj):
+    #     """Calculer la note moyenne du prestataire"""
+    #     from django.db.models import Avg
+    #     avg_rating = obj.provider.reviews_received.aggregate(
+    #         avg_rating=Avg('rating')
+    #     )['avg_rating']
+    #     return round(avg_rating, 1) if avg_rating else 0
     
     def get_provider_avatar(self, obj):
         """Obtenir l'avatar du prestataire"""

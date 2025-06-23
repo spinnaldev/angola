@@ -368,6 +368,7 @@ class ClientProject(TimeStampMixin):
         ('very_high', 'Très urgent'),
     )
     
+    
     # Informations de base
     title = models.CharField(max_length=200, verbose_name="Titre du projet")
     description = models.TextField(verbose_name="Description détaillée")
@@ -450,6 +451,35 @@ class ClientProject(TimeStampMixin):
         """Indique si le projet peut être clôturé"""
         return self.status in ['open', 'in_progress', 'paused']
     
+    @property
+    def budget_display(self):
+        """Génère l'affichage formaté du budget"""
+        budget_ranges = {
+            'moins_500': 'Moins de 500 €',
+            '500_1000': '500 à 1 000 €',
+            '1000_10000': '1 000 à 10 000 €',
+            '10000_plus': '10 000 € et plus',
+            'sur_devis': 'Sur devis'
+        }
+        
+        # Si on a des valeurs min/max budget définies
+        if self.min_budget is not None and self.max_budget is not None:
+            if self.min_budget == self.max_budget:
+                return f"{int(self.min_budget)} €"
+            else:
+                return f"{int(self.min_budget)} € - {int(self.max_budget)} €"
+        
+        # Si on a seulement un budget minimum
+        elif self.min_budget is not None:
+            return f"À partir de {int(self.min_budget)} €"
+        
+        # Si on a seulement un budget maximum
+        elif self.max_budget is not None:
+            return f"Jusqu'à {int(self.max_budget)} €"
+        
+        # Sinon utiliser la plage prédéfinie
+        return budget_ranges.get(self.budget_range, 'Budget à discuter')
+    
     def close_project(self, user=None):
         """Méthode pour clôturer le projet"""
         if self.can_be_closed:
@@ -460,6 +490,7 @@ class ClientProject(TimeStampMixin):
             # Log de l'action
             if user:
                 print(f"Projet {self.id} clôturé par {user.email} le {self.closed_at}")
+
 
 
 

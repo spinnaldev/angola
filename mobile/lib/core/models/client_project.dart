@@ -145,96 +145,92 @@ class ClientProject {
   }
 
   factory ClientProject.fromJson(Map<String, dynamic> json) {
-    // Gestion des compétences requises
-    List<String> skillsList = [];
-    if (json['required_skills'] != null) {
-      if (json['required_skills'] is List) {
-        skillsList = List<String>.from(
-          json['required_skills'].map((skill) {
-            if (skill is Map<String, dynamic>) {
-              return skill['name']?.toString() ?? '';
-            } else {
-              return skill.toString();
-            }
-          }).where((skill) => skill.isNotEmpty),
-        );
+    try {
+      // Gestion des compétences requises
+      List<String> skillsList = [];
+      if (json['required_skills'] != null) {
+        if (json['required_skills'] is List) {
+          skillsList = List<String>.from(
+            json['required_skills'].map((skill) {
+              if (skill is Map<String, dynamic>) {
+                return skill['name']?.toString() ?? '';
+              } else {
+                return skill.toString();
+              }
+            }).where((skill) => skill.isNotEmpty),
+          );
+        }
       }
-    }
 
-    // Gestion des attachments
-    List<Map<String, String>>? attachmentsList;
-    if (json['attachments'] != null && json['attachments'] is List) {
-      attachmentsList = List<Map<String, String>>.from(
-        json['attachments'].map((attachment) {
-          if (attachment is Map<String, dynamic>) {
-            return {
-              'name': attachment['name']?.toString() ?? 'Fichier',
-              'url': attachment['url']?.toString() ?? '',
-            };
-          }
-          return <String, String>{};
-        }).where((attachment) => attachment.isNotEmpty),
+      // Gestion des attachments
+      List<Map<String, String>>? attachmentsList;
+      if (json['attachments'] != null && json['attachments'] is List) {
+        try {
+          attachmentsList = List<Map<String, String>>.from(
+            json['attachments'].map((attachment) => Map<String, String>.from(attachment))
+          );
+        } catch (e) {
+          print('❌ Erreur parsing attachments: $e');
+          attachmentsList = null;
+        }
+      }
+
+      return ClientProject(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? '',
+        description: json['description'] ?? '',
+        client: json['client'] != null ? User.fromJson(json['client']) : null,
+        clientName: json['client_name'] ?? 'Client anonyme',
+        category: json['category'] != null ? Category.fromJson(json['category']) : null,
+        categoryName: json['category_name'] ?? '',
+        subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
+        subcategoryName: json['subcategory_name'] ?? '',
+        budgetRange: json['budget_range'] ?? '',
+        minBudget: json['min_budget']?.toDouble(),
+        maxBudget: json['max_budget']?.toDouble(),
+        budgetDisplay: json['budget_display'] ?? '',
+        location: json['location'] ?? '',
+        remotePossible: json['remote_possible'] ?? false,
+        deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'].toString()) : null,
+        urgency: json['urgency'] ?? 'medium',
+        status: json['status'] ?? 'open',
+        contactViaPlatform: json['contact_via_platform'] ?? true,
+        showEmail: json['show_email'] ?? false,
+        showPhone: json['show_phone'] ?? false,
+        requiredSkills: skillsList,
+        offersCount: json['offers_count'] ?? 0,
+        viewsCount: json['views_count'] ?? 0,
+        createdAt: json['created_at'] != null 
+            ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+        timeSincePosted: json['time_since_posted'],
+        // CORRECTION PRINCIPALE : Gestion robuste de isFavorited
+        isFavorited: _parseBoolSafely(json['is_favorited']),
+        hasUserOffered: _parseBoolSafely(json['has_user_offered']),
+        attachment1: json['attachment1'],
+        attachment2: json['attachment2'],
+        attachment3: json['attachment3'],
+        attachments: attachmentsList,
       );
-    } else {
-      // Créer la liste à partir des champs individuels si disponibles
-      attachmentsList = <Map<String, String>>[];
-      if (json['attachment1'] != null) {
-        attachmentsList.add({
-          'name': 'Fichier 1',
-          'url': json['attachment1'].toString(),
-        });
-      }
-      if (json['attachment2'] != null) {
-        attachmentsList.add({
-          'name': 'Fichier 2',
-          'url': json['attachment2'].toString(),
-        });
-      }
-      if (json['attachment3'] != null) {
-        attachmentsList.add({
-          'name': 'Fichier 3',
-          'url': json['attachment3'].toString(),
-        });
-      }
+    } catch (e) {
+      print('❌ Erreur critique dans ClientProject.fromJson: $e');
+      print('Données JSON problématiques: $json');
+      rethrow;
     }
+  }
 
-    return ClientProject(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      client: json['client'] != null ? User.fromJson(json['client']) : null,
-      clientName: json['client_name'] ?? 'Client anonyme',
-      category: json['category'] != null ? Category.fromJson(json['category']) : null,
-      categoryName: json['category_name'] ?? '',
-      subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
-      subcategoryName: json['subcategory_name'],
-      budgetRange: json['budget_range'] ?? '',
-      minBudget: json['min_budget'] != null ? double.tryParse(json['min_budget'].toString()) : null,
-      maxBudget: json['max_budget'] != null ? double.tryParse(json['max_budget'].toString()) : null,
-      budgetDisplay: json['budget_display'] ?? '',
-      location: json['location'] ?? '',
-      remotePossible: json['remote_possible'] ?? false,
-      deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'].toString()) : null,
-      urgency: json['urgency'] ?? 'medium',
-      status: json['status'] ?? 'open',
-      contactViaPlatform: json['contact_via_platform'] ?? true,
-      showEmail: json['show_email'] ?? false,
-      showPhone: json['show_phone'] ?? false,
-      requiredSkills: skillsList,
-      offersCount: json['offers_count'] ?? 0,
-      viewsCount: json['views_count'] ?? 0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      timeSincePosted: json['time_since_posted'],
-      // isFavorited: json['is_favorited'],
-      isFavorited: json['is_favorited'] as bool?,
-      hasUserOffered: json['has_user_offered'],
-      attachment1: json['attachment1'],
-      attachment2: json['attachment2'],
-      attachment3: json['attachment3'],
-      attachments: attachmentsList,
-    );
+  // Méthode utilitaire pour parser les booléens de manière sécurisée
+  static bool? _parseBoolSafely(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is String) {
+      final lowerValue = value.toLowerCase();
+      if (lowerValue == 'true') return true;
+      if (lowerValue == 'false') return false;
+      return null;
+    }
+    if (value is int) return value != 0;
+    return null;
   }
 
   Map<String, dynamic> toJson() {

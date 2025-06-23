@@ -122,11 +122,12 @@ class _ProjectsListScreenState extends State<ProjectsListScreen>
 
       setState(() {
         if (refresh) {
-          _projects = result['projects'];
+          _projects = List<ClientProject>.from(result['projects'] ?? []);
         } else {
-          _projects.addAll(result['projects']);
+          _projects.addAll(List<ClientProject>.from(result['projects'] ?? []));
         }
-        _hasMore = result['hasMore'];
+        // CORRECTION : Gestion robuste de hasMore
+        _hasMore = result['hasMore'] ?? result['next'] != null ?? false;
         _currentPage++;
       });
     } catch (e) {
@@ -581,28 +582,28 @@ class _ProjectsListScreenState extends State<ProjectsListScreen>
   }
 
   Future<void> _toggleFavorite(ClientProject project) async {
-  try {
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    await apiService.toggleProjectFavorite(project.id);
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.toggleProjectFavorite(project.id);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          // Corrigez cette ligne en gérant explicitement la valeur null
-          (project.isFavorited ?? false)
-              ? 'Projet retiré des favoris'
-              : 'Projet ajouté aux favoris'
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            // CORRECTION : Gestion explicite des valeurs null
+            (project.isFavorited == true)
+                ? 'Projet retiré des favoris'
+                : 'Projet ajouté aux favoris'
+          ),
         ),
-      ),
-    );
+      );
 
-    _loadProjects(refresh: true);
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur: $e')),
-    );
+      _loadProjects(refresh: true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
   }
-}
 
   @override
   void dispose() {

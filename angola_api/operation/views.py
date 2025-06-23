@@ -88,7 +88,7 @@ class LoginView(APIView):
             'access': str(refresh.access_token),
             'refresh': str(refresh)
         }
-        
+        print(str(refresh.access_token))
         return Response(response_data, status=status.HTTP_200_OK)
     
 class RegisterView(generics.CreateAPIView):
@@ -1401,6 +1401,76 @@ class ConversationViewSet(viewsets.ModelViewSet):
         serializer = ConversationSerializer(conversation, context={'user_id': user_id})
         return Response(serializer.data)
     
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def start_conversation(self, request):
+        """Démarrer une nouvelle conversation avec un prestataire"""
+        try:
+            provider_id = request.data.get('provider_id')
+            initial_message = request.data.get('initial_message', '')
+            
+            if not provider_id:
+                return Response(
+                    {'error': 'provider_id est requis'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier que le prestataire existe
+            try:
+                provider = Provider.objects.get(id=provider_id)
+            except Provider.DoesNotExist:
+                return Response(
+                    {'error': 'Prestataire non trouvé'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Vérifier qu'on ne crée pas une conversation avec soi-même
+            if hasattr(request.user, 'provider_profile') and request.user.provider_profile.id == provider_id:
+                return Response(
+                    {'error': 'Vous ne pouvez pas créer une conversation avec vous-même'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier si une conversation existe déjà
+            existing_conversation = Conversation.objects.filter(
+                Q(participant1=request.user, participant2=provider.user) |
+                Q(participant1=provider.user, participant2=request.user)
+            ).first()
+            
+            if existing_conversation:
+                # Si un message initial est fourni, l'envoyer
+                if initial_message.strip():
+                    message = Message.objects.create(
+                        conversation=existing_conversation,
+                        sender=request.user,
+                        content=initial_message.strip()
+                    )
+                
+                serializer = ConversationSerializer(existing_conversation, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # Créer une nouvelle conversation
+            conversation = Conversation.objects.create(
+                participant1=request.user,
+                participant2=provider.user
+            )
+            
+            # Envoyer le message initial si fourni
+            if initial_message.strip():
+                message = Message.objects.create(
+                    conversation=conversation,
+                    sender=request.user,
+                    content=initial_message.strip()
+                )
+            
+            serializer = ConversationSerializer(conversation, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la création de la conversation: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_notification_count(request):
@@ -2077,19 +2147,39 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
     """ViewSet pour la gestion des offres sur les projets"""
     serializer_class = ProjectOfferSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['project', 'status']  # AJOUTER LE FILTRAGE PAR PROJET
     
     def get_queryset(self):
         queryset = ProjectOffer.objects.select_related(
             'project', 'provider__user'
         ).prefetch_related('provider__reviews_received')
         
-        # Filtrage basé sur le rôle de l'utilisateur
-        if hasattr(self.request.user, 'provider_profile'):
-            # Prestataire : voir ses propres offres
-            queryset = queryset.filter(provider=self.request.user.provider_profile)
+        # AJOUTER : Filtrage par projet si spécifié
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            try:
+                project = ClientProject.objects.get(id=project_id)
+                # Vérifier les permissions
+                if hasattr(self.request.user, 'provider_profile'):
+                    # Prestataire : peut voir toutes les offres du projet (pour transparence)
+                    queryset = queryset.filter(project=project)
+                elif project.client == self.request.user:
+                    # Client : peut voir les offres sur son projet
+                    queryset = queryset.filter(project=project)
+                else:
+                    # Pas d'autorisation
+                    return ProjectOffer.objects.none()
+            except ClientProject.DoesNotExist:
+                return ProjectOffer.objects.none()
         else:
-            # Client : voir les offres sur ses projets
-            queryset = queryset.filter(project__client=self.request.user)
+            # Comportement par défaut : filtrer selon le rôle
+            if hasattr(self.request.user, 'provider_profile'):
+                # Prestataire : voir ses propres offres
+                queryset = queryset.filter(provider=self.request.user.provider_profile)
+            else:
+                # Client : voir les offres sur ses projets
+                queryset = queryset.filter(project__client=self.request.user)
         
         return queryset
     
@@ -2097,6 +2187,67 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return ProjectOfferCreateSerializer
         return ProjectOfferSerializer
+    
+    def create(self, request, *args, **kwargs):
+        """Créer une nouvelle offre"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response(
+                {'error': 'Seuls les prestataires peuvent faire des offres'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Vérifier que le projet existe et est ouvert
+        project_id = request.data.get('project')
+        try:
+            project = ClientProject.objects.get(id=project_id)
+        except ClientProject.DoesNotExist:
+            return Response(
+                {'error': 'Projet non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if project.status != 'open':
+            return Response(
+                {'error': 'Ce projet n\'accepte plus d\'offres'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier qu'il n'y a pas déjà d'offre de ce prestataire
+        existing_offer = ProjectOffer.objects.filter(
+            project=project,
+            provider=request.user.provider_profile
+        ).first()
+        
+        if existing_offer:
+            return Response(
+                {'error': 'Vous avez déjà fait une offre pour ce projet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Créer l'offre
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            offer = serializer.save(provider=request.user.provider_profile)
+            
+            # Créer une notification pour le client
+            try:
+                from .models import Notification
+                Notification.objects.create(
+                    user=project.client,
+                    title="Nouvelle offre reçue",
+                    message=f"Une nouvelle offre a été reçue pour votre projet '{project.title}'",
+                    notification_type='new_offer',
+                    related_object_id=offer.id
+                )
+            except Exception as e:
+                print(f"Erreur création notification: {e}")
+            
+            return Response(
+                self.get_serializer(offer).data,
+                status=status.HTTP_201_CREATED
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])
     def by_project(self, request):

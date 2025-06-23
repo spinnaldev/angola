@@ -73,7 +73,7 @@ urlpatterns = [
     path('api/providers/by_subcategory/', views.ProviderBySubcategoryView.as_view(), name='provider-by-subcategory'),
     path('api/providers/nearby/', views.NearbyProvidersView.as_view(), name='nearby-providers'),
     path('api/users/profile_stats/', views.get_profile_stats, name='profile-stats'),
-
+    path('api/projects/<int:pk>/offers/', views.ClientProjectViewSet.as_view({'get': 'offers', 'post': 'offers'}), name='project-offers'),
     # path('api/projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
     
     path('api/projects/categories/<int:category_id>/', views.ClientProjectViewSet.as_view({'get': 'list'}),name='projects-by-category'),

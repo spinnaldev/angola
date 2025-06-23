@@ -1,4 +1,3 @@
-// lib/providers/messaging_provider.dart
 import 'package:flutter/foundation.dart';
 import '../core/models/conversation.dart';
 import '../core/models/message.dart';
@@ -11,28 +10,80 @@ class MessagingProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _isSending = false;
   int? _currentConversationId;
+  int? _currentUserId;
 
   MessagingProvider(this._apiService);
 
+  // Getters
   List<Conversation> get conversations => _conversations;
   List<Message> getMessagesForConversation(int conversationId) => 
       _messages[conversationId] ?? [];
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
-  int? get currentConversationId => _currentConversationId;
+  int? get currentUserId => _currentUserId;
+
+  // Méthode pour définir l'utilisateur actuel
+  void setCurrentUserId(int userId) {
+    _currentUserId = userId;
+  }
 
   Future<void> fetchConversations() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final fetchedConversations = await _apiService.getConversations();
-      _conversations = fetchedConversations;
+      if (_currentUserId == null) {
+        _currentUserId = await _apiService.getCurrentUserId();
+      }
+
+      // Pas besoin de parser, les objets sont déjà créés
+      _conversations = await _apiService.getConversations();
+      
     } catch (error) {
       print('Error fetching conversations: $error');
+      _conversations = [];
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<Conversation?> startConversation(int providerId, {String? initialMessage}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Obtenir l'ID de l'utilisateur actuel si pas encore défini
+      if (_currentUserId == null) {
+        _currentUserId = await _apiService.getCurrentUserId();
+      }
+
+      // Récupérer les données JSON brutes
+      final conversationData = await _apiService.startConversation(providerId, initialMessage);
+      
+      // Créer l'objet Conversation à partir des données JSON
+      final conversation = Conversation.fromJson(conversationData, _currentUserId!);
+      
+      // Vérifier si la conversation existe déjà dans la liste
+      final existingIndex = _conversations.indexWhere((c) => c.id == conversation.id);
+      
+      if (existingIndex != -1) {
+        // Mettre à jour la conversation existante
+        _conversations[existingIndex] = conversation;
+      } else {
+        // Ajouter la nouvelle conversation au début de la liste
+        _conversations.insert(0, conversation);
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      return conversation;
+      
+    } catch (error) {
+      print('Error starting conversation: $error');
+      _isLoading = false;
+      notifyListeners();
+      return null;
     }
   }
 
@@ -100,35 +151,6 @@ class MessagingProvider with ChangeNotifier {
       _isSending = false;
       notifyListeners();
       return false;
-    }
-  }
-
-  Future<Conversation?> startConversation(int providerId, {String? initialMessage}) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final conversation = await _apiService.startConversation(providerId, initialMessage);
-      
-      // Ajouter la nouvelle conversation à la liste
-      _conversations.insert(0, conversation);
-      
-      // Si un message initial a été envoyé
-      if (initialMessage != null && initialMessage.isNotEmpty) {
-        final message = await _apiService.getInitialMessage(conversation.id);
-        if (message != null) {
-          _messages[conversation.id] = [message];
-        }
-      }
-      
-      _isLoading = false;
-      notifyListeners();
-      return conversation;
-    } catch (error) {
-      print('Error starting conversation: $error');
-      _isLoading = false;
-      notifyListeners();
-      return null;
     }
   }
 

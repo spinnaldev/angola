@@ -2784,8 +2784,16 @@ class ApiService {
       final data = await _apiClient.get(endpoint, requireAuth: false);
 
       final List<dynamic> projectsJson = data['results'] ?? [];
-      final projects =
-          projectsJson.map((item) => ClientProject.fromJson(item)).toList();
+      final projects = projectsJson.map((item) {
+        try {
+          return ClientProject.fromJson(item);
+        } catch (e) {
+          print('❌ Erreur lors du parsing du projet: $e');
+          print('Données du projet problématique: $item');
+          // Ignorer ce projet et continuer
+          return null;
+        }
+      }).where((project) => project != null).cast<ClientProject>().toList();
 
       print('✅ Projets récupérés: ${projects.length}');
 
@@ -2794,10 +2802,18 @@ class ApiService {
         'count': data['count'] ?? 0,
         'next': data['next'],
         'previous': data['previous'],
+        'hasMore': data['next'] != null, // Ajouter explicitement hasMore
       };
     } catch (e) {
       print('❌ Erreur dans getProjects: $e');
-      throw e;
+      // Retourner une structure par défaut en cas d'erreur
+      return {
+        'projects': <ClientProject>[],
+        'count': 0,
+        'next': null,
+        'previous': null,
+        'hasMore': false,
+      };
     }
   }
 
@@ -3078,19 +3094,19 @@ class ApiService {
   Future<List<dynamic>> getProjectOffers(int projectId) async {
     try {
       print('📋 Récupération des offres pour le projet $projectId...');
-
-      final data = await _apiClient.get('projects/$projectId/offers/',
-          requireAuth: true);
-
-      final offers = data['results'] ?? [];
-      print('✅ Offres récupérées: ${offers.length}');
-
-      return offers;
+      
+      // CORRIGER : Utiliser l'endpoint project-offers avec un filtre
+      final data = await _apiClient.get('project-offers/?project=$projectId', requireAuth: true);
+      
+      print('✅ Offres récupérées: ${data['results']?.length ?? 0}');
+      return data['results'] ?? [];
+      
     } catch (e) {
       print('❌ Erreur dans getProjectOffers: $e');
-      throw e;
+      return [];
     }
   }
+
 
   Future<ProjectOffer> updateOfferStatus(int offerId, String status,
       {String? notes}) async {
@@ -3238,33 +3254,33 @@ class ApiService {
     }
   }
 
-  Future<Conversation> startConversation(
-      int providerId, String? initialMessage) async {
-    try {
-      print('💬 Démarrage d\'une conversation...');
+  // Future<Conversation> startConversation(
+  //     int providerId, String? initialMessage) async {
+  //   try {
+  //     print('💬 Démarrage d\'une conversation...');
 
-      final userId = await getCurrentUserId();
-      final Map<String, dynamic> requestData = {
-        'user_id': userId,
-        'provider_id': providerId,
-      };
+  //     final userId = await getCurrentUserId();
+  //     final Map<String, dynamic> requestData = {
+  //       'user_id': userId,
+  //       'provider_id': providerId,
+  //     };
 
-      if (initialMessage != null && initialMessage.isNotEmpty) {
-        requestData['message'] = initialMessage;
-      }
+  //     if (initialMessage != null && initialMessage.isNotEmpty) {
+  //       requestData['message'] = initialMessage;
+  //     }
 
-      final data = await _apiClient.post('conversations/start/',
-          data: requestData, requireAuth: true);
+  //     final data = await _apiClient.post('conversations/start/',
+  //         data: requestData, requireAuth: true);
 
-      final conversation = Conversation.fromJson(data, userId);
-      print('✅ Conversation démarrée');
+  //     final conversation = Conversation.fromJson(data, userId);
+  //     print('✅ Conversation démarrée');
 
-      return conversation;
-    } catch (e) {
-      print('❌ Erreur dans startConversation: $e');
-      throw e;
-    }
-  }
+  //     return conversation;
+  //   } catch (e) {
+  //     print('❌ Erreur dans startConversation: $e');
+  //     throw e;
+  //   }
+  // }
 
   Future<Message?> getInitialMessage(int conversationId) async {
     try {
@@ -3472,6 +3488,28 @@ class ApiService {
       }
     }
   }
+  Future<Map<String, dynamic>> startConversation(int providerId, String? initialMessage) async {
+    try {
+      print('🚀 Démarrage conversation avec prestataire $providerId...');
+      
+      final data = {
+        'provider_id': providerId,
+        if (initialMessage?.isNotEmpty == true) 'initial_message': initialMessage,
+      };
+      
+      // Retourner les données JSON brutes, PAS un objet Conversation
+      final response = await _apiClient.post('conversations/start_conversation/', 
+          data: data, requireAuth: true);
+      
+      print('✅ Conversation démarrée avec succès');
+      return response; // Retourner le Map<String, dynamic>
+      
+    } catch (e) {
+      print('❌ Erreur démarrage conversation: $e');
+      throw Exception('Impossible de démarrer la conversation: $e');
+    }
+  }
+
 
   // ===============================
   // MÉTHODES UTILITAIRES
