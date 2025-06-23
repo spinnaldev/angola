@@ -227,7 +227,8 @@ class ClientProject {
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
       timeSincePosted: json['time_since_posted'],
-      isFavorited: json['is_favorited'],
+      // isFavorited: json['is_favorited'],
+      isFavorited: json['is_favorited'] as bool?,
       hasUserOffered: json['has_user_offered'],
       attachment1: json['attachment1'],
       attachment2: json['attachment2'],

@@ -150,6 +150,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+
+DEFAULT_CHARSET = 'utf-8'
+FILE_CHARSET = 'utf-8'
+
+
 DATABASES = {
     'default': {
 
@@ -161,6 +166,7 @@ DATABASES = {
         'PORT':  SECRETS['PORT'],
         'OPTIONS': {
             'client_encoding': 'UTF8',
+            
         },
     }
     # {

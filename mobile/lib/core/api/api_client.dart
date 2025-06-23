@@ -8,11 +8,11 @@ class ApiClient {
 
   ApiClient({required this.baseUrl});
 
-  Future<Map<String, String>> _getHeaders({bool requireAuth = true}) async {
+  Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {  // Enlever le _
     Map<String, String> headers = {
-      'Content-Type': 'application/json; charset=utf-8',  // Spécifier UTF-8
+      'Content-Type': 'application/json; charset=utf-8',
       'Accept': 'application/json',
-      'Accept-Charset': 'utf-8',  // Accepter UTF-8
+      'Accept-Charset': 'utf-8',
     };
 
     if (requireAuth) {
@@ -26,7 +26,7 @@ class ApiClient {
   }
 
   Future<dynamic> get(String endpoint, {bool requireAuth = true}) async {
-    final headers = await _getHeaders(requireAuth: requireAuth);
+    final headers = await getHeaders(requireAuth: requireAuth);
     final response = await http.get(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
@@ -38,7 +38,7 @@ class ApiClient {
   }
 
   Future<dynamic> post(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
-    final headers = await _getHeaders(requireAuth: requireAuth);
+    final headers = await getHeaders(requireAuth: requireAuth);
     
     // Convertir les données en JSON avec encodage UTF-8
     final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
@@ -55,7 +55,7 @@ class ApiClient {
   }
 
   Future<dynamic> put(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
-    final headers = await _getHeaders(requireAuth: requireAuth);
+    final headers = await getHeaders(requireAuth: requireAuth);
     
     // Convertir les données en JSON avec encodage UTF-8
     final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
@@ -72,7 +72,7 @@ class ApiClient {
   }
 
   Future<dynamic> delete(String endpoint, {bool requireAuth = true}) async {
-    final headers = await _getHeaders(requireAuth: requireAuth);
+    final headers = await getHeaders(requireAuth: requireAuth);
     final response = await http.delete(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,

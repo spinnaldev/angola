@@ -581,25 +581,28 @@ class _ProjectsListScreenState extends State<ProjectsListScreen>
   }
 
   Future<void> _toggleFavorite(ClientProject project) async {
-    try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      await apiService.toggleProjectFavorite(project.id);
+  try {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    await apiService.toggleProjectFavorite(project.id);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(project.isFavorited ?? false
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          // Corrigez cette ligne en gérant explicitement la valeur null
+          (project.isFavorited ?? false)
               ? 'Projet retiré des favoris'
-              : 'Projet ajouté aux favoris'),
+              : 'Projet ajouté aux favoris'
         ),
-      );
+      ),
+    );
 
-      _loadProjects(refresh: true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
-    }
+    _loadProjects(refresh: true);
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erreur: $e')),
+    );
   }
+}
 
   @override
   void dispose() {

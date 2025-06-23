@@ -1745,7 +1745,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
             show_all = self.request.query_params.get('show_all')
             if not show_all or show_all.lower() != 'true':
                 queryset = queryset.filter(status='open')
-        
+        print(queryset)
         return queryset
     
     def get_serializer_class(self):

@@ -533,14 +533,14 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
     offers_count = serializers.IntegerField(read_only=True)
     budget_display = serializers.CharField(read_only=True)
     time_since_posted = serializers.SerializerMethodField()
-    
+    is_favorited = serializers.SerializerMethodField()
     class Meta:
         model = ClientProject
         fields = [
             'id', 'title', 'description', 'client_name', 'category_name', 
             'subcategory_name', 'budget_range', 'budget_display', 'location',
             'urgency', 'status', 'offers_count', 'views_count', 'created_at',
-            'time_since_posted', 'deadline', 'remote_possible'
+            'time_since_posted', 'deadline', 'remote_possible','is_favorited'
         ]
     
     def get_client_name(self, obj):
@@ -550,6 +550,21 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
             return obj.client.first_name or obj.client.username
         return "Client anonyme"
     
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        
+        try:
+            if hasattr(request.user, 'provider_profile'):
+                return ProjectFavorite.objects.filter(
+                    project=obj,
+                    provider=request.user.provider_profile
+                ).exists()
+            return False
+        except Exception:
+            return False 
+        
     def get_time_since_posted(self, obj):
         from django.utils import timezone
         from datetime import timedelta
