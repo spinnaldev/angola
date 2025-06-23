@@ -1272,32 +1272,21 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def send_message(self, request, pk=None):
         """Envoyer un message dans une conversation"""
         try:
-            # Récupérer les données
-            user_id = request.data.get('user_id')
+            # ✅ CORRECTION : Utiliser l'utilisateur authentifié au lieu de user_id
             content = request.data.get('content', '').strip()
             
-            print(f"📤 Tentative d'envoi message: conversation_id={pk}, user_id={user_id}")
+            print(f"📤 Tentative d'envoi message: conversation_id={pk}")
+            print(f"👤 Utilisateur: {request.user.username} (ID: {request.user.id})")
             print(f"📝 Contenu: {content[:50]}...")
             
-            if not user_id or not content:
+            if not content:
                 return Response(
-                    {"detail": "user_id et content sont requis"}, 
+                    {"detail": "content est requis"}, 
                     status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Vérifier l'utilisateur
-            try:
-                user_id = int(user_id)
-                user = User.objects.get(id=user_id)
-                print(f"✅ Utilisateur trouvé: {user.username}")
-            except (ValueError, User.DoesNotExist):
-                print(f"❌ Utilisateur {user_id} non trouvé")
-                return Response(
-                    {"detail": "Utilisateur non trouvé"}, 
-                    status=status.HTTP_404_NOT_FOUND
                 )
             
             # Récupérer la conversation
@@ -1312,12 +1301,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
                 )
             
             # Vérifier les permissions (utilisateur fait partie de la conversation)
-            is_client = conversation.client.id == user.id
-            is_provider = (hasattr(user, 'provider_profile') and 
-                        conversation.provider.id == user.provider_profile.id)
+            is_client = conversation.client == request.user
+            is_provider = (hasattr(request.user, 'provider_profile') and 
+                        conversation.provider == request.user.provider_profile)
             
             if not (is_client or is_provider):
-                print(f"❌ Accès refusé pour user {user_id}")
+                print(f"❌ Accès refusé pour user {request.user.id}")
+                print(f"Client: {conversation.client.id}, Provider: {conversation.provider.id}")
                 return Response(
                     {"detail": "Accès non autorisé à cette conversation"}, 
                     status=status.HTTP_403_FORBIDDEN
@@ -1328,7 +1318,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             # Créer le message
             message = Message.objects.create(
                 conversation=conversation,
-                sender=user,
+                sender=request.user,
                 content=content
             )
             
@@ -1338,8 +1328,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
             
             print(f"✅ Message créé: {message.id}")
             
-            # Sérialiser et retourner
-            serializer = MessageSerializer(message, context={'user_id': user_id})
+            # Sérialiser et retourner (utiliser l'ID de l'utilisateur actuel)
+            serializer = MessageSerializer(message, context={'user_id': request.user.id})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
@@ -1598,6 +1588,78 @@ class ConversationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        user = self.request.user
+        # Filtrer pour ne montrer que les messages des conversations de l'utilisateur
+        if hasattr(user, 'provider_profile'):
+            # Si c'est un prestataire
+            conversations = Conversation.objects.filter(provider=user.provider_profile)
+        else:
+            # Si c'est un client
+            conversations = Conversation.objects.filter(client=user)
+        
+        return Message.objects.filter(conversation__in=conversations)
+    
+    def create(self, request, *args, **kwargs):
+        """Créer un nouveau message"""
+        try:
+            conversation_id = request.data.get('conversation')
+            content = request.data.get('content', '').strip()
+            
+            if not conversation_id or not content:
+                return Response(
+                    {"detail": "conversation et content sont requis"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier que la conversation existe
+            try:
+                conversation = Conversation.objects.get(id=conversation_id)
+            except Conversation.DoesNotExist:
+                return Response(
+                    {"detail": "Conversation non trouvée"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Vérifier les permissions
+            is_client = conversation.client == request.user
+            is_provider = (hasattr(request.user, 'provider_profile') and 
+                          conversation.provider == request.user.provider_profile)
+            
+            if not (is_client or is_provider):
+                return Response(
+                    {"detail": "Accès non autorisé"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Créer le message
+            message = Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=content
+            )
+            
+            # Mettre à jour la conversation
+            conversation.updated_at = timezone.now()
+            conversation.save()
+            
+            serializer = MessageSerializer(message, context={'user_id': request.user.id})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"❌ Erreur dans create message: {e}")
+            return Response(
+                {"detail": f"Erreur serveur: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_notification_count(request):
