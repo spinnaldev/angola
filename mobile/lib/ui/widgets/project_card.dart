@@ -22,6 +22,7 @@ class ProjectCard extends StatelessWidget {
     final isProvider = user?.role == 'provider';
 
     return Card(
+      color: Colors.grey[50],
       elevation: 2,
       shadowColor: Colors.grey.withOpacity(0.1),
       shape: RoundedRectangleBorder(

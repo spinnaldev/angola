@@ -186,8 +186,10 @@ class ClientProject {
         subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
         subcategoryName: json['subcategory_name'] ?? '',
         budgetRange: json['budget_range'] ?? '',
-        minBudget: json['min_budget']?.toDouble(),
-        maxBudget: json['max_budget']?.toDouble(),
+        // minBudget: json['min_budget']?.toDouble(),
+        // maxBudget: json['max_budget']?.toDouble(),
+        minBudget: _parseDoubleFromDynamic(json['min_budget']),
+        maxBudget: _parseDoubleFromDynamic(json['max_budget']),
         budgetDisplay: json['budget_display'] ?? '',
         location: json['location'] ?? '',
         remotePossible: json['remote_possible'] ?? false,
@@ -231,6 +233,27 @@ class ClientProject {
     }
     if (value is int) return value != 0;
     return null;
+  }
+
+  static double? _parseDoubleFromDynamic(dynamic value) {
+    if (value == null) return null;
+    
+    try {
+      if (value is double) {
+        return value;
+      } else if (value is int) {
+        return value.toDouble();
+      } else if (value is String) {
+        if (value.isEmpty) return null;
+        return double.parse(value);
+      } else {
+        print('⚠️ Type inattendu pour budget: ${value.runtimeType} - $value');
+        return double.tryParse(value.toString());
+      }
+    } catch (e) {
+      print('❌ Erreur parsing budget: $e pour valeur: $value');
+      return null;
+    }
   }
 
   Map<String, dynamic> toJson() {

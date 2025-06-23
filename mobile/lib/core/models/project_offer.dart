@@ -49,11 +49,13 @@ class ProjectOffer {
       providerId: json['provider'],
       providerName: json['provider_name'],
       providerBusinessType: json['provider_business_type'],
-      providerRating: (json['provider_rating'] ?? 0).toDouble(),
+      providerRating: _parseDoubleFromDynamic(json['provider_rating']) ?? 0.0,
+      // providerRating: (json['provider_rating'] ?? 0).toDouble(),
       providerAvatar: json['provider_avatar'],
       providerLocation: json['provider_location'],
       providerVerified: json['provider_verified'] ?? false,
-      proposedPrice: double.parse(json['proposed_price'].toString()),
+      proposedPrice: _parseDoubleFromDynamic(json['proposed_price']) ?? 0.0,
+      // proposedPrice: double.parse(json['proposed_price'].toString()),
       deliveryTime: json['delivery_time'],
       message: json['message'],
       includesMaterials: json['includes_materials'] ?? false,
@@ -63,6 +65,27 @@ class ProjectOffer {
       viewedByClient: json['viewed_by_client'] ?? false,
       createdAt: DateTime.parse(json['created_at']),
     );
+  }
+
+  static double? _parseDoubleFromDynamic(dynamic value) {
+    if (value == null) return null;
+    
+    try {
+      if (value is double) {
+        return value;
+      } else if (value is int) {
+        return value.toDouble();
+      } else if (value is String) {
+        if (value.isEmpty) return null;
+        return double.parse(value);
+      } else {
+        print('⚠️ Type inattendu pour nombre: ${value.runtimeType} - $value');
+        return double.tryParse(value.toString());
+      }
+    } catch (e) {
+      print('❌ Erreur parsing nombre: $e pour valeur: $value');
+      return null;
+    }
   }
 
   Map<String, dynamic> toJson() {

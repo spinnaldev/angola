@@ -289,32 +289,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProviderHome(User? user) {
-    return Container(
-      color: Colors.white, // AJOUT : Background blanc
-      child: CustomScrollView(
-        slivers: [
-          _buildOriginalHeader(),
-          SliverToBoxAdapter(child: _buildProviderStats()),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildProviderProjectsSection()),
-          SliverToBoxAdapter(child: _buildCategoriesSection()),
-        ],
-      ),
+    return CustomScrollView(
+      slivers: [
+        _buildOriginalHeader(),
+        SliverToBoxAdapter(child: _buildProviderStats()),
+        SliverToBoxAdapter(child: _buildSearchBar()),
+        SliverToBoxAdapter(child: _buildProviderProjectsSection()),
+        SliverToBoxAdapter(child: _buildCategoriesSection()),
+      ],
     );
   }
 
   Widget _buildClientHome(User? user) {
-    return Container(
-      color: Colors.white, // AJOUT : Background blanc
-      child: CustomScrollView(
-        slivers: [
-          _buildOriginalHeader(),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildProjectsSection()),
-          SliverToBoxAdapter(child: _buildServicesSection()),
-          SliverToBoxAdapter(child: _buildCategoriesSection()),
-        ],
-      ),
+    return CustomScrollView(
+      slivers: [
+        _buildOriginalHeader(),
+        SliverToBoxAdapter(child: _buildSearchBar()),
+        SliverToBoxAdapter(child: _buildProjectsSection()),
+        SliverToBoxAdapter(child: _buildServicesSection()),
+        SliverToBoxAdapter(child: _buildCategoriesSection()),
+      ],
     );
   }
 
@@ -553,7 +547,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProjectFilter(String title, List<ClientProject> projects, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -609,37 +602,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            Container(
-            color: Colors.white, // AJOUT : Background blanc pour la liste
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: projects.length.clamp(0, 3),
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: ProjectCard(
-                    project: projects[index],
-                    onTap: () => _navigateToProjectDetail(projects[index]),
-                    onFavoriteToggle: (project) => _toggleProjectFavorite(project),
-                  ),
-                );
-              },
+            // ✅ AFFICHAGE EN LISTE VERTICALE comme pour les clients
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: projects.length.clamp(0, 3), // Limiter à 3 projets
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ProjectCard(
+                      project: projects[index],
+                      onTap: () => _navigateToProjectDetail(projects[index]),
+                      onFavoriteToggle: (project) => _toggleProjectFavorite(project),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -719,7 +700,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: _recentProjects.length.clamp(0, 3),
                   itemBuilder: (context, index) {
                     return Container(
-                      color: Colors.white,
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,

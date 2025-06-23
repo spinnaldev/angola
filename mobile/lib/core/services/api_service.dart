@@ -3233,24 +3233,67 @@ class ApiService {
 
   Future<Message> sendMessage(int conversationId, String content) async {
     try {
-      print('📤 Envoi d\'un message...');
+      print('📤 Envoi d\'un message vers conversation $conversationId...');
+      print('📝 Contenu: ${content.substring(0, content.length > 50 ? 50 : content.length)}...');
 
       final userId = await getCurrentUserId();
-      final data =
-          await _apiClient.post('conversations/$conversationId/send_message/',
+      print('👤 User ID: $userId');
+
+      // ✅ CORRECTION : Essayer plusieurs endpoints
+      Map<String, dynamic> data;
+      
+      try {
+        // Méthode 1: Utiliser l'endpoint ViewSet standard
+        print('🔄 Tentative avec endpoint ViewSet...');
+        data = await _apiClient.post('conversations/$conversationId/send_message/',
+            data: {
+              'user_id': userId,
+              'content': content,
+            },
+            requireAuth: true);
+        print('✅ Message envoyé via ViewSet');
+      } catch (e) {
+        print('⚠️ Échec ViewSet, tentative endpoint alternatif...');
+        
+        try {
+          // Méthode 2: Utiliser l'endpoint alternatif simple
+          data = await _apiClient.post('conversations/$conversationId/send_message/',
               data: {
-                'user_id': userId,
                 'content': content,
               },
               requireAuth: true);
+          print('✅ Message envoyé via endpoint alternatif');
+        } catch (e2) {
+          print('⚠️ Échec endpoint alternatif, tentative messages/ ...');
+          
+          // Méthode 3: Essayer via l'endpoint messages
+          data = await _apiClient.post('messages/',
+              data: {
+                'conversation': conversationId,
+                'content': content,
+              },
+              requireAuth: true);
+          print('✅ Message envoyé via endpoint messages');
+        }
+      }
 
       final message = Message.fromJson(data, userId);
-      print('✅ Message envoyé');
+      print('✅ Message traité côté Flutter');
 
       return message;
     } catch (e) {
       print('❌ Erreur dans sendMessage: $e');
-      throw e;
+      
+      // Fournir plus de détails sur l'erreur
+      if (e.toString().contains('404')) {
+        throw Exception('Endpoint de message non trouvé. Vérifiez la configuration du serveur.');
+      } else if (e.toString().contains('403')) {
+        throw Exception('Accès refusé. Vous n\'êtes pas autorisé à envoyer ce message.');
+      } else if (e.toString().contains('401')) {
+        throw Exception('Non authentifié. Veuillez vous reconnecter.');
+      } else {
+        throw Exception('Erreur lors de l\'envoi du message: $e');
+      }
     }
   }
 

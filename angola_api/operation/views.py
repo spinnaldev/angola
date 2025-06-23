@@ -1271,46 +1271,86 @@ class ConversationViewSet(viewsets.ModelViewSet):
         serializer = MessageSerializer(messages, many=True, context={'user_id': user_id})
         return Response(serializer.data)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def send_message(self, request, pk=None):
-        user_id = request.data.get('user_id')
-        content = request.data.get('content')
-        
-        if not user_id or not content:
-            return Response(
-                {"detail": "user_id et content sont requis"}, 
-                status=status.HTTP_400_BAD_REQUEST
+        """Envoyer un message dans une conversation"""
+        try:
+            # Récupérer les données
+            user_id = request.data.get('user_id')
+            content = request.data.get('content', '').strip()
+            
+            print(f"📤 Tentative d'envoi message: conversation_id={pk}, user_id={user_id}")
+            print(f"📝 Contenu: {content[:50]}...")
+            
+            if not user_id or not content:
+                return Response(
+                    {"detail": "user_id et content sont requis"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier l'utilisateur
+            try:
+                user_id = int(user_id)
+                user = User.objects.get(id=user_id)
+                print(f"✅ Utilisateur trouvé: {user.username}")
+            except (ValueError, User.DoesNotExist):
+                print(f"❌ Utilisateur {user_id} non trouvé")
+                return Response(
+                    {"detail": "Utilisateur non trouvé"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Récupérer la conversation
+            try:
+                conversation = self.get_object()
+                print(f"✅ Conversation trouvée: {conversation.id}")
+            except Exception as e:
+                print(f"❌ Conversation non trouvée: {e}")
+                return Response(
+                    {"detail": "Conversation non trouvée"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Vérifier les permissions (utilisateur fait partie de la conversation)
+            is_client = conversation.client.id == user.id
+            is_provider = (hasattr(user, 'provider_profile') and 
+                        conversation.provider.id == user.provider_profile.id)
+            
+            if not (is_client or is_provider):
+                print(f"❌ Accès refusé pour user {user_id}")
+                return Response(
+                    {"detail": "Accès non autorisé à cette conversation"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            print(f"✅ Permissions validées: client={is_client}, provider={is_provider}")
+            
+            # Créer le message
+            message = Message.objects.create(
+                conversation=conversation,
+                sender=user,
+                content=content
             )
             
-        try:
-            user_id = int(user_id)
-            user = User.objects.get(id=user_id)
-        except (ValueError, User.DoesNotExist):
-            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            # Mettre à jour la date de la conversation
+            conversation.updated_at = timezone.now()
+            conversation.save()
             
-        conversation = self.get_object()
+            print(f"✅ Message créé: {message.id}")
+            
+            # Sérialiser et retourner
+            serializer = MessageSerializer(message, context={'user_id': user_id})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"❌ Erreur dans send_message: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"detail": f"Erreur serveur: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
-        # Vérifier que l'utilisateur fait partie de la conversation
-        if conversation.client.id != user.id and (
-            not hasattr(user, 'provider_profile') or 
-            conversation.provider.id != user.provider_profile.id
-        ):
-            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Créer le message
-        message = Message.objects.create(
-            conversation=conversation,
-            sender=user,
-            content=content
-        )
-        
-        # Mettre à jour la date de la conversation
-        conversation.updated_at = timezone.now()
-        conversation.save()
-        
-        serializer = MessageSerializer(message, context={'user_id': user_id})
-        return Response(serializer.data)
-    
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
         user_id = request.data.get('user_id')
@@ -1401,12 +1441,16 @@ class ConversationViewSet(viewsets.ModelViewSet):
         serializer = ConversationSerializer(conversation, context={'user_id': user_id})
         return Response(serializer.data)
     
+    
+
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def start_conversation(self, request):
         """Démarrer une nouvelle conversation avec un prestataire"""
         try:
             provider_id = request.data.get('provider_id')
             initial_message = request.data.get('initial_message', '')
+            
+            print(f"🚀 Démarrage conversation: provider_id={provider_id}, user={request.user.id}")
             
             if not provider_id:
                 return Response(
@@ -1417,7 +1461,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
             # Vérifier que le prestataire existe
             try:
                 provider = Provider.objects.get(id=provider_id)
+                print(f"✅ Prestataire trouvé: {provider.user.username}")
             except Provider.DoesNotExist:
+                print(f"❌ Prestataire {provider_id} non trouvé")
                 return Response(
                     {'error': 'Prestataire non trouvé'},
                     status=status.HTTP_404_NOT_FOUND
@@ -1430,13 +1476,16 @@ class ConversationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
+            # ✅ CORRECTION PRINCIPALE : Utiliser client et provider
             # Vérifier si une conversation existe déjà
+            print(f"🔍 Recherche conversation existante entre client {request.user.id} et provider {provider_id}")
             existing_conversation = Conversation.objects.filter(
-                Q(participant1=request.user, participant2=provider.user) |
-                Q(participant1=provider.user, participant2=request.user)
+                client=request.user,
+                provider=provider
             ).first()
             
             if existing_conversation:
+                print(f"✅ Conversation existante trouvée: {existing_conversation.id}")
                 # Si un message initial est fourni, l'envoyer
                 if initial_message.strip():
                     message = Message.objects.create(
@@ -1444,15 +1493,18 @@ class ConversationViewSet(viewsets.ModelViewSet):
                         sender=request.user,
                         content=initial_message.strip()
                     )
+                    print(f"✅ Message initial ajouté: {message.id}")
                 
                 serializer = ConversationSerializer(existing_conversation, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             
-            # Créer une nouvelle conversation
+            # ✅ CORRECTION : Créer une nouvelle conversation avec les bons champs
+            print(f"📝 Création nouvelle conversation...")
             conversation = Conversation.objects.create(
-                participant1=request.user,
-                participant2=provider.user
+                client=request.user,
+                provider=provider
             )
+            print(f"✅ Conversation créée: {conversation.id}")
             
             # Envoyer le message initial si fourni
             if initial_message.strip():
@@ -1461,16 +1513,91 @@ class ConversationViewSet(viewsets.ModelViewSet):
                     sender=request.user,
                     content=initial_message.strip()
                 )
+                print(f"✅ Message initial créé: {message.id}")
             
             serializer = ConversationSerializer(conversation, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
+            print(f"❌ Erreur dans start_conversation: {e}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {'error': f'Erreur lors de la création de la conversation: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def create_conversation(self, request):
+            """Créer une nouvelle conversation"""
+            try:
+                user_id = request.data.get('user_id')
+                provider_id = request.data.get('provider_id')
+                initial_message = request.data.get('initial_message', '')
+                
+                if not user_id or not provider_id:
+                    return Response(
+                        {'error': 'user_id et provider_id sont requis'}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                try:
+                    user = User.objects.get(id=user_id)
+                    provider = Provider.objects.get(id=provider_id)
+                except (User.DoesNotExist, Provider.DoesNotExist):
+                    return Response(
+                        {'error': 'Utilisateur ou prestataire non trouvé'}, 
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                
+                # ✅ CORRECTION : Utiliser client et provider
+                # Vérifier si une conversation existe déjà
+                existing_conversation = Conversation.objects.filter(
+                    client=user,
+                    provider=provider
+                ).first()
+                
+                if existing_conversation:
+                    # Si un message initial est fourni, l'envoyer
+                    if initial_message:
+                        Message.objects.create(
+                            conversation=existing_conversation,
+                            sender=user,
+                            content=initial_message
+                        )
+                        # Mettre à jour la date de la conversation
+                        existing_conversation.updated_at = timezone.now()
+                        existing_conversation.save()
+                    
+                    serializer = ConversationSerializer(existing_conversation, context={'user_id': user_id})
+                    return Response(serializer.data)
+                
+                # ✅ CORRECTION : Créer nouvelle conversation avec les bons champs
+                conversation = Conversation.objects.create(
+                    client=user,
+                    provider=provider
+                )
+                
+                # Envoyer le message initial si fourni
+                if initial_message:
+                    Message.objects.create(
+                        conversation=conversation,
+                        sender=user,
+                        content=initial_message
+                    )
+                    # Mettre à jour la date de la conversation
+                    conversation.updated_at = timezone.now()
+                    conversation.save()
+                
+                serializer = ConversationSerializer(conversation, context={'user_id': user_id})
+                return Response(serializer.data)
+                
+            except Exception as e:
+                print(f"❌ Erreur dans create_conversation: {e}")
+                return Response(
+                    {'error': f'Erreur lors de la création de la conversation: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_notification_count(request):

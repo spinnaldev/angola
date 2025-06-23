@@ -25,6 +25,7 @@ class OfferCard extends StatelessWidget {
     final isClient = user?.role == 'client';
     
     return Card(
+      color: Colors.white,
       elevation: 2,
       shadowColor: Colors.grey.withOpacity(0.1),
       shape: RoundedRectangleBorder(
@@ -90,7 +91,7 @@ class OfferCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${offer['provider_rating']?.toStringAsFixed(1) ?? '5.0'} (${offer['provider_reviews_count'] ?? 0} avis)',
+                    '${_parseRating(offer['provider_rating']).toStringAsFixed(1)} (${offer['provider_reviews_count'] ?? 0} avis)',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -149,7 +150,7 @@ class OfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${offer['proposed_price']?.toInt() ?? 0}€',
+                  '${_parsePrice(offer['proposed_price'])}€',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -160,7 +161,7 @@ class OfferCard extends StatelessWidget {
             ),
           ),
           Container(
-            width: 1,
+            width: 1, 
             height: 30,
             color: Colors.grey[300],
           ),
@@ -231,68 +232,63 @@ class OfferCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final status = offer['status'] ?? 'pending';
+    final status = offer['status']?.toString().toLowerCase() ?? 'pending';
     
-    if (status == 'accepted') {
-      return _buildAcceptedState(context);
-    } else if (status == 'rejected') {
-      return _buildRejectedState();
-    }
-    
-    // État pending - afficher les boutons d'action
     return Column(
       children: [
-        // Bouton Contact en premier
+        if (status == 'pending') ...[
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => onReject(offer),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Rejeter'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => onAccept(offer),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF142FE2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Accepter'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+        
+        // Bouton Contact prestataire (toujours visible)
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => _contactProvider(context),
-            icon: const Icon(Icons.message, size: 18),
+            onPressed: () {
+              print('🚀 Tentative de contact prestataire');
+              print('📋 Données de l\'offre: $offer');
+              _contactProvider(context);
+            },
+            icon: const Icon(Icons.message),
             label: const Text('Contacter le prestataire'),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF142FE2),
               side: const BorderSide(color: Color(0xFF142FE2)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        // Boutons Accepter/Rejeter
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => onReject(offer),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Rejeter'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => onAccept(offer),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Accepter'),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -427,8 +423,29 @@ class OfferCard extends StatelessWidget {
         ),
       );
 
-      // Obtenir l'ID du prestataire depuis l'offre
-      final providerId = offer['provider_id'] ?? offer['provider']?['id'];
+      // ✅ CORRECTION PRINCIPALE : Gestion correcte de l'ID du prestataire
+      int? providerId;
+      
+      // Essayer différentes façons d'obtenir l'ID du prestataire
+      if (offer['provider_id'] != null) {
+        // Si provider_id existe directement
+        providerId = _parseId(offer['provider_id']);
+      } else if (offer['provider'] != null) {
+        // Si provider est un objet avec un id
+        if (offer['provider'] is Map<String, dynamic>) {
+          providerId = _parseId(offer['provider']['id']);
+        } else {
+          // Si provider est directement l'ID
+          providerId = _parseId(offer['provider']);
+        }
+      } else if (offer['providerId'] != null) {
+        // Autre variante possible
+        providerId = _parseId(offer['providerId']);
+      }
+
+      print('🔍 Provider ID trouvé: $providerId');
+      print('🔍 Structure de l\'offre: ${offer.keys.toList()}');
+      
       if (providerId == null) {
         Navigator.pop(context); // Fermer le loading
         ScaffoldMessenger.of(context).showSnackBar(
@@ -438,7 +455,15 @@ class OfferCard extends StatelessWidget {
       }
 
       // Créer le message initial avec contexte de l'offre
-      final projectTitle = offer['project_title'] ?? offer['project']?['title'] ?? 'votre projet';
+      String projectTitle = 'votre projet';
+      
+      // Essayer d'obtenir le titre du projet
+      if (offer['project_title'] != null) {
+        projectTitle = offer['project_title'].toString();
+      } else if (offer['project'] != null && offer['project'] is Map<String, dynamic>) {
+        projectTitle = offer['project']['title']?.toString() ?? projectTitle;
+      }
+      
       final initialMessage = 'Bonjour, je suis intéressé(e) par votre offre pour le projet "$projectTitle". Pouvons-nous discuter des détails ?';
 
       // Démarrer ou récupérer la conversation
@@ -474,6 +499,26 @@ class OfferCard extends StatelessWidget {
     }
   }
 
+  int? _parseId(dynamic value) {
+  if (value == null) return null;
+  
+  try {
+    if (value is int) {
+      return value;
+    } else if (value is String) {
+      return int.parse(value);
+    } else if (value is double) {
+      return value.toInt();
+    } else {
+      print('⚠️ Type inattendu pour ID: ${value.runtimeType} - $value');
+      return int.tryParse(value.toString());
+    }
+  } catch (e) {
+    print('❌ Erreur parsing ID: $e pour valeur: $value');
+    return null;
+  }
+}
+
   String _getInitials(String name) {
     final words = name.split(' ');
     if (words.length >= 2) {
@@ -483,4 +528,44 @@ class OfferCard extends StatelessWidget {
     }
     return 'P';
   }
+  int _parsePrice(dynamic price) {
+    if (price == null) return 0;
+    
+    try {
+      if (price is int) {
+        return price;
+      } else if (price is double) {
+        return price.toInt();
+      } else if (price is String) {
+        if (price.isEmpty) return 0;
+        return double.parse(price).toInt();
+      } else {
+        return int.tryParse(price.toString()) ?? 0;
+      }
+    } catch (e) {
+      print('❌ Erreur parsing prix: $e pour valeur: $price');
+      return 0;
+    }
+  }
+
+  double _parseRating(dynamic rating) {
+    if (rating == null) return 5.0;
+    
+    try {
+      if (rating is double) {
+        return rating;
+      } else if (rating is int) {
+        return rating.toDouble();
+      } else if (rating is String) {
+        if (rating.isEmpty) return 5.0;
+        return double.parse(rating);
+      } else {
+        return double.tryParse(rating.toString()) ?? 5.0;
+      }
+    } catch (e) {
+      print('❌ Erreur parsing rating: $e pour valeur: $rating');
+      return 5.0;
+    }
+  }
+
 }

@@ -40,9 +40,34 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   void _estimatePrice() {
-    if (widget.project.minBudget != null) {
-      _priceController.text = widget.project.minBudget!.toInt().toString();
+    
+    if (widget.project.minBudget != null && widget.project.minBudget! > 0) {
+      try {
+        _priceController.text = widget.project.minBudget!.toInt().toString();
+      } catch (e) {
+        print('❌ Erreur conversion budget: $e');
+        _priceController.text = '1000'; // Valeur par défaut
+      }
+    } else {
+      
+      switch (widget.project.budgetRange) {
+        case 'moins_500':
+          _priceController.text = '400';
+          break;
+        case '500_1000':
+          _priceController.text = '750';
+          break;
+        case '1000_10000':
+          _priceController.text = '2500';
+          break;
+        case '10000_plus':
+          _priceController.text = '15000';
+          break;
+        default:
+          _priceController.text = '1000';
+      }
     }
+    
     // Estimation du délai basée sur l'urgence
     switch (widget.project.urgency) {
       case 'high':
