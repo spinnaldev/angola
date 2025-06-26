@@ -221,7 +221,7 @@ class SideMenu extends StatelessWidget {
             ),
           ],
 
-          if (user.role == 'client')
+          if (user.role == 'client') ...[
             _buildMenuItem(
               context,
               icon: Icons.work_outline,
@@ -249,7 +249,7 @@ class SideMenu extends StatelessWidget {
                 );
               },
             ),
-          
+          ],
           _buildMenuItem(
             context,
             icon: Icons.gavel,
@@ -313,7 +313,7 @@ class SideMenu extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: 24), // Plus d'espace en bas
+          const SizedBox(height: 24),
         ],
       ),
     );
