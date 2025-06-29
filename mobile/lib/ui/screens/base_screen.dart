@@ -5,14 +5,15 @@ import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../widgets/side_menu.dart';
 import '../widgets/app_bottom_navigation.dart';
+import 'home_screen.dart';
+import 'explore_screen.dart';
+import 'messaging/messages_screen.dart';
 
 class BaseScreen extends StatefulWidget {
   final Widget body;
   final int currentIndex;
-  final PreferredSizeWidget? appBar; // Changé de Widget? vers PreferredSizeWidget?
+  final Widget? appBar;
   final bool hasBottomNavigation;
-  final bool showProfileToggle;
-  final String? customTitle; // Ajouté pour permettre un titre personnalisé
 
   const BaseScreen({
     Key? key,
@@ -20,251 +21,173 @@ class BaseScreen extends StatefulWidget {
     this.currentIndex = 0,
     this.appBar,
     this.hasBottomNavigation = true,
-    this.showProfileToggle = true,
-    this.customTitle,
   }) : super(key: key);
 
   @override
-  State<BaseScreen> createState() => _BaseScreenState();
+  _BaseScreenState createState() => _BaseScreenState();
 }
 
 class _BaseScreenState extends State<BaseScreen> {
-  OverlayEntry? _overlayEntry;
   bool _isMenuOpen = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _overlayEntry = null;
-  }
-
-  @override
-  void dispose() {
-    _closeMenu();
-    super.dispose();
-  }
-
-  /// Gère la navigation selon le profil actuel
-  void _handleNavigation(int index) {
-    // Éviter la navigation si on est déjà sur la page demandée
-    if (index == widget.currentIndex) return;
-
-    if (ProfileManager.isProviderMode()) {
-      // Navigation prestataire
-      switch (index) {
-        case 0: // Demandes de devis
-          Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
-          break;
-        case 1: // Projets
-          Navigator.pushNamedAndRemoveUntil(context, '/projects', (route) => false);
-          break;
-        case 2: // Messages
-          Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
-          break;
-        case 3: // Profil
-          Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
-          break;
-      }
-    } else {
-      // Navigation client
-      switch (index) {
-        case 0: // Accueil
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          break;
-        case 1: // Explorer
-          Navigator.pushNamedAndRemoveUntil(context, '/explore', (route) => false);
-          break;
-        case 2: // Messages
-          Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
-          break;
-        case 3: // Profil
-          Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
-          break;
-      }
-    }
-  }
-
-  /// Construit le bouton de bascule de profil
-  Widget _buildProfileToggle(AuthProvider authProvider) {
-    final user = authProvider.currentUser;
-    if (user == null || !widget.showProfileToggle) return const SizedBox();
-    
-    // Vérifier si l'utilisateur peut basculer entre les profils
-    final canSwitchProfile = _canUserSwitchProfile(user);
-    if (!canSwitchProfile) return const SizedBox();
-    
-    return PopupMenuButton<String>(
-      onSelected: (String value) async {
-        try {
-          await ProfileManager.setCurrentProfile(value);
-          // Redémarrer l'interface en naviguant vers l'accueil
-          if (mounted) {
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          }
-        } catch (e) {
-          // Gérer l'erreur de changement de profil
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Erreur lors du changement de profil: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      },
-      itemBuilder: (BuildContext context) => [
-        PopupMenuItem(
-          value: 'client',
-          child: Row(
-            children: [
-              const Icon(Icons.person, size: 20),
-              const SizedBox(width: 8),
-              const Text('Mode Client'),
-              if (ProfileManager.isClientMode()) 
-                const Icon(Icons.check, color: Colors.green, size: 16),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'provider',
-          child: Row(
-            children: [
-              const Icon(Icons.work, size: 20),
-              const SizedBox(width: 8),
-              const Text('Mode Prestataire'),
-              if (ProfileManager.isProviderMode()) 
-                const Icon(Icons.check, color: Colors.green, size: 16),
-            ],
-          ),
-        ),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              ProfileManager.isProviderMode() ? Icons.work : Icons.person,
-              size: 16,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              ProfileManager.getProfileLabel(),
-              style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: Theme.of(context).primaryColor,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Vérifie si l'utilisateur peut basculer entre les profils
-  bool _canUserSwitchProfile(dynamic user) {
-    // Logique pour déterminer si l'utilisateur peut basculer
-    // Pour l'instant, on suppose que tous les utilisateurs peuvent basculer
-    // À adapter selon votre logique métier
-    return true; // ou user.canSwitchProfile ou user.role == 'both', etc.
-  }
-
-  /// Ouvre le menu latéral
   void _openMenu() {
-    if (_isMenuOpen) return;
-    
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _buildMenuOverlay(),
-    );
-    
-    Overlay.of(context).insert(_overlayEntry!);
     setState(() {
       _isMenuOpen = true;
     });
   }
 
-  /// Ferme le menu latéral
   void _closeMenu() {
-    if (!_isMenuOpen) return;
-    
-    _overlayEntry?.remove();
-    _overlayEntry = null;
     setState(() {
       _isMenuOpen = false;
     });
   }
 
-  /// Construit l'overlay du menu
-  Widget _buildMenuOverlay() {
-    return GestureDetector(
-      onTap: _closeMenu,
-      child: Container(
-        color: Colors.black.withOpacity(0.5),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {}, // Empêche la fermeture quand on tape sur le menu
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.85,
-                height: double.infinity,
-                child: SideMenu(onClose: _closeMenu),
-              ),
-            ),
-            Expanded(
-              child: GestureDetector(
-                onTap: _closeMenu,
-                child: Container(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _handleNavigation(int index) {
+    // Fermer le menu si ouvert
+    if (_isMenuOpen) {
+      _closeMenu();
+    }
+
+    // Éviter la navigation si on est déjà sur la page demandée
+    if (index == widget.currentIndex) return;
+
+    // Navigation selon le profil de l'utilisateur
+    if (ProfileManager.isProviderMode()) {
+      // Navigation pour prestataires : Demandes de devis, Litige, Messages, Profil
+      _handleProviderNavigation(index);
+    } else {
+      // Navigation pour clients : Accueil, Explorer, Messages, Profil
+      _handleClientNavigation(index);
+    }
   }
 
-  /// Construit l'AppBar par défaut
-  // PreferredSizeWidget _buildDefaultAppBar() {
-  //   return AppBar(
-  //     title: Text(widget.customTitle ?? _getAppBarTitle()),
-  //     elevation: 0,
-  //     backgroundColor: Theme.of(context).primaryColor,
-  //     foregroundColor: Colors.white,
-  //     leading: IconButton(
-  //       icon: const Icon(Icons.menu),
-  //       onPressed: _openMenu,
-  //     ),
-  //     actions: [
-  //       Consumer<AuthProvider>(
-  //         builder: (context, authProvider, child) {
-  //           return _buildProfileToggle(authProvider);
-  //         },
-  //       ),
-  //       const SizedBox(width: 16),
-  //     ],
-  //   );
-  // }
+  void _handleProviderNavigation(int index) {
+    switch (index) {
+      case 0:
+        // Demandes de devis
+        if (widget.currentIndex != 0) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 1:
+        // Litige
+        if (widget.currentIndex != 1) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const DisputesScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 2:
+        // Messages
+        if (widget.currentIndex != 2) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 3:
+        // Profil - Ouvrir le menu latéral
+        _openMenu();
+        break;
+    }
+  }
+
+  void _handleClientNavigation(int index) {
+    switch (index) {
+      case 0:
+        // Accueil
+        if (widget.currentIndex != 0) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 1:
+        // Explorer
+        if (widget.currentIndex != 1) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const ExploreScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 2:
+        // Messages
+        if (widget.currentIndex != 2) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
+            (route) => false,
+          );
+        }
+        break;
+      case 3:
+        // Profil - Ouvrir le menu latéral
+        _openMenu();
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final menuWidth = MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isLoggedIn = authProvider.isAuthenticated;
+
     return Scaffold(
-      // appBar: widget.appBar ?? _buildDefaultAppBar(),
-      body: widget.body,
+      body: Stack(
+        children: [
+          // Contenu principal
+          Column(
+            children: [
+              // AppBar personnalisé si fourni
+              if (widget.appBar != null) widget.appBar!,
+              
+              // Contenu principal
+              Expanded(child: widget.body),
+            ],
+          ),
+
+          // Superposition semi-transparente quand le menu est ouvert
+          if (_isMenuOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _closeMenu,
+                child: Container(
+                  color: Colors.black54, // Fond semi-transparent
+                ),
+              ),
+            ),
+
+          // Menu latéral avec animation
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            right: _isMenuOpen ? 0 : -menuWidth, // Position depuis la droite
+            top: 0,
+            bottom: 0,
+            width: menuWidth,
+            child: GestureDetector(
+              // Empêche les taps sur le menu de fermer la superposition
+              onTap: () {},
+              child: isLoggedIn
+                  ? SideMenu(onClose: _closeMenu)
+                  : _buildGuestMenu(),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: widget.hasBottomNavigation
           ? AppBottomNavigation(
               currentIndex: widget.currentIndex,
@@ -274,24 +197,179 @@ class _BaseScreenState extends State<BaseScreen> {
     );
   }
 
-  /// Récupère le titre de l'AppBar selon le contexte
-  String _getAppBarTitle() {
-    if (ProfileManager.isProviderMode()) {
-      switch (widget.currentIndex) {
-        case 0: return 'Demandes de devis';
-        case 1: return 'Projets disponibles';
-        case 2: return 'Messages';
-        case 3: return 'Mon profil';
-        default: return 'Espace Prestataire';
-      }
-    } else {
-      switch (widget.currentIndex) {
-        case 0: return 'Accueil';
-        case 1: return 'Explorer';
-        case 2: return 'Messages';
-        case 3: return 'Mon profil';
-        default: return 'ServiceConnect';
-      }
-    }
+  // Menu pour les utilisateurs non connectés
+  Widget _buildGuestMenu() {
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // En-tête avec bouton de fermeture
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Menu',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _closeMenu,
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(),
+
+            // Options de menu pour les invités
+            _buildMenuItem(
+              icon: Icons.home_outlined,
+              text: 'Accueil',
+              onTap: () {
+                _closeMenu();
+                _handleNavigation(0);
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.search,
+              text: 'Explorer',
+              onTap: () {
+                _closeMenu();
+                _handleNavigation(1);
+              },
+            ),
+
+            const Spacer(),
+
+            // Boutons de connexion et inscription
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _closeMenu();
+                        Navigator.pushNamed(context, '/login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'Se connecter',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        _closeMenu();
+                        Navigator.pushNamed(context, '/profile-selector');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).primaryColor,
+                        side: BorderSide(color: Theme.of(context).primaryColor),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'S\'inscrire',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 24, color: Colors.grey[800]),
+            const SizedBox(width: 16),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Écrans fictifs - vous devrez les remplacer par vos vrais écrans
+class QuoteRequestsScreen extends StatelessWidget {
+  const QuoteRequestsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const BaseScreen(
+      currentIndex: 0,
+      body: Center(
+        child: Text(
+          'Demandes de devis',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+    );
+  }
+}
+
+class DisputesScreen extends StatelessWidget {
+  const DisputesScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const BaseScreen(
+      currentIndex: 1,
+      body: Center(
+        child: Text(
+          'Litiges',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+    );
   }
 }

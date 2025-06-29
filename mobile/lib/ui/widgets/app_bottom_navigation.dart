@@ -17,7 +17,7 @@ class AppBottomNavigation extends StatelessWidget {
   /// Récupère les éléments de navigation selon le profil actuel
   List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
     if (ProfileManager.isProviderMode()) {
-      // Navigation pour prestataires
+      // Navigation pour prestataires : Demandes de devis, Litige, Messages, Profil
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.request_quote_outlined),
@@ -25,9 +25,9 @@ class AppBottomNavigation extends StatelessWidget {
           label: 'Demandes',
         ),
         const BottomNavigationBarItem(
-          icon: Icon(Icons.work_outline),
-          activeIcon: Icon(Icons.work),
-          label: 'Projets',
+          icon: Icon(Icons.gavel_outlined),
+          activeIcon: Icon(Icons.gavel),
+          label: 'Litigess',
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
@@ -41,7 +41,7 @@ class AppBottomNavigation extends StatelessWidget {
         ),
       ];
     } else {
-      // Navigation pour clients
+      // Navigation pour clients : Accueil, Explorer, Messages, Profil
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),

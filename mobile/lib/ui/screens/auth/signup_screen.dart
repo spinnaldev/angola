@@ -718,7 +718,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 // ),
                 const Gap(8),
                 CustomTextField(
-                  controller: _usernameController,
+                  controller: _phoneController,
                   labelText: 'Numéro de téléphone',
                   hintText: 'Votre numéro de téléphone',
                   validator: (value) {
