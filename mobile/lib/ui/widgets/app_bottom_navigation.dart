@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/messaging_provider.dart';
+import '../../core/services/profile_manager.dart';
 
 class AppBottomNavigation extends StatelessWidget {
   final int currentIndex;
@@ -12,6 +13,137 @@ class AppBottomNavigation extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
   }) : super(key: key);
+
+  /// Récupère les éléments de navigation selon le profil actuel
+  List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
+    if (ProfileManager.isProviderMode()) {
+      // Navigation pour prestataires
+      return [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.request_quote_outlined),
+          activeIcon: Icon(Icons.request_quote),
+          label: 'Demandes',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.work_outline),
+          activeIcon: Icon(Icons.work),
+          label: 'Projets',
+        ),
+        BottomNavigationBarItem(
+          icon: _buildMessagesIcon(context),
+          activeIcon: _buildMessagesActiveIcon(context),
+          label: 'Messages',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: 'Profil',
+        ),
+      ];
+    } else {
+      // Navigation pour clients
+      return [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Accueil',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.search_outlined),
+          activeIcon: Icon(Icons.search),
+          label: 'Explorer',
+        ),
+        BottomNavigationBarItem(
+          icon: _buildMessagesIcon(context),
+          activeIcon: _buildMessagesActiveIcon(context),
+          label: 'Messages',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: 'Profil',
+        ),
+      ];
+    }
+  }
+
+  /// Construit l'icône des messages avec badge de notification
+  Widget _buildMessagesIcon(BuildContext context) {
+    return Consumer<MessagingProvider>(
+      builder: (context, messagingProvider, child) {
+        final unreadCount = messagingProvider.getTotalUnreadCount();
+        return Stack(
+          children: [
+            const Icon(Icons.chat_bubble_outline),
+            if (unreadCount > 0)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 12,
+                    minHeight: 12,
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Construit l'icône active des messages avec badge de notification
+  Widget _buildMessagesActiveIcon(BuildContext context) {
+    return Consumer<MessagingProvider>(
+      builder: (context, messagingProvider, child) {
+        final unreadCount = messagingProvider.getTotalUnreadCount();
+        return Stack(
+          children: [
+            const Icon(Icons.chat_bubble),
+            if (unreadCount > 0)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 12,
+                    minHeight: 12,
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,64 +178,7 @@ class AppBottomNavigation extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w400,
         ),
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Accueil',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
-            label: 'Explorer',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                const Icon(Icons.chat_bubble_outline),
-                Consumer<MessagingProvider>(
-                  builder: (context, messagingProvider, child) {
-                    final unreadCount = messagingProvider.getTotalUnreadCount();
-                    if (unreadCount > 0) {
-                      return Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 12,
-                            minHeight: 12,
-                          ),
-                          child: Text(
-                            unreadCount.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
-            ),
-            activeIcon: const Icon(Icons.chat_bubble),
-            label: 'Messages',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
+        items: _getNavigationItems(context),
       ),
     );
   }

@@ -177,6 +177,15 @@ DATABASES = {
     #     "PORT": "5432",
     #     "PASS": "#!@dm1n!#"
     # }
+    
+    # {
+    #     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
+    #     "NAME": "angola_db",
+    #     "USER": "angola_user",
+    #     "HOST": "dpg-d0rpn2s9c44c73cfdvmg-a.oregon-postgres.render.com",
+    #     "PORT": "5432",
+    #     "PASS": "T4QjF2WRVBABrweDn1ROtG36ZEY9Xryn"
+    # }
 }
 
 

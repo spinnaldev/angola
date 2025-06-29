@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:w3_loc/ui/screens/edit_profile_screen.dart';
 import 'package:w3_loc/ui/screens/explore_screen.dart';
+import 'package:w3_loc/ui/screens/home/home_screen.dart';
 import 'package:w3_loc/ui/screens/profile_screen.dart';
 import '../ui/screens/auth/login_screen.dart';
 import '../ui/screens/auth/signup_screen.dart';

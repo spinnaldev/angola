@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:w3_loc/ui/screens/home/home_screen.dart';
 import 'core/api/api_client.dart';
 import 'core/services/api_service.dart';
 import 'core/services/auth_service.dart';
@@ -147,7 +148,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         home:
-            const HomeScreen(), // Utiliser notre nouvelle page d'accueil comme écran principal
+            const HomeScreen(), 
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,
