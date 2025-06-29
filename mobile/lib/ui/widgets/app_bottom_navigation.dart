@@ -27,7 +27,7 @@ class AppBottomNavigation extends StatelessWidget {
         const BottomNavigationBarItem(
           icon: Icon(Icons.gavel_outlined),
           activeIcon: Icon(Icons.gavel),
-          label: 'Litigess',
+          label: 'Litiges',
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),

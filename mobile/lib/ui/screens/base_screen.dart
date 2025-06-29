@@ -8,6 +8,9 @@ import '../widgets/app_bottom_navigation.dart';
 import 'home_screen.dart';
 import 'explore_screen.dart';
 import 'messaging/messages_screen.dart';
+// Ajoutez ces imports selon votre structure de fichiers
+// import 'provider/quote_requests_screen.dart';
+// import 'disputes/disputes_screen.dart';
 
 class BaseScreen extends StatefulWidget {
   final Widget body;
@@ -66,21 +69,27 @@ class _BaseScreenState extends State<BaseScreen> {
       case 0:
         // Demandes de devis
         if (widget.currentIndex != 0) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
-            (route) => false,
-          );
+          // TODO: Remplacez par votre vraie route
+          Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
+          // Ou utilisez MaterialPageRoute si vous n'avez pas de routes nommées :
+          // Navigator.pushAndRemoveUntil(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
+          //   (route) => false,
+          // );
         }
         break;
       case 1:
         // Litige
         if (widget.currentIndex != 1) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const DisputesScreen()),
-            (route) => false,
-          );
+          // TODO: Remplacez par votre vraie route
+          Navigator.pushNamedAndRemoveUntil(context, '/disputes', (route) => false);
+          // Ou utilisez MaterialPageRoute si vous n'avez pas de routes nommées :
+          // Navigator.pushAndRemoveUntil(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const DisputesScreen()),
+          //   (route) => false,
+          // );
         }
         break;
       case 2:
@@ -333,41 +342,6 @@ class _BaseScreenState extends State<BaseScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// Écrans fictifs - vous devrez les remplacer par vos vrais écrans
-class QuoteRequestsScreen extends StatelessWidget {
-  const QuoteRequestsScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const BaseScreen(
-      currentIndex: 0,
-      body: Center(
-        child: Text(
-          'Demandes de devis',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
-  }
-}
-
-class DisputesScreen extends StatelessWidget {
-  const DisputesScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const BaseScreen(
-      currentIndex: 1,
-      body: Center(
-        child: Text(
-          'Litiges',
-          style: TextStyle(fontSize: 24),
         ),
       ),
     );

@@ -7,7 +7,7 @@ import '../../providers/project_provider.dart';
 import '../../core/models/user.dart';
 import '../../core/models/service.dart';
 import '../../core/models/client_project.dart'; // Changé de project.dart vers client_project.dart
-import '../common/bottom_navigation.dart';
+// import '../common/bottom_navigation.dart';
 import 'edit_profile_screen.dart';
 import 'service_detail_screen.dart';
 import 'user_projects_screen.dart'; // Ajouté pour la navigation

@@ -38,57 +38,72 @@ class SideMenu extends StatelessWidget {
   /// Menu pour les utilisateurs connectés
   Widget _buildAuthenticatedMenu(BuildContext context, User user) {
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // En-tête avec bouton fermer séparé - NOUVEAU DESIGN
-          _buildHeader(context),
-          
-          // Profile utilisateur - NOUVEAU DESIGN  
-          _buildUserProfile(context, user),
-          
-          // Menu principal selon le profil actuel
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 24.0), // Marge à gauche pour tous les menus
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 32), // Espacement après le profil
-                    
-                    if (ProfileManager.isProviderMode()) ...[
-                      _buildProviderMenu(context),
-                    ] else ...[
-                      _buildClientMenu(context),
-                    ],
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Menu commun à tous les profils
-                    _buildCommonMenu(context),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Section Profil et Compte
-                    _buildProfileSection(context),
-                  ],
+          // Contenu principal du menu
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête avec bouton fermer
+              _buildHeader(context),
+              
+              // Espace pour la photo de profil qui dépasse
+              const SizedBox(height: 50), // Réduit pour s'adapter
+              
+              // Informations utilisateur (nom, email, badge)
+              _buildUserInfo(context, user),
+              
+              // Menu principal selon le profil actuel
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20), // Réduit de 32 à 20
+                        
+                        if (ProfileManager.isProviderMode()) ...[
+                          _buildProviderMenu(context),
+                        ] else ...[
+                          _buildClientMenu(context),
+                        ],
+                        
+                        const SizedBox(height: 16), // Réduit de 24 à 16
+                        
+                        // Menu commun à tous les profils
+                        _buildCommonMenu(context),
+                        
+                        const SizedBox(height: 16), // Réduit de 24 à 16
+                        
+                        // Section Profil et Compte
+                        _buildProfileSection(context),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+              
+              // Menu de bas de page
+              Padding(
+                padding: const EdgeInsets.only(left: 24.0, bottom: 24.0),
+                child: _buildBottomMenu(context),
+              ),
+            ],
           ),
           
-          // Menu de bas de page avec marge
-          Padding(
-            padding: const EdgeInsets.only(left: 24.0, bottom: 24.0),
-            child: _buildBottomMenu(context),
+          // Photo de profil positionnée au-dessus du menu (dépassante)
+          Positioned(
+            top: 50, // Position depuis le haut ajustée
+            left: -20, // Position moins négative pour être plus visible
+            child: _buildProfileAvatar(context, user),
           ),
         ],
       ),
     );
   }
 
-  /// NOUVEAU : En-tête avec juste le bouton fermer
+  /// En-tête avec juste le bouton fermer
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, right: 16.0),
@@ -105,37 +120,89 @@ class SideMenu extends StatelessWidget {
     );
   }
 
-  /// NOUVEAU : Section profil utilisateur selon le design Figma
-  Widget _buildUserProfile(BuildContext context, User user) {
+  /// Photo de profil dépassante (positionnée avec Positioned)
+  Widget _buildProfileAvatar(BuildContext context, User user) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white,
+          width: 4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CircleAvatar(
+        radius: 30, // Réduit pour s'adapter au layout
+        backgroundColor: Theme.of(context).primaryColor,
+        backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
+            ? NetworkImage(user.profilePicture!)
+            : null,
+        child: user.profilePicture == null || user.profilePicture!.isEmpty
+            ? Text(
+                user.fullName?.isNotEmpty == true ? user.fullName![0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// Informations utilisateur (email et badge uniquement)
+  Widget _buildUserInfo(BuildContext context, User user) {
     return Padding(
-      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 16.0),
+      padding: const EdgeInsets.only(left: 70.0, right: 24.0, top: 8.0), // Marge à gauche pour l'avatar
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image de profil plus volumineuse
-          CircleAvatar(
-            radius: 40, // Plus grand (était 20)
-            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-            child: Text(
-              user.fullName?.isNotEmpty == true ? user.fullName![0].toUpperCase() : 'U',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-                fontSize: 32, // Plus grand texte pour la plus grande image
+          // Email et badge prestataire sur la même ligne
+          Row(
+            children: [
+              // Email de l'utilisateur
+              Expanded(
+                child: Text(
+                  user.email ?? 'user@example.com',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Email de l'utilisateur seulement (pas le nom)
-          Text(
-            user.email ?? 'user@example.com',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            ),
+              
+              const SizedBox(width: 8),
+              
+              // Badge prestataire/client
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: user.role == 'provider' 
+                      ? const Color(0xFF142FE2).withOpacity(0.1)
+                      : Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  user.role == 'provider' ? 'Prestataire' : 'Client',
+                  style: TextStyle(
+                    color: user.role == 'provider' 
+                        ? const Color(0xFF142FE2)
+                        : Colors.green,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -316,8 +383,7 @@ class SideMenu extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Plus besoin de divider ici selon le design Figma
-        // Pas de "Mon Profil" car déjà dans le menu principal
+        // Section vide pour l'instant
       ],
     );
   }
@@ -379,14 +445,14 @@ class SideMenu extends StatelessWidget {
           // En-tête avec bouton de fermeture
           _buildHeader(context),
           
-          // Options de menu pour les invités avec marge
+          // Options de menu pour les invités
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(left: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20), // Réduit
                   _buildMenuItem(
                     context,
                     icon: Icons.home_outlined,
@@ -450,7 +516,7 @@ class SideMenu extends StatelessWidget {
     );
   }
 
-  /// Construit un élément de menu - STYLE SIMPLIFIÉ selon Figma
+  /// Construit un élément de menu avec espacement réduit
   Widget _buildMenuItem(
     BuildContext context, {
     required IconData icon,
@@ -461,7 +527,7 @@ class SideMenu extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0), // Plus d'espacement vertical
+        padding: const EdgeInsets.symmetric(vertical: 12.0), // Réduit de 16 à 12
         child: Row(
           children: [
             Icon(
@@ -469,7 +535,7 @@ class SideMenu extends StatelessWidget {
               color: Colors.grey[700],
               size: 24,
             ),
-            const SizedBox(width: 20), // Espacement entre l'icône et le texte
+            const SizedBox(width: 16), // Réduit de 20 à 16
             Text(
               text,
               style: TextStyle(
