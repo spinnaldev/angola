@@ -216,6 +216,19 @@ class SideMenu extends StatelessWidget {
       children: [
         _buildMenuItem(
           context,
+          icon: Icons.person_outline,
+          text: 'Mon profil',
+          onTap: () {
+            onClose();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            );
+          },
+        ),
+
+        _buildMenuItem(
+          context,
           icon: Icons.home_repair_service_outlined,
           text: 'Mes services',
           onTap: () {
@@ -251,17 +264,17 @@ class SideMenu extends StatelessWidget {
             Navigator.pushNamed(context, '/projects');
           },
         ),
-        _buildMenuItem(
-          context,
-          icon: Icons.analytics_outlined,
-          text: 'Statistiques',
-          onTap: () {
-            onClose();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Statistiques - À venir')),
-            );
-          },
-        ),
+        // _buildMenuItem(
+        //   context,
+        //   icon: Icons.analytics_outlined,
+        //   text: 'Statistiques',
+        //   onTap: () {
+        //     onClose();
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('Statistiques - À venir')),
+        //     );
+        //   },
+        // ),
       ],
     );
   }

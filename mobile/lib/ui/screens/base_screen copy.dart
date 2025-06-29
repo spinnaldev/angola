@@ -1,6 +1,8 @@
-// lib/ui/screens/base_screen.dart
+// lib/ui/screens/base_screen.dart - Navigation différente selon le profil
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:w3_loc/ui/screens/projects_list_screen.dart';
+import 'package:w3_loc/ui/screens/provider/quote_requests_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../widgets/side_menu.dart';
@@ -9,10 +11,10 @@ import '../widgets/app_bottom_navigation.dart';
 class BaseScreen extends StatefulWidget {
   final Widget body;
   final int currentIndex;
-  final PreferredSizeWidget? appBar; // Changé de Widget? vers PreferredSizeWidget?
+  final PreferredSizeWidget? appBar;
   final bool hasBottomNavigation;
   final bool showProfileToggle;
-  final String? customTitle; // Ajouté pour permettre un titre personnalisé
+  final String? customTitle;
 
   const BaseScreen({
     Key? key,
@@ -36,6 +38,20 @@ class _BaseScreenState extends State<BaseScreen> {
   void initState() {
     super.initState();
     _overlayEntry = null;
+    
+    // S'assurer que le ProfileManager est initialisé
+    _ensureProfileManagerInitialized();
+  }
+
+  /// S'assure que le ProfileManager est initialisé
+  Future<void> _ensureProfileManagerInitialized() async {
+    if (!ProfileManager.isInitialized) {
+      print("BaseScreen: ProfileManager pas initialisé, initialisation en cours...");
+      await ProfileManager.initialize();
+      if (mounted) {
+        setState(() {}); // Rafraîchir l'interface après initialisation
+      }
+    }
   }
 
   @override
@@ -44,43 +60,105 @@ class _BaseScreenState extends State<BaseScreen> {
     super.dispose();
   }
 
+  void _openMenu() {
+    setState(() {
+      _isMenuOpen = true;
+    });
+  }
+
+  void _closeMenu() {
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove();
+      _overlayEntry = null;
+    }
+    setState(() {
+      _isMenuOpen = false;
+    });
+  }
+
   /// Gère la navigation selon le profil actuel
   void _handleNavigation(int index) {
     // Éviter la navigation si on est déjà sur la page demandée
     if (index == widget.currentIndex) return;
 
+    print("Navigation demandée - Index: $index, Mode prestataire: ${ProfileManager.isProviderMode()}");
+
     if (ProfileManager.isProviderMode()) {
-      // Navigation prestataire
-      switch (index) {
-        case 0: // Demandes de devis
-          Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
-          break;
-        case 1: // Projets
-          Navigator.pushNamedAndRemoveUntil(context, '/projects', (route) => false);
-          break;
-        case 2: // Messages
-          Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
-          break;
-        case 3: // Profil
-          Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
-          break;
-      }
+      // Navigation PRESTATAIRE : Projets, Demandes de devis, Messages, Profil
+      _handleProviderNavigation(index);
     } else {
-      // Navigation client
-      switch (index) {
-        case 0: // Accueil
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          break;
-        case 1: // Explorer
-          Navigator.pushNamedAndRemoveUntil(context, '/explore', (route) => false);
-          break;
-        case 2: // Messages
-          Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
-          break;
-        case 3: // Profil
-          Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
-          break;
-      }
+      // Navigation CLIENT : Accueil, Explorer, Messages, Profil
+      _handleClientNavigation(index);
+    }
+  }
+
+  void _handleProviderNavigation(int index) {
+    switch (index) {
+      case 0: // Projets
+        _navigateToProjectsList();
+        break;
+      case 1: // Demandes de devis
+        _navigateToQuoteRequests();
+        break;
+      case 2: // Messages
+        Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
+        break;
+      case 3: // Profil
+        Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
+        break;
+    }
+  }
+
+  void _handleClientNavigation(int index) {
+    switch (index) {
+      case 0: // Accueil
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        break;
+      case 1: // Explorer
+        Navigator.pushNamedAndRemoveUntil(context, '/explore', (route) => false);
+        break;
+      case 2: // Messages
+        Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
+        break;
+      case 3: // Profil
+        Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
+        break;
+    }
+  }
+
+  /// Navigation vers la liste des projets pour prestataires
+  void _navigateToProjectsList() {
+    try {
+      // Essayer d'abord la route nommée
+      Navigator.pushNamedAndRemoveUntil(context, '/projects-list', (route) => false);
+    } catch (e) {
+      print("Route nommée '/projects-list' non trouvée, utilisation de MaterialPageRoute");
+      // Si la route nommée n'existe pas, naviguer directement
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProjectsListScreen(), // Votre écran de liste des projets
+        ),
+        (route) => false,
+      );
+    }
+  }
+
+  /// Navigation vers les demandes de devis pour prestataires
+  void _navigateToQuoteRequests() {
+    try {
+      // Essayer d'abord la route nommée
+      Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
+    } catch (e) {
+      print("Route nommée '/quote-requests' non trouvée, utilisation de MaterialPageRoute");
+      // Si la route nommée n'existe pas, naviguer directement
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const QuoteRequestsScreen(), // Votre écran de demandes de devis
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -97,9 +175,15 @@ class _BaseScreenState extends State<BaseScreen> {
       onSelected: (String value) async {
         try {
           await ProfileManager.setCurrentProfile(value);
-          // Redémarrer l'interface en naviguant vers l'accueil
+          // Redémarrer l'interface en naviguant vers la page d'accueil appropriée
           if (mounted) {
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            if (value == 'provider') {
+              // Prestataire -> aller vers liste des projets
+              _navigateToProjectsList();
+            } else {
+              // Client -> aller vers accueil
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            }
           }
         } catch (e) {
           // Gérer l'erreur de changement de profil
@@ -163,11 +247,11 @@ class _BaseScreenState extends State<BaseScreen> {
               style: TextStyle(
                 color: Theme.of(context).primaryColor,
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
               ),
             ),
+            const SizedBox(width: 4),
             Icon(
-              Icons.arrow_drop_down,
+              Icons.keyboard_arrow_down,
               size: 16,
               color: Theme.of(context).primaryColor,
             ),
@@ -177,121 +261,64 @@ class _BaseScreenState extends State<BaseScreen> {
     );
   }
 
-  /// Vérifie si l'utilisateur peut basculer entre les profils
-  bool _canUserSwitchProfile(dynamic user) {
-    // Logique pour déterminer si l'utilisateur peut basculer
-    // Pour l'instant, on suppose que tous les utilisateurs peuvent basculer
-    // À adapter selon votre logique métier
-    return true; // ou user.canSwitchProfile ou user.role == 'both', etc.
-  }
-
-  /// Ouvre le menu latéral
-  void _openMenu() {
-    if (_isMenuOpen) return;
-    
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _buildMenuOverlay(),
-    );
-    
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() {
-      _isMenuOpen = true;
-    });
-  }
-
-  /// Ferme le menu latéral
-  void _closeMenu() {
-    if (!_isMenuOpen) return;
-    
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    setState(() {
-      _isMenuOpen = false;
-    });
-  }
-
-  /// Construit l'overlay du menu
-  Widget _buildMenuOverlay() {
-    return GestureDetector(
-      onTap: _closeMenu,
-      child: Container(
-        color: Colors.black.withOpacity(0.5),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {}, // Empêche la fermeture quand on tape sur le menu
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.85,
-                height: double.infinity,
-                child: SideMenu(onClose: _closeMenu),
-              ),
-            ),
-            Expanded(
-              child: GestureDetector(
-                onTap: _closeMenu,
-                child: Container(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Construit l'AppBar par défaut
-  PreferredSizeWidget _buildDefaultAppBar() {
-    return AppBar(
-      title: Text(widget.customTitle ?? _getAppBarTitle()),
-      elevation: 0,
-      backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: _openMenu,
-      ),
-      actions: [
-        Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-            return _buildProfileToggle(authProvider);
-          },
-        ),
-        const SizedBox(width: 16),
-      ],
-    );
+  /// Vérifie si l'utilisateur peut changer de profil
+  bool _canUserSwitchProfile(user) {
+    // Ici vous pouvez ajouter votre logique métier
+    // Par exemple, vérifier si l'utilisateur a les deux rôles
+    return true; // Pour l'instant, on autorise tout le monde
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: widget.appBar ?? _buildDefaultAppBar(),
-      body: widget.body,
-      bottomNavigationBar: widget.hasBottomNavigation
-          ? AppBottomNavigation(
-              currentIndex: widget.currentIndex,
-              onTap: _handleNavigation,
-            )
-          : null,
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        return Scaffold(
+          appBar: widget.appBar ?? AppBar(
+            title: Text(widget.customTitle ?? 'W3 Loc'),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.black),
+            titleTextStyle: const TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+            actions: [
+              _buildProfileToggle(authProvider),
+              IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: _openMenu,
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              widget.body,
+              if (_isMenuOpen)
+                GestureDetector(
+                  onTap: _closeMenu,
+                  child: Container(
+                    color: Colors.black54,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: SideMenu(onClose: _closeMenu),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          bottomNavigationBar: widget.hasBottomNavigation
+              ? AppBottomNavigation(
+                  currentIndex: widget.currentIndex,
+                  onTap: _handleNavigation,
+                )
+              : null,
+        );
+      },
     );
   }
-
-  /// Récupère le titre de l'AppBar selon le contexte
-  String _getAppBarTitle() {
-    if (ProfileManager.isProviderMode()) {
-      switch (widget.currentIndex) {
-        case 0: return 'Demandes de devis';
-        case 1: return 'Projets disponibles';
-        case 2: return 'Messages';
-        case 3: return 'Mon profil';
-        default: return 'Espace Prestataire';
-      }
-    } else {
-      switch (widget.currentIndex) {
-        case 0: return 'Accueil';
-        case 1: return 'Explorer';
-        case 2: return 'Messages';
-        case 3: return 'Mon profil';
-        default: return 'ServiceConnect';
-      }
-    }
-  }
 }
+
+// NOTE: Vous devez importer ces écrans selon votre structure de fichiers
+// import 'projects_list_screen.dart';
+// import 'provider/quote_requests_screen.dart';

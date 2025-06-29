@@ -3,6 +3,7 @@ import 'package:w3_loc/ui/screens/edit_profile_screen.dart';
 import 'package:w3_loc/ui/screens/explore_screen.dart';
 import 'package:w3_loc/ui/screens/home/home_screen.dart';
 import 'package:w3_loc/ui/screens/profile_screen.dart';
+import 'package:w3_loc/ui/screens/projects_list_screen.dart';
 import '../ui/screens/auth/login_screen.dart';
 import '../ui/screens/auth/signup_screen.dart';
 import '../ui/screens/auth/forgot_password_screen.dart';
@@ -30,9 +31,11 @@ class AppRoutes {
    static const String serviceDetail = '/service-detail';
   static const String serviceManagement = '/service-management';
   static const String quoteRequests = '/quote-requests';
+  static const String disputes = '/disputes';
   static const String myQuoteRequests = '/my-quote-requests';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
+  static const String providerProjects = '/provider-projects';
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const HomeScreen(), 
@@ -49,6 +52,8 @@ class AppRoutes {
     myQuoteRequests: (context) => const MyQuoteRequestsScreen(),
     profile: (context) => const ProfileScreen(),
     editProfile: (context) => const EditProfileScreen(),
+    providerProjects: (context) => const ProjectsListScreen(),
+    disputes: (context) => const QuoteRequestsScreen(),
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -76,12 +81,16 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ServiceManagementScreen());
       case quoteRequests:
         return MaterialPageRoute(builder: (_) => const QuoteRequestsScreen());
+      case disputes:
+        return MaterialPageRoute(builder: (_) => const QuoteRequestsScreen());
       case myQuoteRequests:
         return MaterialPageRoute(builder: (_) => const MyQuoteRequestsScreen());
       case profile:
         return MaterialPageRoute(builder: (context) => const ProfileScreen());
       case editProfile:
         return MaterialPageRoute(builder: (context) => const EditProfileScreen());
+      case providerProjects:
+        return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
       case serviceDetail:
         final serviceId = settings.arguments as int;
         final providerId = settings.arguments as int;

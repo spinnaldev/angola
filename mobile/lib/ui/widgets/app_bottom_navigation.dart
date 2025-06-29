@@ -1,4 +1,4 @@
-// lib/ui/widgets/app_bottom_navigation.dart
+// lib/ui/widgets/app_bottom_navigation.dart - Navigation différente selon le profil
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/messaging_provider.dart';
@@ -17,17 +17,17 @@ class AppBottomNavigation extends StatelessWidget {
   /// Récupère les éléments de navigation selon le profil actuel
   List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
     if (ProfileManager.isProviderMode()) {
-      // Navigation pour prestataires : Demandes de devis, Litige, Messages, Profil
+      // Navigation pour PRESTATAIRES : Projets, Demandes de devis, Messages, Profil
       return [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.work_outline),
+          activeIcon: Icon(Icons.work),
+          label: 'Projets',
+        ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.request_quote_outlined),
           activeIcon: Icon(Icons.request_quote),
           label: 'Demandes',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.gavel_outlined),
-          activeIcon: Icon(Icons.gavel),
-          label: 'Litiges',
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
@@ -41,7 +41,7 @@ class AppBottomNavigation extends StatelessWidget {
         ),
       ];
     } else {
-      // Navigation pour clients : Accueil, Explorer, Messages, Profil
+      // Navigation pour CLIENTS : Accueil, Explorer, Messages, Profil
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),

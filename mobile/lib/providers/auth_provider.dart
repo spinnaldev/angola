@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../core/services/profile_manager.dart'; 
 
 enum AuthStatus {
   uninitialized,
@@ -48,7 +49,14 @@ class AuthProvider with ChangeNotifier {
   String? get resetEmail => _resetEmail;
   String? get resetCode => _resetCode;
 
+  @override
+  void addListener(VoidCallback listener) {
+    super.addListener(listener);
+    // Mettre à jour la référence ProfileManager quand des listeners sont ajoutés
+    ProfileManager.setAuthProvider(this);
+  }
 
+  
   Future<bool> refreshToken() async {
     try {
       final refreshToken = await _secureStorage.read(key: 'refresh_token');
@@ -171,23 +179,53 @@ class AuthProvider with ChangeNotifier {
   // Méthodes d'authentification existantes
   Future<bool> login(String email, String password) async {
     try {
+      // Réinitialiser le message d'erreur
       _errorMessage = null;
+      notifyListeners();
+      
+      print('🔑 Tentative de connexion pour: $email');
+      
       final user = await _authService.login(email, password);
       
       if (user != null) {
+        print('✅ Connexion réussie pour: ${user.email} (rôle: ${user.role})');
         _currentUser = user;
         _status = AuthStatus.authenticated;
+        
+        // AJOUT: Synchroniser le ProfileManager avec le rôle utilisateur
+        ProfileManager.setAuthProvider(this);
+        await ProfileManager.forceSync();
+        
         notifyListeners();
         return true;
       } else {
+        print('❌ Connexion échouée: utilisateur null');
         _errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      print('❌ Erreur lors de la connexion: $e');
+      
+      // Gérer différents types d'erreurs
+      if (e.toString().contains('401') || 
+          e.toString().contains('Unauthorized') ||
+          e.toString().contains('Invalid credentials')) {
+        _errorMessage = "Email ou mot de passe incorrect.";
+      } else if (e.toString().contains('404')) {
+        _errorMessage = "Compte non trouvé.";
+      } else if (e.toString().contains('500')) {
+        _errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      } else if (e.toString().contains('Network') || 
+                 e.toString().contains('SocketException')) {
+        _errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
+      } else {
+        _errorMessage = "Erreur de connexion: ${e.toString()}";
+      }
+      
       _status = AuthStatus.unauthenticated;
+      _currentUser = null;
       notifyListeners();
       return false;
     }
@@ -203,6 +241,11 @@ class AuthProvider with ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _status = AuthStatus.authenticated;
+
+        // AJOUT: Synchroniser le ProfileManager avec le rôle utilisateur
+        ProfileManager.setAuthProvider(this);
+        await ProfileManager.forceSync();
+
         notifyListeners();
         return true;
       } else {
@@ -246,6 +289,11 @@ class AuthProvider with ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _status = AuthStatus.authenticated;
+
+        // AJOUT: Synchroniser le ProfileManager avec le rôle utilisateur
+        ProfileManager.setAuthProvider(this);
+        await ProfileManager.forceSync();
+        
         notifyListeners();
         return true;
       } else {

@@ -463,36 +463,51 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await Provider.of<AuthProvider>(context, listen: false).login(
-        _emailController.text,
+      // Appeler la méthode login qui retourne un boolean
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login(
+        _emailController.text.trim(),
         _passwordController.text,
       );
-      // Navigation après connexion réussie
-      // Navigator.pushNamedAndRemoveUntil(
-      //       context, 
-      //       AppRoutes.home,  // Utilisez les constantes de AppRoutes
-      //       (route) => false,  // Supprime toute la pile
-      //     );
-      //   }
-      //   if (success && mounted) {
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (success) {
+          // Connexion réussie - Navigation vers l'accueil
           Navigator.pushReplacementNamed(context, '/home');
-        // }
-      // GoRouter.of(context).go('/home');
-      
+        } else {
+          // Connexion échouée - Afficher le message d'erreur
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                authProvider.errorMessage ?? 'Échec de la connexion. Vérifiez vos identifiants.'
+              ),
+              backgroundColor: const Color(0xFFDB3022),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString()),
-          backgroundColor: const Color(0xFFDB3022),
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // Gestion des exceptions
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion: ${error.toString()}'),
+            backgroundColor: const Color(0xFFDB3022),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

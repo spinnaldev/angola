@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:w3_loc/ui/screens/app_entry_screen.dart';
 import 'package:w3_loc/ui/screens/home/home_screen.dart';
 import 'core/api/api_client.dart';
 import 'core/services/api_service.dart';
@@ -24,6 +25,7 @@ import 'providers/project_provider.dart';
 import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
 import 'config/routes.dart';
+import 'core/services/profile_manager.dart'; 
 import 'ui/screens/home_screen.dart'; // Nouvelle page d'accueil
 import 'providers/dispute_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -42,6 +44,14 @@ void main() async {
     // Continue even if .env file is not found
   }
 
+  // AJOUT CRUCIAL : Initialiser le ProfileManager
+  try {
+    await ProfileManager.initialize();
+    print('ProfileManager initialisé avec succès');
+  } catch (e) {
+    print('Erreur lors de l\'initialisation du ProfileManager: $e');
+  }
+  
   runApp(const MyApp());
 }
 
@@ -147,8 +157,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home:
-            const HomeScreen(), 
+        home:const AppEntryScreen(), 
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,

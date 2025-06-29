@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:w3_loc/ui/screens/base_screen.dart';
 import '../../../providers/quote_provider.dart';
 import '../../../core/models/quote_request.dart';
 import '../../widgets/loading_indicator.dart';
@@ -36,6 +37,13 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    return BaseScreen(
+      currentIndex: 1, // messaging est sélectionné
+      body: _buildQuoteContent(),
+    );
+  }
+
+  Widget _buildQuoteContent() {
     return Scaffold(
       appBar: AppBar(
         title: Text('Demandes de devis'),
