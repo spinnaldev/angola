@@ -158,6 +158,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         home:const AppEntryScreen(), 
+        // home: HomeScreen(), 
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,

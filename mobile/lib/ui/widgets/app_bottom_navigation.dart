@@ -1,7 +1,8 @@
-// lib/ui/widgets/app_bottom_navigation.dart - Navigation différente selon le profil
+// lib/ui/widgets/app_bottom_navigation.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/messaging_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 
 class AppBottomNavigation extends StatelessWidget {
@@ -16,18 +17,22 @@ class AppBottomNavigation extends StatelessWidget {
 
   /// Récupère les éléments de navigation selon le profil actuel
   List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
-    if (ProfileManager.isProviderMode()) {
-      // Navigation pour PRESTATAIRES : Projets, Demandes de devis, Messages, Profil
+    // Vérifier si l'utilisateur est connecté
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAuthenticated = authProvider.isAuthenticated;
+    
+    if (isAuthenticated && ProfileManager.isProviderMode()) {
+      // Navigation pour PRESTATAIRES : Accueil, Projets, Messages, Profil
       return [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Accueil',
+        ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.work_outline),
           activeIcon: Icon(Icons.work),
           label: 'Projets',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.request_quote_outlined),
-          activeIcon: Icon(Icons.request_quote),
-          label: 'Demandes',
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
@@ -41,7 +46,7 @@ class AppBottomNavigation extends StatelessWidget {
         ),
       ];
     } else {
-      // Navigation pour CLIENTS : Accueil, Explorer, Messages, Profil
+      // Navigation pour CLIENTS ou utilisateurs non connectés : Accueil, Explorer, Messages, Profil
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
@@ -150,33 +155,29 @@ class AppBottomNavigation extends StatelessWidget {
     return Container(
       height: 85,
       decoration: BoxDecoration(
-        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, -3),
           ),
         ],
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: onTap,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF142FE2),
+        unselectedItemColor: Colors.grey,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
         ),
         items: _getNavigationItems(context),
       ),

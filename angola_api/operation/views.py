@@ -22,6 +22,7 @@ import string
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
+from django.db.models import Sum
 # from django.contrib.gis.geos import Point
 # from django.contrib.gis.measure import D
 # from django.contrib.gis.db.models.functions import Distance
@@ -769,6 +770,84 @@ class ProviderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(providers, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def stats(self, request):
+        """Statistiques du prestataire"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response({'error': 'User is not a provider'}, status=400)
+        
+        provider = request.user.provider_profile
+        
+        # Calculer les statistiques
+        this_month = timezone.now().replace(day=1)
+        
+        stats = {
+            'prestations_completed_this_month': ClientProject.objects.filter(
+                assigned_provider=provider,
+                status='completed',
+                completed_at__gte=this_month
+            ).count(),
+            
+            'prestations_in_progress': ClientProject.objects.filter(
+                assigned_provider=provider,
+                status='in_progress'
+            ).count(),
+            
+            'unread_messages': Message.objects.filter(
+                recipient=request.user,
+                is_read=False
+            ).count(),
+            
+            'total_earnings_this_month': ClientProject.objects.filter(
+                assigned_provider=provider,
+                status='completed',
+                completed_at__gte=this_month
+            ).aggregate(
+                total=Sum('budget')
+            )['total'] or 0,
+            
+            'avg_rating': Review.objects.filter(
+                provider=provider
+            ).aggregate(
+                avg=Avg('rating')
+            )['avg'] or 0,
+            
+            'total_reviews': Review.objects.filter(
+                provider=provider
+            ).count(),
+        }
+        
+        return Response(stats)
+
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def recent_projects(self, request):
+        """Récupérer les 5 derniers projets de la plateforme"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response({'error': 'User is not a provider'}, status=400)
+        
+        # Récupérer les 5 derniers projets de toute la plateforme
+        recent_projects = ClientProject.objects.filter(
+            status='open'  # Optionnel: seulement les projets ouverts
+        ).order_by('-created_at')[:5]
+        
+        results = []
+        for project in recent_projects:
+            results.append({
+                'id': project.id,
+                'title': project.title,
+                'status': project.status,
+                'client_name': project.client.get_full_name(),
+                'client_id': project.client.id,
+                'budget': float(project.budget) if project.budget else None,
+                'created_at': project.created_at.isoformat(),
+                'description': project.description if hasattr(project, 'description') else '',
+                'location': project.location if hasattr(project, 'location') else '',
+                'urgency': project.urgency if hasattr(project, 'urgency') else '',
+            })
+        
+        return Response({'results': results})
+
 class ProviderServiceViewSet(viewsets.ModelViewSet):
     queryset = ProviderService.objects.all()
     serializer_class = ProviderServiceSerializer
@@ -924,6 +1003,41 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Recherche de services"""
+        query = request.query_params.get('q', '')
+        
+        if not query:
+            return Response({'results': []})
+        
+        # Recherche dans les titres et descriptions des services
+        services = ProviderService.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(subcategory__name__icontains=query) |
+            Q(subcategory__category__name__icontains=query),
+            is_available=True
+        ).select_related('provider', 'subcategory')[:20]
+        
+        results = []
+        for service in services:
+            results.append({
+                'id': service.id,
+                'title': service.title,
+                'description': service.description,
+                'price': float(service.price) if service.price else None,
+                'price_type': service.price_type,
+                'image_url': service.image_url,
+                'rating': float(service.provider.avg_rating) if service.provider.avg_rating else 0.0,
+                'provider_id': service.provider.id,
+                'provider_name': service.provider.user.get_full_name(),
+                'category': service.subcategory.category.name,
+                'subcategory': service.subcategory.name,
+            })
+        
+        return Response({'results': results})
+
     @action(detail=False, methods=['get'])
     def count_by_subcategory(self, request):
         """
@@ -1857,7 +1971,38 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         else:
             return Response({"detail": "You are not authorized to update this quote request"}, 
                            status=status.HTTP_403_FORBIDDEN)
+    
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def recent_quote_requests(self, request):
+        """Récupérer les demandes de devis récentes pour le prestataire"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response({'error': 'User is not a provider'}, status=400)
         
+        provider = request.user.provider_profile
+        
+        # Récupérer les demandes de devis récentes
+        recent_quotes = QuoteRequest.objects.filter(
+            # Filtrer selon tes critères (par exemple, par catégorie de service)
+            status='pending',
+            created_at__gte=timezone.now() - timedelta(days=7)
+        ).order_by('-created_at')[:5]
+        
+        results = []
+        for quote in recent_quotes:
+            results.append({
+                'id': quote.id,
+                'title': quote.title,
+                'service_title': quote.service_title,
+                'client_name': quote.client.get_full_name(),
+                'client_id': quote.client.id,
+                'budget': float(quote.budget) if quote.budget else None,
+                'created_at': quote.created_at.isoformat(),
+                'description': quote.description,
+            })
+        
+        return Response({'results': results})
+    
 class ProviderByCategoryView(generics.ListAPIView):
     serializer_class = ProviderListSerializer
     permission_classes = [AllowAny]
@@ -2085,6 +2230,44 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
         )
         
         return Response(stats)
+    
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def search(self, request):
+        """Recherche de projets pour les prestataires"""
+        if not hasattr(request.user, 'provider_profile'):
+            return Response({'error': 'User is not a provider'}, status=400)
+        
+        query = request.query_params.get('q', '')
+        
+        if not query:
+            return Response({'results': []})
+        
+        # Recherche dans les projets ouverts
+        projects = ClientProject.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(location__icontains=query),
+            status='open'
+        ).select_related('client')[:20]
+        
+        results = []
+        for project in projects:
+            results.append({
+                'id': project.id,
+                'title': project.title,
+                'description': project.description,
+                'budget': float(project.budget) if project.budget else None,
+                'location': project.location,
+                'status': project.status,
+                'urgency': project.urgency,
+                'client_name': project.client.get_full_name(),
+                'client_id': project.client.id,
+                'created_at': project.created_at.isoformat(),
+            })
+        
+        return Response({'results': results})
+
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def toggle_favorite(self, request, pk=None):

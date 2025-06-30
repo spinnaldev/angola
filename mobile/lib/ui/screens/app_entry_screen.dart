@@ -58,19 +58,21 @@ class _AppEntryScreenState extends State<AppEntryScreen> {
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Si utilisateur non connecté, afficher l'écran d'accueil client
-        if (!authProvider.isAuthenticated) {
-          return const HomeScreen();
-        }
+        // // Si utilisateur non connecté, afficher l'écran d'accueil client
+        // if (!authProvider.isAuthenticated) {
+        //   return const HomeScreen();
+        // }
 
-        // Utilisateur connecté - rediriger selon le profil
-        if (ProfileManager.isProviderMode()) {
-          // PRESTATAIRE -> Afficher la liste des projets (index 0)
-          return const ProjectsListScreen();
-        } else {
-          // CLIENT -> Afficher l'accueil (index 0)
-          return const HomeScreen();
-        }
+        // // Utilisateur connecté - rediriger selon le profil
+        // if (ProfileManager.isProviderMode()) {
+        //   // PRESTATAIRE -> Afficher la liste des projets (index 0)
+        //   return const ProjectsListScreen();
+        // } else {
+        //   // CLIENT -> Afficher l'accueil (index 0)
+        //   return const HomeScreen();
+        // }
+        return const HomeScreen();
+        
       },
     );
   }

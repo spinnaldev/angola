@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import '../../core/models/review.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/service_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/models/category.dart';
 import '../../core/models/service.dart';
+import '../../core/services/profile_manager.dart';
+import '../../core/services/api_service.dart';
 import '../screens/service_list_screen.dart';
 import '../screens/service_detail_screen.dart';
-import '../widgets/app_bottom_navigation.dart';
 import '../widgets/map_filter_screen.dart';
 import 'dart:math' as math;
 import 'base_screen.dart';
@@ -28,14 +30,18 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Service> _recentServices = [];
   List<Service> _nearbyServices = [];
   List<Service> _topRatedServices = [];
-  List<Service> _featuredServices = [];
+  Map<String, dynamic>? _providerStats;
   bool _showMapView = false;
   bool _isLoading = true;
-  
-  // Add the missing random instance
+  bool _isLoadingStats = false;
+
+  List<Map<String, dynamic>> _recentProjects = [];
+  List<Map<String, dynamic>> _recentQuoteRequests = [];
+  bool _isLoadingProjects = false;
+  bool _isLoadingQuotes = false;
+
   final math.Random random = math.Random();
-  
-  // Add the missing serviceNames list
+
   final List<String> serviceNames = [
     'Rénovation d\'intérieur',
     'Plomberie urgente',
@@ -69,97 +75,243 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final categoryProvider =
-          Provider.of<CategoryProvider>(context, listen: false);
-      if (categoryProvider.categories.isEmpty) {
-        await categoryProvider.fetchCategories();
-      }
+      // Charger les données communes
+      await _loadCommonData();
 
-      // Récupérer la position de l'utilisateur
-      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-      await locationProvider.getCurrentLocation();
-
-      final providerListProvider = Provider.of<ProviderListProvider>(context, listen: false);
-      if (locationProvider.currentPosition != null) {
-        await providerListProvider.fetchNearbyProviders(
-          locationProvider.currentPosition!.latitude,
-          locationProvider.currentPosition!.longitude,
-          radius: 10.0,
-        );
-      } else {
-        await providerListProvider.fetchProviders();
-      }
-
-      // Charger les vrais services depuis l'API
-      final serviceProvider =
-          Provider.of<ServiceProvider>(context, listen: false);
-
-      // Charger les services récents
-      await serviceProvider.fetchRecentServices();
-      _recentServices = serviceProvider.recentServices;
-
-      // Charger les services les mieux notés
-      await serviceProvider.fetchTopRatedServices();
-      _topRatedServices = serviceProvider.topRatedServices;
-
-      // Obtenir la position actuelle (à implémenter avec une bibliothèque de géolocalisation)
-      // Pour l'exemple, utilisons des coordonnées fixes
-      double latitude = 6.3668; // Exemple: Cotonou
-      double longitude = 2.4293;
-
-      // Charger les services à proximité
-      if (providerListProvider.providers.isNotEmpty) {
-        _nearbyServices = providerListProvider.providers.take(6).map((provider) {
-          return Service(
-            id: 200 + provider.id,
-            title: provider.services.isNotEmpty ? provider.services.first.title : provider.name,
-            description: provider.description,
-            imageUrl: provider.profileImageUrl.isNotEmpty 
-                ? provider.profileImageUrl 
-                : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-            rating: provider.rating,
-            reviewCount: provider.reviewCount,
-            provider_id: provider.id,
-            businessType: provider.businessType,
-            price: 50.0 + random.nextInt(150) * 1.0,
-            categoryId: 1 + random.nextInt(5),
-            priceType: random.nextBool() ? 'quote' : 'fixed',
-          );
-        }).toList();
-      } else {
-        _nearbyServices = List.generate(
-          6,
-          (index) => Service(
-            id: 200 + index,
-            title: serviceNames[random.nextInt(serviceNames.length)],
-            description: 'Service de proximité disponible rapidement',
-            imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
-            rating: 3.5 + random.nextDouble() * 1.5,
-            reviewCount: 5 + random.nextInt(30),
-            provider_id: 300 + index, // Fixed: was providerId, should be provider_id consistently
-            businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
-            price: 50.0 + random.nextInt(150) * 1.0,
-            categoryId: 1 + random.nextInt(5),
-            priceType: random.nextBool() ? 'quote' : 'fixed',
-          ),
-        );
+      // Charger les statistiques si l'utilisateur est un prestataire
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated && ProfileManager.isProviderMode()) {
+        await Future.wait([
+          _loadProviderStats(),
+          _loadProviderRecentProjects(),
+          _loadProviderQuoteRequests(),
+        ]);
       }
 
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
-      print('Erreur lors du chargement des services: $e');
+      print('Erreur lors du chargement des données: $e');
       setState(() {
         _isLoading = false;
       });
     }
   }
 
+  // Charger les vrais projets récents du prestataire
+  Future<void> _loadProviderRecentProjects() async {
+    setState(() {
+      _isLoadingProjects = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // Utiliser la nouvelle méthode de ton ApiService
+      final response = await apiService.getProviderRecentProjects();
+
+      if (response['results'] != null) {
+        setState(() {
+          _recentProjects =
+              List<Map<String, dynamic>>.from(response['results']);
+        });
+      } else {
+        setState(() {
+          _recentProjects = [];
+        });
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des projets récents: $e');
+      setState(() {
+        _recentProjects = [];
+      });
+    } finally {
+      setState(() {
+        _isLoadingProjects = false;
+      });
+    }
+  }
+
+  // Charger les vraies demandes de devis
+  Future<void> _loadProviderQuoteRequests() async {
+    setState(() {
+      _isLoadingQuotes = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // Utiliser la nouvelle méthode de ton ApiService
+      final response = await apiService.getProviderQuoteRequests();
+
+      if (response['results'] != null) {
+        setState(() {
+          _recentQuoteRequests =
+              List<Map<String, dynamic>>.from(response['results']);
+        });
+      } else {
+        setState(() {
+          _recentQuoteRequests = [];
+        });
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des demandes de devis: $e');
+      setState(() {
+        _recentQuoteRequests = [];
+      });
+    } finally {
+      setState(() {
+        _isLoadingQuotes = false;
+      });
+    }
+  }
+
+  Future<void> _loadCommonData() async {
+    final categoryProvider =
+        Provider.of<CategoryProvider>(context, listen: false);
+    if (categoryProvider.categories.isEmpty) {
+      await categoryProvider.fetchCategories();
+    }
+
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+    await locationProvider.getCurrentLocation();
+
+    final providerListProvider =
+        Provider.of<ProviderListProvider>(context, listen: false);
+    if (locationProvider.currentPosition != null) {
+      await providerListProvider.fetchNearbyProviders(
+        locationProvider.currentPosition!.latitude,
+        locationProvider.currentPosition!.longitude,
+        radius: 10.0,
+      );
+    } else {
+      await providerListProvider.fetchProviders();
+    }
+
+    final serviceProvider =
+        Provider.of<ServiceProvider>(context, listen: false);
+    await serviceProvider.fetchRecentServices();
+    _recentServices = serviceProvider.recentServices;
+
+    await serviceProvider.fetchTopRatedServices();
+    _topRatedServices = serviceProvider.topRatedServices;
+
+    // Générer les services à proximité
+    if (providerListProvider.providers.isNotEmpty) {
+      _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+        return Service(
+          id: 200 + provider.id,
+          title: provider.services.isNotEmpty
+              ? provider.services.first.title
+              : provider.name,
+          description: provider.description,
+          imageUrl: provider.profileImageUrl.isNotEmpty
+              ? provider.profileImageUrl
+              : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+          rating: provider.rating,
+          reviewCount: provider.reviewCount,
+          provider_id: provider.id,
+          businessType: provider.businessType,
+          price: 50.0 + random.nextInt(150) * 1.0,
+          categoryId: 1 + random.nextInt(5),
+          priceType: random.nextBool() ? 'quote' : 'fixed',
+        );
+      }).toList();
+    } else {
+      _nearbyServices = List.generate(
+          6,
+          (index) => Service(
+                id: 200 + index,
+                title: serviceNames[random.nextInt(serviceNames.length)],
+                description: 'Service de proximité disponible rapidement',
+                imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
+                rating: 3.5 + random.nextDouble() * 1.5,
+                reviewCount: 5 + random.nextInt(30),
+                provider_id: 300 + index,
+                businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
+                price: 50.0 + random.nextInt(150) * 1.0,
+                categoryId: 1 + random.nextInt(5),
+                priceType: random.nextBool() ? 'quote' : 'fixed',
+              ));
+    }
+  }
+
+  Future<void> _loadProviderStats() async {
+    setState(() {
+      _isLoadingStats = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final stats = await apiService.getProviderStats();
+
+      setState(() {
+        _providerStats = stats;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement des statistiques: $e');
+      // Données par défaut en cas d'erreur
+      setState(() {
+        _providerStats = {
+          'prestations_completed_this_month': 0,
+          'prestations_in_progress': 0,
+          'unread_messages': 0,
+          'total_earnings_this_month': 0.0,
+          'avg_rating': 0.0,
+          'total_reviews': 0,
+        };
+      });
+    } finally {
+      setState(() {
+        _isLoadingStats = false;
+      });
+    }
+  }
+
+  Future<void> _searchServices(String query) async {
+    try {
+      // Naviguer vers la page de résultats de services
+      Navigator.pushNamed(
+        context,
+        '/search-services',
+        arguments: {'query': query, 'type': 'services'},
+      );
+    } catch (e) {
+      print('Erreur lors de la recherche de services: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la recherche: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _searchProjects(String query) async {
+    try {
+      // Naviguer vers la page de résultats de projets
+      Navigator.pushNamed(
+        context,
+        '/search-projects',
+        arguments: {'query': query, 'type': 'projects'},
+      );
+    } catch (e) {
+      print('Erreur lors de la recherche de projets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la recherche: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      currentIndex: 0, // Accueil est sélectionné
+      currentIndex: 0,
       body: Stack(
         children: [
           _showMapView
@@ -176,196 +328,894 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En-tête avec logo et icônes
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Logo - utiliser un logo local
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 40,
-                  width: 80,
-                  errorBuilder: (context, error, stackTrace) => const Text(
-                    'LOGO',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.location_on),
-                      onPressed: () {
-                        setState(() {
-                          _showMapView = true;
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none),
-                      onPressed: () {
-                        // Notifications
-                      },
-                    ),
-                  ],
-                ),
-              ],
+          _buildHeader(),
+          _buildSearchBar(),
+          Expanded(child: _buildAdaptedContent()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Image.asset(
+            'assets/images/logo.png',
+            height: 40,
+            width: 80,
+            errorBuilder: (context, error, stackTrace) => const Text(
+              'LOGO',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
-
-          // Barre de recherche
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(25),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.location_on),
+                onPressed: () => setState(() => _showMapView = true),
               ),
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Rechercher un service...',
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 15),
-                ),
-                onSubmitted: (value) {
-                  if (value.isNotEmpty) {
-                    // Naviguer vers les résultats de recherche
-                  }
+              IconButton(
+                icon: const Icon(Icons.notifications_none),
+                onPressed: () {
+                  // Notifications
                 },
               ),
-            ),
-          ),
-
-          // Contenu principal
-          Expanded(
-            child: _buildHomeTab(),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // Tab d'accueil
-  Widget _buildHomeTab() {
+  Widget _buildSearchBar() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isAuthenticated = authProvider.isAuthenticated;
+    final isProvider = isAuthenticated && ProfileManager.isProviderMode();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: isProvider
+                ? 'Rechercher un projet...'
+                : 'Rechercher un service...',
+            prefixIcon: Icon(isProvider ? Icons.work_outline : Icons.search,
+                color: Colors.grey),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          ),
+          onSubmitted: (value) {
+            if (value.isNotEmpty) {
+              _performSearch(value, isProvider);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _performSearch(String query, bool isProvider) {
+    if (isProvider) {
+      // Recherche de projets pour les prestataires
+      _searchProjects(query);
+    } else {
+      // Recherche de services pour les clients
+      _searchServices(query);
+    }
+  }
+
+  Widget _buildAdaptedContent() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isAuthenticated = authProvider.isAuthenticated;
+
+    if (isAuthenticated && ProfileManager.isProviderMode()) {
+      return _buildProviderHomeContent();
+    } else {
+      return _buildClientHomeContent();
+    }
+  }
+
+  // ================== CONTENU PRESTATAIRE ==================
+  Widget _buildProviderHomeContent() {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bannière promotionnelle
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF142FE2), Color(0xFF4B39EF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -20,
-                  bottom: -20,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Trouvez les meilleurs prestataires',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Réservez facilement des services de qualité',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/explore');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF142FE2),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text('Explorer'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Meilleurs prestations de la semaine
-          _buildSectionTitle('Meilleurs prestations de la semaine'),
-          _buildHorizontalServicesList(
-              _topRatedServices, 'Aucune prestation populaire pour le moment'),
-
-          // Annonces récentes
-          _buildSectionTitle('Annonces récentes'),
-          _buildHorizontalServicesList(
-              _recentServices, 'Aucune annonce récente disponible'),
-
-          // Meilleurs avis
-          _buildSectionTitle('Meilleurs avis'),
-          _buildReviewsSection(),
-
-          // Espace au fond
+          _buildProviderBanner(),
+          _buildProviderStatsSection(),
+          _buildSectionTitle('Projets récents'),
+          _buildProviderRecentProjects(),
+          _buildSectionTitle('Demandes récentes'),
+          _buildRecentQuoteRequests(),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // Widget pour afficher le titre d'une section
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+  Widget _buildProviderBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      height: 150,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color.fromARGB(255, 23, 47, 233), Color(0xFF142FE2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Gérez votre activité',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Suivez vos projets et développez votre business',
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/projects'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Color(0xFF142FE2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text('Voir mes projets'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Widget pour afficher une liste horizontale de services
+  // Méthode helper pour convertir safely les types
+  double _safeToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  int _safeToInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
+  }
+
+  Widget _buildProviderStatsSection() {
+    if (_isLoadingStats) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        height: 200,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_providerStats == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Mes statistiques',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Prestations\nterminées',
+                  value:
+                      '${_safeToInt(_providerStats!['prestations_completed_this_month'])}',
+                  icon: Icons.check_circle_outline,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'En cours',
+                  value:
+                      '${_safeToInt(_providerStats!['prestations_in_progress'])}',
+                  icon: Icons.work_outline,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Messages\nnon lus',
+                  value: '${_safeToInt(_providerStats!['unread_messages'])}',
+                  icon: Icons.message_outlined,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Revenus\nce mois',
+                  value:
+                      '${_safeToDouble(_providerStats!['total_earnings_this_month']).toStringAsFixed(0)} FCFA',
+                  icon: Icons.attach_money_outlined,
+                  color: Colors.purple,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Note\nmoyenne',
+                  value:
+                      '${_safeToDouble(_providerStats!['avg_rating']).toStringAsFixed(1)}/5',
+                  icon: Icons.star_outline,
+                  color: Colors.amber,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Total\navis',
+                  value: '${_safeToInt(_providerStats!['total_reviews'])}',
+                  icon: Icons.rate_review_outlined,
+                  color: Colors.indigo,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget _buildProviderStatsSection() {
+  //   if (_isLoadingStats) {
+  //     return Container(
+  //       margin: const EdgeInsets.symmetric(horizontal: 20),
+  //       height: 200,
+  //       child: const Center(child: CircularProgressIndicator()),
+  //     );
+  //   }
+
+  //   if (_providerStats == null) {
+  //     return const SizedBox.shrink();
+  //   }
+
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 20),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Text(
+  //           'Mes statistiques',
+  //           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //         ),
+  //         const SizedBox(height: 16),
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'Prestations\nterminées',
+  //                 value: '${_providerStats!['prestations_completed_this_month'] ?? 0}',
+  //                 icon: Icons.check_circle_outline,
+  //                 color: Colors.green,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'En cours',
+  //                 value: '${_providerStats!['prestations_in_progress'] ?? 0}',
+  //                 icon: Icons.work_outline,
+  //                 color: Colors.orange,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'Messages\nnon lus',
+  //                 value: '${_providerStats!['unread_messages'] ?? 0}',
+  //                 icon: Icons.message_outlined,
+  //                 color: Colors.blue,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'Revenus\nce mois',
+  //                 value: '${(_providerStats!['total_earnings_this_month'] as double?)?.toStringAsFixed(0) ?? '0'} FCFA',
+  //                 icon: Icons.attach_money_outlined,
+  //                 color: Colors.purple,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'Note\nmoyenne',
+  //                 value: '${(_providerStats!['avg_rating'] as double?)?.toStringAsFixed(1) ?? '0'}/5',
+  //                 icon: Icons.star_outline,
+  //                 color: Colors.amber,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 title: 'Total\navis',
+  //                 value: '${_providerStats!['total_reviews'] ?? 0}',
+  //                 icon: Icons.rate_review_outlined,
+  //                 color: Colors.indigo,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const Spacer(),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProviderRecentProjects() {
+    if (_isLoadingProjects) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_recentProjects.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.work_outline,
+        message: 'Aucun projet récent trouvé',
+        height: 180,
+        actionText: 'Voir tous les projets',
+        onAction: () => Navigator.pushNamed(context, '/projects'),
+      );
+    }
+
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        scrollDirection: Axis.horizontal,
+        itemCount: _recentProjects.length,
+        itemBuilder: (context, index) {
+          final project = _recentProjects[index];
+          return _buildProjectCard(project);
+        },
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(Map<String, dynamic> project) {
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    project['title'] ?? 'Projet sans nom',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(project['status'] ?? 'unknown')
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getStatusText(project['status']),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _getStatusColor(project['status'] ?? 'unknown'),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  project['client_name'] ??
+                      project['client']?['name'] ??
+                      'Client inconnu',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  _formatBudget(project['budget']),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF4CAF50),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Navigation vers détail du projet
+                      Navigator.pushNamed(
+                        context,
+                        '/project-detail',
+                        arguments: project['id'],
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Voir détails',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    // Contacter le client
+                    Navigator.pushNamed(
+                      context,
+                      '/chat',
+                      arguments: project['client_id'],
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withOpacity(0.1),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentQuoteRequests() {
+    if (_isLoadingQuotes) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_recentQuoteRequests.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.request_quote_outlined,
+        message: 'Aucune demande de devis récente',
+        height: 180,
+        actionText: 'Voir toutes les demandes',
+        onAction: () => Navigator.pushNamed(context, '/quote-requests'),
+      );
+    }
+
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        scrollDirection: Axis.horizontal,
+        itemCount: _recentQuoteRequests.length,
+        itemBuilder: (context, index) {
+          final request = _recentQuoteRequests[index];
+          return _buildQuoteRequestCard(request);
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuoteRequestCard(Map<String, dynamic> request) {
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              request['title'] ??
+                  request['service_title'] ??
+                  'Service non spécifié',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  request['client_name'] ??
+                      request['client']?['name'] ??
+                      'Client inconnu',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  _formatBudget(request['budget']),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF4CAF50),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  _formatDate(request['created_at']),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Répondre à la demande
+                      Navigator.pushNamed(
+                        context,
+                        '/quote-response',
+                        arguments: request['id'],
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF142FE2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child:
+                        const Text('Répondre', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () {
+                    // Voir le détail
+                    Navigator.pushNamed(
+                      context,
+                      '/quote-request-detail',
+                      arguments: request['id'],
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Détails', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Méthodes utilitaires
+  String _getStatusText(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'in_progress':
+      case 'active':
+        return 'En cours';
+      case 'completed':
+      case 'finished':
+        return 'Terminé';
+      case 'pending':
+      case 'waiting':
+        return 'En attente';
+      case 'cancelled':
+        return 'Annulé';
+      default:
+        return 'Statut inconnu';
+    }
+  }
+
+  String _formatBudget(dynamic budget) {
+    if (budget == null) return 'Sur devis';
+    if (budget is String) {
+      if (budget.toLowerCase().contains('devis')) return 'Sur devis';
+      return budget;
+    }
+    if (budget is num) {
+      return '${budget.toStringAsFixed(0)} FCFA';
+    }
+    return 'Sur devis';
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '';
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date).inDays;
+
+      if (difference == 0) return 'Aujourd\'hui';
+      if (difference == 1) return 'Hier';
+      if (difference < 7) return 'Il y a $difference jours';
+      return 'Il y a ${(difference / 7).floor()} semaines';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'en cours':
+        return Colors.blue;
+      case 'terminé':
+        return Colors.green;
+      case 'en attente':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // ================== CONTENU CLIENT ==================
+  Widget _buildClientHomeContent() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildClientBanner(),
+          _buildSectionTitle('Meilleurs prestations de la semaine'),
+          _buildHorizontalServicesList(
+              _topRatedServices, 'Aucune prestation populaire pour le moment'),
+          _buildSectionTitle('Annonces récentes'),
+          _buildHorizontalServicesList(
+              _recentServices, 'Aucune annonce récente disponible'),
+          _buildSectionTitle('Meilleurs avis'),
+          _buildReviewsSection(),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClientBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      height: 150,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF142FE2), Color(0xFF4B39EF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Trouvez les meilleurs prestataires',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Réservez facilement des services de qualité',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pushNamed(context, '/explore'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF142FE2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: const Text('Explorer'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================== WIDGETS COMMUNS ==================
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
   Widget _buildHorizontalServicesList(
       List<Service> services, String emptyMessage) {
     if (_isLoading) {
@@ -513,210 +1363,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget pour afficher une liste verticale de services
-  Widget _buildVerticalServicesList(
-      List<Service> services, int limit, String emptyMessage) {
-    if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (services.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.search_off,
-        message: emptyMessage,
-        height: 200,
-      );
-    }
-
-    final displayServices =
-        services.length > limit ? services.sublist(0, limit) : services;
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayServices.length,
-      itemBuilder: (context, index) {
-        final service = displayServices[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ServiceDetailScreen(
-                    serviceId: service.id,
-                    providerId: service.provider_id,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      service.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Détails du service
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            service.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            service.businessType,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                service.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "(${service.reviewCount})",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Prix et bouton
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          service.priceType == 'quote'
-                              ? 'Sur devis'
-                              : '${service.price.toInt()} FCFA',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF142FE2),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ServiceDetailScreen(
-                                  serviceId: service.id,
-                                  providerId: service.provider_id,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF142FE2),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            minimumSize: const Size(60, 30),
-                          ),
-                          child: const Text(
-                            'Voir',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Widget pour afficher la section des meilleurs avis
   Widget _buildReviewsSection() {
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
-        // Load reviews if they're empty and not already loading
-        if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
-          // reviewProvider.fetchTopReviews();
-        }
-
         final reviews = reviewProvider.topReviews;
-        print("Reviews loaded: ${reviews.length}");
 
-        // Show loading state
         if (reviewProvider.isLoading) {
           return const SizedBox(
             height: 200,
@@ -724,7 +1375,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        // Show empty state if no reviews
         if (reviews.isEmpty) {
           return _buildEmptyState(
             icon: Icons.rate_review_outlined,
@@ -763,7 +1413,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Row(
                         children: [
-                          // Photo de profil
                           CircleAvatar(
                             radius: 20,
                             child: Text(review.clientName.isNotEmpty
@@ -792,7 +1441,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          // Note
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
@@ -842,7 +1490,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget générique pour afficher un état vide
   Widget _buildEmptyState({
     required IconData icon,
     required String message,
@@ -884,8 +1531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                      borderRadius: BorderRadius.circular(20)),
                 ),
                 child: Text(actionText),
               ),
@@ -894,56 +1540,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  // Méthodes pour obtenir la couleur et l'icône de chaque catégorie
-  Color _getCategoryColor(int categoryId) {
-    switch (categoryId) {
-      case 1:
-        return const Color(0xFF4B39EF); // Maison & Construction
-      case 2:
-        return const Color(0xFFAA39EF); // Bien-être & Beauté
-      case 3:
-        return const Color(0xFFEF3976); // Événements & Artistiques
-      case 4:
-        return const Color(0xFF4B88EF); // Transport & Logistique
-      case 5:
-        return const Color(0xFFEF6C39); // Santé & Bien-être
-      case 6:
-        return const Color(0xFF39EFBA); // Services Professionnels
-      case 7:
-        return const Color(0xFF3976EF); // Services Numériques
-      case 8:
-        return const Color(0xFFEFD939); // Services pour Animaux
-      case 9:
-        return const Color(0xFF39BAEF); // Services Divers
-      default:
-        return const Color(0xFF142FE2);
-    }
-  }
-
-  IconData _getCategoryIcon(int categoryId) {
-    switch (categoryId) {
-      case 1:
-        return Icons.home;
-      case 2:
-        return Icons.spa;
-      case 3:
-        return Icons.event;
-      case 4:
-        return Icons.local_shipping;
-      case 5:
-        return Icons.favorite;
-      case 6:
-        return Icons.work;
-      case 7:
-        return Icons.computer;
-      case 8:
-        return Icons.pets;
-      case 9:
-        return Icons.miscellaneous_services;
-      default:
-        return Icons.category;
-    }
   }
 }
