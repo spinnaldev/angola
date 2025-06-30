@@ -23,15 +23,13 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Service> _recentServices = [];
   List<Service> _nearbyServices = [];
   List<Service> _topRatedServices = [];
   List<Service> _featuredServices = [];
   bool _showMapView = false;
-  late TabController _tabController;
   bool _isLoading = true;
   
   // Add the missing random instance
@@ -56,13 +54,11 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
     _loadData();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -247,31 +243,9 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // TabBar pour les différentes sections
-          TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFF142FE2),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF142FE2),
-            tabs: const [
-              Tab(text: 'Accueil'),
-              Tab(text: 'Meilleurs'),
-              Tab(text: 'Récents'),
-              Tab(text: 'Proximité'),
-            ],
-          ),
-
-          // Contenu des tabs
+          // Contenu principal
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildHomeTab(),
-                _buildTopRatedTab(),
-                _buildRecentTab(),
-                _buildNearbyTab(),
-              ],
-            ),
+            child: _buildHomeTab(),
           ),
         ],
       ),
@@ -356,9 +330,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // Catégories
-          // _buildCategories(),
-
           // Meilleurs prestations de la semaine
           _buildSectionTitle('Meilleurs prestations de la semaine'),
           _buildHorizontalServicesList(
@@ -373,252 +344,10 @@ class _HomeScreenState extends State<HomeScreen>
           _buildSectionTitle('Meilleurs avis'),
           _buildReviewsSection(),
 
-          //================== Services à proximité===================================
-          // _buildSectionTitle('À proximité de vous'),
-          // _buildVerticalServicesList(
-          //     _nearbyServices, 3, 'Aucun service disponible dans votre région'),
-
-
-          //================== tous les services ===================================
-          // Voir tous les services
-          // Center(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(vertical: 16),
-          //     child: ElevatedButton.icon(
-          //       onPressed: () {
-          //         Navigator.pushNamed(context, '/explore');
-          //       },
-          //       icon: const Icon(Icons.explore),
-          //       label: const Text('Explorer tous les services'),
-          //       style: ElevatedButton.styleFrom(
-          //         backgroundColor: const Color(0xFF142FE2),
-          //         foregroundColor: Colors.white,
-          //         padding:
-          //             const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          //         shape: RoundedRectangleBorder(
-          //           borderRadius: BorderRadius.circular(20),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
           // Espace au fond
           const SizedBox(height: 20),
         ],
       ),
-    );
-  }
-
-  // Tab des meilleurs services
-  Widget _buildTopRatedTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          const Text(
-            'Meilleurs prestataires par note',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildVerticalServicesList(
-              _topRatedServices,
-              _topRatedServices.length,
-              'Aucun service bien noté disponible pour le moment'),
-        ],
-      ),
-    );
-  }
-
-  // Tab des services récents
-  Widget _buildRecentTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          const Text(
-            'Annonces les plus récentes',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildVerticalServicesList(_recentServices, _recentServices.length,
-              'Aucune nouvelle annonce disponible'),
-        ],
-      ),
-    );
-  }
-
-  // Tab des services à proximité
-  Widget _buildNearbyTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Services à proximité',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Fixed: Use the map filter screen instead of undefined MapScreen
-                  setState(() {
-                    _showMapView = true;
-                  });
-                },
-                icon: const Icon(Icons.map, size: 16),
-                label: const Text('Carte'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF142FE2),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildVerticalServicesList(_nearbyServices, _nearbyServices.length,
-              'Aucun service disponible dans votre région'),
-        ],
-      ),
-    );
-  }
-  
-  // Widget pour afficher les catégories
-  Widget _buildCategories() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-          child: Text(
-            'Catégories populaires',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
-        // Grille de catégories
-        Consumer<CategoryProvider>(
-          builder: (context, categoryProvider, child) {
-            if (categoryProvider.isLoading) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-
-            if (categoryProvider.categories.isEmpty) {
-              return _buildEmptyState(
-                icon: Icons.category_outlined,
-                message: 'Aucune catégorie disponible pour le moment',
-                height: 120,
-              );
-            }
-
-            final categories = categoryProvider.categories;
-
-            // Limiter à 4 catégories pour l'écran d'accueil
-            final displayCategories =
-                categories.length > 4 ? categories.sublist(0, 4) : categories;
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(displayCategories.length, (index) {
-                  final category = displayCategories[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServiceListScreen(
-                            categoryId: category.id,
-                            categoryName: category.name,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: _getCategoryColor(category.id),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            _getCategoryIcon(category.id),
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            category.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            );
-          },
-        ),
-
-        // Voir toutes les catégories
-        Center(
-          child: TextButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/explore');
-            },
-            child: const Text(
-              'Voir toutes les catégories',
-              style: TextStyle(
-                color: Color(0xFF142FE2),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

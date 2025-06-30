@@ -426,6 +426,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:w3_loc/ui/screens/auth/login_screen.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import 'package:provider/provider.dart';
@@ -461,6 +462,8 @@ class _SignupScreenState extends State<SignupScreen> {
     super.initState();
 
     if (widget.initialRole != null) {
+      print("On  récupéré le role a l'initialisation ");
+      print(widget.initialRole);
       setState(() {
         _selectedRole = widget.initialRole!;
       });
@@ -567,27 +570,27 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                // Text(
-                //   _selectedRole == 'client' ? 'Client' : 'Prestataire',
-                //   style: const TextStyle(
-                //     fontSize: 28,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
-                // Text(
-                //   _getRoleDescription(),
-                //   style: const TextStyle(
-                //     fontSize: 16,
-                //     color: Colors.grey,
-                //   ),
-                // ),
-                const Text(
-                  "S'inscrire",
-                  style: TextStyle(
+                Text(
+                  _selectedRole == 'client' ? 'Client' : 'Prestataire',
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Text(
+                  (_getRoleDescription()),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                // const Text(
+                //   "S'inscrire",
+                //   style: TextStyle(
+                //     fontSize: 28,
+                //     fontWeight: FontWeight.bold,
+                //   ),
+                // ),
                 const Gap(36),
                 const SizedBox(height: 30),
                 CustomTextField(
@@ -742,88 +745,137 @@ class _SignupScreenState extends State<SignupScreen> {
                 //   },
                 // ),
                 // const SizedBox(height: 24),
-                const Gap(16),
-                const Text(
-                  'Inscrivez-vous en choisissant votre profil',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                const Gap(20),
+                // const Text(
+                //   'Inscrivez-vous en choisissant votre profil',
+                //   style: TextStyle(
+                //     fontSize: 16,
+                //     fontWeight: FontWeight.w500,
+                //   ),
+                // ),
+                // const SizedBox(height: 16),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: ElevatedButton(
+                //         onPressed: () {
+                //           setState(() {
+                //             _selectedRole = 'client';
+                //           });
+                //         },
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: _selectedRole == 'client'
+                //               ? const Color(0xFF142FE2)
+                //               : Colors.grey[300],
+                //           padding:
+                //               const EdgeInsets.symmetric(vertical: 12),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(30),
+                //             side: BorderSide(
+                //               color: _selectedRole == 'client'
+                //                   ? Colors.transparent
+                //                   : Colors.grey.shade300,
+                //             ),
+                //           ),
+                //           elevation: 0,
+                //         ),
+                //         child: Text(
+                //           'CLIENT',
+                //           style: TextStyle(
+                //             color: _selectedRole == 'client'
+                //                 ? Colors.white
+                //                 : Colors.black,
+                //             fontWeight: FontWeight.bold,
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //     const SizedBox(width: 16),
+                //     Expanded(
+                //       child: ElevatedButton(
+                //         onPressed: () {
+                //           setState(() {
+                //             _selectedRole = 'provider';
+                //           });
+                //         },
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: _selectedRole == 'provider'
+                //               ? const Color(0xFF142FE2)
+                //               : Colors.white,
+                //           padding:
+                //               const EdgeInsets.symmetric(vertical: 12),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(30),
+                //             side: BorderSide(
+                //               color: _selectedRole == 'provider'
+                //                   ? Colors.transparent
+                //                   : Colors.grey.shade300,
+                //             ),
+                //           ),
+                //           elevation: 0,
+                //         ),
+                //         child: Text(
+                //           'PRESTATAIRE',
+                //           style: TextStyle(
+                //             color: _selectedRole == 'provider'
+                //                 ? Colors.white
+                //                 : Colors.black,
+                //             fontWeight: FontWeight.bold,
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Vous avez déja un compte ?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Gap(8),
+                      Icon(
+                        Icons.arrow_right_alt,
+                        color: Color(0xFF142FE2),
+                        size: 20,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedRole = 'client';
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedRole == 'client'
-                              ? const Color(0xFF142FE2)
-                              : Colors.grey[300],
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            side: BorderSide(
-                              color: _selectedRole == 'client'
-                                  ? Colors.transparent
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'CLIENT',
-                          style: TextStyle(
-                            color: _selectedRole == 'client'
-                                ? Colors.white
-                                : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedRole = 'provider';
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedRole == 'provider'
-                              ? const Color(0xFF142FE2)
-                              : Colors.white,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            side: BorderSide(
-                              color: _selectedRole == 'provider'
-                                  ? Colors.transparent
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'PRESTATAIRE',
-                          style: TextStyle(
-                            color: _selectedRole == 'provider'
-                                ? Colors.white
-                                : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // const Row(
+                //   mainAxisSize: MainAxisSize.min,
+                //   mainAxisAlignment: MainAxisAlignment.end,
+                //   children: [
+                //     Text(
+                //       'Vous avez déjà un compte ?',
+                //       style: TextStyle(
+                //         fontSize: 14,
+                //         color: Colors.black,
+                //       ),
+                //     ),
+                //     Gap(8),
+                //     Icon(
+                //       Icons.arrow_right_alt, // Or Icons.arrow_forward
+                //       color: const Color(0xFF142FE2),
+                //       size: 20,
+                //     ),
+                //   ],
+                // ),
+                
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -849,55 +901,17 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Vous avez déjà un compte ?'),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF142FE2),
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size(0, 36),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Text('Se connecter'),
-                            Icon(Icons.arrow_forward, size: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const Gap(20),
                 Row(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey[300],
-                        thickness: 1,
-                      ),
-                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text(
                         'Ou connectez-vous avec un compte social',
                         style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
+                          color: Colors.black,
+                          fontSize: 16,
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey[300],
-                        thickness: 1,
                       ),
                     ),
                   ],

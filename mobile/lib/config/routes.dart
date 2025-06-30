@@ -94,9 +94,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (context) => const EditProfileScreen());
       case providerProjects:
       case projectsList:
-      case providerProjects:
         return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
-        
+      case providerProjects:
         return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
       case serviceDetail:
         final serviceId = settings.arguments as int;

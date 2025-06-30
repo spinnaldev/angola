@@ -1,6 +1,8 @@
 // lib/ui/screens/auth/forgot_password_screen.dart
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
+import 'package:w3_loc/ui/widgets/custom_text_field.dart';
 import '../../../providers/auth_provider.dart';
 import '../../common/app_textfield.dart';
 import 'verify_code_screen.dart';
@@ -79,26 +81,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
+            const Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const Text(
-                    'Mot de passe oublié',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  // const Text(
+                  //   'Mot de passe oublié',
+                  //   style: TextStyle(
+                  //     fontSize: 18,
+                  //     fontWeight: FontWeight.w500,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -118,47 +125,67 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      const Gap(80),
                       const Text(
                         'Veuillez entrer votre adresse e-mail. Vous recevrez un code pour créer un nouveau mot de passe par e-mail.',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey,
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 30),
-                      TextFormField(
+                      CustomTextField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        onChanged: _validateEmail,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: _emailController.text.isNotEmpty
-                              ? _isValidEmail
-                                  ? const Icon(Icons.check, color: Colors.green)
-                                  : const Icon(Icons.error, color: Colors.red)
-                              : null,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 14.0,
-                          ),
-                        ),
+                        labelText: 'Email',
+                        hintText: 'Votre adresse email',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez entrer votre email';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              .hasMatch(value)) {
                             return 'Veuillez entrer un email valide';
                           }
                           return null;
                         },
+                        suffixIcon: _emailController.text.isNotEmpty
+                            ? const Icon(Icons.check, color: Colors.green)
+                            : null,
                       ),
+                      // TextFormField(
+                      //   controller: _emailController,
+                      //   keyboardType: TextInputType.emailAddress,
+                      //   onChanged: _validateEmail,
+                      //   decoration: InputDecoration(
+                      //     labelText: 'Email',
+                      //     filled: true,
+                      //     fillColor: Colors.grey[200],
+                      //     border: OutlineInputBorder(
+                      //       borderRadius: BorderRadius.circular(8.0),
+                      //       borderSide: BorderSide.none,
+                      //     ),
+                      //     suffixIcon: _emailController.text.isNotEmpty
+                      //         ? _isValidEmail
+                      //             ? const Icon(Icons.check, color: Colors.green)
+                      //             : const Icon(Icons.error, color: Colors.red)
+                      //         : null,
+                      //     contentPadding: const EdgeInsets.symmetric(
+                      //       horizontal: 16.0,
+                      //       vertical: 14.0,
+                      //     ),
+                      //   ),
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Veuillez entrer votre email';
+                      //     }
+                      //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      //       return 'Veuillez entrer un email valide';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
                       const SizedBox(height: 30),
+                      const Gap(30),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -168,7 +195,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             backgroundColor: const Color(0xFF142FE2),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(30),
                             ),
                             disabledBackgroundColor: Colors.grey,
                           ),

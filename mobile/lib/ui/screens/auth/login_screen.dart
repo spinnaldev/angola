@@ -418,6 +418,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:w3_loc/ui/screens/auth/profile_selector_screen.dart';
+import 'package:w3_loc/ui/screens/auth/signup_screen.dart';
 // import '../providers/auth_provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -571,24 +573,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const Gap(16),
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Mot de passe oublié ?',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
                       ),
-                    ),
-                    Gap(8),
-                    Icon(
-                      Icons.arrow_right_alt, // Or Icons.arrow_forward
-                      color: const Color(0xFF142FE2),
-                      size: 20,
-                    ),
-                  ],
+                    );
+                  },
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Mot de passe oublié ?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Gap(8),
+                      Icon(
+                        Icons.arrow_right_alt,
+                        color: Color(0xFF142FE2),
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 30),
                 CustomButton(
@@ -597,28 +609,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _login,
                 ),
                 const SizedBox(height: 30),
+                const Gap(200),
                 Row(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey[300],
-                        thickness: 1,
-                      ),
-                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text(
                         'Ou connectez-vous avec un compte social',
                         style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
+                          color: Colors.black,
+                          fontSize: 16,
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey[300],
-                        thickness: 1,
                       ),
                     ),
                   ],
@@ -643,6 +644,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 30),
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -652,9 +654,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.grey[600],
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        GoRouter.of(context).push('/signup');
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileSelectorScreen(),
+                          ),
+                        );
                       },
                       child: Text(
                         'S\'inscrire',
@@ -664,6 +671,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+                    // TextButton(
+                    //   onPressed: () {
+                    //     Navigator.pushReplacementNamed(context, '/register');
+                    //   },
+                    //   child: Text(
+                    //     'S\'inscrire',
+                    //     style: TextStyle(
+                    //       color: Theme.of(context).primaryColor,
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],
