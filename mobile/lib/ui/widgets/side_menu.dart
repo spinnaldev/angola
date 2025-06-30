@@ -255,10 +255,10 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.work_outline,
-          text: 'Projets disponibles',
+          text: 'Mes offres',
           onTap: () {
             onClose();
-            Navigator.pushNamed(context, '/projects');
+            Navigator.pushNamed(context, '/');
           },
         ),
         // _buildMenuItem(

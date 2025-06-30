@@ -47,14 +47,19 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      print("Venu récupéré les services");
       final response = await http.get(
         Uri.parse('${_apiService.baseUrl}/services/recent/'),
         headers: await _apiService.getHeaders(requireAuth: false),
       );
 
       if (response.statusCode == 200) {
+        print(response.body);
         final List<dynamic> data = json.decode(response.body);
+        print(data);
+        
         _recentServices = data.map((item) => Service.fromJson(item)).toList();
+        print("on a récupéré les services récent unh");
         print(_recentServices);
       } else {
         _errorMessage = 'Erreur lors du chargement des services récents';

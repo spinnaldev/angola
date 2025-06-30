@@ -1,7 +1,8 @@
 // lib/main.dart
 import 'dart:convert';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:w3_loc/ui/screens/app_entry_screen.dart';
@@ -35,6 +36,11 @@ void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
 
+   // Supprimer les debug elements
+  if (kDebugMode) {
+    debugPaintSizeEnabled = false;
+  }
+  
   await initializeDateFormatting('fr_FR', null); // AJOUT
   // Charger les variables d'environnement si nécessaire
   try {
@@ -129,6 +135,13 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        showPerformanceOverlay: false,               // Supprime l'overlay de performance
+        checkerboardRasterCacheImages: false,       // Supprime le damier des images
+        checkerboardOffscreenLayers: false,         // Supprime le damier des layers
+        showSemanticsDebugger: false,               // Supprime le debugger sémantique
+        debugShowMaterialGrid: false,  
+        
         title: 'Angola Services',
         theme: ThemeData(
           primaryColor: const Color(0xFF142FE2),
@@ -161,13 +174,14 @@ class MyApp extends StatelessWidget {
         // home: HomeScreen(), 
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
-        debugShowCheckedModeBanner: false,
-        // Supprime le banner "DEBUG"
-        showPerformanceOverlay: false,               // Supprime l'overlay de performance
-        checkerboardRasterCacheImages: false,       // Supprime le damier des images
-        checkerboardOffscreenLayers: false,         // Supprime le damier des layers
-        showSemanticsDebugger: false,               // Supprime le debugger sémantique
-        debugShowMaterialGrid: false,   
+
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+            child: child!,
+          );
+        },
+         
       ),
     );
   }

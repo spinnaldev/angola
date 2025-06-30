@@ -1064,7 +1064,7 @@ class _HomeScreenState extends State<HomeScreen> {
         contactViaPlatform: true,
         showEmail: false,
         showPhone: false,
-        requiredSkills: ['Plomberie'],
+        requiredSkills: ['  '],
         offersCount: 3,
         viewsCount: 15,
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),

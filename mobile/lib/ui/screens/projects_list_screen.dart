@@ -218,9 +218,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           controller: _scrollController,
           slivers: [
             // Carte promotionnelle pour les projets
-            SliverToBoxAdapter(
-              child: _buildProjectsPromoCard(),
-            ),
+            // SliverToBoxAdapter(
+            //   child: _buildProjectsPromoCard(),
+            // ),
             
             // // Statistiques prestataire
             // SliverToBoxAdapter(

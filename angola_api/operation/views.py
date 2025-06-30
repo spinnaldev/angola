@@ -934,6 +934,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         if subcategory_id:
             queryset = queryset.filter(subcategory_id=subcategory_id)
         
+        print(queryset)
         return queryset
     
     def perform_create(self, serializer):
@@ -1124,7 +1125,9 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
     def recent(self, request):
         """Endpoint pour récupérer les services les plus récents"""
         queryset = ProviderService.objects.filter(is_available=True).order_by('-created_at')[:10]
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = ProviderServiceSerializer(queryset, many=True)
+        print("API:Les services récents sont :" + str(queryset))
+        print(queryset)
         print(serializer.data)
         return Response(serializer.data)
 
@@ -2691,6 +2694,134 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
+    def offers(self, request, pk=None):
+        """Gérer les offres d'un projet"""
+        project = self.get_object()
+        
+        if request.method == 'GET':
+            # 📋 RÉCUPÉRER LES OFFRES DU PROJET
+            return self._get_project_offers(request, project)
+        
+        elif request.method == 'POST':
+            # ✨ CRÉER UNE NOUVELLE OFFRE
+            return self._create_project_offer(request, project)
+
+    def _get_project_offers(self, request, project):
+        """Récupérer les offres d'un projet"""
+        try:
+            # Vérifier les permissions
+            if project.client != request.user and not hasattr(request.user, 'provider_profile'):
+                return Response(
+                    {'error': 'Vous n\'avez pas accès aux offres de ce projet'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Récupérer les offres
+            offers = ProjectOffer.objects.filter(project=project).select_related(
+                'provider__user', 'provider'
+            ).order_by('-created_at')
+            
+            # Sérialiser les offres
+            from .serializers import ProjectOfferSerializer  # Ajustez l'import selon votre structure
+            serializer = ProjectOfferSerializer(offers, many=True, context={'request': request})
+            
+            return Response({
+                'count': offers.count(),
+                'results': serializer.data
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la récupération des offres: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _create_project_offer(self, request, project):
+        """Créer une nouvelle offre sur un projet"""
+        try:
+            # Vérifier que l'utilisateur est un prestataire
+            if not hasattr(request.user, 'provider_profile'):
+                return Response(
+                    {'error': 'Seuls les prestataires peuvent faire des offres'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            provider = request.user.provider_profile
+            
+            # Vérifier que le projet est ouvert
+            if project.status != 'open':
+                return Response(
+                    {'error': 'Ce projet n\'accepte plus d\'offres'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier que le prestataire n'a pas déjà fait d'offre
+            if ProjectOffer.objects.filter(project=project, provider=provider).exists():
+                return Response(
+                    {'error': 'Vous avez déjà fait une offre sur ce projet'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier que le prestataire ne fait pas une offre sur son propre projet
+            if project.client == request.user:
+                return Response(
+                    {'error': 'Vous ne pouvez pas faire une offre sur votre propre projet'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Valider les données
+            required_fields = ['proposed_price', 'delivery_time', 'message']
+            for field in required_fields:
+                if field not in request.data:
+                    return Response(
+                        {'error': f'Le champ {field} est requis'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Créer l'offre
+            with transaction.atomic():
+                offer = ProjectOffer.objects.create(
+                    project=project,
+                    provider=provider,
+                    proposed_price=request.data['proposed_price'],
+                    delivery_time=request.data['delivery_time'],
+                    message=request.data['message'],
+                    includes_materials=request.data.get('includes_materials', False),
+                    warranty_period=request.data.get('warranty_period'),
+                    travel_costs_included=request.data.get('travel_costs_included', True),
+                )
+                
+                # Créer une notification pour le client
+                try:
+                    from .models import Notification  # Ajustez l'import
+                    Notification.objects.create(
+                        user=project.client,
+                        title="Nouvelle offre reçue",
+                        message=f"Vous avez reçu une nouvelle offre de {provider.user.get_full_name()} pour votre projet '{project.title}'.",
+                        notification_type='new_offer',
+                        related_object_id=offer.id
+                    )
+                except Exception as notif_error:
+                    print(f"Erreur création notification: {notif_error}")
+            
+            # Sérialiser et retourner l'offre créée
+            from .serializers import ProjectOfferSerializer
+            serializer = ProjectOfferSerializer(offer, context={'request': request})
+            
+            return Response(
+                {
+                    'message': 'Offre créée avec succès',
+                    'offer': serializer.data
+                },
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la création de l\'offre: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ProjectOfferViewSet(viewsets.ModelViewSet):
     """ViewSet pour la gestion des offres sur les projets"""

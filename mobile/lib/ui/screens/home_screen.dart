@@ -34,7 +34,7 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   List<Service> _recentServices = [];
   List<Service> _nearbyServices = [];
@@ -69,23 +69,61 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    //pour détecter les changements d'état de l'app
+    WidgetsBinding.instance.addObserver(this);
+
     _loadData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
 
+  // Méthode appelée quand l'état de l'application change
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // L'application revient au premier plan - recharger les données
+        print('Application resumed - Reloading data...');
+        _loadData();
+        break;
+      case AppLifecycleState.paused:
+        // L'application passe en arrière-plan
+        print('Application paused');
+        break;
+      case AppLifecycleState.inactive:
+        // L'application devient inactive (ex: appel entrant)
+        print('Application inactive');
+        break;
+      case AppLifecycleState.detached:
+        // L'application va être fermée
+        print('Application detached');
+        break;
+      case AppLifecycleState.hidden:
+        // L'application est cachée (nouveau dans Flutter 3.13+)
+        print('Application hidden');
+        break;
+    }
+  }
+
   Future<void> _loadData() async {
+    if (!mounted) return;
+
+    print('Loading all data...');
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       // Charger les données communes
-      // await _loadCommonData();
+      await _loadCommonData();
 
       // Charger les statistiques si l'utilisateur est un prestataire
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -255,9 +293,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _startConversationWithProjectOwner(Map<String, dynamic> project) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+    final messagingProvider =
+        Provider.of<MessagingProvider>(context, listen: false);
     final currentUser = authProvider.currentUser;
-    
+
     // Vérifier l'authentification
     if (!authProvider.isAuthenticated || currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,12 +350,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Créer le message initial avec contexte du projet
       final projectTitle = project['title'] ?? 'ce projet';
-      final initialMessage = 'Bonjour, je suis intéressé(e) par votre projet "$projectTitle". Pouvons-nous en discuter ?';
+      final initialMessage =
+          'Bonjour, je suis intéressé(e) par votre projet "$projectTitle". Pouvons-nous en discuter ?';
 
       // 🎯 CORRECTION 1: Utiliser la méthode du MessagingProvider qui retourne un Conversation?
       final conversation = await messagingProvider.startConversationFromProject(
         projectId,
-        initialMessage: null, 
+        initialMessage: null,
       );
 
       Navigator.pop(context); // Fermer le loading
@@ -341,18 +381,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
-
     } catch (e) {
       Navigator.pop(context); // Fermer le loading
       print('Erreur conversation: $e');
-      
+
       String errorMessage = 'Erreur lors de l\'ouverture de la conversation';
       if (e.toString().contains('contacter votre propre projet')) {
         errorMessage = 'Vous ne pouvez pas contacter votre propre projet';
       } else if (e.toString().contains('Seuls les prestataires')) {
         errorMessage = 'Seuls les prestataires peuvent contacter les clients';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -370,76 +409,77 @@ class _HomeScreenState extends State<HomeScreen> {
     return null;
   }
 
-  // Future<void> _loadCommonData() async {
-  //   final categoryProvider =
-  //       Provider.of<CategoryProvider>(context, listen: false);
-  //   if (categoryProvider.categories.isEmpty) {
-  //     await categoryProvider.fetchCategories();
-  //   }
+  Future<void> _loadCommonData() async {
+    final categoryProvider =
+        Provider.of<CategoryProvider>(context, listen: false);
+    if (categoryProvider.categories.isEmpty) {
+      await categoryProvider.fetchCategories();
+    }
 
-  //   final locationProvider =
-  //       Provider.of<LocationProvider>(context, listen: false);
-  //   await locationProvider.getCurrentLocation();
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+    await locationProvider.getCurrentLocation();
 
-  //   final providerListProvider =
-  //       Provider.of<ProviderListProvider>(context, listen: false);
-  //   if (locationProvider.currentPosition != null) {
-  //     await providerListProvider.fetchNearbyProviders(
-  //       locationProvider.currentPosition!.latitude,
-  //       locationProvider.currentPosition!.longitude,
-  //       radius: 10.0,
-  //     );
-  //   } else {
-  //     await providerListProvider.fetchProviders();
-  //   }
+    final providerListProvider =
+        Provider.of<ProviderListProvider>(context, listen: false);
+    if (locationProvider.currentPosition != null) {
+      await providerListProvider.fetchNearbyProviders(
+        locationProvider.currentPosition!.latitude,
+        locationProvider.currentPosition!.longitude,
+        radius: 10.0,
+      );
+    } else {
+      await providerListProvider.fetchProviders();
+    }
 
-  //   final serviceProvider =
-  //       Provider.of<ServiceProvider>(context, listen: false);
-  //   await serviceProvider.fetchRecentServices();
-  //   _recentServices = serviceProvider.recentServices;
+    final serviceProvider =
+        Provider.of<ServiceProvider>(context, listen: false);
+    await serviceProvider.fetchRecentServices();
+    _recentServices = serviceProvider.recentServices;
+    print("Les services récent:");
+    print(_recentServices);
+    await serviceProvider.fetchTopRatedServices();
+    _topRatedServices = serviceProvider.topRatedServices;
 
-  //   await serviceProvider.fetchTopRatedServices();
-  //   _topRatedServices = serviceProvider.topRatedServices;
-
-  //   // Générer les services à proximité
-  //   if (providerListProvider.providers.isNotEmpty) {
-  //     _nearbyServices = providerListProvider.providers.take(6).map((provider) {
-  //       return Service(
-  //         id: 200 + provider.id,
-  //         title: provider.services.isNotEmpty
-  //             ? provider.services.first.title
-  //             : provider.name,
-  //         description: provider.description,
-  //         imageUrl: provider.profileImageUrl.isNotEmpty
-  //             ? provider.profileImageUrl
-  //             : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-  //         rating: provider.rating,
-  //         reviewCount: provider.reviewCount,
-  //         provider_id: provider.id,
-  //         businessType: provider.businessType,
-  //         price: 50.0 + random.nextInt(150) * 1.0,
-  //         categoryId: 1 + random.nextInt(5),
-  //         priceType: random.nextBool() ? 'quote' : 'fixed',
-  //       );
-  //     }).toList();
-  //   } else {
-  //     _nearbyServices = List.generate(
-  //         6,
-  //         (index) => Service(
-  //               id: 200 + index,
-  //               title: serviceNames[random.nextInt(serviceNames.length)],
-  //               description: 'Service de proximité disponible rapidement',
-  //               imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
-  //               rating: 3.5 + random.nextDouble() * 1.5,
-  //               reviewCount: 5 + random.nextInt(30),
-  //               provider_id: 300 + index,
-  //               businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
-  //               price: 50.0 + random.nextInt(150) * 1.0,
-  //               categoryId: 1 + random.nextInt(5),
-  //               priceType: random.nextBool() ? 'quote' : 'fixed',
-  //             ));
-  //   }
-  // }
+    // Générer les services à proximité
+    // if (providerListProvider.providers.isNotEmpty) {
+    //   _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+    //     return Service(
+    //       id: 200 + provider.id,
+    //       title: provider.services.isNotEmpty
+    //           ? provider.services.first.title
+    //           : provider.name,
+    //       description: provider.description,
+    //       imageUrl: provider.profileImageUrl.isNotEmpty
+    //           ? provider.profileImageUrl
+    //           : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+    //       rating: provider.rating,
+    //       reviewCount: provider.reviewCount,
+    //       provider_id: provider.id,
+    //       businessType: provider.businessType,
+    //       price: 50.0 + random.nextInt(150) * 1.0,
+    //       categoryId: 1 + random.nextInt(5),
+    //       priceType: random.nextBool() ? 'quote' : 'fixed',
+    //     );
+    //   }).toList();
+    // } else {
+    //   _nearbyServices = List.generate(
+    //       6,
+    //       (index) => Service(
+    //             id: 200 + index,
+    //             title: serviceNames[random.nextInt(serviceNames.length)],
+    //             description: 'Service de proximité disponible rapidement',
+    //             imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
+    //             rating: 3.5 + random.nextDouble() * 1.5,
+    //             reviewCount: 5 + random.nextInt(30),
+    //             provider_id: 300 + index,
+    //             businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
+    //             price: 50.0 + random.nextInt(150) * 1.0,
+    //             categoryId: 1 + random.nextInt(5),
+    //             priceType: random.nextBool() ? 'quote' : 'fixed',
+    //           ));
+    // }
+  }
 
   Future<void> _loadProviderStats() async {
     setState(() {
@@ -666,7 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Gérez votre activité',
+              'Trouvez les meilleurs projets',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -675,12 +715,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Suivez vos projets et développez votre business',
+              'Développez votre activité avec des clients de qualité',
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/projects'),
+              onPressed: () => Navigator.pushNamed(context, '/projects-list'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Color(0xFF142FE2),
@@ -689,7 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20)),
               ),
-              child: const Text('Voir mes projets'),
+              child: const Text('Voir les projets'),
             ),
           ],
         ),
@@ -987,6 +1027,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProjectCard(Map<String, dynamic> project) {
     return Container(
       width: 280,
+      height: 180, // ✅ AJOUT D'UNE HAUTEUR FIXE
       margin: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1003,99 +1044,124 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // ✅ IMPORTANT
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ✅ Titre et statut avec hauteur limitée
+            SizedBox(
+              height: 50, // Hauteur fixe pour cette section
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      project['title'] ?? 'Projet sans nom',
+                      style: const TextStyle(
+                        fontSize: 14, // ✅ Taille réduite
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2, // ✅ Limiter à 2 lignes
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2), // ✅ Padding réduit
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(project['status'] ?? 'unknown')
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _getStatusText(project['status']),
+                      style: TextStyle(
+                        fontSize: 10, // ✅ Taille réduite
+                        color: _getStatusColor(project['status'] ?? 'unknown'),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // ✅ Informations client et budget
             Row(
               children: [
+                const Icon(Icons.person_outline,
+                    size: 14, color: Colors.grey), // ✅ Icône plus petite
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    project['title'] ?? 'Projet sans nom',
+                    project['client_name'] ??
+                        project['client']?['name'] ??
+                        'Client inconnu',
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 12, color: Colors.grey), // ✅ Taille réduite
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(project['status'] ?? 'unknown')
-                        .withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              ],
+            ),
+
+            const SizedBox(height: 4),
+
+            Row(
+              children: [
+                const Icon(Icons.attach_money,
+                    size: 14, color: Colors.grey), // ✅ Icône plus petite
+                const SizedBox(width: 4),
+                Expanded(
                   child: Text(
-                    _getStatusText(project['status']),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _getStatusColor(project['status'] ?? 'unknown'),
+                    _formatBudget(project['budget_display']),
+                    style: const TextStyle(
+                      fontSize: 12, // ✅ Taille réduite
+                      color: Color(0xFF4CAF50),
                       fontWeight: FontWeight.w500,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+
+            // ✅ Spacer pour pousser les boutons en bas
+            const Spacer(),
+
+            // ✅ Boutons d'action compacts
             Row(
+              mainAxisAlignment: MainAxisAlignment.end, // ✅ Aligner à droite
               children: [
-                const Icon(Icons.person_outline, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  project['client_name'] ??
-                      project['client']?['name'] ??
-                      'Client inconnu',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.attach_money, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  // ✅ CORRECTION : Utiliser budget_display du backend
-                  _formatBudget(project['budget_display']),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF4CAF50),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                // 🎯 BOUTON "VOIR" TRANSFORMÉ EN ICÔNE DISCRÈTE
                 IconButton(
                   onPressed: () {
-                    // ✅ NAVIGATION VERS DÉTAIL DU PROJET
                     _navigateToProjectDetail(project);
                   },
-                  icon: const Icon(Icons.visibility_outlined), // ou Icons.info_outline
+                  icon: const Icon(Icons.visibility_outlined,
+                      size: 18), // ✅ Icône plus petite
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.1),
+                    minimumSize: const Size(36, 36), // ✅ Taille minimale
+                    padding: const EdgeInsets.all(6), // ✅ Padding réduit
                   ),
-                  tooltip: 'Voir les détails', // Aide contextuelle au survol
+                  tooltip: 'Voir les détails',
                 ),
-                const SizedBox(width: 8),
-                
-                // 🎯 ICÔNE DE MESSAGE (IDENTIQUE)
+                const SizedBox(width: 6),
                 IconButton(
                   onPressed: () {
-                    // ✅ NAVIGATION DIRECTE VERS CONVERSATION AVEC LE PROPRIÉTAIRE
                     _startConversationWithProjectOwner(project);
                   },
-                  icon: const Icon(Icons.chat_bubble_outline),
+                  icon: const Icon(Icons.chat_bubble_outline,
+                      size: 18), // ✅ Icône plus petite
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.1),
+                    minimumSize: const Size(36, 36), // ✅ Taille minimale
+                    padding: const EdgeInsets.all(6), // ✅ Padding réduit
                   ),
-                  tooltip: 'Contacter le client', // Aide contextuelle
+                  tooltip: 'Contacter le client',
                 ),
-                
-                // 🎯 BONUS : SPACER POUR POUSSER LES ICÔNES À DROITE (OPTIONNEL)
-                const Spacer(),
               ],
             ),
           ],
