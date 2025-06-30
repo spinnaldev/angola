@@ -38,7 +38,7 @@ class _BaseScreenState extends State<BaseScreen> {
   void initState() {
     super.initState();
     _overlayEntry = null;
-    
+
     // S'assurer que le ProfileManager est initialisé
     _ensureProfileManagerInitialized();
   }
@@ -46,7 +46,8 @@ class _BaseScreenState extends State<BaseScreen> {
   /// S'assure que le ProfileManager est initialisé
   Future<void> _ensureProfileManagerInitialized() async {
     if (!ProfileManager.isInitialized) {
-      print("BaseScreen: ProfileManager pas initialisé, initialisation en cours...");
+      print(
+          "BaseScreen: ProfileManager pas initialisé, initialisation en cours...");
       await ProfileManager.initialize();
       if (mounted) {
         setState(() {}); // Rafraîchir l'interface après initialisation
@@ -81,7 +82,8 @@ class _BaseScreenState extends State<BaseScreen> {
     // Éviter la navigation si on est déjà sur la page demandée
     if (index == widget.currentIndex) return;
 
-    print("Navigation demandée - Index: $index, Mode prestataire: ${ProfileManager.isProviderMode()}");
+    print(
+        "Navigation demandée - Index: $index, Mode prestataire: ${ProfileManager.isProviderMode()}");
 
     if (ProfileManager.isProviderMode()) {
       // Navigation PRESTATAIRE : Projets, Demandes de devis, Messages, Profil
@@ -95,16 +97,20 @@ class _BaseScreenState extends State<BaseScreen> {
   void _handleProviderNavigation(int index) {
     switch (index) {
       case 0: // Projets
+        print("O ,O ,O ,O ,O");
         _navigateToProjectsList();
         break;
       case 1: // Demandes de devis
+        print("1 ,1 ,1 ,1 ,1");
         _navigateToQuoteRequests();
         break;
       case 2: // Messages
-        Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/messages', (route) => false);
         break;
       case 3: // Profil
-        Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/profile', (route) => false);
         break;
     }
   }
@@ -115,13 +121,16 @@ class _BaseScreenState extends State<BaseScreen> {
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         break;
       case 1: // Explorer
-        Navigator.pushNamedAndRemoveUntil(context, '/explore', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/explore', (route) => false);
         break;
       case 2: // Messages
-        Navigator.pushNamedAndRemoveUntil(context, '/messages', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/messages', (route) => false);
         break;
       case 3: // Profil
-        Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/profile', (route) => false);
         break;
     }
   }
@@ -130,14 +139,17 @@ class _BaseScreenState extends State<BaseScreen> {
   void _navigateToProjectsList() {
     try {
       // Essayer d'abord la route nommée
-      Navigator.pushNamedAndRemoveUntil(context, '/projects-list', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(
+          context, '/projects-list', (route) => false);
     } catch (e) {
-      print("Route nommée '/projects-list' non trouvée, utilisation de MaterialPageRoute");
+      print(
+          "Route nommée '/projects-list' non trouvée, utilisation de MaterialPageRoute");
       // Si la route nommée n'existe pas, naviguer directement
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => const ProjectsListScreen(), // Votre écran de liste des projets
+          builder: (context) =>
+              const ProjectsListScreen(), // Votre écran de liste des projets
         ),
         (route) => false,
       );
@@ -148,14 +160,17 @@ class _BaseScreenState extends State<BaseScreen> {
   void _navigateToQuoteRequests() {
     try {
       // Essayer d'abord la route nommée
-      Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(
+          context, '/quote-requests', (route) => false);
     } catch (e) {
-      print("Route nommée '/quote-requests' non trouvée, utilisation de MaterialPageRoute");
+      print(
+          "Route nommée '/quote-requests' non trouvée, utilisation de MaterialPageRoute");
       // Si la route nommée n'existe pas, naviguer directement
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => const QuoteRequestsScreen(), // Votre écran de demandes de devis
+          builder: (context) =>
+              const QuoteRequestsScreen(), // Votre écran de demandes de devis
         ),
         (route) => false,
       );
@@ -166,11 +181,11 @@ class _BaseScreenState extends State<BaseScreen> {
   Widget _buildProfileToggle(AuthProvider authProvider) {
     final user = authProvider.currentUser;
     if (user == null || !widget.showProfileToggle) return const SizedBox();
-    
+
     // Vérifier si l'utilisateur peut basculer entre les profils
     final canSwitchProfile = _canUserSwitchProfile(user);
     if (!canSwitchProfile) return const SizedBox();
-    
+
     return PopupMenuButton<String>(
       onSelected: (String value) async {
         try {
@@ -182,7 +197,8 @@ class _BaseScreenState extends State<BaseScreen> {
               _navigateToProjectsList();
             } else {
               // Client -> aller vers accueil
-              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/home', (route) => false);
             }
           }
         } catch (e) {
@@ -205,7 +221,7 @@ class _BaseScreenState extends State<BaseScreen> {
               const Icon(Icons.person, size: 20),
               const SizedBox(width: 8),
               const Text('Mode Client'),
-              if (ProfileManager.isClientMode()) 
+              if (ProfileManager.isClientMode())
                 const Icon(Icons.check, color: Colors.green, size: 16),
             ],
           ),
@@ -217,7 +233,7 @@ class _BaseScreenState extends State<BaseScreen> {
               const Icon(Icons.work, size: 20),
               const SizedBox(width: 8),
               const Text('Mode Prestataire'),
-              if (ProfileManager.isProviderMode()) 
+              if (ProfileManager.isProviderMode())
                 const Icon(Icons.check, color: Colors.green, size: 16),
             ],
           ),
@@ -273,24 +289,25 @@ class _BaseScreenState extends State<BaseScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          appBar: widget.appBar ?? AppBar(
-            title: Text(widget.customTitle ?? 'W3 Loc'),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.black),
-            titleTextStyle: const TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-            actions: [
-              _buildProfileToggle(authProvider),
-              IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: _openMenu,
+          appBar: widget.appBar ??
+              AppBar(
+                title: Text(widget.customTitle ?? 'W3 Loc'),
+                backgroundColor: Colors.white,
+                elevation: 0,
+                iconTheme: const IconThemeData(color: Colors.black),
+                titleTextStyle: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+                actions: [
+                  _buildProfileToggle(authProvider),
+                  IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: _openMenu,
+                  ),
+                ],
               ),
-            ],
-          ),
           body: Stack(
             children: [
               widget.body,

@@ -36,6 +36,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String providerProjects = '/provider-projects';
+  static const String projectsList = '/projects-list';
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const HomeScreen(), 
@@ -54,6 +55,8 @@ class AppRoutes {
     editProfile: (context) => const EditProfileScreen(),
     providerProjects: (context) => const ProjectsListScreen(),
     disputes: (context) => const QuoteRequestsScreen(),
+
+    projectsList: (context) => const ProjectsListScreen(),
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -90,6 +93,10 @@ class AppRoutes {
       case editProfile:
         return MaterialPageRoute(builder: (context) => const EditProfileScreen());
       case providerProjects:
+      case projectsList:
+      case providerProjects:
+        return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
+        
         return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
       case serviceDetail:
         final serviceId = settings.arguments as int;
