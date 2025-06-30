@@ -1,6 +1,9 @@
 // lib/ui/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:w3_loc/core/models/conversation.dart';
+import 'package:w3_loc/providers/messaging_provider.dart';
+import 'package:w3_loc/ui/screens/messaging/conversation_detail_screen.dart';
 import '../../core/models/review.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/service_provider.dart';
@@ -17,6 +20,12 @@ import 'base_screen.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
+
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/models/client_project.dart';
+import '../screens/project_detail_screen.dart';
+import '../screens/messaging/messages_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -76,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       // Charger les données communes
-      await _loadCommonData();
+      // await _loadCommonData();
 
       // Charger les statistiques si l'utilisateur est un prestataire
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -167,76 +176,270 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadCommonData() async {
-    final categoryProvider =
-        Provider.of<CategoryProvider>(context, listen: false);
-    if (categoryProvider.categories.isEmpty) {
-      await categoryProvider.fetchCategories();
-    }
+  /// Navigation vers le détail du projet
+  void _navigateToProjectDetail(Map<String, dynamic> projectData) {
+    try {
+      // Créer un objet ClientProject à partir des données du projet
+      final project = ClientProject.fromJson(projectData);
 
-    final locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
-    await locationProvider.getCurrentLocation();
-
-    final providerListProvider =
-        Provider.of<ProviderListProvider>(context, listen: false);
-    if (locationProvider.currentPosition != null) {
-      await providerListProvider.fetchNearbyProviders(
-        locationProvider.currentPosition!.latitude,
-        locationProvider.currentPosition!.longitude,
-        radius: 10.0,
+      // Navigation vers ProjectDetailScreen avec l'objet ClientProject
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProjectDetailScreen(project: project),
+        ),
       );
-    } else {
-      await providerListProvider.fetchProviders();
-    }
-
-    final serviceProvider =
-        Provider.of<ServiceProvider>(context, listen: false);
-    await serviceProvider.fetchRecentServices();
-    _recentServices = serviceProvider.recentServices;
-
-    await serviceProvider.fetchTopRatedServices();
-    _topRatedServices = serviceProvider.topRatedServices;
-
-    // Générer les services à proximité
-    if (providerListProvider.providers.isNotEmpty) {
-      _nearbyServices = providerListProvider.providers.take(6).map((provider) {
-        return Service(
-          id: 200 + provider.id,
-          title: provider.services.isNotEmpty
-              ? provider.services.first.title
-              : provider.name,
-          description: provider.description,
-          imageUrl: provider.profileImageUrl.isNotEmpty
-              ? provider.profileImageUrl
-              : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-          rating: provider.rating,
-          reviewCount: provider.reviewCount,
-          provider_id: provider.id,
-          businessType: provider.businessType,
-          price: 50.0 + random.nextInt(150) * 1.0,
-          categoryId: 1 + random.nextInt(5),
-          priceType: random.nextBool() ? 'quote' : 'fixed',
-        );
-      }).toList();
-    } else {
-      _nearbyServices = List.generate(
-          6,
-          (index) => Service(
-                id: 200 + index,
-                title: serviceNames[random.nextInt(serviceNames.length)],
-                description: 'Service de proximité disponible rapidement',
-                imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
-                rating: 3.5 + random.nextDouble() * 1.5,
-                reviewCount: 5 + random.nextInt(30),
-                provider_id: 300 + index,
-                businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
-                price: 50.0 + random.nextInt(150) * 1.0,
-                categoryId: 1 + random.nextInt(5),
-                priceType: random.nextBool() ? 'quote' : 'fixed',
-              ));
+    } catch (e) {
+      print('Erreur lors de la navigation vers le détail du projet: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l\'ouverture du projet'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+
+  /// Navigation vers les messages/chat
+  void _navigateToChat(Map<String, dynamic> project) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez vous connecter pour envoyer un message'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Navigation vers MessagesScreen ou ConversationScreen selon votre implémentation
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MessagesScreen(
+              // Vous pouvez passer des paramètres ici si nécessaire
+              // Par exemple : initialClientId: project['client_id']
+              ),
+        ),
+      );
+    } catch (e) {
+      print('Erreur lors de la navigation vers les messages: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l\'ouverture des messages'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Correction de la méthode de formatage du budget
+  String _formatBudget(dynamic budget) {
+    if (budget == null) return 'Budget à discuter';
+
+    // Si c'est déjà une string formatée (budget_display), l'utiliser directement
+    if (budget is String) {
+      return budget.isNotEmpty ? budget : 'Budget à discuter';
+    }
+
+    // Si c'est un nombre, le formater
+    if (budget is num) {
+      return '${budget.toStringAsFixed(0)} €';
+    }
+
+    return 'Budget à discuter';
+  }
+
+  void _startConversationWithProjectOwner(Map<String, dynamic> project) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+    final currentUser = authProvider.currentUser;
+    
+    // Vérifier l'authentification
+    if (!authProvider.isAuthenticated || currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez vous connecter pour contacter le client'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Vérifier que l'utilisateur est un prestataire
+    if (currentUser.role != 'provider') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Seuls les prestataires peuvent contacter les clients'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Afficher un indicateur de chargement
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Ouverture de la conversation...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Obtenir l'ID du projet
+      final projectId = _parseId(project['id']);
+      if (projectId == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur: ID du projet introuvable'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Créer le message initial avec contexte du projet
+      final projectTitle = project['title'] ?? 'ce projet';
+      final initialMessage = 'Bonjour, je suis intéressé(e) par votre projet "$projectTitle". Pouvons-nous en discuter ?';
+
+      // 🎯 CORRECTION 1: Utiliser la méthode du MessagingProvider qui retourne un Conversation?
+      final conversation = await messagingProvider.startConversationFromProject(
+        projectId,
+        initialMessage: null, 
+      );
+
+      Navigator.pop(context); // Fermer le loading
+
+      // 🎯 CORRECTION 2: Vérifier que la conversation n'est pas null
+      if (conversation != null) {
+        // Naviguer vers l'écran de conversation
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConversationDetailScreen(
+              conversationId: conversation.id,
+              otherPerson: conversation.otherPerson,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de la création de la conversation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+    } catch (e) {
+      Navigator.pop(context); // Fermer le loading
+      print('Erreur conversation: $e');
+      
+      String errorMessage = 'Erreur lors de l\'ouverture de la conversation';
+      if (e.toString().contains('contacter votre propre projet')) {
+        errorMessage = 'Vous ne pouvez pas contacter votre propre projet';
+      } else if (e.toString().contains('Seuls les prestataires')) {
+        errorMessage = 'Seuls les prestataires peuvent contacter les clients';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Méthode utilitaire pour parser les IDs
+  int? _parseId(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  // Future<void> _loadCommonData() async {
+  //   final categoryProvider =
+  //       Provider.of<CategoryProvider>(context, listen: false);
+  //   if (categoryProvider.categories.isEmpty) {
+  //     await categoryProvider.fetchCategories();
+  //   }
+
+  //   final locationProvider =
+  //       Provider.of<LocationProvider>(context, listen: false);
+  //   await locationProvider.getCurrentLocation();
+
+  //   final providerListProvider =
+  //       Provider.of<ProviderListProvider>(context, listen: false);
+  //   if (locationProvider.currentPosition != null) {
+  //     await providerListProvider.fetchNearbyProviders(
+  //       locationProvider.currentPosition!.latitude,
+  //       locationProvider.currentPosition!.longitude,
+  //       radius: 10.0,
+  //     );
+  //   } else {
+  //     await providerListProvider.fetchProviders();
+  //   }
+
+  //   final serviceProvider =
+  //       Provider.of<ServiceProvider>(context, listen: false);
+  //   await serviceProvider.fetchRecentServices();
+  //   _recentServices = serviceProvider.recentServices;
+
+  //   await serviceProvider.fetchTopRatedServices();
+  //   _topRatedServices = serviceProvider.topRatedServices;
+
+  //   // Générer les services à proximité
+  //   if (providerListProvider.providers.isNotEmpty) {
+  //     _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+  //       return Service(
+  //         id: 200 + provider.id,
+  //         title: provider.services.isNotEmpty
+  //             ? provider.services.first.title
+  //             : provider.name,
+  //         description: provider.description,
+  //         imageUrl: provider.profileImageUrl.isNotEmpty
+  //             ? provider.profileImageUrl
+  //             : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+  //         rating: provider.rating,
+  //         reviewCount: provider.reviewCount,
+  //         provider_id: provider.id,
+  //         businessType: provider.businessType,
+  //         price: 50.0 + random.nextInt(150) * 1.0,
+  //         categoryId: 1 + random.nextInt(5),
+  //         priceType: random.nextBool() ? 'quote' : 'fixed',
+  //       );
+  //     }).toList();
+  //   } else {
+  //     _nearbyServices = List.generate(
+  //         6,
+  //         (index) => Service(
+  //               id: 200 + index,
+  //               title: serviceNames[random.nextInt(serviceNames.length)],
+  //               description: 'Service de proximité disponible rapidement',
+  //               imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
+  //               rating: 3.5 + random.nextDouble() * 1.5,
+  //               reviewCount: 5 + random.nextInt(30),
+  //               provider_id: 300 + index,
+  //               businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
+  //               price: 50.0 + random.nextInt(150) * 1.0,
+  //               categoryId: 1 + random.nextInt(5),
+  //               priceType: random.nextBool() ? 'quote' : 'fixed',
+  //             ));
+  //   }
+  // }
 
   Future<void> _loadProviderStats() async {
     setState(() {
@@ -763,7 +966,7 @@ class _HomeScreenState extends State<HomeScreen> {
         message: 'Aucun projet récent trouvé',
         height: 180,
         actionText: 'Voir tous les projets',
-        onAction: () => Navigator.pushNamed(context, '/projects'),
+        onAction: () => Navigator.pushNamed(context, '/projectsList'),
       );
     }
 
@@ -851,7 +1054,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Icon(Icons.attach_money, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  _formatBudget(project['budget']),
+                  // ✅ CORRECTION : Utiliser budget_display du backend
+                  _formatBudget(project['budget_display']),
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF4CAF50),
@@ -860,45 +1064,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigation vers détail du projet
-                      Navigator.pushNamed(
-                        context,
-                        '/project-detail',
-                        arguments: project['id'],
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Voir détails',
-                        style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-                const SizedBox(width: 8),
+                // 🎯 BOUTON "VOIR" TRANSFORMÉ EN ICÔNE DISCRÈTE
                 IconButton(
                   onPressed: () {
-                    // Contacter le client
-                    Navigator.pushNamed(
-                      context,
-                      '/chat',
-                      arguments: project['client_id'],
-                    );
+                    // ✅ NAVIGATION VERS DÉTAIL DU PROJET
+                    _navigateToProjectDetail(project);
+                  },
+                  icon: const Icon(Icons.visibility_outlined), // ou Icons.info_outline
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withOpacity(0.1),
+                  ),
+                  tooltip: 'Voir les détails', // Aide contextuelle au survol
+                ),
+                const SizedBox(width: 8),
+                
+                // 🎯 ICÔNE DE MESSAGE (IDENTIQUE)
+                IconButton(
+                  onPressed: () {
+                    // ✅ NAVIGATION DIRECTE VERS CONVERSATION AVEC LE PROPRIÉTAIRE
+                    _startConversationWithProjectOwner(project);
                   },
                   icon: const Icon(Icons.chat_bubble_outline),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.1),
                   ),
+                  tooltip: 'Contacter le client', // Aide contextuelle
                 ),
+                
+                // 🎯 BONUS : SPACER POUR POUSSER LES ICÔNES À DROITE (OPTIONNEL)
+                const Spacer(),
               ],
             ),
           ],
@@ -1074,18 +1271,6 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return 'Statut inconnu';
     }
-  }
-
-  String _formatBudget(dynamic budget) {
-    if (budget == null) return 'Sur devis';
-    if (budget is String) {
-      if (budget.toLowerCase().contains('devis')) return 'Sur devis';
-      return budget;
-    }
-    if (budget is num) {
-      return '${budget.toStringAsFixed(0)} FCFA';
-    }
-    return 'Sur devis';
   }
 
   String _formatDate(String? dateString) {

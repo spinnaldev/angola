@@ -616,18 +616,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       expandedHeight: 80,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF142FE2),
+      backgroundColor: Colors.white,
       elevation: 4,
-      shadowColor: const Color(0xFF142FE2).withOpacity(0.3),
+      shadowColor: Colors.grey.withOpacity(0.2),
       leading: Container(
         margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
         child: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
           padding: EdgeInsets.zero,
         ),
       ),
@@ -640,38 +636,30 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               if (isProvider) ...[
                 Container(
                   margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                   child: IconButton(
                     onPressed: _toggleFavorite,
                     icon: Icon(
                       _isFavorited ? Icons.favorite : Icons.favorite_border,
-                      color: _isFavorited ? Colors.red : Colors.white,
-                      size: 20,
+                      color: _isFavorited ? Colors.red : const Color(0xFF142FE2),
+                      size: 24,
                     ),
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
+                      minWidth: 40,
+                      minHeight: 40,
                     ),
                   ),
                 ),
               ],
               Container(
                 margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 child: IconButton(
                   onPressed: _shareProject,
-                  icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                  icon: const Icon(Icons.share, color: Color(0xFF142FE2), size: 24),
                   padding: const EdgeInsets.all(8),
                   constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
+                    minWidth: 40,
+                    minHeight: 40,
                   ),
                 ),
               ),
@@ -679,17 +667,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           ),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          'Détails du projet',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+      // Vous pouvez aussi ajouter une ombre personnalisée sur le conteneur principal
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        titlePadding: const EdgeInsets.only(left: 56, bottom: 12),
-        centerTitle: false,
       ),
     );
   }

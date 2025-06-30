@@ -2364,22 +2364,21 @@ class ApiService {
 
       // Essayer plusieurs endpoints possibles
       Map<String, dynamic>? data;
-      
+
       try {
         // Essayer l'endpoint principal
         data = await _apiClient.get('providers/stats/', requireAuth: true);
-        
       } catch (e) {
-        print('📊 Tous les endpoints ont échoué, utilisation de données simulées');
+        print(
+            '📊 Tous les endpoints ont échoué, utilisation de données simulées');
         throw Exception('Stats endpoints not available');
       }
 
       print('✅ Statistiques récupérées avec succès');
       return data ?? {};
-
     } catch (e) {
       print('❌ Erreur dans getProviderStats: $e');
-      
+
       // Retourner des données simulées réalistes
       return {
         'prestations_completed_this_month': 0,
@@ -2796,16 +2795,20 @@ class ApiService {
       final data = await _apiClient.get(endpoint, requireAuth: false);
 
       final List<dynamic> projectsJson = data['results'] ?? [];
-      final projects = projectsJson.map((item) {
-        try {
-          return ClientProject.fromJson(item);
-        } catch (e) {
-          print('❌ Erreur lors du parsing du projet: $e');
-          print('Données du projet problématique: $item');
-          // Ignorer ce projet et continuer
-          return null;
-        }
-      }).where((project) => project != null).cast<ClientProject>().toList();
+      final projects = projectsJson
+          .map((item) {
+            try {
+              return ClientProject.fromJson(item);
+            } catch (e) {
+              print('❌ Erreur lors du parsing du projet: $e');
+              print('Données du projet problématique: $item');
+              // Ignorer ce projet et continuer
+              return null;
+            }
+          })
+          .where((project) => project != null)
+          .cast<ClientProject>()
+          .toList();
 
       print('✅ Projets récupérés: ${projects.length}');
 
@@ -3106,19 +3109,18 @@ class ApiService {
   Future<List<dynamic>> getProjectOffers(int projectId) async {
     try {
       print('📋 Récupération des offres pour le projet $projectId...');
-      
+
       // CORRIGER : Utiliser l'endpoint project-offers avec un filtre
-      final data = await _apiClient.get('project-offers/?project=$projectId', requireAuth: true);
-      
+      final data = await _apiClient.get('project-offers/?project=$projectId',
+          requireAuth: true);
+
       print('✅ Offres récupérées: ${data['results']?.length ?? 0}');
       return data['results'] ?? [];
-      
     } catch (e) {
       print('❌ Erreur dans getProjectOffers: $e');
       return [];
     }
   }
-
 
   Future<ProjectOffer> updateOfferStatus(int offerId, String status,
       {String? notes}) async {
@@ -3196,10 +3198,10 @@ class ApiService {
     }
   }
 
-
   Future<Map<String, dynamic>> getProviderRecentProjects() async {
     try {
-      final data = await _apiClient.get('providers/me/projects/recent/', requireAuth: true);
+      final data =
+          await _apiClient.get('providers/recent_projects/', requireAuth: true);
       return data ?? {'results': []};
     } catch (e) {
       print('❌ Erreur dans getProviderRecentProjects: $e');
@@ -3209,7 +3211,8 @@ class ApiService {
 
   Future<Map<String, dynamic>> getProviderQuoteRequests() async {
     try {
-      final data = await _apiClient.get('quote-requests/recent/', requireAuth: true);
+      final data = await _apiClient.get('quote-requests/recent_quote_requests/',
+          requireAuth: true);
       return data ?? {'results': []};
     } catch (e) {
       print('❌ Erreur dans getProviderQuoteRequests: $e');
@@ -3226,13 +3229,12 @@ class ApiService {
       print('🔍 Recherche de services: $query');
 
       final data = await _apiClient.get(
-        'services/search/?q=${Uri.encodeComponent(query)}', 
-        requireAuth: false
-      );
+          'services/search/?q=${Uri.encodeComponent(query)}',
+          requireAuth: false);
 
-      print('✅ Résultats de recherche services: ${data['results']?.length ?? 0}');
+      print(
+          '✅ Résultats de recherche services: ${data['results']?.length ?? 0}');
       return data ?? {'results': []};
-
     } catch (e) {
       print('❌ Erreur dans searchServices: $e');
       return {'results': []};
@@ -3244,13 +3246,12 @@ class ApiService {
       print('🔍 Recherche de projets: $query');
 
       final data = await _apiClient.get(
-        'projects/search/?q=${Uri.encodeComponent(query)}', 
-        requireAuth: true
-      );
+          'projects/search/?q=${Uri.encodeComponent(query)}',
+          requireAuth: true);
 
-      print('✅ Résultats de recherche projets: ${data['results']?.length ?? 0}');
+      print(
+          '✅ Résultats de recherche projets: ${data['results']?.length ?? 0}');
       return data ?? {'results': []};
-
     } catch (e) {
       print('❌ Erreur dans searchProjects: $e');
       return {'results': []};
@@ -3287,65 +3288,73 @@ class ApiService {
       print('💬 Récupération des messages pour la conversation $conversationId...');
 
       final userId = await getCurrentUserId();
+      print('👤 User ID récupéré: $userId');
       
-      // ✅ UTILISER L'ENDPOINT CONVERSATIONS (pas user_id en paramètre)
+      // ✅ SOLUTION 1: Utiliser l'endpoint qui requiert user_id (pour compatibilité)
       final data = await _apiClient.get(
-          'conversations/$conversationId/messages/',
-          requireAuth: true);
+        'conversations/$conversationId/messages/?user_id=$userId',
+        requireAuth: true
+      );
 
       final List<dynamic> messagesData = data['results'] ?? data ?? [];
-      final messages =
-          messagesData.map((item) => Message.fromJson(item, userId)).toList();
+      final messages = messagesData.map((item) => Message.fromJson(item, userId)).toList();
 
       print('✅ Messages récupérés: ${messages.length}');
       return messages;
+      
     } catch (e) {
       print('❌ Erreur dans getMessages: $e');
       
-      // Si erreur, essayer l'ancien format avec user_id
-      try {
-        print('🔄 Tentative avec user_id en paramètre...');
-        final userId = await getCurrentUserId();
-        final data = await _apiClient.get(
+      // Si l'erreur contient "user_id est requis", réessayer différemment
+      if (e.toString().contains('user_id est requis')) {
+        try {
+          print('🔄 Réessai avec user_id dans les paramètres...');
+          final userId = await getCurrentUserId();
+          
+          // Essayer avec user_id dans l'URL
+          final data = await _apiClient.get(
             'conversations/$conversationId/messages/?user_id=$userId',
-            requireAuth: true);
-
-        final List<dynamic> messagesData = data['results'] ?? data ?? [];
-        final messages =
-            messagesData.map((item) => Message.fromJson(item, userId)).toList();
-
-        print('✅ Messages récupérés via fallback');
-        return messages;
-      } catch (e2) {
-        print('❌ Erreur fallback getMessages: $e2');
-        return [];
+            requireAuth: true
+          );
+          
+          final List<dynamic> messagesData = data['results'] ?? data ?? [];
+          final messages = messagesData.map((item) => Message.fromJson(item, userId)).toList();
+          
+          return messages;
+        } catch (e2) {
+          print('❌ Erreur finale getMessages: $e2');
+          return [];
+        }
       }
+      
+      return [];
     }
   }
 
   Future<Message> sendMessage(int conversationId, String content) async {
     try {
       print('📤 Envoi d\'un message vers conversation $conversationId...');
-      print('📝 Contenu: ${content.substring(0, content.length > 50 ? 50 : content.length)}...');
+      print(
+          '📝 Contenu: ${content.substring(0, content.length > 50 ? 50 : content.length)}...');
 
       final userId = await getCurrentUserId();
       print('👤 User ID: $userId');
 
       Map<String, dynamic> data;
-      
+
       try {
         // ✅ MÉTHODE 1: Endpoint ViewSet (SANS user_id - utilise l'auth)
         print('🔄 Tentative avec endpoint ViewSet authentifié...');
-        data = await _apiClient.post('conversations/$conversationId/send_message/',
-            data: {
-              'content': content,  // ✅ Plus de user_id !
-            },
-            requireAuth: true);
+        data =
+            await _apiClient.post('conversations/$conversationId/send_message/',
+                data: {
+                  'content': content, // ✅ Plus de user_id !
+                },
+                requireAuth: true);
         print('✅ Message envoyé via ViewSet authentifié');
-        
       } catch (e) {
         print('⚠️ Échec ViewSet, tentative endpoint messages...');
-        
+
         try {
           // ✅ MÉTHODE 2: Endpoint messages (nouveau)
           data = await _apiClient.post('messages/',
@@ -3355,14 +3364,14 @@ class ApiService {
               },
               requireAuth: true);
           print('✅ Message envoyé via endpoint messages');
-          
         } catch (e2) {
           print('⚠️ Échec endpoint messages, tentative avec user_id...');
-          
+
           // ✅ MÉTHODE 3: Fallback avec user_id (pour compatibilité)
-          data = await _apiClient.post('conversations/$conversationId/send_message/',
+          data = await _apiClient.post(
+              'conversations/$conversationId/send_message/',
               data: {
-                'user_id': userId,  // Fallback au cas où
+                'user_id': userId, // Fallback au cas où
                 'content': content,
               },
               requireAuth: true);
@@ -3376,19 +3385,23 @@ class ApiService {
       return message;
     } catch (e) {
       print('❌ Erreur dans sendMessage: $e');
-      
+
       // Gestion spéciale de l'erreur HTML (page 404/500 Django)
-      if (e.toString().contains('<!DOCTYPE html>') || e.toString().contains('FormatException')) {
+      if (e.toString().contains('<!DOCTYPE html>') ||
+          e.toString().contains('FormatException')) {
         print('🚨 Erreur: Le serveur a renvoyé du HTML au lieu de JSON');
         print('🔍 Cela indique probablement une erreur 404/500 sur le serveur');
-        throw Exception('Erreur serveur: Endpoint non trouvé ou erreur interne');
+        throw Exception(
+            'Erreur serveur: Endpoint non trouvé ou erreur interne');
       }
-      
+
       // Autres erreurs
       if (e.toString().contains('404')) {
-        throw Exception('Endpoint de message non trouvé. Vérifiez la configuration du serveur.');
+        throw Exception(
+            'Endpoint de message non trouvé. Vérifiez la configuration du serveur.');
       } else if (e.toString().contains('403')) {
-        throw Exception('Accès refusé. Vous n\'êtes pas autorisé à envoyer ce message.');
+        throw Exception(
+            'Accès refusé. Vous n\'êtes pas autorisé à envoyer ce message.');
       } else if (e.toString().contains('401')) {
         throw Exception('Non authentifié. Veuillez vous reconnecter.');
       } else if (e.toString().contains('400')) {
@@ -3633,29 +3646,73 @@ class ApiService {
       }
     }
   }
-  Future<Map<String, dynamic>> startConversation(int providerId, String? initialMessage) async {
+
+  Future<Map<String, dynamic>> startConversation(
+    int? providerId,
+    String? initialMessage, {
+    int? clientId,
+  }) async {
     try {
-      print('🚀 Démarrage conversation avec prestataire $providerId...');
-      
-      final data = {
-        'provider_id': providerId,
-        if (initialMessage?.isNotEmpty == true) 'initial_message': initialMessage,
-      };
-      
-      // Retourner les données JSON brutes, PAS un objet Conversation
-      final response = await _apiClient.post('conversations/start_conversation/', 
-          data: data, requireAuth: true);
-      
+      print('🚀 Démarrage conversation...');
+
+      final data = <String, dynamic>{};
+
+      // Ajouter les paramètres selon le contexte
+      if (providerId != null) {
+        data['provider_id'] = providerId;
+        print('📞 Contacter prestataire $providerId');
+      }
+
+      if (clientId != null) {
+        data['client_id'] = clientId;
+        print('📞 Contacter client $clientId');
+      }
+
+      if (initialMessage?.isNotEmpty == true) {
+        data['initial_message'] = initialMessage;
+      }
+
+      // Retourner les données JSON brutes
+      final response = await _apiClient.post(
+          'conversations/start_conversation/',
+          data: data,
+          requireAuth: true);
+
       print('✅ Conversation démarrée avec succès');
-      return response; // Retourner le Map<String, dynamic>
-      
+      return response;
     } catch (e) {
       print('❌ Erreur démarrage conversation: $e');
       throw Exception('Impossible de démarrer la conversation: $e');
     }
   }
 
-
+  // 🎯 NOUVELLE MÉTHODE pour contacter le propriétaire d'un projet
+  Future<Map<String, dynamic>> startConversationFromProject(
+    int projectId, 
+    String? initialMessage,
+  ) async {
+    try {
+      print('🚀 Démarrage conversation depuis projet $projectId...');
+      
+      final data = {
+        'project_id': projectId,
+        if (initialMessage?.isNotEmpty == true) 'initial_message': initialMessage,
+      };
+      
+      final response = await _apiClient.post(
+        'conversations/start_conversation_from_project/', 
+        data: data, 
+        requireAuth: true
+      );
+      
+      print('✅ Conversation depuis projet démarrée avec succès');
+      return response;
+      
+    } catch (e) {
+      print('❌ Erreur démarrage conversation depuis projet: $e');
+      throw Exception('Impossible de démarrer la conversation: $e');
+    }
+  }
   // ===============================
   // MÉTHODES UTILITAIRES
   // ===============================

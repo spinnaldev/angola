@@ -162,6 +162,12 @@ class MyApp extends StatelessWidget {
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,
+        // Supprime le banner "DEBUG"
+        showPerformanceOverlay: false,               // Supprime l'overlay de performance
+        checkerboardRasterCacheImages: false,       // Supprime le damier des images
+        checkerboardOffscreenLayers: false,         // Supprime le damier des layers
+        showSemanticsDebugger: false,               // Supprime le debugger sémantique
+        debugShowMaterialGrid: false,   
       ),
     );
   }

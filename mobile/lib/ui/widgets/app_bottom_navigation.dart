@@ -1,4 +1,4 @@
-// lib/ui/widgets/app_bottom_navigation.dart
+// lib/ui/widgets/app_bottom_navigation.dart - CORRIGÉ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/messaging_provider.dart';
@@ -21,52 +21,59 @@ class AppBottomNavigation extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAuthenticated = authProvider.isAuthenticated;
     
+    // DEBUG : Afficher le profil actuel
+    print("🔍 AppBottomNavigation - Profil détecté:");
+    print("   - Authentifié: $isAuthenticated");
+    print("   - Mode prestataire: ${ProfileManager.isProviderMode()}");
+    
     if (isAuthenticated && ProfileManager.isProviderMode()) {
-      // Navigation pour PRESTATAIRES : Accueil, Projets, Messages, Profil
+      // ✅ Navigation pour PRESTATAIRES : Accueil, Projets, Messages, Profil
+      print("   → Menu PRESTATAIRE: Accueil(0), Projets(1), Messages(2), Profil(3)");
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'Accueil',
+          label: 'Accueil',  // Index 0
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.work_outline),
           activeIcon: Icon(Icons.work),
-          label: 'Projets',
+          label: 'Projets',  // Index 1
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
           activeIcon: _buildMessagesActiveIcon(context),
-          label: 'Messages',
+          label: 'Messages',  // Index 2
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
-          label: 'Profil',
+          label: 'Profil',   // Index 3
         ),
       ];
     } else {
-      // Navigation pour CLIENTS ou utilisateurs non connectés : Accueil, Explorer, Messages, Profil
+      // ✅ Navigation pour CLIENTS ou utilisateurs non connectés : Accueil, Explorer, Messages, Profil
+      print("   → Menu CLIENT: Accueil(0), Explorer(1), Messages(2), Profil(3)");
       return [
         const BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'Accueil',
+          label: 'Accueil',   // Index 0
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.search_outlined),
           activeIcon: Icon(Icons.search),
-          label: 'Explorer',
+          label: 'Explorer',  // Index 1
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
           activeIcon: _buildMessagesActiveIcon(context),
-          label: 'Messages',
+          label: 'Messages',  // Index 2
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
-          label: 'Profil',
+          label: 'Profil',    // Index 3
         ),
       ];
     }
@@ -153,8 +160,9 @@ class AppBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 85,
+      height: 80, // Hauteur augmentée comme demandé
       decoration: BoxDecoration(
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.3),
@@ -164,22 +172,26 @@ class AppBottomNavigation extends StatelessWidget {
           ),
         ],
       ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: onTap,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF142FE2),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+      child: SafeArea(
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: onTap,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedItemColor: const Color(0xFF142FE2),
+          unselectedItemColor: Colors.grey,
+          selectedLabelStyle: const TextStyle(
+            fontSize: 13, // Légèrement plus grand
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          iconSize: 26, // Icônes légèrement plus grandes
+          items: _getNavigationItems(context),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-        ),
-        items: _getNavigationItems(context),
       ),
     );
   }

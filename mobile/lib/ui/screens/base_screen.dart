@@ -1,6 +1,7 @@
 // lib/ui/screens/base_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:w3_loc/ui/screens/projects_list_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../widgets/side_menu.dart';
@@ -70,26 +71,23 @@ class _BaseScreenState extends State<BaseScreen> {
         // Demandes de devis
         if (widget.currentIndex != 0) {
           // TODO: Remplacez par votre vraie route
-          Navigator.pushNamedAndRemoveUntil(context, '/quote-requests', (route) => false);
-          // Ou utilisez MaterialPageRoute si vous n'avez pas de routes nommées :
-          // Navigator.pushAndRemoveUntil(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const QuoteRequestsScreen()),
-          //   (route) => false,
-          // );
+          // Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
         }
         break;
       case 1:
         // Litige
         if (widget.currentIndex != 1) {
-          // TODO: Remplacez par votre vraie route
-          Navigator.pushNamedAndRemoveUntil(context, '/disputes', (route) => false);
-          // Ou utilisez MaterialPageRoute si vous n'avez pas de routes nommées :
-          // Navigator.pushAndRemoveUntil(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const DisputesScreen()),
-          //   (route) => false,
-          // );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const ProjectsListScreen()),
+            (route) => false,
+          );
+          
         }
         break;
       case 2:

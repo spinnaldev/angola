@@ -781,40 +781,68 @@ class ProviderViewSet(viewsets.ModelViewSet):
         # Calculer les statistiques
         this_month = timezone.now().replace(day=1)
         
-        stats = {
-            'prestations_completed_this_month': ClientProject.objects.filter(
-                assigned_provider=provider,
-                status='completed',
-                completed_at__gte=this_month
-            ).count(),
-            
-            'prestations_in_progress': ClientProject.objects.filter(
-                assigned_provider=provider,
-                status='in_progress'
-            ).count(),
-            
-            'unread_messages': Message.objects.filter(
+        # Compter les offres acceptées ce mois-ci
+        accepted_offers_this_month = ProjectOffer.objects.filter(
+            provider=provider,
+            status='accepted',
+            created_at__gte=this_month
+        ).count()
+        
+        # Compter les offres en cours (acceptées mais pas encore terminées)
+        offers_in_progress = ProjectOffer.objects.filter(
+            provider=provider,
+            status='accepted',
+            project__status='in_progress'
+        ).count()
+        
+        # Compter les messages non lus
+        try:
+            unread_messages = Message.objects.filter(
                 recipient=request.user,
                 is_read=False
-            ).count(),
-            
-            'total_earnings_this_month': ClientProject.objects.filter(
-                assigned_provider=provider,
-                status='completed',
-                completed_at__gte=this_month
-            ).aggregate(
-                total=Sum('budget')
-            )['total'] or 0,
-            
-            'avg_rating': Review.objects.filter(
+            ).count()
+        except:
+            # Si le modèle Message n'existe pas encore
+            unread_messages = 0
+        
+        # Calculer les gains totaux basés sur les offres acceptées ce mois-ci
+        total_earnings_this_month = ProjectOffer.objects.filter(
+            provider=provider,
+            status='accepted',
+            created_at__gte=this_month
+        ).aggregate(
+            total=Sum('proposed_price')
+        )['total'] or 0
+        
+        # Calculer la note moyenne
+        try:
+            avg_rating = Review.objects.filter(
                 provider=provider
             ).aggregate(
                 avg=Avg('rating')
-            )['avg'] or 0,
-            
-            'total_reviews': Review.objects.filter(
+            )['avg'] or 0
+        except:
+            # Si le modèle Review n'existe pas encore
+            avg_rating = provider.avg_rating or 0
+        
+        # Compter le total des avis
+        try:
+            total_reviews = Review.objects.filter(
                 provider=provider
-            ).count(),
+            ).count()
+        except:
+            # Si le modèle Review n'existe pas encore
+            total_reviews = 0
+        
+        stats = {
+            'prestations_completed_this_month': accepted_offers_this_month,
+            'prestations_in_progress': offers_in_progress,
+            'unread_messages': unread_messages,
+            'total_earnings_this_month': float(total_earnings_this_month),
+            'avg_rating': float(avg_rating),
+            'total_reviews': total_reviews,
+            'total_offers_sent': ProjectOffer.objects.filter(provider=provider).count(),
+            'pending_offers': ProjectOffer.objects.filter(provider=provider, status='pending').count(),
         }
         
         return Response(stats)
@@ -823,27 +851,50 @@ class ProviderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def recent_projects(self, request):
         """Récupérer les 5 derniers projets de la plateforme"""
-        if not hasattr(request.user, 'provider_profile'):
-            return Response({'error': 'User is not a provider'}, status=400)
+        # if not hasattr(request.user, 'provider_profile'):
+        #     return Response({'error': 'User is not a provider'}, status=400)
         
         # Récupérer les 5 derniers projets de toute la plateforme
         recent_projects = ClientProject.objects.filter(
-            status='open'  # Optionnel: seulement les projets ouverts
+            status='open'  # Seulement les projets ouverts
         ).order_by('-created_at')[:5]
         
         results = []
         for project in recent_projects:
+            # Vérifier si l'utilisateur actuel a déjà fait une offre (si c'est un prestataire)
+            has_offered = False
+            if hasattr(request.user, 'provider_profile'):
+                has_offered = ProjectOffer.objects.filter(
+                    project=project,
+                    provider=request.user.provider_profile
+                ).exists()
+            
             results.append({
                 'id': project.id,
                 'title': project.title,
                 'status': project.status,
-                'client_name': project.client.get_full_name(),
-                'client_id': project.client.id,
-                'budget': float(project.budget) if project.budget else None,
+                'client_name': project.client.get_full_name() if project.client else 'Client anonyme',
+                'client_id': project.client.id if project.client else None,
+                
+                # CORRECTION : Utiliser budget_display au lieu de budget
+                'budget_display': project.budget_display,
+                'min_budget': float(project.min_budget) if project.min_budget else None,
+                'max_budget': float(project.max_budget) if project.max_budget else None,
+                'budget_range': project.budget_range,
+                
                 'created_at': project.created_at.isoformat(),
-                'description': project.description if hasattr(project, 'description') else '',
-                'location': project.location if hasattr(project, 'location') else '',
-                'urgency': project.urgency if hasattr(project, 'urgency') else '',
+                'description': project.description,  # Ce champ existe dans votre modèle
+                'location': project.location,        # Ce champ existe dans votre modèle
+                'urgency': project.urgency,          # Ce champ existe dans votre modèle
+                'deadline': project.deadline.isoformat() if project.deadline else None,
+                'remote_possible': project.remote_possible,
+                'offers_count': project.offers_count,  # Propriété définie dans votre modèle
+                'time_since_posted': project.time_since_posted,  # Propriété définie dans votre modèle
+                'has_user_offered': has_offered,
+                
+                # Informations sur la catégorie
+                'category_name': project.category.name if project.category else '',
+                'subcategory_name': project.subcategory.name if project.subcategory else '',
             })
         
         return Response({'results': results})
@@ -1549,42 +1600,78 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def start_conversation(self, request):
-        """Démarrer une nouvelle conversation avec un prestataire"""
+        """Démarrer une nouvelle conversation (bidirectionnelle : client ↔ prestataire)"""
         try:
             provider_id = request.data.get('provider_id')
+            client_id = request.data.get('client_id')
             initial_message = request.data.get('initial_message', '')
             
-            print(f"🚀 Démarrage conversation: provider_id={provider_id}, user={request.user.id}")
+            print(f"🚀 Démarrage conversation: provider_id={provider_id}, client_id={client_id}, user={request.user.id}")
             
-            if not provider_id:
+            # Variables pour stocker les entités
+            provider = None
+            client = None
+            
+            # 🎯 LOGIQUE BIDIRECTIONNELLE
+            if provider_id and not client_id:
+                # CAS 1: Un client veut contacter un prestataire
+                try:
+                    provider = Provider.objects.get(id=provider_id)
+                    client = request.user  # L'utilisateur actuel est le client
+                    print(f"📞 Client {client.username} contacte prestataire {provider.user.username}")
+                except Provider.DoesNotExist:
+                    return Response(
+                        {'error': 'Prestataire non trouvé'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                    
+            elif client_id and not provider_id:
+                # CAS 2: Un prestataire veut contacter un client
+                try:
+                    client = User.objects.get(id=client_id)
+                    if hasattr(request.user, 'provider_profile'):
+                        provider = request.user.provider_profile
+                        print(f"📞 Prestataire {provider.user.username} contacte client {client.username}")
+                    else:
+                        return Response(
+                            {'error': 'Vous devez être un prestataire pour contacter un client'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'Client non trouvé'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                    
+            elif provider_id and client_id:
+                # CAS 3: IDs spécifiques fournis (pour admin ou cas particuliers)
+                try:
+                    provider = Provider.objects.get(id=provider_id)
+                    client = User.objects.get(id=client_id)
+                    print(f"📞 Conversation spécifique: client {client.username} ↔ prestataire {provider.user.username}")
+                except (Provider.DoesNotExist, User.DoesNotExist):
+                    return Response(
+                        {'error': 'Prestataire ou client non trouvé'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            else:
+                # CAS 4: Paramètres manquants
                 return Response(
-                    {'error': 'provider_id est requis'},
+                    {'error': 'Vous devez fournir soit provider_id soit client_id'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Vérifier que le prestataire existe
-            try:
-                provider = Provider.objects.get(id=provider_id)
-                print(f"✅ Prestataire trouvé: {provider.user.username}")
-            except Provider.DoesNotExist:
-                print(f"❌ Prestataire {provider_id} non trouvé")
-                return Response(
-                    {'error': 'Prestataire non trouvé'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Vérifier qu'on ne crée pas une conversation avec soi-même
-            if hasattr(request.user, 'provider_profile') and request.user.provider_profile.id == provider_id:
+            # 🚫 VÉRIFICATION : Pas de conversation avec soi-même
+            if client.id == provider.user.id:
                 return Response(
                     {'error': 'Vous ne pouvez pas créer une conversation avec vous-même'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # ✅ CORRECTION PRINCIPALE : Utiliser client et provider
-            # Vérifier si une conversation existe déjà
-            print(f"🔍 Recherche conversation existante entre client {request.user.id} et provider {provider_id}")
+            # 🔍 VÉRIFIER SI UNE CONVERSATION EXISTE DÉJÀ
+            print(f"🔍 Recherche conversation existante entre client {client.id} et provider {provider.id}")
             existing_conversation = Conversation.objects.filter(
-                client=request.user,
+                client=client,
                 provider=provider
             ).first()
             
@@ -1598,19 +1685,23 @@ class ConversationViewSet(viewsets.ModelViewSet):
                         content=initial_message.strip()
                     )
                     print(f"✅ Message initial ajouté: {message.id}")
+                    
+                    # Mettre à jour la date de modification de la conversation
+                    existing_conversation.updated_at = timezone.now()
+                    existing_conversation.save()
                 
                 serializer = ConversationSerializer(existing_conversation, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             
-            # ✅ CORRECTION : Créer une nouvelle conversation avec les bons champs
+            # 📝 CRÉER UNE NOUVELLE CONVERSATION
             print(f"📝 Création nouvelle conversation...")
             conversation = Conversation.objects.create(
-                client=request.user,
+                client=client,
                 provider=provider
             )
             print(f"✅ Conversation créée: {conversation.id}")
             
-            # Envoyer le message initial si fourni
+            # 💬 ENVOYER LE MESSAGE INITIAL SI FOURNI
             if initial_message.strip():
                 message = Message.objects.create(
                     conversation=conversation,
@@ -1626,6 +1717,92 @@ class ConversationViewSet(viewsets.ModelViewSet):
             print(f"❌ Erreur dans start_conversation: {e}")
             import traceback
             traceback.print_exc()
+            return Response(
+                {'error': f'Erreur lors de la création de la conversation: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def start_conversation_from_project(self, request):
+        """Démarrer une conversation avec le propriétaire d'un projet"""
+        try:
+            project_id = request.data.get('project_id')
+            initial_message = request.data.get('initial_message', '')
+            
+            if not project_id:
+                return Response(
+                    {'error': 'project_id est requis'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Récupérer le projet et son propriétaire
+            try:
+                from .models import ClientProject  # Ajustez l'import selon votre structure
+                project = ClientProject.objects.get(id=project_id)
+                project_owner = project.client
+            except ClientProject.DoesNotExist:
+                return Response(
+                    {'error': 'Projet non trouvé'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Vérifier qu'on ne contacte pas son propre projet
+            if request.user.id == project_owner.id:
+                return Response(
+                    {'error': 'Vous ne pouvez pas contacter votre propre projet'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier que l'utilisateur actuel est un prestataire
+            if not hasattr(request.user, 'provider_profile'):
+                return Response(
+                    {'error': 'Seuls les prestataires peuvent contacter les propriétaires de projets'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Utiliser l'endpoint start_conversation avec les bons paramètres
+            provider = request.user.provider_profile
+            client = project_owner
+            
+            # Vérifier si une conversation existe déjà
+            existing_conversation = Conversation.objects.filter(
+                client=client,
+                provider=provider
+            ).first()
+            
+            if existing_conversation:
+                # Ajouter le message initial s'il est fourni
+                if initial_message.strip():
+                    Message.objects.create(
+                        conversation=existing_conversation,
+                        sender=request.user,
+                        content=initial_message.strip()
+                    )
+                    existing_conversation.updated_at = timezone.now()
+                    existing_conversation.save()
+                
+                serializer = ConversationSerializer(existing_conversation, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # Créer une nouvelle conversation
+            conversation = Conversation.objects.create(
+                client=client,
+                provider=provider
+            )
+            
+            # Ajouter le message initial
+            if initial_message.strip():
+                Message.objects.create(
+                    conversation=conversation,
+                    sender=request.user,
+                    content=initial_message.strip()
+                )
+            
+            serializer = ConversationSerializer(conversation, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"❌ Erreur dans start_conversation_from_project: {e}")
             return Response(
                 {'error': f'Erreur lors de la création de la conversation: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

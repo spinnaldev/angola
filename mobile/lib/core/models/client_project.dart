@@ -186,8 +186,6 @@ class ClientProject {
         subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
         subcategoryName: json['subcategory_name'] ?? '',
         budgetRange: json['budget_range'] ?? '',
-        // minBudget: json['min_budget']?.toDouble(),
-        // maxBudget: json['max_budget']?.toDouble(),
         minBudget: _parseDoubleFromDynamic(json['min_budget']),
         maxBudget: _parseDoubleFromDynamic(json['max_budget']),
         budgetDisplay: json['budget_display'] ?? '',
@@ -206,9 +204,9 @@ class ClientProject {
             ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
             : DateTime.now(),
         timeSincePosted: json['time_since_posted'],
-        // CORRECTION PRINCIPALE : Gestion robuste de isFavorited
-        isFavorited: _parseBoolSafely(json['is_favorited']),
-        hasUserOffered: _parseBoolSafely(json['has_user_offered']),
+        // CORRECTION PRINCIPALE : Valeurs par défaut explicites pour éviter les erreurs de type
+        isFavorited: _parseBoolSafely(json['is_favorited']) ?? false,
+        hasUserOffered: _parseBoolSafely(json['has_user_offered']) ?? false,
         attachment1: json['attachment1'],
         attachment2: json['attachment2'],
         attachment3: json['attachment3'],
@@ -226,12 +224,23 @@ class ClientProject {
     if (value == null) return null;
     if (value is bool) return value;
     if (value is String) {
-      final lowerValue = value.toLowerCase();
-      if (lowerValue == 'true') return true;
-      if (lowerValue == 'false') return false;
+      final lowerValue = value.toLowerCase().trim();
+      if (lowerValue == 'true' || lowerValue == '1') return true;
+      if (lowerValue == 'false' || lowerValue == '0') return false;
       return null;
     }
     if (value is int) return value != 0;
+    if (value is double) return value != 0.0;
+    
+    // Si c'est un autre type, essayer de le convertir en string puis parser
+    try {
+      final stringValue = value.toString().toLowerCase().trim();
+      if (stringValue == 'true' || stringValue == '1') return true;
+      if (stringValue == 'false' || stringValue == '0') return false;
+    } catch (e) {
+      print('⚠️ Impossible de parser la valeur booléenne: $value (${value.runtimeType})');
+    }
+    
     return null;
   }
 

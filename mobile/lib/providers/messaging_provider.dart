@@ -86,6 +86,113 @@ class MessagingProvider with ChangeNotifier {
       return null;
     }
   }
+  Future<Conversation?> startConversationWithProvider(int providerId, {String? initialMessage}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_currentUserId == null) {
+        _currentUserId = await _apiService.getCurrentUserId();
+      }
+
+      // Utiliser la méthode mise à jour avec providerId
+      final conversationData = await _apiService.startConversation(
+        providerId, 
+        initialMessage,
+      );
+      
+      final conversation = Conversation.fromJson(conversationData, _currentUserId!);
+      
+      final existingIndex = _conversations.indexWhere((c) => c.id == conversation.id);
+      if (existingIndex != -1) {
+        _conversations[existingIndex] = conversation;
+      } else {
+        _conversations.insert(0, conversation);
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      return conversation;
+      
+    } catch (error) {
+      print('Error starting conversation with provider: $error');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Conversation?> startConversationWithClient(int clientId, {String? initialMessage}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_currentUserId == null) {
+        _currentUserId = await _apiService.getCurrentUserId();
+      }
+
+      // Utiliser la méthode mise à jour avec clientId
+      final conversationData = await _apiService.startConversation(
+        null, // pas de providerId
+        initialMessage,
+        clientId: clientId,
+      );
+      
+      final conversation = Conversation.fromJson(conversationData, _currentUserId!);
+      
+      final existingIndex = _conversations.indexWhere((c) => c.id == conversation.id);
+      if (existingIndex != -1) {
+        _conversations[existingIndex] = conversation;
+      } else {
+        _conversations.insert(0, conversation);
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      return conversation;
+      
+    } catch (error) {
+      print('Error starting conversation with client: $error');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Conversation?> startConversationFromProject(int projectId, {String? initialMessage}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_currentUserId == null) {
+        _currentUserId = await _apiService.getCurrentUserId();
+      }
+
+      final conversationData = await _apiService.startConversationFromProject(
+        projectId,
+        initialMessage,
+      );
+      
+      final conversation = Conversation.fromJson(conversationData, _currentUserId!);
+      
+      final existingIndex = _conversations.indexWhere((c) => c.id == conversation.id);
+      if (existingIndex != -1) {
+        _conversations[existingIndex] = conversation;
+      } else {
+        _conversations.insert(0, conversation);
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      return conversation;
+      
+    } catch (error) {
+      print('Error starting conversation from project: $error');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
 
   Future<void> fetchMessages(int conversationId) async {
     _isLoading = true;

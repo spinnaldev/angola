@@ -4,6 +4,7 @@ import 'package:w3_loc/ui/screens/explore_screen.dart';
 import 'package:w3_loc/ui/screens/home/home_screen.dart';
 import 'package:w3_loc/ui/screens/profile_screen.dart';
 import 'package:w3_loc/ui/screens/projects_list_screen.dart';
+import 'package:w3_loc/ui/screens/search_results_screen.dart';
 import '../ui/screens/auth/login_screen.dart';
 import '../ui/screens/auth/signup_screen.dart';
 import '../ui/screens/auth/forgot_password_screen.dart';
@@ -37,6 +38,8 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String providerProjects = '/provider-projects';
   static const String projectsList = '/projects-list';
+  static const String searchServices   = '/search-services';
+  static const String searchProjets   = '/search-projects';
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const HomeScreen(), 
@@ -55,8 +58,8 @@ class AppRoutes {
     editProfile: (context) => const EditProfileScreen(),
     providerProjects: (context) => const ProjectsListScreen(),
     disputes: (context) => const QuoteRequestsScreen(),
-
     projectsList: (context) => const ProjectsListScreen(),
+
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -97,17 +100,35 @@ class AppRoutes {
         return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
       case providerProjects:
         return MaterialPageRoute(builder: (context) => const ProjectsListScreen());
+        
       case serviceDetail:
         final serviceId = settings.arguments as int;
         final providerId = settings.arguments as int;
         return MaterialPageRoute(
           builder: (_) => ServiceDetailScreen(serviceId: serviceId ,providerId: providerId),
         );
+
       case providerDetail:
         final providerId = settings.arguments as int;
         return MaterialPageRoute(
           builder: (_) => ProviderDetailScreen(providerId: providerId),
         );
+
+      case searchServices:
+        final query = settings.arguments as String;
+        final type = settings.arguments as String;
+         return MaterialPageRoute(
+          builder: (_) => SearchResultsScreen(query: query ,type:type ),
+        );
+      
+      case searchProjets:
+        final query = settings.arguments as String;
+        final type = settings.arguments as String;
+         return MaterialPageRoute(
+          builder: (_) => SearchResultsScreen(query: query ,type:type ),
+        );
+        
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

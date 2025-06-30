@@ -94,8 +94,8 @@ class SideMenu extends StatelessWidget {
           
           // Photo de profil positionnée au-dessus du menu (dépassante)
           Positioned(
-            top: 50, // Position depuis le haut ajustée
-            left: -20, // Position moins négative pour être plus visible
+            top: 30, // Adjusting position to showcase half outside
+            left: -40, // More negative to push it left
             child: _buildProfileAvatar(context, user),
           ),
         ],
@@ -139,7 +139,7 @@ class SideMenu extends StatelessWidget {
         ],
       ),
       child: CircleAvatar(
-        radius: 30, // Réduit pour s'adapter au layout
+        radius: 36, // Réduit pour s'adapter au layout
         backgroundColor: Theme.of(context).primaryColor,
         backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
             ? NetworkImage(user.profilePicture!)
@@ -161,47 +161,44 @@ class SideMenu extends StatelessWidget {
   /// Informations utilisateur (email et badge uniquement)
   Widget _buildUserInfo(BuildContext context, User user) {
     return Padding(
-      padding: const EdgeInsets.only(left: 70.0, right: 24.0, top: 8.0), // Marge à gauche pour l'avatar
+      padding: const EdgeInsets.only(left: 70.0, right: 24.0, top: 32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Email et badge prestataire sur la même ligne
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Email de l'utilisateur
               Expanded(
                 child: Text(
                   user.email ?? 'user@example.com',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: Colors.grey[700],
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              
-              const SizedBox(width: 8),
-              
-              // Badge prestataire/client
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: user.role == 'provider' 
-                      ? const Color(0xFF142FE2).withOpacity(0.1)
-                      : Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  user.role == 'provider' ? 'Prestataire' : 'Client',
-                  style: TextStyle(
-                    color: user.role == 'provider' 
-                        ? const Color(0xFF142FE2)
-                        : Colors.green,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              const SizedBox(width: 12), // Adjust spacing
+              // Container(
+              //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              //   decoration: BoxDecoration(
+              //     color: user.role == 'provider' 
+              //         ? const Color(0xFF142FE2).withOpacity(0.1)
+              //         : Colors.green.withOpacity(0.1),
+              //     borderRadius: BorderRadius.circular(12),
+              //   ),
+              //   child: Text(
+              //     user.role == 'provider' ? 'Prestataire' : 'Client',
+              //     style: TextStyle(
+              //       color: user.role == 'provider' 
+              //           ? const Color(0xFF142FE2)
+              //           : Colors.green,
+              //       fontSize: 12, // Adjust font size
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ],

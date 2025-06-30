@@ -200,7 +200,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      currentIndex: 0, // Projets sélectionné
+      currentIndex: 1, // Projets sélectionné
       appBar: AppBar(
         title: const Text('Projets disponibles'),
         backgroundColor: Colors.white,
@@ -222,10 +222,10 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               child: _buildProjectsPromoCard(),
             ),
             
-            // Statistiques prestataire
-            SliverToBoxAdapter(
-              child: _buildProviderStatsSection(),
-            ),
+            // // Statistiques prestataire
+            // SliverToBoxAdapter(
+            //   child: _buildProviderStatsSection(),
+            // ),
             
             // Barre de recherche
             SliverToBoxAdapter(
