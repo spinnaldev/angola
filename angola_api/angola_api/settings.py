@@ -138,6 +138,23 @@ SIMPLE_JWT = {
 # Configuration CORS
 CORS_ALLOW_ALL_ORIGINS = True  # Pour le développement uniquement, limitez en production
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+)
+
 # Configuration du modèle utilisateur personnalisé
 # AUTH_USER_MODEL = 'api.User'
 

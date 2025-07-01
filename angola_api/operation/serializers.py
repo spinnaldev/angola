@@ -30,8 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
             else:
                 # Fallback si pas de request dans le contexte
                 # Remplacez par votre domaine de production
-                base_url = "http://10.0.2.2:8001"  # Pour l'émulateur Android
-                # base_url = "https://votre-domaine.com"  # Pour la production
+                # base_url = "http://10.0.2.2:8001"  # Pour l'émulateur Android
+                base_url = "https://angola.onrender.com/api"  # Pour la production
                 return f"{base_url}{obj.profile_picture.url}"
         return None
     
