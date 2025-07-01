@@ -138,22 +138,49 @@ SIMPLE_JWT = {
 # Configuration CORS
 CORS_ALLOW_ALL_ORIGINS = True  # Pour le développement uniquement, limitez en production
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = (
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
-)
-CORS_ALLOW_HEADERS = (
-    "accept",
-    "authorization",
-    "content-type",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-)
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'HEAD',  # Ajouté pour Flutter
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',
+    'pragma',
+    'expires',
+    'if-modified-since',
+    'content-disposition',
+    # Headers spécifiques pour mobile/Flutter
+    'x-forwarded-for',
+    'x-forwarded-proto',
+    'x-real-ip',
+]
+
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'content-length',
+    'content-disposition',
+    'cache-control',
+    'expires',
+    'pragma',
+]
+
+CORS_REPLACE_HTTPS_REFERER = True
+
+CORS_PREFLIGHT_MAX_AGE = 86400  
 
 # Configuration du modèle utilisateur personnalisé
 # AUTH_USER_MODEL = 'api.User'
