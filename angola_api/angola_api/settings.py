@@ -164,9 +164,9 @@ CORS_ALLOW_HEADERS = [
     'if-modified-since',
     'content-disposition',
     # Headers spécifiques pour mobile/Flutter
-    'x-forwarded-for',
-    'x-forwarded-proto',
-    'x-real-ip',
+    # 'x-forwarded-for',
+    # 'x-forwarded-proto',
+    # 'x-real-ip',
 ]
 
 CORS_EXPOSE_HEADERS = [
@@ -178,7 +178,6 @@ CORS_EXPOSE_HEADERS = [
     'pragma',
 ]
 
-CORS_REPLACE_HTTPS_REFERER = True
 
 CORS_PREFLIGHT_MAX_AGE = 86400  
 

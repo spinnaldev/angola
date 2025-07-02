@@ -480,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //           ));
     // }
   }
-
+  
   Future<void> _loadProviderStats() async {
     setState(() {
       _isLoadingStats = true;

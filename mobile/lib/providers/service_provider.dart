@@ -47,27 +47,75 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print("Venu récupéré les services");
+      print("🔄 Début récupération des services récents...");
+      
       final response = await http.get(
         Uri.parse('${_apiService.baseUrl}/services/recent/'),
         headers: await _apiService.getHeaders(requireAuth: false),
       );
 
+      print("📡 Statut réponse: ${response.statusCode}");
+      print("📄 Corps de la réponse: ${response.body}");
+
       if (response.statusCode == 200) {
-        print(response.body);
-        final List<dynamic> data = json.decode(response.body);
-        print(data);
+        final dynamic responseData = json.decode(response.body);
+        print("🔍 Données décodées: $responseData");
         
-        _recentServices = data.map((item) => Service.fromJson(item)).toList();
-        print("on a récupéré les services récent unh");
-        print(_recentServices);
+        // ✅ CORRECTION 1: Vérifier la structure de la réponse
+        List<dynamic> data;
+        
+        if (responseData is Map<String, dynamic>) {
+          // Si la réponse est paginée avec 'results'
+          data = responseData['results'] ?? [];
+          print("📋 Données dans 'results': ${data.length} éléments");
+        } else if (responseData is List) {
+          // Si la réponse est directement une liste
+          data = responseData;
+          print("📋 Données directes: ${data.length} éléments");
+        } else {
+          print("❌ Structure de réponse inattendue: ${responseData.runtimeType}");
+          data = [];
+        }
+
+        if (data.isNotEmpty) {
+          print("🔧 Premier élément pour debug: ${data.first}");
+          
+          // ✅ CORRECTION 2: Parser chaque service avec gestion d'erreur
+          _recentServices = [];
+          for (int i = 0; i < data.length; i++) {
+            try {
+              final service = Service.fromJson(data[i]);
+              _recentServices.add(service);
+              print("✅ Service $i parsé: ${service.title}");
+            } catch (e) {
+              print("❌ Erreur parsing service $i: $e");
+              print("📄 Données problématiques: ${data[i]}");
+              // Continuer avec les autres services
+            }
+          }
+          
+          print("🎉 Services récents récupérés: ${_recentServices.length}");
+          
+          // ✅ CORRECTION 3: Vérifier que _recentServices n'est pas vide après parsing
+          if (_recentServices.isEmpty && data.isNotEmpty) {
+            print("⚠️ Aucun service parsé malgré la présence de données");
+            _errorMessage = 'Erreur de format des données des services';
+          }
+        } else {
+          print("ℹ️ Aucun service récent disponible");
+          _recentServices = [];
+        }
       } else {
-        _errorMessage = 'Erreur lors du chargement des services récents';
+        print("❌ Erreur HTTP: ${response.statusCode}");
+        _errorMessage = 'Erreur ${response.statusCode} lors du chargement des services récents';
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      print("💥 Exception dans fetchRecentServices: $e");
+      _errorMessage = 'Erreur de connexion: ${e.toString()}';
+      _recentServices = []; // S'assurer que la liste est vide en cas d'erreur
     } finally {
       _isLoading = false;
+      print("🔄 Fin fetchRecentServices - Services: ${_recentServices.length}");
       notifyListeners();
     }
   }

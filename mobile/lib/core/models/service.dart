@@ -39,19 +39,37 @@ class Service {
 
   factory Service.fromJson(Map<String, dynamic> json) {
     List<GalleryImage> galleryImages = [];
-      if (json['gallery_images'] != null) {
-        galleryImages = (json['gallery_images'] as List)
-            .map((x) => GalleryImage.fromJson(x))
-            .toList();
-      }
-      
-      List<ServiceOption> options = [];
-      if (json['options'] != null) {
-        options = (json['options'] as List)
-            .map((x) => ServiceOption.fromJson(x))
-            .toList();
-      }
+    if (json['gallery_images'] != null) {
+      galleryImages = (json['gallery_images'] as List)
+          .map((x) => GalleryImage.fromJson(x))
+          .toList();
+    }
+    
+    List<ServiceOption> options = [];
+    if (json['options'] != null) {
+      options = (json['options'] as List)
+          .map((x) => ServiceOption.fromJson(x))
+          .toList();
+    }
 
+        double parsePrice(dynamic priceValue) {
+          if (priceValue == null) return 0.0;
+          
+          if (priceValue is double) {
+            return priceValue;
+          } else if (priceValue is int) {
+            return priceValue.toDouble();
+          } else if (priceValue is String) {
+            // ✅ CORRECTION PRINCIPALE : Parser le string en double
+            if (priceValue.isEmpty) return 0.0;
+            final parsed = double.tryParse(priceValue);
+            return parsed ?? 0.0;
+          } else {
+            print('⚠️ Type de prix inattendu: ${priceValue.runtimeType} - $priceValue');
+            return double.tryParse(priceValue.toString()) ?? 0.0;
+          }
+        }
+        
       // Parse rating avec validation
       double parseRating(dynamic ratingValue) {
         if (ratingValue == null) return 0.0;
@@ -84,7 +102,7 @@ class Service {
       reviewCount: parseReviewCount(json['review_count'] ?? json['reviews_count'] ?? json['total_reviews']),
       provider_id: json['provider_id'] ?? 0,
       businessType: json['business_type'] ?? 'Entreprise',
-      price: (json['price'] ?? 0.0).toDouble(),
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       priceType: json['price_type'] ?? 'quote',
       subcategoryId: json['subcategory'] ?? 0,
       categoryId: json['category_id'] ?? 0, 
