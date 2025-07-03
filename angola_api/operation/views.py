@@ -469,7 +469,6 @@ class UserViewSet(viewsets.ModelViewSet):
             "user": response_serializer.data
         })
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_profile_stats(request):
@@ -481,33 +480,99 @@ def get_profile_stats(request):
     if user.role == 'provider':
         # Statistiques pour prestataire
         provider = user.provider_profile
-        services_count = provider.provider_services.count()
-        reviews_count = provider.reviews_received.count()
-        avg_rating = provider.avg_rating
-        total_quotes = provider.quote_requests.count()
-        pending_quotes = provider.quote_requests.filter(status='pending').count()
+        
+        # Calculer les prestations de ce mois
+        from django.utils import timezone
+        from datetime import datetime
+        current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Prestations terminées ce mois
+        prestations_completed_this_month = provider.quote_requests.filter(
+            status='completed',
+            completed_at__gte=current_month
+        ).count()
+        
+        # Prestations en cours
+        prestations_in_progress = provider.quote_requests.filter(
+            status__in=['accepted', 'in_progress']
+        ).count()
+        
+        # Messages non lus (supposant un modèle Message)
+        try:
+            from operation.models import Message, Conversation
+            unread_messages = Message.objects.filter(
+                conversation__provider=provider,
+                is_read=False
+            ).exclude(sender=user).count()
+        except:
+            unread_messages = 0
+        
+        # Revenus de ce mois (supposant un champ price dans QuoteRequest)
+        try:
+            total_earnings_this_month = provider.quote_requests.filter(
+                status='completed',
+                completed_at__gte=current_month
+            ).aggregate(
+                total=models.Sum('price')
+            )['total'] or 0.0
+        except:
+            total_earnings_this_month = 0.0
+        
+        # Note moyenne et total des avis
+        avg_rating = provider.avg_rating or 0.0
+        total_reviews = provider.reviews_received.count()
         
         stats = {
             'user_type': 'provider',
-            'services_count': services_count,
-            'reviews_count': reviews_count,
+            'prestations_completed_this_month': prestations_completed_this_month,
+            'prestations_in_progress': prestations_in_progress,
+            'unread_messages': unread_messages,
+            'total_earnings_this_month': float(total_earnings_this_month),
             'avg_rating': float(avg_rating),
-            'total_quotes': total_quotes,
-            'pending_quotes': pending_quotes,
+            'total_reviews': total_reviews,
+            
+            # Garder les anciennes données pour compatibilité
+            'services_count': provider.provider_services.count(),
+            'reviews_count': total_reviews,
+            'total_quotes': provider.quote_requests.count(),
+            'pending_quotes': provider.quote_requests.filter(status='pending').count(),
         }
     else:
         # Statistiques pour client
-        total_projects = user.quote_requests.count()
-        pending_projects = user.quote_requests.filter(status='pending').count()
-        completed_projects = user.quote_requests.filter(status='completed').count()
+        from django.utils import timezone
+        current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        total_projects = user.client_projects.count()
+        active_projects = user.client_projects.filter(status='open').count()
+        completed_projects = user.client_projects.filter(status='completed').count()
         reviews_given = user.reviews_given.count()
+        
+        # Messages non lus pour client
+        try:
+            from operation.models import Message, Conversation
+            unread_messages = Message.objects.filter(
+                conversation__client=user,
+                is_read=False
+            ).exclude(sender=user).count()
+        except:
+            unread_messages = 0
+        
+        # Projets créés ce mois
+        projects_this_month = user.client_projects.filter(
+            created_at__gte=current_month
+        ).count()
         
         stats = {
             'user_type': 'client',
             'total_projects': total_projects,
-            'pending_projects': pending_projects,
+            'active_projects': active_projects,
             'completed_projects': completed_projects,
             'reviews_given': reviews_given,
+            'unread_messages': unread_messages,
+            'projects_this_month': projects_this_month,
+            
+            # Garder les anciennes données pour compatibilité
+            'pending_projects': user.client_projects.filter(status='open').count(),
         }
     
     return Response(stats)
@@ -1249,7 +1314,8 @@ class CertificateViewSet(viewsets.ModelViewSet):
         certificates = Certificate.objects.filter(provider=user.provider_profile)
         serializer = self.get_serializer(certificates, many=True)
         return Response(serializer.data)
-
+    
+    
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -1259,7 +1325,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     filterset_fields = ['provider', 'service']
     
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action in ['list', 'retrieve', 'top_reviews']:
             return [AllowAny()]
         return [IsAuthenticated()]
     
@@ -1293,18 +1359,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
-    
     def top_reviews(self, request):
-        """Endpoint pour récupérer les avis les mieux notés"""
+        """Endpoint public pour récupérer les avis les mieux notés"""
         from django.db.models import Q
         queryset = Review.objects.filter(
             Q(overall_rating__gte=4.0) & Q(is_verified=True)
         ).order_by('-overall_rating', '-created_at')[:10]
         
         serializer = self.get_serializer(queryset, many=True)
-        print("les reviews sont:")
-        print(serializer.data)
         return Response(serializer.data)
+    
 
     # @action(detail=False, methods=['get'])
     # def top_reviews(self, request):

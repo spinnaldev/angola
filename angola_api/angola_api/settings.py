@@ -145,38 +145,38 @@ CORS_ALLOW_METHODS = [
     'PATCH',
     'POST',
     'PUT',
-    'HEAD',  # Ajouté pour Flutter
+    # 'HEAD',  # Ajouté pour Flutter
 ]
 
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-    'cache-control',
-    'pragma',
-    'expires',
-    'if-modified-since',
-    'content-disposition',
-    # Headers spécifiques pour mobile/Flutter
-    # 'x-forwarded-for',
-    # 'x-forwarded-proto',
-    # 'x-real-ip',
-]
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+#     'cache-control',
+#     'pragma',
+#     'expires',
+#     'if-modified-since',
+#     'content-disposition',
+#     # Headers spécifiques pour mobile/Flutter
+#     'x-forwarded-for',
+#     'x-forwarded-proto',
+#     'x-real-ip',
+# ]
 
-CORS_EXPOSE_HEADERS = [
-    'content-type',
-    'content-length',
-    'content-disposition',
-    'cache-control',
-    'expires',
-    'pragma',
-]
+# CORS_EXPOSE_HEADERS = [
+#     'content-type',
+#     'content-length',
+#     'content-disposition',
+#     'cache-control',
+#     'expires',
+#     'pragma',
+# ]
 
 
 CORS_PREFLIGHT_MAX_AGE = 86400  

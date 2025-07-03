@@ -3202,6 +3202,8 @@ class ApiService {
     try {
       final data =
           await _apiClient.get('providers/recent_projects/', requireAuth: true);
+      print("Côté API on a :");
+      print(data);
       return data ?? {'results': []};
     } catch (e) {
       print('❌ Erreur dans getProviderRecentProjects: $e');
@@ -3285,48 +3287,49 @@ class ApiService {
 
   Future<List<Message>> getMessages(int conversationId) async {
     try {
-      print('💬 Récupération des messages pour la conversation $conversationId...');
+      print(
+          '💬 Récupération des messages pour la conversation $conversationId...');
 
       final userId = await getCurrentUserId();
       print('👤 User ID récupéré: $userId');
-      
+
       // ✅ SOLUTION 1: Utiliser l'endpoint qui requiert user_id (pour compatibilité)
       final data = await _apiClient.get(
-        'conversations/$conversationId/messages/?user_id=$userId',
-        requireAuth: true
-      );
+          'conversations/$conversationId/messages/?user_id=$userId',
+          requireAuth: true);
 
       final List<dynamic> messagesData = data['results'] ?? data ?? [];
-      final messages = messagesData.map((item) => Message.fromJson(item, userId)).toList();
+      final messages =
+          messagesData.map((item) => Message.fromJson(item, userId)).toList();
 
       print('✅ Messages récupérés: ${messages.length}');
       return messages;
-      
     } catch (e) {
       print('❌ Erreur dans getMessages: $e');
-      
+
       // Si l'erreur contient "user_id est requis", réessayer différemment
       if (e.toString().contains('user_id est requis')) {
         try {
           print('🔄 Réessai avec user_id dans les paramètres...');
           final userId = await getCurrentUserId();
-          
+
           // Essayer avec user_id dans l'URL
           final data = await _apiClient.get(
-            'conversations/$conversationId/messages/?user_id=$userId',
-            requireAuth: true
-          );
-          
+              'conversations/$conversationId/messages/?user_id=$userId',
+              requireAuth: true);
+
           final List<dynamic> messagesData = data['results'] ?? data ?? [];
-          final messages = messagesData.map((item) => Message.fromJson(item, userId)).toList();
-          
+          final messages = messagesData
+              .map((item) => Message.fromJson(item, userId))
+              .toList();
+
           return messages;
         } catch (e2) {
           print('❌ Erreur finale getMessages: $e2');
           return [];
         }
       }
-      
+
       return [];
     }
   }
@@ -3688,26 +3691,25 @@ class ApiService {
 
   // 🎯 NOUVELLE MÉTHODE pour contacter le propriétaire d'un projet
   Future<Map<String, dynamic>> startConversationFromProject(
-    int projectId, 
+    int projectId,
     String? initialMessage,
   ) async {
     try {
       print('🚀 Démarrage conversation depuis projet $projectId...');
-      
+
       final data = {
         'project_id': projectId,
-        if (initialMessage?.isNotEmpty == true) 'initial_message': initialMessage,
+        if (initialMessage?.isNotEmpty == true)
+          'initial_message': initialMessage,
       };
-      
+
       final response = await _apiClient.post(
-        'conversations/start_conversation_from_project/', 
-        data: data, 
-        requireAuth: true
-      );
-      
+          'conversations/start_conversation_from_project/',
+          data: data,
+          requireAuth: true);
+
       print('✅ Conversation depuis projet démarrée avec succès');
       return response;
-      
     } catch (e) {
       print('❌ Erreur démarrage conversation depuis projet: $e');
       throw Exception('Impossible de démarrer la conversation: $e');

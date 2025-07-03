@@ -723,6 +723,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 CustomTextField(
                   controller: _phoneController,
                   labelText: 'Numéro de téléphone',
+                  keyboardType: TextInputType.number,
                   hintText: 'Votre numéro de téléphone',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
