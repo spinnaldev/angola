@@ -122,7 +122,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               const SizedBox(height: 24),
               _buildAttachmentsSection(),
               const SizedBox(height: 24),
-              _buildContactPreferencesSection(),
+              // _buildContactPreferencesSection(),
               const SizedBox(height: 32),
             ],
           ),
@@ -245,29 +245,29 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
             );
           },
         ),
-        const SizedBox(height: 16),
-        Consumer<SubcategoryProvider>(
-          builder: (context, subcategoryProvider, child) {
-            return DropdownButtonFormField<Subcategory>(
-              value: _selectedSubcategory,
-              decoration: const InputDecoration(
-                labelText: 'Sous-catégorie (optionnel)',
-                border: OutlineInputBorder(),
-              ),
-              items: subcategoryProvider.subcategories.map((subcategory) {
-                return DropdownMenuItem(
-                  value: subcategory,
-                  child: Text(subcategory.name),
-                );
-              }).toList(),
-              onChanged: (Subcategory? value) {
-                setState(() {
-                  _selectedSubcategory = value;
-                });
-              },
-            );
-          },
-        ),
+        // const SizedBox(height: 16),
+        // Consumer<SubcategoryProvider>(
+        //   builder: (context, subcategoryProvider, child) {
+        //     return DropdownButtonFormField<Subcategory>(
+        //       value: _selectedSubcategory,
+        //       decoration: const InputDecoration(
+        //         labelText: 'Sous-catégorie (optionnel)',
+        //         border: OutlineInputBorder(),
+        //       ),
+        //       items: subcategoryProvider.subcategories.map((subcategory) {
+        //         return DropdownMenuItem(
+        //           value: subcategory,
+        //           child: Text(subcategory.name),
+        //         );
+        //       }).toList(),
+        //       onChanged: (Subcategory? value) {
+        //         setState(() {
+        //           _selectedSubcategory = value;
+        //         });
+        //       },
+        //     );
+        //   },
+        // ),
       ],
     );
   }
@@ -501,12 +501,12 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         const SizedBox(height: 16),
         _buildAttachmentTile(
             'Fichier 1', _attachment1, (file) => _attachment1 = file),
-        const SizedBox(height: 8),
-        _buildAttachmentTile(
-            'Fichier 2', _attachment2, (file) => _attachment2 = file),
-        const SizedBox(height: 8),
-        _buildAttachmentTile(
-            'Fichier 3', _attachment3, (file) => _attachment3 = file),
+        // const SizedBox(height: 8),
+        // _buildAttachmentTile(
+        //     'Fichier 2', _attachment2, (file) => _attachment2 = file),
+        // const SizedBox(height: 8),
+        // _buildAttachmentTile(
+        //     'Fichier 3', _attachment3, (file) => _attachment3 = file),
       ],
     );
   }
@@ -554,46 +554,46 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     );
   }
 
-  Widget _buildContactPreferencesSection() {
-    return _buildSection(
-      title: 'Préférences de contact',
-      children: [
-        CheckboxListTile(
-          title: const Text('Messagerie privée de la plateforme'),
-          subtitle: const Text('Recommandé pour la sécurité'),
-          value: _contactViaPlatform,
-          onChanged: (bool? value) {
-            setState(() {
-              _contactViaPlatform = value ?? true;
-            });
-          },
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        CheckboxListTile(
-          title: const Text('Afficher mon adresse email'),
-          subtitle: const Text('(sera affiché aux prestataires)'),
-          value: _showEmail,
-          onChanged: (bool? value) {
-            setState(() {
-              _showEmail = value ?? false;
-            });
-          },
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        CheckboxListTile(
-          title: const Text('Afficher mon numéro de téléphone'),
-          subtitle: const Text('(sera affiché aux prestataires)'),
-          value: _showPhone,
-          onChanged: (bool? value) {
-            setState(() {
-              _showPhone = value ?? false;
-            });
-          },
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-      ],
-    );
-  }
+  // Widget _buildContactPreferencesSection() {
+  //   return _buildSection(
+  //     title: 'Préférences de contact',
+  //     children: [
+  //       CheckboxListTile(
+  //         title: const Text('Messagerie privée de la plateforme'),
+  //         subtitle: const Text('Recommandé pour la sécurité'),
+  //         value: _contactViaPlatform,
+  //         onChanged: (bool? value) {
+  //           setState(() {
+  //             _contactViaPlatform = value ?? true;
+  //           });
+  //         },
+  //         controlAffinity: ListTileControlAffinity.leading,
+  //       ),
+  //       CheckboxListTile(
+  //         title: const Text('Afficher mon adresse email'),
+  //         subtitle: const Text('(sera affiché aux prestataires)'),
+  //         value: _showEmail,
+  //         onChanged: (bool? value) {
+  //           setState(() {
+  //             _showEmail = value ?? false;
+  //           });
+  //         },
+  //         controlAffinity: ListTileControlAffinity.leading,
+  //       ),
+  //       CheckboxListTile(
+  //         title: const Text('Afficher mon numéro de téléphone'),
+  //         subtitle: const Text('(sera affiché aux prestataires)'),
+  //         value: _showPhone,
+  //         onChanged: (bool? value) {
+  //           setState(() {
+  //             _showPhone = value ?? false;
+  //           });
+  //         },
+  //         controlAffinity: ListTileControlAffinity.leading,
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildSection(
       {required String title, required List<Widget> children}) {

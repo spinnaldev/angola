@@ -149,100 +149,162 @@ class ClientProject {
       // Gestion des compétences requises
       List<String> skillsList = [];
       if (json['required_skills'] != null) {
-        if (json['required_skills'] is List) {
-          skillsList = List<String>.from(
-            json['required_skills'].map((skill) {
-              if (skill is Map<String, dynamic>) {
-                return skill['name']?.toString() ?? '';
+        try {
+          if (json['required_skills'] is List) {
+            final rawSkills = json['required_skills'] as List;
+            
+            // CORRECTION : Utiliser une boucle for au lieu de where() pour éviter l'erreur de type
+            for (var skill in rawSkills) {
+              String skillName = '';
+              if (skill is Map<String, dynamic> && skill.containsKey('name')) {
+                skillName = skill['name']?.toString() ?? '';
+              } else if (skill is String) {
+                skillName = skill;
               } else {
-                return skill.toString();
+                skillName = skill.toString();
               }
-            }).where((skill) => skill.isNotEmpty),
-          );
+              
+              // Ajouter seulement si non vide
+              if (skillName.isNotEmpty) {
+                skillsList.add(skillName);
+              }
+            }
+          }
+        } catch (e) {
+          print('❌ Erreur parsing required_skills: $e');
+          skillsList = [];
         }
       }
 
       // Gestion des attachments
       List<Map<String, String>>? attachmentsList;
-      if (json['attachments'] != null && json['attachments'] is List) {
-        try {
-          attachmentsList = List<Map<String, String>>.from(
-            json['attachments'].map((attachment) => Map<String, String>.from(attachment))
-          );
-        } catch (e) {
-          print('❌ Erreur parsing attachments: $e');
-          attachmentsList = null;
+        if (json['attachments'] != null && json['attachments'] is List) {
+          try {
+            attachmentsList = List<Map<String, String>>.from(
+              json['attachments'].map((attachment) => Map<String, String>.from(attachment))
+            );
+          } catch (e) {
+            print('❌ Erreur parsing attachments: $e');
+            attachmentsList = null;
+          }
         }
-      }
 
-      return ClientProject(
-        id: json['id'] ?? 0,
-        title: json['title'] ?? '',
-        description: json['description'] ?? '',
-        client: json['client'] != null ? User.fromJson(json['client']) : null,
-        clientName: json['client_name'] ?? 'Client anonyme',
-        category: json['category'] != null ? Category.fromJson(json['category']) : null,
-        categoryName: json['category_name'] ?? '',
-        subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
-        subcategoryName: json['subcategory_name'] ?? '',
-        budgetRange: json['budget_range'] ?? '',
-        minBudget: _parseDoubleFromDynamic(json['min_budget']),
-        maxBudget: _parseDoubleFromDynamic(json['max_budget']),
-        budgetDisplay: json['budget_display'] ?? '',
-        location: json['location'] ?? '',
-        remotePossible: json['remote_possible'] ?? false,
-        deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'].toString()) : null,
-        urgency: json['urgency'] ?? 'medium',
-        status: json['status'] ?? 'open',
-        contactViaPlatform: json['contact_via_platform'] ?? true,
-        showEmail: json['show_email'] ?? false,
-        showPhone: json['show_phone'] ?? false,
-        requiredSkills: skillsList,
-        offersCount: json['offers_count'] ?? 0,
-        viewsCount: json['views_count'] ?? 0,
-        createdAt: json['created_at'] != null 
-            ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
-            : DateTime.now(),
-        timeSincePosted: json['time_since_posted'],
-        // CORRECTION PRINCIPALE : Valeurs par défaut explicites pour éviter les erreurs de type
-        isFavorited: _parseBoolSafely(json['is_favorited']) ?? false,
-        hasUserOffered: _parseBoolSafely(json['has_user_offered']) ?? false,
-        attachment1: json['attachment1'],
-        attachment2: json['attachment2'],
-        attachment3: json['attachment3'],
-        attachments: attachmentsList,
-      );
-    } catch (e) {
-      print('❌ Erreur critique dans ClientProject.fromJson: $e');
-      print('Données JSON problématiques: $json');
-      rethrow;
+        Category? categoryObject;
+        if (json['category'] != null) {
+          if (json['category'] is Map<String, dynamic>) {
+            // Si c'est un objet complet
+            categoryObject = Category.fromJson(json['category']);
+          } else {
+            // Si c'est juste un ID, créer un objet Category minimal
+            categoryObject = Category(
+              id: json['category'] is int ? json['category'] : int.tryParse(json['category'].toString()) ?? 0,
+              name: json['category_name'] ?? 'Catégorie',
+              imageUrl: '',
+              description: '',
+              icon: '',
+            );
+          }
+        }
+
+        Subcategory? subcategoryObject;
+        if (json['subcategory'] != null) {
+          if (json['subcategory'] is Map<String, dynamic>) {
+            // Si c'est un objet complet
+            subcategoryObject = Subcategory.fromJson(json['subcategory']);
+          } else {
+            // Si c'est juste un ID, créer un objet Subcategory minimal
+            subcategoryObject = Subcategory(
+              id: json['subcategory'] is int ? json['subcategory'] : int.tryParse(json['subcategory'].toString()) ?? 0,
+              name: json['subcategory_name'] ?? 'Sous-catégorie',
+              description: '',
+              categoryId: categoryObject?.id ?? 0,
+            );
+          }
+        }
+        
+        return ClientProject(
+          id: json['id'] ?? 0,
+          title: json['title'] ?? '',
+          description: json['description'] ?? '',
+          client: json['client'] != null ? User.fromJson(json['client']) : null,
+          clientName: json['client_name'] ?? 'Client anonyme',
+          category: categoryObject,
+          // category: json['category'] != null ? Category.fromJson(json['category']) : null,
+          categoryName: json['category_name'] ?? '',
+          // subcategory: json['subcategory'] != null ? Subcategory.fromJson(json['subcategory']) : null,
+          subcategory: subcategoryObject,
+          subcategoryName: json['subcategory_name'] ?? '',
+          budgetRange: json['budget_range'] ?? '',
+          minBudget: _parseDoubleFromDynamic(json['min_budget']),
+          maxBudget: _parseDoubleFromDynamic(json['max_budget']),
+          budgetDisplay: json['budget_display'] ?? '',
+          location: json['location'] ?? '',
+          remotePossible: _parseBoolSafely(json['remote_possible']) ?? false,
+          deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'].toString()) : null,
+          urgency: json['urgency'] ?? 'medium',
+          status: json['status'] ?? 'open',
+          contactViaPlatform: _parseBoolSafely(json['contact_via_platform']) ?? true,
+          showEmail: _parseBoolSafely(json['show_email']) ?? false,
+          showPhone: _parseBoolSafely(json['show_phone']) ?? false,
+          requiredSkills: skillsList,
+          offersCount: json['offers_count'] ?? 0,
+          viewsCount: json['views_count'] ?? 0,
+          createdAt: json['created_at'] != null 
+              ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
+          timeSincePosted: json['time_since_posted'],
+          isFavorited: _parseBoolSafely(json['is_favorited']) ?? false,
+          hasUserOffered: _parseBoolSafely(json['has_user_offered']) ?? false,
+          attachment1: json['attachment1'],
+          attachment2: json['attachment2'],
+          attachment3: json['attachment3'],
+          attachments: attachmentsList,
+        );
+      } catch (e) {
+        print('❌ Erreur critique dans ClientProject.fromJson: $e');
+        print('Données JSON problématiques: $json');
+        rethrow;
+      }
     }
-  }
 
   // Méthode utilitaire pour parser les booléens de manière sécurisée
   static bool? _parseBoolSafely(dynamic value) {
     if (value == null) return null;
     if (value is bool) return value;
     if (value is String) {
-      final lowerValue = value.toLowerCase().trim();
-      if (lowerValue == 'true' || lowerValue == '1') return true;
-      if (lowerValue == 'false' || lowerValue == '0') return false;
-      return null;
+      final lowerValue = value.toLowerCase();
+      return lowerValue == 'true' || lowerValue == '1' || lowerValue == 'yes';
     }
-    if (value is int) return value != 0;
-    if (value is double) return value != 0.0;
+    if (value is int) return value == 1;
+    if (value is double) return value == 1.0;
     
-    // Si c'est un autre type, essayer de le convertir en string puis parser
-    try {
-      final stringValue = value.toString().toLowerCase().trim();
-      if (stringValue == 'true' || stringValue == '1') return true;
-      if (stringValue == 'false' || stringValue == '0') return false;
-    } catch (e) {
-      print('⚠️ Impossible de parser la valeur booléenne: $value (${value.runtimeType})');
-    }
-    
-    return null;
+    // Par défaut, retourner false pour les valeurs inattendues
+    print('⚠️ Valeur booléenne inattendue: $value (${value.runtimeType})');
+    return false;
   }
+  // static bool? _parseBoolSafely(dynamic value) {
+  //   if (value == null) return null;
+  //   if (value is bool) return value;
+  //   if (value is String) {
+  //     final lowerValue = value.toLowerCase().trim();
+  //     if (lowerValue == 'true' || lowerValue == '1') return true;
+  //     if (lowerValue == 'false' || lowerValue == '0') return false;
+  //     return null;
+  //   }
+  //   if (value is int) return value != 0;
+  //   if (value is double) return value != 0.0;
+    
+  //   // Si c'est un autre type, essayer de le convertir en string puis parser
+  //   try {
+  //     final stringValue = value.toString().toLowerCase().trim();
+  //     if (stringValue == 'true' || stringValue == '1') return true;
+  //     if (stringValue == 'false' || stringValue == '0') return false;
+  //   } catch (e) {
+  //     print('⚠️ Impossible de parser la valeur booléenne: $value (${value.runtimeType})');
+  //   }
+    
+  //   return null;
+  // }
 
   static double? _parseDoubleFromDynamic(dynamic value) {
     if (value == null) return null;
@@ -256,11 +318,11 @@ class ClientProject {
         if (value.isEmpty) return null;
         return double.parse(value);
       } else {
-        print('⚠️ Type inattendu pour budget: ${value.runtimeType} - $value');
+        print('⚠️ Type inattendu pour nombre: ${value.runtimeType} - $value');
         return double.tryParse(value.toString());
       }
     } catch (e) {
-      print('❌ Erreur parsing budget: $e pour valeur: $value');
+      print('❌ Erreur parsing nombre: $e pour valeur: $value');
       return null;
     }
   }
