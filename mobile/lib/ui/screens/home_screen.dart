@@ -23,7 +23,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatefulWidget  {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
   List<Service> _nearbyServices = [];
   List<Service> _topRatedServices = [];
   List<Service> _featuredServices = [];
+  bool _hasFetchedReviews = false;
 
   // Variables pour les projets (mode prestataire)
   List<ClientProject> _recentProjects = [];
@@ -68,6 +69,17 @@ class _HomeScreenState extends State<HomeScreen>
     'Expertise comptable',
     'Coaching sportif',
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasFetchedReviews) {
+      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+      reviewProvider.fetchTopReviews();
+      _hasFetchedReviews = true;
+    }
+  }
+
 
   @override
   void initState() {
@@ -1903,9 +1915,9 @@ class _HomeScreenState extends State<HomeScreen>
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
         // Load reviews if they're empty and not already loading
-        if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
-          reviewProvider.fetchTopReviews();
-        }
+        // if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
+        //   reviewProvider.fetchTopReviews();
+        // }
 
         final reviews = reviewProvider.topReviews;
         print("Reviews loaded: ${reviews.length}");
