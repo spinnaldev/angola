@@ -13,23 +13,22 @@ import '../screens/profile_screen.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
+  final bool allowOverflow;
 
-  const SideMenu({
-    Key? key,
-    required this.onClose,
-  }) : super(key: key);
+  const SideMenu({Key? key, required this.onClose, this.allowOverflow = false})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
-        
+
         return Container(
           color: Colors.white,
-          child: user != null 
-            ? _buildAuthenticatedMenu(context, user)
-            : _buildGuestMenu(context),
+          child: user != null
+              ? _buildAuthenticatedMenu(context, user)
+              : _buildGuestMenu(context),
         );
       },
     );
@@ -38,65 +37,80 @@ class SideMenu extends StatelessWidget {
   /// Menu pour les utilisateurs connectés
   Widget _buildAuthenticatedMenu(BuildContext context, User user) {
     return SafeArea(
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Contenu principal du menu
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // En-tête avec bouton fermer
-              _buildHeader(context),
-              
-              // Espace pour la photo de profil qui dépasse
-              const SizedBox(height: 50), // Réduit pour s'adapter
-              
-              // Informations utilisateur (nom, email, badge)
-              _buildUserInfo(context, user),
-              
-              // Menu principal selon le profil actuel
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 20), // Réduit de 32 à 20
-                        
-                        if (ProfileManager.isProviderMode()) ...[
-                          _buildProviderMenu(context),
-                        ] else ...[
-                          _buildClientMenu(context),
-                        ],
-                        
-                        const SizedBox(height: 16), // Réduit de 24 à 16
-                        
-                        // Menu commun à tous les profils
-                        _buildCommonMenu(context),
-                        
-                        const SizedBox(height: 16), // Réduit de 24 à 16
-                        
-                        // Section Profil et Compte
-                        _buildProfileSection(context),
-                      ],
+          // En-tête avec bouton fermer
+          _buildHeader(context),
+          
+          // Section avec photo - CONDITION ici
+          Container(
+            height: 100,
+            child: allowOverflow 
+              ? Stack( // Menu ouvert : avec débordement
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Photo débordante
+                    Positioned(
+                      left: -35,
+                      top: 10,
+                      child: _buildProfileAvatar(context, user),
                     ),
-                  ),
+                    // Email aligné
+                    Positioned(
+                      top: 30,
+                      left: 45,
+                      right: 24,
+                      child: _buildUserInfo(context, user),
+                    ),
+                  ],
+                )
+              : Row( // Menu fermé : sans débordement
+                  children: [
+                    const SizedBox(width: 24),
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: _buildProfileAvatar(context, user),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 30, right: 24),
+                        child: _buildUserInfo(context, user),
+                      ),
+                    ),
+                  ],
+                ),
+          ),
+
+          // Menu principal selon le profil actuel
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    if (ProfileManager.isProviderMode()) ...[
+                      _buildProviderMenu(context),
+                    ] else ...[
+                      _buildClientMenu(context),
+                    ],
+                    const SizedBox(height: 16),
+                    _buildCommonMenu(context),
+                    const SizedBox(height: 16),
+                    _buildProfileSection(context),
+                  ],
                 ),
               ),
-              
-              // Menu de bas de page
-              Padding(
-                padding: const EdgeInsets.only(left: 24.0, bottom: 24.0),
-                child: _buildBottomMenu(context),
-              ),
-            ],
+            ),
           ),
-          
-          // Photo de profil positionnée au-dessus du menu (dépassante)
-          Positioned(
-            top: 30, // Adjusting position to showcase half outside
-            left: -40, // More negative to push it left
-            child: _buildProfileAvatar(context, user),
+
+          // Menu de bas de page
+          Padding(
+            padding: const EdgeInsets.only(left: 24.0, bottom: 24.0),
+            child: _buildBottomMenu(context),
           ),
         ],
       ),
@@ -127,7 +141,7 @@ class SideMenu extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(
           color: Colors.white,
-          width: 4,
+          width: 3,
         ),
         boxShadow: [
           BoxShadow(
@@ -139,14 +153,17 @@ class SideMenu extends StatelessWidget {
         ],
       ),
       child: CircleAvatar(
-        radius: 36, // Réduit pour s'adapter au layout
+        radius: 35, // Taille optimale pour l'effet à cheval
         backgroundColor: Theme.of(context).primaryColor,
-        backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
-            ? NetworkImage(user.profilePicture!)
-            : null,
+        backgroundImage:
+            user.profilePicture != null && user.profilePicture!.isNotEmpty
+                ? NetworkImage(user.profilePicture!)
+                : null,
         child: user.profilePicture == null || user.profilePicture!.isEmpty
             ? Text(
-                user.fullName?.isNotEmpty == true ? user.fullName![0].toUpperCase() : 'U',
+                user.fullName?.isNotEmpty == true
+                    ? user.fullName![0].toUpperCase()
+                    : 'U',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -160,49 +177,14 @@ class SideMenu extends StatelessWidget {
 
   /// Informations utilisateur (email et badge uniquement)
   Widget _buildUserInfo(BuildContext context, User user) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 70.0, right: 24.0, top: 32.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  user.email ?? 'user@example.com',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12), // Adjust spacing
-              // Container(
-              //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              //   decoration: BoxDecoration(
-              //     color: user.role == 'provider' 
-              //         ? const Color(0xFF142FE2).withOpacity(0.1)
-              //         : Colors.green.withOpacity(0.1),
-              //     borderRadius: BorderRadius.circular(12),
-              //   ),
-              //   child: Text(
-              //     user.role == 'provider' ? 'Prestataire' : 'Client',
-              //     style: TextStyle(
-              //       color: user.role == 'provider' 
-              //           ? const Color(0xFF142FE2)
-              //           : Colors.green,
-              //       fontSize: 12, // Adjust font size
-              //       fontWeight: FontWeight.w600,
-              //     ),
-              //   ),
-              // ),
-            ],
-          ),
-        ],
+    return Text(
+      user.email ?? 'user@example.com',
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.grey[700],
+        fontWeight: FontWeight.w500,
       ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -223,7 +205,6 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
-
         _buildMenuItem(
           context,
           icon: Icons.home_repair_service_outlined,
@@ -261,17 +242,6 @@ class SideMenu extends StatelessWidget {
             Navigator.pushNamed(context, '/');
           },
         ),
-        // _buildMenuItem(
-        //   context,
-        //   icon: Icons.analytics_outlined,
-        //   text: 'Statistiques',
-        //   onTap: () {
-        //     onClose();
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       const SnackBar(content: Text('Statistiques - À venir')),
-        //     );
-        //   },
-        // ),
       ],
     );
   }
@@ -287,7 +257,8 @@ class SideMenu extends StatelessWidget {
           text: 'Accueil',
           onTap: () {
             onClose();
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            Navigator.pushNamedAndRemoveUntil(
+                context, '/home', (route) => false);
           },
         ),
         _buildMenuItem(
@@ -362,7 +333,9 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.gavel,
-          text: ProfileManager.isProviderMode() ? 'Mes réclamations' : 'Mes litiges',
+          text: ProfileManager.isProviderMode()
+              ? 'Mes réclamations'
+              : 'Mes litiges',
           onTap: () {
             onClose();
             Navigator.push(
@@ -431,7 +404,8 @@ class SideMenu extends StatelessWidget {
           text: 'Déconnexion',
           onTap: () async {
             onClose();
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
             await authProvider.logout();
             if (context.mounted) {
               Navigator.pushNamedAndRemoveUntil(
@@ -454,7 +428,7 @@ class SideMenu extends StatelessWidget {
         children: [
           // En-tête avec bouton de fermeture
           _buildHeader(context),
-          
+
           // Options de menu pour les invités
           Expanded(
             child: Padding(
@@ -470,10 +444,7 @@ class SideMenu extends StatelessWidget {
                     onTap: () {
                       onClose();
                       Navigator.pushNamedAndRemoveUntil(
-                        context, 
-                        '/home', 
-                        (route) => false
-                      );
+                          context, '/home', (route) => false);
                     },
                   ),
                   _buildMenuItem(
@@ -485,13 +456,13 @@ class SideMenu extends StatelessWidget {
                       Navigator.pushNamed(context, '/explore');
                     },
                   ),
-                  
+
                   const Spacer(),
                 ],
               ),
             ),
           ),
-          
+
           // Boutons de connexion/inscription
           Padding(
             padding: const EdgeInsets.all(24.0),
@@ -537,7 +508,8 @@ class SideMenu extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0), // Réduit de 16 à 12
+        padding:
+            const EdgeInsets.symmetric(vertical: 12.0), // Réduit de 16 à 12
         child: Row(
           children: [
             Icon(

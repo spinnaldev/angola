@@ -181,15 +181,17 @@ class _BaseScreenState extends State<BaseScreen> {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            right: _isMenuOpen ? 0 : -menuWidth, // Position depuis la droite
+            right: _isMenuOpen ? 0 : -menuWidth, 
             top: 0,
             bottom: 0,
             width: menuWidth,
             child: GestureDetector(
-              // Empêche les taps sur le menu de fermer la superposition
               onTap: () {},
               child: isLoggedIn
-                  ? SideMenu(onClose: _closeMenu)
+                  ? SideMenu(
+                      onClose: _closeMenu,
+                      allowOverflow: _isMenuOpen, // ← PASSER LA CONDITION ICI
+                    )
                   : _buildGuestMenu(),
             ),
           ),
