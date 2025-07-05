@@ -1,4 +1,4 @@
-package com.example.w3_loc
+package com.example.teyago
 
 import io.flutter.embedding.android.FlutterActivity
 

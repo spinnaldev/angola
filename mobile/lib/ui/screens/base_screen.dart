@@ -1,7 +1,7 @@
 // lib/ui/screens/base_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:w3_loc/ui/screens/projects_list_screen.dart';
+import 'package:teyago/ui/screens/projects_list_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../widgets/side_menu.dart';
@@ -87,7 +87,6 @@ class _BaseScreenState extends State<BaseScreen> {
             MaterialPageRoute(builder: (context) => const ProjectsListScreen()),
             (route) => false,
           );
-          
         }
         break;
       case 2:
@@ -148,7 +147,8 @@ class _BaseScreenState extends State<BaseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final menuWidth = MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
+    final menuWidth =
+        MediaQuery.of(context).size.width * 0.85; // 85% de la largeur
     final authProvider = Provider.of<AuthProvider>(context);
     final isLoggedIn = authProvider.isAuthenticated;
 
@@ -160,7 +160,7 @@ class _BaseScreenState extends State<BaseScreen> {
             children: [
               // AppBar personnalisé si fourni
               if (widget.appBar != null) widget.appBar!,
-              
+
               // Contenu principal
               Expanded(child: widget.body),
             ],
@@ -181,7 +181,7 @@ class _BaseScreenState extends State<BaseScreen> {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            right: _isMenuOpen ? 0 : -menuWidth, 
+            right: _isMenuOpen ? 0 : -menuWidth,
             top: 0,
             bottom: 0,
             width: menuWidth,

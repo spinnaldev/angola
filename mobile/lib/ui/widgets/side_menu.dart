@@ -1,6 +1,7 @@
 // lib/ui/widgets/side_menu.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:teyago/ui/screens/help_faq_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../../core/models/user.dart';
@@ -10,6 +11,7 @@ import '../screens/client/client_projects_screen.dart';
 import '../screens/client/my_quote_requests_screen.dart';
 import '../screens/disputes/disputes_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/settings_screen.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -382,8 +384,11 @@ class SideMenu extends StatelessWidget {
           text: 'Paramètres',
           onTap: () {
             onClose();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Paramètres - À venir')),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
             );
           },
         ),
@@ -392,9 +397,11 @@ class SideMenu extends StatelessWidget {
           icon: Icons.help_outline,
           text: 'Aide et FAQ',
           onTap: () {
-            onClose();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Aide et FAQ - À venir')),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HelpFAQScreen(),
+              ),
             );
           },
         ),

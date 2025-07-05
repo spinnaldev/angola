@@ -1,4 +1,3 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
 // import '../../core/models/user.dart';
@@ -24,7 +23,7 @@
 
 // class _HomeScreenState extends State<HomeScreen> {
 //   final TextEditingController _searchController = TextEditingController();
-  
+
 //   List<ClientProject> _recentProjects = [];
 //   List<Service> _recentServices = [];
 //   List<Category> _categories = [];
@@ -32,7 +31,7 @@
 //   bool _isLoadingServices = false;
 //   bool _isLoadingCategories = false;
 //   bool _isLoadingStats = false;
-  
+
 //   // Statistiques prestataire
 //   Map<String, dynamic>? _providerStats;
 //   List<ClientProject> _nearbyProjects = [];
@@ -274,7 +273,7 @@
 //           child: Consumer<AuthProvider>(
 //             builder: (context, authProvider, child) {
 //               final user = authProvider.currentUser;
-              
+
 //               // Si pas connecté, afficher la version client
 //               if (user?.role == 'provider') {
 //                 return _buildProviderHome(user);
@@ -961,7 +960,7 @@
 //   void _navigateToCategory(Category category) {
 //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //     final user = authProvider.currentUser;
-    
+
 //     if (user?.role == 'provider') {
 //       Navigator.push(
 //         context,
@@ -979,10 +978,10 @@
 
 //   void _performSearch(String query) {
 //     if (query.trim().isEmpty) return;
-    
+
 //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //     final user = authProvider.currentUser;
-    
+
 //     if (user?.role == 'provider') {
 //       Navigator.push(
 //         context,
@@ -999,17 +998,17 @@
 //     try {
 //       final apiService = Provider.of<ApiService>(context, listen: false);
 //       await apiService.toggleProjectFavorite(project.id);
-      
+
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(
 //           content: Text(
-//             project.isFavorited ?? false 
-//                 ? 'Projet retiré des favoris' 
+//             project.isFavorited ?? false
+//                 ? 'Projet retiré des favoris'
 //                 : 'Projet ajouté aux favoris'
 //           ),
 //         ),
 //       );
-      
+
 //       _loadData();
 //     } catch (e) {
 //       ScaffoldMessenger.of(context).showSnackBar(
@@ -1160,25 +1159,14 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
 // ========================================================================2 =====================================================================
 //=========================================================================222 ===================================================================
 // lib/ui/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:w3_loc/core/models/conversation.dart';
-import 'package:w3_loc/providers/messaging_provider.dart';
-import 'package:w3_loc/ui/screens/messaging/conversation_detail_screen.dart';
+import 'package:teyago/core/models/conversation.dart';
+import 'package:teyago/providers/messaging_provider.dart';
+import 'package:teyago/ui/screens/messaging/conversation_detail_screen.dart';
 import '../../core/models/review.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/service_provider.dart';
@@ -1655,7 +1643,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //           ));
     // }
   }
-  
+
   Future<void> _loadProviderStats() async {
     setState(() {
       _isLoadingStats = true;
@@ -1675,7 +1663,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _providerStats = {
           'prestations_completed_this_month': 0,
           'prestations_in_progress': 0,
-          'unread_messages': 0, 
+          'unread_messages': 0,
           'total_earnings_this_month': 0.0,
           'avg_rating': 0.0,
           'total_reviews': 0,

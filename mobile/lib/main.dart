@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:w3_loc/ui/screens/app_entry_screen.dart';
-import 'package:w3_loc/ui/screens/home/home_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/ui/screens/app_entry_screen.dart';
+import 'package:teyago/ui/screens/home/home_screen.dart';
 import 'core/api/api_client.dart';
 import 'core/services/api_service.dart';
 import 'core/services/auth_service.dart';
@@ -25,8 +27,9 @@ import 'providers/filter_provider.dart';
 import 'providers/project_provider.dart';
 import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
+import 'providers/language_provider.dart'; // NOUVEAU
 import 'config/routes.dart';
-import 'core/services/profile_manager.dart'; 
+import 'core/services/profile_manager.dart';
 import 'ui/screens/home_screen.dart'; // Nouvelle page d'accueil
 import 'providers/dispute_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -36,12 +39,16 @@ void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
 
-   // Supprimer les debug elements
+  // Supprimer les debug elements
   if (kDebugMode) {
     debugPaintSizeEnabled = false;
   }
-  
-  await initializeDateFormatting('fr_FR', null); // AJOUT
+
+  // Initialiser le formatage des dates pour toutes les locales supportées
+  await initializeDateFormatting('fr_FR', null);
+  await initializeDateFormatting('en_US', null);
+  await initializeDateFormatting('pt_PT', null);
+
   // Charger les variables d'environnement si nécessaire
   try {
     await dotenv.load(fileName: "lib/.env");
@@ -57,12 +64,19 @@ void main() async {
   } catch (e) {
     print('Erreur lors de l\'initialisation du ProfileManager: $e');
   }
-  
-  runApp(const MyApp());
+
+  // NOUVEAU : Initialiser le provider de langue
+  final languageProvider = LanguageProvider();
+  await languageProvider.initializeLanguage();
+  print('LanguageProvider initialisé avec succès');
+
+  runApp(MyApp(languageProvider: languageProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final LanguageProvider languageProvider;
+
+  const MyApp({Key? key, required this.languageProvider}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +97,9 @@ class MyApp extends StatelessWidget {
       providers: [
         // Fournisseurs de données
         Provider<ApiService>.value(value: apiService),
+
+        // NOUVEAU : Provider de langue
+        ChangeNotifierProvider.value(value: languageProvider),
 
         // Providers d'état
         ChangeNotifierProvider(
@@ -134,54 +151,73 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        showPerformanceOverlay: false,               // Supprime l'overlay de performance
-        checkerboardRasterCacheImages: false,       // Supprime le damier des images
-        checkerboardOffscreenLayers: false,         // Supprime le damier des layers
-        showSemanticsDebugger: false,               // Supprime le debugger sémantique
-        debugShowMaterialGrid: false,  
-        
-        title: 'Angola Services',
-        theme: ThemeData(
-          primaryColor: const Color(0xFF142FE2),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF142FE2),
-            primary: const Color(0xFF142FE2),
-          ),
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            iconTheme: IconThemeData(color: Colors.black),
-            titleTextStyle: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF142FE2),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      child: Consumer<LanguageProvider>(
+        builder: (context, languageProvider, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            showPerformanceOverlay: false, // Supprime l'overlay de performance
+            checkerboardRasterCacheImages:
+                false, // Supprime le damier des images
+            checkerboardOffscreenLayers: false, // Supprime le damier des layers
+            showSemanticsDebugger: false, // Supprime le debugger sémantique
+            debugShowMaterialGrid: false,
+
+            title: 'Angola Services',
+
+            // NOUVEAU : Configuration de la localisation
+            locale: languageProvider.currentLocale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('fr'), // Français
+              Locale('en'), // Anglais
+              Locale('pt'), // Portugais
+            ],
+
+            theme: ThemeData(
+              primaryColor: const Color(0xFF142FE2),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF142FE2),
+                primary: const Color(0xFF142FE2),
+              ),
+              scaffoldBackgroundColor: Colors.white,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                iconTheme: IconThemeData(color: Colors.black),
+                titleTextStyle: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF142FE2),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        home:const AppEntryScreen(), 
-        // home: HomeScreen(), 
-        routes: AppRoutes.routes,
-        onGenerateRoute: AppRoutes.generateRoute,
+            home: const AppEntryScreen(),
+            // home: HomeScreen(),
+            routes: AppRoutes.routes,
+            onGenerateRoute: AppRoutes.generateRoute,
 
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-            child: child!,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+                child: child!,
+              );
+            },
           );
         },
-         
       ),
     );
   }

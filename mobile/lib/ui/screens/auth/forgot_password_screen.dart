@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
-import 'package:w3_loc/ui/widgets/custom_text_field.dart';
+import 'package:teyago/ui/widgets/custom_text_field.dart';
 import '../../../providers/auth_provider.dart';
 import '../../common/app_textfield.dart';
 import 'verify_code_screen.dart';
@@ -40,7 +40,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       try {
         final success = await authProvider.requestPasswordReset(
           _emailController.text.trim(),
@@ -60,14 +60,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           );
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(authProvider.errorMessage ?? 'Erreur de réinitialisation')),
+            SnackBar(
+                content: Text(
+                    authProvider.errorMessage ?? 'Erreur de réinitialisation')),
           );
         }
       } catch (e) {
         setState(() {
           _isLoading = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString())),
@@ -91,7 +93,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-
       body: SafeArea(
         child: Column(
           children: [

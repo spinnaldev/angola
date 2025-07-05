@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:w3_loc/ui/screens/base_screen.dart';
+import 'package:teyago/ui/screens/base_screen.dart';
 import '../../../providers/quote_provider.dart';
 import '../../../core/models/quote_request.dart';
 import '../../widgets/loading_indicator.dart';
@@ -15,16 +15,17 @@ class QuoteRequestsScreen extends StatefulWidget {
   _QuoteRequestsScreenState createState() => _QuoteRequestsScreenState();
 }
 
-class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTickerProviderStateMixin {
+class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadData();
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -32,7 +33,8 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
   }
 
   Future<void> _loadData() async {
-    await Provider.of<QuoteProvider>(context, listen: false).fetchUserQuoteRequests();
+    await Provider.of<QuoteProvider>(context, listen: false)
+        .fetchUserQuoteRequests();
   }
 
   @override
@@ -67,13 +69,14 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
           final pendingRequests = quoteProvider.quoteRequests
               .where((request) => request.status == 'pending')
               .toList();
-          
+
           final acceptedRequests = quoteProvider.quoteRequests
               .where((request) => request.status == 'accepted')
               .toList();
-          
+
           final completedRequests = quoteProvider.quoteRequests
-              .where((request) => request.status == 'completed' || request.status == 'rejected')
+              .where((request) =>
+                  request.status == 'completed' || request.status == 'rejected')
               .toList();
 
           return TabBarView(
@@ -81,10 +84,10 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
             children: [
               // Tab En attente
               _buildRequestsList(pendingRequests, 'pending'),
-              
+
               // Tab Acceptées
               _buildRequestsList(acceptedRequests, 'accepted'),
-              
+
               // Tab Terminées
               _buildRequestsList(completedRequests, 'completed'),
             ],
@@ -187,14 +190,14 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
                       ),
                     ],
                   ),
-                  
                   if (type == 'pending') ...[
                     SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => _updateRequestStatus(request, 'rejected'),
+                            onPressed: () =>
+                                _updateRequestStatus(request, 'rejected'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
                               side: BorderSide(color: Colors.red),
@@ -208,7 +211,8 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
                         SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _updateRequestStatus(request, 'accepted'),
+                            onPressed: () =>
+                                _updateRequestStatus(request, 'accepted'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor,
                               shape: RoundedRectangleBorder(
@@ -221,13 +225,13 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
                       ],
                     ),
                   ],
-                  
                   if (type == 'accepted') ...[
                     SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => _updateRequestStatus(request, 'completed'),
+                        onPressed: () =>
+                            _updateRequestStatus(request, 'completed'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
@@ -250,7 +254,7 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
   Widget _buildStatusChip(String status) {
     Color color;
     String label;
-    
+
     switch (status) {
       case 'pending':
         color = Colors.orange;
@@ -272,7 +276,7 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
         color = Colors.grey;
         label = 'Inconnu';
     }
-    
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -358,7 +362,6 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
               SizedBox(height: 8),
               Text(request.description),
               SizedBox(height: 24),
-              
               if (request.status == 'pending')
                 Row(
                   children: [
@@ -396,7 +399,6 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
                     ),
                   ],
                 ),
-              
               if (request.status == 'accepted')
                 SizedBox(
                   width: double.infinity,
@@ -421,11 +423,13 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
     );
   }
 
-  Future<void> _updateRequestStatus(QuoteRequest request, String newStatus) async {
+  Future<void> _updateRequestStatus(
+      QuoteRequest request, String newStatus) async {
     try {
       final quoteProvider = Provider.of<QuoteProvider>(context, listen: false);
-      final success = await quoteProvider.updateQuoteRequestStatus(request.id!, newStatus);
-      
+      final success =
+          await quoteProvider.updateQuoteRequestStatus(request.id!, newStatus);
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -436,7 +440,8 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen> with SingleTi
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(quoteProvider.errorMessage ?? 'Erreur lors de la mise à jour du statut'),
+            content: Text(quoteProvider.errorMessage ??
+                'Erreur lors de la mise à jour du statut'),
             backgroundColor: Colors.red,
           ),
         );

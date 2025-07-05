@@ -65,7 +65,7 @@
 //           'phoneNumber': _phoneController.text.trim(),
 //           'role': _selectedRole,
 //         };
-        
+
 //         // Naviguer vers l'écran de sélection des catégories
 //         Navigator.push(
 //           context,
@@ -426,7 +426,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
-import 'package:w3_loc/ui/screens/auth/login_screen.dart';
+import 'package:teyago/ui/screens/auth/login_screen.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import 'package:provider/provider.dart';
@@ -497,7 +497,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'phoneNumber': _phoneController.text.trim(),
           'role': _selectedRole,
         };
-        
+
         // Naviguer vers l'écran de sélection des catégories
         Navigator.push(
           context,
@@ -561,7 +561,6 @@ class _SignupScreenState extends State<SignupScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Form(
@@ -876,7 +875,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 //     ),
                 //   ],
                 // ),
-                
+
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -891,10 +890,11 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(
-                            color: Colors.white)
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                            _selectedRole == 'client' ? 'S\'INSCRIRE' : 'SUIVANT',
+                            _selectedRole == 'client'
+                                ? 'S\'INSCRIRE'
+                                : 'SUIVANT',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -940,12 +940,9 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
         ),
-      
-       
       ),
     );
   }
-
 }
 
 class SocialLoginButton extends StatelessWidget {

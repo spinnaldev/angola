@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:w3_loc/providers/project_provider.dart';
+import 'package:teyago/providers/project_provider.dart';
 import '../../core/models/client_project.dart';
 import '../../core/models/user.dart';
 import '../../providers/auth_provider.dart';
@@ -37,16 +37,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   // Controllers pour l'offre
   final TextEditingController _offerMessageController = TextEditingController();
   final TextEditingController _offerPriceController = TextEditingController();
-  final TextEditingController _offerDeliveryController = TextEditingController();
+  final TextEditingController _offerDeliveryController =
+      TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     // Initialiser l'état favori de manière sécurisée
     _isFavorited = widget.project.isFavorited ?? false;
-    
+
     // Charger les données après le premier build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOffers();
@@ -58,9 +59,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Future<void> _incrementView() async {
     if (_viewCounted) return;
-    
+
     try {
-      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      final projectProvider =
+          Provider.of<ProjectProvider>(context, listen: false);
       await projectProvider.incrementProjectView(widget.project.id);
       _viewCounted = true;
     } catch (e) {
@@ -80,7 +82,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Future<void> _loadOffers() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoadingOffers = true;
     });
@@ -88,7 +90,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final offers = await apiService.getProjectOffers(widget.project.id);
-      
+
       if (mounted) {
         setState(() {
           _offers = offers;
@@ -163,7 +165,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       return;
     }
 
-    final int? deliveryTime = int.tryParse(_offerDeliveryController.text.trim());
+    final int? deliveryTime =
+        int.tryParse(_offerDeliveryController.text.trim());
     if (deliveryTime == null || deliveryTime <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -190,14 +193,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      
+
       // Envoyer l'offre
       await apiService.submitOffer(widget.project.id, offerData);
 
       if (mounted) {
         // Fermer le bottom sheet avec un délai pour montrer le succès
         Navigator.pop(context);
-        
+
         // Vider les champs pour la prochaine fois
         _offerMessageController.clear();
         _offerPriceController.clear();
@@ -225,7 +228,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       }
     } catch (e) {
       print('Erreur lors de l\'envoi de l\'offre: $e');
-      
+
       if (mounted) {
         // Afficher l'erreur dans une snackbar ou un dialog
         String errorMessage = e.toString();
@@ -295,7 +298,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       await apiService.toggleProjectFavorite(widget.project.id);
-      
+
       if (mounted) {
         setState(() {
           _isFavorited = !_isFavorited;
@@ -303,11 +306,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _isFavorited 
-                ? 'Projet ajouté aux favoris' 
-                : 'Projet retiré des favoris'
-            ),
+            content: Text(_isFavorited
+                ? 'Projet ajouté aux favoris'
+                : 'Projet retiré des favoris'),
           ),
         );
       }
@@ -360,7 +361,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: !_isSubmittingOffer, // Empêcher la fermeture pendant l'envoi
+      isDismissible:
+          !_isSubmittingOffer, // Empêcher la fermeture pendant l'envoi
       enableDrag: !_isSubmittingOffer, // Empêcher le drag pendant l'envoi
       builder: (context) => StatefulBuilder(
         builder: (context, setBottomSheetState) => Container(
@@ -399,13 +401,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                         SizedBox(width: 8),
-                        Text('Envoi en cours...', style: TextStyle(color: Colors.grey)),
+                        Text('Envoi en cours...',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                 ],
               ),
               const SizedBox(height: 20),
-              
+
               const Text(
                 'Faire une offre',
                 style: TextStyle(
@@ -458,22 +461,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               CheckboxListTile(
                 title: const Text('Matériaux inclus'),
                 value: localIncludesMaterials,
-                onChanged: _isSubmittingOffer ? null : (value) {
-                  setBottomSheetState(() {
-                    localIncludesMaterials = value ?? false;
-                  });
-                },
+                onChanged: _isSubmittingOffer
+                    ? null
+                    : (value) {
+                        setBottomSheetState(() {
+                          localIncludesMaterials = value ?? false;
+                        });
+                      },
                 controlAffinity: ListTileControlAffinity.leading,
               ),
 
               CheckboxListTile(
                 title: const Text('Frais de déplacement inclus'),
                 value: localTravelCostsIncluded,
-                onChanged: _isSubmittingOffer ? null : (value) {
-                  setBottomSheetState(() {
-                    localTravelCostsIncluded = value ?? false;
-                  });
-                },
+                onChanged: _isSubmittingOffer
+                    ? null
+                    : (value) {
+                        setBottomSheetState(() {
+                          localTravelCostsIncluded = value ?? false;
+                        });
+                      },
                 controlAffinity: ListTileControlAffinity.leading,
               ),
 
@@ -483,16 +490,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isSubmittingOffer ? null : () {
-                    // Mettre à jour les variables d'état globales
-                    setState(() {
-                      _includesMaterials = localIncludesMaterials;
-                      _travelCostsIncluded = localTravelCostsIncluded;
-                    });
-                    
-                    // Appeler la méthode de soumission
-                    _submitOffer();
-                  },
+                  onPressed: _isSubmittingOffer
+                      ? null
+                      : () {
+                          // Mettre à jour les variables d'état globales
+                          setState(() {
+                            _includesMaterials = localIncludesMaterials;
+                            _travelCostsIncluded = localTravelCostsIncluded;
+                          });
+
+                          // Appeler la méthode de soumission
+                          _submitOffer();
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
                     foregroundColor: Colors.white,
@@ -510,7 +519,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                             SizedBox(width: 12),
@@ -538,19 +548,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       // Implémenter l'API pour accepter/rejeter les offres
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              action == 'accepted' 
-                ? 'Offre acceptée avec succès' 
-                : 'Offre rejetée'
-            ),
-            backgroundColor: action == 'accepted' ? Colors.green : Colors.orange,
+            content: Text(action == 'accepted'
+                ? 'Offre acceptée avec succès'
+                : 'Offre rejetée'),
+            backgroundColor:
+                action == 'accepted' ? Colors.green : Colors.orange,
           ),
         );
-        
+
         _loadOffers();
       }
     } catch (e) {
@@ -602,9 +611,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           ],
         ),
       ),
-      bottomNavigationBar: isProvider && !_hasUserOffered() 
-          ? _buildMakeOfferButton() 
-          : null,
+      bottomNavigationBar:
+          isProvider && !_hasUserOffered() ? _buildMakeOfferButton() : null,
     );
   }
 
@@ -640,7 +648,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     onPressed: _toggleFavorite,
                     icon: Icon(
                       _isFavorited ? Icons.favorite : Icons.favorite_border,
-                      color: _isFavorited ? Colors.red : const Color(0xFF142FE2),
+                      color:
+                          _isFavorited ? Colors.red : const Color(0xFF142FE2),
                       size: 24,
                     ),
                     padding: const EdgeInsets.all(8),
@@ -655,7 +664,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 margin: const EdgeInsets.only(right: 8),
                 child: IconButton(
                   onPressed: _shareProject,
-                  icon: const Icon(Icons.share, color: Color(0xFF142FE2), size: 24),
+                  icon: const Icon(Icons.share,
+                      color: Color(0xFF142FE2), size: 24),
                   padding: const EdgeInsets.all(8),
                   constraints: const BoxConstraints(
                     minWidth: 40,
@@ -692,7 +702,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF142FE2).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -709,7 +720,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               const Spacer(),
               if (widget.project.urgency != 'low') ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getUrgencyColor().withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -793,7 +805,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 const Spacer(),
                 if (widget.project.remotePossible) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -855,7 +868,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               runSpacing: 8,
               children: widget.project.requiredSkills.map((skill) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF142FE2).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),

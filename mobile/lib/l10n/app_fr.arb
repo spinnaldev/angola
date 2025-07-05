@@ -1,0 +1,96 @@
+{
+  "@@locale": "fr",
+  
+  // Navigation et recherche
+  "searchProject": "Rechercher un projet...",
+  "searchService": "Rechercher un service...",
+  "home": "Accueil",
+  "recent": "Récents",
+  "nearby": "Proximité",
+  "bestRated": "Meilleurs",
+  "map": "Carte",
+  "view": "Voir",
+  "explore": "Explorer",
+  "service": "Service",
+  "by": "Par",
+  "open": "Ouvert",
+  "closed": "Fermé",
+  "onQuote": "Sur devis",
+  
+  // Bannières promotionnelles
+  "findBestProviders": "Trouvez les meilleurs prestataires",
+  "bookQualityServices": "Réservez facilement des services de qualité",
+  "discoverNewProjects": "Découvrez de nouveaux projets",
+  "findClientsDevelop": "Trouvez des clients et développez votre activité",
+  "viewProjects": "Voir projets",
+  
+  // Sections d'accueil
+  "popularCategories": "Catégories populaires",
+  "bestServicesWeek": "Meilleurs prestations de la semaine",
+  "recentAnnouncements": "Annonces récentes",
+  "bestReviews": "Meilleurs avis",
+  "nearbyServices": "À proximité de vous",
+  "exploreAllServices": "Explorer tous les services",
+  "viewAllCategories": "Voir toutes les catégories",
+  
+  // Mode prestataire
+  "recentProjects": "Projets récents",
+  "nearbyProjects": "Projets à proximité",
+  "viewAllProjects": "Voir tous les projets",
+  "yourStatistics": "Vos statistiques",
+  "completedServices": "Prestations terminées",
+  "inProgress": "En cours",
+  "unreadMessages": "Messages non lus",
+  "revenueThisMonth": "Revenus ce mois",
+  "averageRating": "Note moyenne",
+  "totalReviews": "Total avis",
+  
+  // Onglets
+  "mostRecentProjects": "Projets les plus récents",
+  "bestProvidersByRating": "Meilleurs prestataires par note",
+  "mostRecentAnnouncements": "Annonces les plus récentes",
+  
+  // Messages d'état vide
+  "noCategoriesAvailableMoment": "Aucune catégorie disponible pour le moment",
+  "noPopularServicesMoment": "Aucune prestation populaire pour le moment",
+  "noRecentAnnouncementsAvailable": "Aucune annonce récente disponible",
+  "noReviewsAvailableMoment": "Aucun avis disponible pour le moment",
+  "noServicesAvailableRegion": "Aucun service disponible dans votre région",
+  "noRecentProjectsAvailable": "Aucun projet récent disponible",
+  "noProjectsAvailableRegion": "Aucun projet disponible dans votre région",
+  "noNewProjectsAvailable": "Aucun nouveau projet disponible",
+  "noWellRatedServicesMoment": "Aucun service bien noté disponible pour le moment",
+  "noNewAnnouncementsAvailable": "Aucune nouvelle annonce disponible",
+  
+  // Services types
+  "serviceInteriorRenovation": "Rénovation d'intérieur",
+  "serviceEmergencyPlumbing": "Plomberie urgente",
+  "serviceElectricalInstallation": "Installation électrique",
+  "serviceFacadePainting": "Peinture de façade",
+  "serviceHomeCleaning": "Ménage à domicile",
+  "serviceGardening": "Jardinage & Entretien",
+  "serviceConstruction": "Construction",
+  "serviceHomeHairdressing": "Coiffure à domicile",
+  "serviceMassage": "Massage",
+  "serviceCarRepair": "Réparation automobile",
+  "serviceAccounting": "Expertise comptable",
+  "serviceSportsCoaching": "Coaching sportif",
+  
+  // Types de projets
+  "projectTypeWebDev": "développement web",
+  "projectTypeRenovation": "rénovation",
+  "projectTypeGraphicDesign": "design graphique",
+  "projectTypePlumbing": "plomberie",
+  "projectTypeElectricity": "électricité",
+  "projectTypeGardening": "jardinage",
+  "projectTypeCleaning": "nettoyage",
+  "projectTypeCoaching": "coaching",
+  
+  // Catégories
+  "categoryIT": "Informatique",
+  "categoryHomeGarden": "Maison & Jardin",
+  "categoryProfessionalServices": "Services Pro",
+  "categoryCrafts": "Artisanat",
+  "categoryWellness": "Bien-être",
+  "categoryTransport": "Transport"
+}

@@ -44,7 +44,7 @@
 //       });
 
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
 //       try {
 //         final success = await authProvider.login(
 //           _emailController.text.trim(),  // Utiliser l'email maintenant
@@ -57,7 +57,7 @@
 //         if (success && mounted) {
 //           // Cette méthode remplace l'écran actuel et supprime tous les écrans précédents
 //           Navigator.pushNamedAndRemoveUntil(
-//             context, 
+//             context,
 //             AppRoutes.home,  // Utilisez les constantes de AppRoutes
 //             (route) => false,  // Supprime toute la pile
 //           );
@@ -77,7 +77,7 @@
 //         setState(() {
 //           _isLoading = false;
 //         });
-        
+
 //         if (mounted) {
 //           ScaffoldMessenger.of(context).showSnackBar(
 //             SnackBar(
@@ -133,7 +133,7 @@
 //                         ),
 //                       ),
 //                       const SizedBox(height: 40),
-                      
+
 //                       // Champ email
 //                       TextFormField(
 //                         controller: _emailController,
@@ -167,9 +167,9 @@
 //                           return null;
 //                         },
 //                       ),
-                      
+
 //                       const SizedBox(height: 20),
-                      
+
 //                       // Champ mot de passe
 //                       TextFormField(
 //                         controller: _passwordController,
@@ -205,7 +205,7 @@
 //                           return null;
 //                         },
 //                       ),
-                      
+
 //                       Align(
 //                         alignment: Alignment.centerRight,
 //                         child: TextButton(
@@ -232,9 +232,9 @@
 //                           ),
 //                         ),
 //                       ),
-                      
+
 //                       const SizedBox(height: 30),
-                      
+
 //                       SizedBox(
 //                         width: double.infinity,
 //                         height: 50,
@@ -266,7 +266,7 @@
 //                                 ),
 //                         ),
 //                       ),
-                      
+
 //                       Padding(
 //                         padding: const EdgeInsets.symmetric(vertical: 24),
 //                         child: Row(
@@ -299,7 +299,7 @@
 //                           ],
 //                         ),
 //                       ),
-                      
+
 //                       const Center(
 //                         child: Text(
 //                           'Ou connectez-vous avec un compte social.',
@@ -308,9 +308,9 @@
 //                           ),
 //                         ),
 //                       ),
-                      
+
 //                       const SizedBox(height: 20),
-                      
+
 //                       const SizedBox(height: 20),
 //                       Row(
 //                         mainAxisAlignment: MainAxisAlignment.center,
@@ -338,7 +338,7 @@
 //                       //     ),
 //                       //   ],
 //                       // ),
-                      
+
 //                     ],
 //                   ),
 //                 ),
@@ -418,8 +418,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
-import 'package:w3_loc/ui/screens/auth/profile_selector_screen.dart';
-import 'package:w3_loc/ui/screens/auth/signup_screen.dart';
+import 'package:teyago/ui/screens/auth/profile_selector_screen.dart';
+import 'package:teyago/ui/screens/auth/signup_screen.dart';
 // import '../providers/auth_provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -484,9 +484,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // Connexion échouée - Afficher le message d'erreur
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                authProvider.errorMessage ?? 'Échec de la connexion. Vérifiez vos identifiants.'
-              ),
+              content: Text(authProvider.errorMessage ??
+                  'Échec de la connexion. Vérifiez vos identifiants.'),
               backgroundColor: const Color(0xFFDB3022),
               duration: const Duration(seconds: 4),
             ),
@@ -510,6 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -644,7 +644,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 30),
-                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

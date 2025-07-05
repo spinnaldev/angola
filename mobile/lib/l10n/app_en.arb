@@ -1,0 +1,96 @@
+{
+  "@@locale": "en",
+  
+  // Navigation et recherche
+  "searchProject": "Search for a project...",
+  "searchService": "Search for a service...",
+  "home": "Home",
+  "recent": "Recent",
+  "nearby": "Nearby",
+  "bestRated": "Best Rated",
+  "map": "Map",
+  "view": "View",
+  "explore": "Explore",
+  "service": "Service",
+  "by": "By",
+  "open": "Open",
+  "closed": "Closed",
+  "onQuote": "On quote",
+  
+  // Bannières promotionnelles
+  "findBestProviders": "Find the best service providers",
+  "bookQualityServices": "Easily book quality services",
+  "discoverNewProjects": "Discover new projects",
+  "findClientsDevelop": "Find clients and grow your business",
+  "viewProjects": "View projects",
+  
+  // Sections d'accueil
+  "popularCategories": "Popular categories",
+  "bestServicesWeek": "Best services of the week",
+  "recentAnnouncements": "Recent announcements",
+  "bestReviews": "Best reviews",
+  "nearbyServices": "Near you",
+  "exploreAllServices": "Explore all services",
+  "viewAllCategories": "View all categories",
+  
+  // Mode prestataire
+  "recentProjects": "Recent projects",
+  "nearbyProjects": "Nearby projects",
+  "viewAllProjects": "View all projects",
+  "yourStatistics": "Your statistics",
+  "completedServices": "Completed services",
+  "inProgress": "In progress",
+  "unreadMessages": "Unread messages",
+  "revenueThisMonth": "Revenue this month",
+  "averageRating": "Average rating",
+  "totalReviews": "Total reviews",
+  
+  // Onglets
+  "mostRecentProjects": "Most recent projects",
+  "bestProvidersByRating": "Best providers by rating",
+  "mostRecentAnnouncements": "Most recent announcements",
+  
+  // Messages d'état vide
+  "noCategoriesAvailableMoment": "No categories available at the moment",
+  "noPopularServicesMoment": "No popular services at the moment",
+  "noRecentAnnouncementsAvailable": "No recent announcements available",
+  "noReviewsAvailableMoment": "No reviews available at the moment",
+  "noServicesAvailableRegion": "No services available in your region",
+  "noRecentProjectsAvailable": "No recent projects available",
+  "noProjectsAvailableRegion": "No projects available in your region",
+  "noNewProjectsAvailable": "No new projects available",
+  "noWellRatedServicesMoment": "No well-rated services available at the moment",
+  "noNewAnnouncementsAvailable": "No new announcements available",
+  
+  // Services types
+  "serviceInteriorRenovation": "Interior renovation",
+  "serviceEmergencyPlumbing": "Emergency plumbing",
+  "serviceElectricalInstallation": "Electrical installation",
+  "serviceFacadePainting": "Facade painting",
+  "serviceHomeCleaning": "Home cleaning",
+  "serviceGardening": "Gardening & Maintenance",
+  "serviceConstruction": "Construction",
+  "serviceHomeHairdressing": "Home hairdressing",
+  "serviceMassage": "Massage",
+  "serviceCarRepair": "Car repair",
+  "serviceAccounting": "Accounting expertise",
+  "serviceSportsCoaching": "Sports coaching",
+  
+  // Types de projets
+  "projectTypeWebDev": "web development",
+  "projectTypeRenovation": "renovation",
+  "projectTypeGraphicDesign": "graphic design",
+  "projectTypePlumbing": "plumbing",
+  "projectTypeElectricity": "electricity",
+  "projectTypeGardening": "gardening",
+  "projectTypeCleaning": "cleaning",
+  "projectTypeCoaching": "coaching",
+  
+  // Catégories
+  "categoryIT": "IT",
+  "categoryHomeGarden": "Home & Garden",
+  "categoryProfessionalServices": "Professional Services",
+  "categoryCrafts": "Crafts",
+  "categoryWellness": "Wellness",
+  "categoryTransport": "Transport"
+}
