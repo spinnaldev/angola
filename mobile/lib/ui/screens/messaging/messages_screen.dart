@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../providers/messaging_provider.dart';
 import '../base_screen.dart';
 import 'conversation_detail_screen.dart';
@@ -45,13 +46,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
       body: _buildMessagingContent(),
     );
   }
+  
   Widget _buildMessagingContent() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Messagerie',
-          style: TextStyle(
+        title: Text(
+          l10n.messaging,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -81,11 +85,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Rechercher un message...',
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+                decoration: InputDecoration(
+                  hintText: l10n.searchMessage,
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
@@ -97,7 +101,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Tous les messages',
+                l10n.allMessages,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -128,8 +132,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   return Center(
                     child: Text(
                       _searchQuery.isEmpty 
-                        ? 'Aucune conversation' 
-                        : 'Aucun résultat pour "$_searchQuery"',
+                        ? l10n.noConversations
+                        : l10n.noResultsFor(_searchQuery),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 16,
@@ -154,6 +158,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
   
   Widget _buildConversationItem(Conversation conversation) {
+    final l10n = AppLocalizations.of(context)!;
     final lastMessage = conversation.lastMessage;
     final hasUnread = conversation.unreadCount > 0;
     
@@ -198,7 +203,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           // Message
           Expanded(
             child: Text(
-              lastMessage?.content ?? 'Démarrer une conversation...',
+              lastMessage?.content ?? l10n.startConversation,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -267,15 +272,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
   
   String _formatTime(DateTime dateTime) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = DateTime(today.day - 1);
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
     final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
     
     if (date == today) {
       return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (date == yesterday) {
-      return 'Hier';
+      return l10n.yesterday;
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }

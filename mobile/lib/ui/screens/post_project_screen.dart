@@ -245,29 +245,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
             );
           },
         ),
-        // const SizedBox(height: 16),
-        // Consumer<SubcategoryProvider>(
-        //   builder: (context, subcategoryProvider, child) {
-        //     return DropdownButtonFormField<Subcategory>(
-        //       value: _selectedSubcategory,
-        //       decoration: const InputDecoration(
-        //         labelText: 'Sous-catégorie (optionnel)',
-        //         border: OutlineInputBorder(),
-        //       ),
-        //       items: subcategoryProvider.subcategories.map((subcategory) {
-        //         return DropdownMenuItem(
-        //           value: subcategory,
-        //           child: Text(subcategory.name),
-        //         );
-        //       }).toList(),
-        //       onChanged: (Subcategory? value) {
-        //         setState(() {
-        //           _selectedSubcategory = value;
-        //         });
-        //       },
-        //     );
-        //   },
-        // ),
+        
       ],
     );
   }

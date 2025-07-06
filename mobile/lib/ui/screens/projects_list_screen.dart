@@ -1,6 +1,7 @@
-// lib/ui/screens/projects_list_screen.dart - Version complète
+// lib/ui/screens/projects_list_screen.dart - Version complète avec traductions
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/models/client_project.dart';
 import '../../core/models/category.dart';
 import '../../providers/category_provider.dart';
@@ -199,10 +200,12 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return BaseScreen(
       currentIndex: 1, // Projets sélectionné
       appBar: AppBar(
-        title: const Text('Projets disponibles'),
+        title: Text(l10n.availableProjects),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -289,6 +292,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   /// Carte promotionnelle pour les projets
   Widget _buildProjectsPromoCard() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -307,18 +312,18 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Trouvez les meilleurs projets',
-              style: TextStyle(
+            Text(
+              l10n.findBestProjects,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Développez votre activité avec des clients de qualité',
-              style: TextStyle(
+            Text(
+              l10n.growBusinessQualityClients,
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 16,
               ),
@@ -335,9 +340,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'Explorer',
-                style: TextStyle(
+              child: Text(
+                l10n.explore,
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -350,6 +355,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   /// Section des statistiques prestataire
   Widget _buildProviderStatsSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_isLoadingStats) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -367,9 +374,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Vos statistiques',
-            style: TextStyle(
+          Text(
+            l10n.yourStatistics,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -380,7 +387,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Prestations\nréalisées',
+                  l10n.completedServices,
                   '${_providerStats!['prestations_completed_this_month'] ?? 0}',
                   Colors.green,
                   Icons.check_circle,
@@ -389,7 +396,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'En cours',
+                  l10n.inProgress,
                   '${_providerStats!['prestations_in_progress'] ?? 0}',
                   Colors.orange,
                   Icons.work,
@@ -398,7 +405,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Messages',
+                  l10n.messages,
                   '${_providerStats!['unread_messages'] ?? 0}',
                   Colors.blue,
                   Icons.message,
@@ -411,7 +418,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Gains du mois',
+                  l10n.monthlyEarnings,
                   '${_providerStats!['total_earnings_this_month']?.toStringAsFixed(0) ?? 0}€',
                   Colors.purple,
                   Icons.euro,
@@ -420,7 +427,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Note moyenne',
+                  l10n.averageRating,
                   '${_providerStats!['avg_rating']?.toStringAsFixed(1) ?? 0}/5',
                   Colors.amber,
                   Icons.star,
@@ -429,7 +436,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Avis',
+                  l10n.reviews,
                   '${_providerStats!['total_reviews'] ?? 0}',
                   Colors.teal,
                   Icons.rate_review,
@@ -479,14 +486,16 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   /// Section de recherche
   Widget _buildSearchSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Rechercher des projets',
-            style: TextStyle(
+          Text(
+            l10n.searchProjects,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -496,7 +505,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Rechercher des projets...',
+              hintText: l10n.searchProjectsPlaceholder,
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -521,6 +530,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -532,7 +543,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucun projet disponible',
+            l10n.noProjectsAvailable,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -541,7 +552,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Revenez plus tard pour découvrir de nouveaux projets',
+            l10n.comeBackLaterForNewProjects,
             style: TextStyle(
               color: Colors.grey[500],
             ),
@@ -562,6 +573,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   Future<void> _toggleProjectFavorite(ClientProject project) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       await apiService.toggleProjectFavorite(project.id);
@@ -571,8 +584,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           SnackBar(
             content: Text(
               project.isFavorited ?? false 
-                  ? 'Projet retiré des favoris' 
-                  : 'Projet ajouté aux favoris'
+                  ? l10n.projectRemovedFromFavorites
+                  : l10n.projectAddedToFavorites
             ),
           ),
         );
@@ -582,7 +595,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(content: Text('${l10n.error}$e')),
         );
       }
     }

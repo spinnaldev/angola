@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../core/models/category.dart';
@@ -32,6 +33,8 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
   }
 
   void _toggleCategory(int categoryId) {
+    final l10n = AppLocalizations.of(context)!;
+    
     setState(() {
       if (_selectedCategories.contains(categoryId)) {
         _selectedCategories.remove(categoryId);
@@ -41,7 +44,7 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Vous pouvez sélectionner au maximum $MAX_CATEGORIES catégories'),
+              content: Text(l10n.maxCategoriesSelectionLimit(MAX_CATEGORIES)),
               backgroundColor: Colors.orange,
             ),
           );
@@ -51,10 +54,12 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
   }
 
   Future<void> _completeRegistration() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_selectedCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Veuillez sélectionner au moins une catégorie'),
+          content: Text(l10n.selectAtLeastOneCategory),
           backgroundColor: Colors.red,
         ),
       );
@@ -95,7 +100,7 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Erreur d\'inscription'),
+            content: Text(authProvider.errorMessage ?? l10n.registrationError),
             backgroundColor: Colors.red,
           ),
         );
@@ -108,7 +113,7 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text(l10n.errorMessage(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -118,18 +123,20 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Choisir vos domaines',
-          style: TextStyle(
+          l10n.chooseYourDomains,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -145,23 +152,23 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Domaines d\'expertise',
-                  style: TextStyle(
+                  l10n.expertiseDomains,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Veuillez sélectionner jusqu\'à $MAX_CATEGORIES catégories où vous proposez vos services',
+                  l10n.selectUpToCategoriesDescription(MAX_CATEGORIES),
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(
-                  'Sélectionnés: ${_selectedCategories.length}/$MAX_CATEGORIES',
+                  l10n.selectedCategories(_selectedCategories.length, MAX_CATEGORIES),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.blue[600],
@@ -177,24 +184,24 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
             child: Consumer<CategoryProvider>(
               builder: (context, categoryProvider, child) {
                 if (categoryProvider.isLoading) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
                 
                 if (categoryProvider.categories.isEmpty) {
                   return Center(
-                    child: Text('Aucune catégorie disponible'),
+                    child: Text(l10n.noCategoriesAvailable),
                   );
                 }
                 
                 return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: categoryProvider.categories.length,
                   itemBuilder: (context, index) {
                     final category = categoryProvider.categories[index];
                     final isSelected = _selectedCategories.contains(category.id);
                     
                     return Card(
-                      margin: EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 12),
                       elevation: isSelected ? 2 : 0,
                       color: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -208,7 +215,7 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
                         onTap: () => _toggleCategory(category.id),
                         borderRadius: BorderRadius.circular(12),
                         child: Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
                               // Icône de catégorie
@@ -217,7 +224,7 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
                                 color: Colors.grey[700],
                                 size: 24,
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               
                               // Infos catégorie
                               Expanded(
@@ -226,13 +233,13 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
                                   children: [
                                     Text(
                                       category.name,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.black,
                                       ),
                                     ),
-                                    SizedBox(height: 2),
+                                    const SizedBox(height: 2),
                                     Text(
                                       category.description,
                                       style: TextStyle(
@@ -283,10 +290,10 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
                   ),
                 ),
                 child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
+                  ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
-                    'TERMINER L\'INSCRIPTION',
-                    style: TextStyle(
+                    l10n.finishRegistration,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),

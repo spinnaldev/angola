@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/category_provider.dart';
 import '../widgets/category_card.dart';
 import 'service_list_screen.dart';
@@ -40,6 +41,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildExploreContent() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -84,7 +87,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Recherche de services...',
+                hintText: l10n.searchForServices,
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -94,11 +97,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
 
         // Texte "Tous les services"
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 15, 20, 5),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 15, 20, 5),
           child: Text(
-            'Tous les services',
-            style: TextStyle(
+            l10n.allServices,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -114,7 +117,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
               }
               
               if (categoryProvider.categories.isEmpty) {
-                return const Center(child: Text('Aucune catégorie disponible'));
+                return Center(
+                  child: Text(l10n.noCategoriesAvailable),
+                );
               }
               
               return Padding(

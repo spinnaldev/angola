@@ -257,6 +257,129 @@
         "type": "int"
       }
     }
-  }
+  },
+  "messaging": "Messagerie",
+  "searchMessage": "Rechercher un message...",
+  "allMessages": "Tous les messages",
+  "noConversations": "Aucune conversation",
+  "noResultsFor": "Aucun résultat pour \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "startConversation": "Démarrer une conversation...",
+  "yesterday": "Hier",
+  "online": "En ligne",
+  "noMessagesStartConversation": "Aucun message. Commencez la conversation!",
+  "today": "Aujourd'hui",
+  "yourMessage": "Votre message..."
+  "searchForServices": "Recherche de services...",
+  "allServices": "Tous les services",
+  "noCategoriesAvailable": "Aucune catégorie disponible",
+  "availableProjects": "Projets disponibles",
+  "findBestProjects": "Trouvez les meilleurs projets",
+  "growBusinessQualityClients": "Développez votre activité avec des clients de qualité",
+  "explore": "Explorer",
+  "yourStatistics": "Vos statistiques",
+  "completedServices": "Prestations\nréalisées",
+  "inProgress": "En cours",
+  "messages": "Messages",
+  "monthlyEarnings": "Gains du mois",
+  "averageRating": "Note moyenne",
+  "reviews": "Avis",
+  "searchProjects": "Rechercher des projets",
+  "searchProjectsPlaceholder": "Rechercher des projets...",
+  "noProjectsAvailable": "Aucun projet disponible",
+  "comeBackLaterForNewProjects": "Revenez plus tard pour découvrir de nouveaux projets",
+  "projectRemovedFromFavorites": "Projet retiré des favoris",
+  "projectAddedToFavorites": "Projet ajouté aux favoris",
+  "error": "Erreur: ",
+  "chooseYourDomains": "Choisir vos domaines",
+  "expertiseDomains": "Domaines d'expertise",
+  "selectUpToCategoriesDescription": "Veuillez sélectionner jusqu'à {maxCategories} catégories où vous proposez vos services",
+  "@selectUpToCategoriesDescription": {
+    "placeholders": {
+      "maxCategories": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedCategories": "Sélectionnés: {selected}/{max}",
+  "@selectedCategories": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noCategoriesAvailable": "Aucune catégorie disponible",
+  "finishRegistration": "TERMINER L'INSCRIPTION",
+  "maxCategoriesSelectionLimit": "Vous pouvez sélectionner au maximum {max} catégories",
+  "@maxCategoriesSelectionLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAtLeastOneCategory": "Veuillez sélectionner au moins une catégorie",
+  "registrationError": "Erreur d'inscription",
+  "errorMessage": "Erreur: {error}",
+  "@errorMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filter": "Filtrer",
+  "rating": "Rang",
+  "type": "Type",
+  "company": "Entreprise",
+  "freelance": "Freelance",
+  "location": "Localisation",
+  "selectLocation": "Sélectionner une localisation",
+  "back": "Retour",
+  "apply": "Appliquer",
+  
+  "makeOffer": "Proposer une offre",
+  "projectToHandle": "Projet à traiter",
+  "pricing": "Tarification",
+  "proposedPrice": "Prix proposé (€) *",
+  "allInclusivePrice": "Votre prix tout compris",
+  "priceRequired": "Le prix est obligatoire",
+  "enterValidPrice": "Veuillez entrer un prix valide",
+  "priceIncludesAllCosts": "Ce prix doit inclure tous vos frais. Vous pourrez négocier avec le client par la suite.",
+  "deliveryTime": "Délai de livraison",
+  "deliveryTimeInDays": "Délai en jours *",
+  "daysToCompleteProject": "Nombre de jours pour réaliser le projet",
+  "deliveryTimeRequired": "Le délai est obligatoire",
+  "enterValidDeliveryTime": "Veuillez entrer un délai valide",
+  "accompanimentMessage": "Message d'accompagnement",
+  "detailedProposal": "Votre proposition détaillée *",
+  "explainYourApproach": "Expliquez votre approche, vos compétences, vos références...",
+  "messageRequired": "Le message est obligatoire",
+  "messageMinLength": "Le message doit contenir au moins 50 caractères",
+  "optionsAndWarranties": "Options et garanties",
+  "materialsIncluded": "Matériaux inclus",
+  "priceIncludesMaterials": "Le prix inclut les matériaux nécessaires",
+  "travelCostsIncluded": "Frais de déplacement inclus",
+  "noAdditionalTravelCosts": "Aucun frais supplémentaire pour les déplacements",
+  "warrantyMonths": "Garantie (mois)",
+  "attractiveOfferTips": "Conseils pour une offre attractive",
+  "offerTipsContent": "• Soyez précis dans votre description\n• Montrez votre compréhension du projet\n• Mettez en avant vos compétences clés\n• Proposez un prix compétitif mais juste\n• Respectez les délais demandés",
+  "sendMyOffer": "Envoyer mon offre",
+  "offerSentSuccessfully": "Offre envoyée avec succès !",
+  "errorSendingOffer": "Erreur lors de l'envoi de l'offre",
+  "alreadyMadeOfferForProject": "Vous avez déjà fait une offre pour ce projet",
+  "projectNoLongerAcceptsOffers": "Ce projet n'accepte plus d'offres",
+  "days": "jours",
+  "months": "mois"
 
 }

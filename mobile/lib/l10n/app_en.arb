@@ -257,6 +257,129 @@
         "type": "int"
       }
     }
-  }
+  },
+  "messaging": "Messaging",
+  "searchMessage": "Search for a message...",
+  "allMessages": "All messages",
+  "noConversations": "No conversations",
+  "noResultsFor": "No results for \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "startConversation": "Start a conversation...",
+  "yesterday": "Yesterday",
+  "online": "Online",
+  "noMessagesStartConversation": "No messages. Start the conversation!",
+  "today": "Today",
+  "yourMessage": "Your message...",
+  "searchForServices": "Search for services...",
+  "allServices": "All services",
+  "noCategoriesAvailable": "No categories available",
+  "availableProjects": "Available Projects",
+  "findBestProjects": "Find the best projects",
+  "growBusinessQualityClients": "Grow your business with quality clients",
+  "explore": "Explore",
+  "yourStatistics": "Your statistics",
+  "completedServices": "Completed\nServices",
+  "inProgress": "In Progress",
+  "messages": "Messages",
+  "monthlyEarnings": "Monthly Earnings",
+  "averageRating": "Average Rating",
+  "reviews": "Reviews",
+  "searchProjects": "Search Projects",
+  "searchProjectsPlaceholder": "Search for projects...",
+  "noProjectsAvailable": "No projects available",
+  "comeBackLaterForNewProjects": "Come back later to discover new projects",
+  "projectRemovedFromFavorites": "Project removed from favorites",
+  "projectAddedToFavorites": "Project added to favorites",
+  "error": "Error: ",
+  "chooseYourDomains": "Choose Your Domains",
+  "expertiseDomains": "Expertise Domains",
+  "selectUpToCategoriesDescription": "Please select up to {maxCategories} categories where you offer your services",
+  "@selectUpToCategoriesDescription": {
+    "placeholders": {
+      "maxCategories": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedCategories": "Selected: {selected}/{max}",
+  "@selectedCategories": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noCategoriesAvailable": "No categories available",
+  "finishRegistration": "FINISH REGISTRATION",
+  "maxCategoriesSelectionLimit": "You can select a maximum of {max} categories",
+  "@maxCategoriesSelectionLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAtLeastOneCategory": "Please select at least one category",
+  "registrationError": "Registration error",
+  "errorMessage": "Error: {error}",
+  "@errorMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filter": "Filter",
+  "rating": "Rating",
+  "type": "Type",
+  "company": "Company",
+  "freelance": "Freelance",
+  "location": "Location",
+  "selectLocation": "Select a location",
+  "back": "Back",
+  "apply": "Apply",
+  
+  "makeOffer": "Make an Offer",
+  "projectToHandle": "Project to Handle",
+  "pricing": "Pricing",
+  "proposedPrice": "Proposed Price (€) *",
+  "allInclusivePrice": "Your all-inclusive price",
+  "priceRequired": "Price is required",
+  "enterValidPrice": "Please enter a valid price",
+  "priceIncludesAllCosts": "This price should include all your costs. You can negotiate with the client later.",
+  "deliveryTime": "Delivery Time",
+  "deliveryTimeInDays": "Delivery time in days *",
+  "daysToCompleteProject": "Number of days to complete the project",
+  "deliveryTimeRequired": "Delivery time is required",
+  "enterValidDeliveryTime": "Please enter a valid delivery time",
+  "accompanimentMessage": "Cover Message",
+  "detailedProposal": "Your detailed proposal *",
+  "explainYourApproach": "Explain your approach, skills, references...",
+  "messageRequired": "Message is required",
+  "messageMinLength": "Message must contain at least 50 characters",
+  "optionsAndWarranties": "Options and Warranties",
+  "materialsIncluded": "Materials Included",
+  "priceIncludesMaterials": "Price includes necessary materials",
+  "travelCostsIncluded": "Travel Costs Included",
+  "noAdditionalTravelCosts": "No additional travel costs",
+  "warrantyMonths": "Warranty (months)",
+  "attractiveOfferTips": "Tips for an attractive offer",
+  "offerTipsContent": "• Be precise in your description\n• Show your understanding of the project\n• Highlight your key skills\n• Propose a competitive but fair price\n• Respect the requested deadlines",
+  "sendMyOffer": "Send My Offer",
+  "offerSentSuccessfully": "Offer sent successfully!",
+  "errorSendingOffer": "Error sending offer",
+  "alreadyMadeOfferForProject": "You have already made an offer for this project",
+  "projectNoLongerAcceptsOffers": "This project no longer accepts offers",
+  "days": "days",
+  "months": "months"
 
 }

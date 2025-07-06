@@ -1,6 +1,7 @@
-// mobile/lib/ui/screens/make_offer_screen.dart - Version corrigée
+// mobile/lib/ui/screens/make_offer_screen.dart - Version avec traductions
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/models/client_project.dart';
 import '../../core/services/api_service.dart';
 import '../../providers/auth_provider.dart';
@@ -40,7 +41,6 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   void _estimatePrice() {
-    
     if (widget.project.minBudget != null && widget.project.minBudget! > 0) {
       try {
         _priceController.text = widget.project.minBudget!.toInt().toString();
@@ -49,7 +49,6 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         _priceController.text = '1000'; // Valeur par défaut
       }
     } else {
-      
       switch (widget.project.budgetRange) {
         case 'moins_500':
           _priceController.text = '400';
@@ -86,12 +85,14 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Proposer une offre',
-          style: TextStyle(
+        title: Text(
+          l10n.makeOffer,
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.w600,
           ),
@@ -117,6 +118,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildProjectSummary() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -136,9 +139,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Projet à traiter',
-                style: TextStyle(
+              Text(
+                l10n.projectToHandle,
+                style: const TextStyle(
                   color: Color(0xFF6366F1),
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
@@ -258,34 +261,36 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildPricingSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Tarification',
+      title: l10n.pricing,
       icon: Icons.euro,
       children: [
         TextFormField(
           controller: _priceController,
-          decoration: const InputDecoration(
-            labelText: 'Prix proposé (€) *',
-            hintText: 'Votre prix tout compris',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.euro),
+          decoration: InputDecoration(
+            labelText: l10n.proposedPrice,
+            hintText: l10n.allInclusivePrice,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.euro),
           ),
           keyboardType: TextInputType.number,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Le prix est obligatoire';
+              return l10n.priceRequired;
             }
             final price = double.tryParse(value);
             if (price == null || price <= 0) {
-              return 'Veuillez entrer un prix valide';
+              return l10n.enterValidPrice;
             }
             return null;
           },
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Ce prix doit inclure tous vos frais. Vous pourrez négocier avec le client par la suite.',
-          style: TextStyle(
+        Text(
+          l10n.priceIncludesAllCosts,
+          style: const TextStyle(
             color: Colors.grey,
             fontSize: 12,
           ),
@@ -295,27 +300,29 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildDeliverySection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Délai de livraison',
+      title: l10n.deliveryTime,
       icon: Icons.schedule,
       children: [
         TextFormField(
           controller: _deliveryTimeController,
-          decoration: const InputDecoration(
-            labelText: 'Délai en jours *',
-            hintText: 'Nombre de jours pour réaliser le projet',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.schedule),
-            suffixText: 'jours',
+          decoration: InputDecoration(
+            labelText: l10n.deliveryTimeInDays,
+            hintText: l10n.daysToCompleteProject,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.schedule),
+            suffixText: l10n.days,
           ),
           keyboardType: TextInputType.number,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Le délai est obligatoire';
+              return l10n.deliveryTimeRequired;
             }
             final days = int.tryParse(value);
             if (days == null || days <= 0) {
-              return 'Veuillez entrer un délai valide';
+              return l10n.enterValidDeliveryTime;
             }
             return null;
           },
@@ -325,25 +332,27 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildMessageSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Message d\'accompagnement',
+      title: l10n.accompanimentMessage,
       icon: Icons.message,
       children: [
         TextFormField(
           controller: _messageController,
-          decoration: const InputDecoration(
-            labelText: 'Votre proposition détaillée *',
-            hintText: 'Expliquez votre approche, vos compétences, vos références...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.detailedProposal,
+            hintText: l10n.explainYourApproach,
+            border: const OutlineInputBorder(),
             alignLabelWithHint: true,
           ),
           maxLines: 6,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Le message est obligatoire';
+              return l10n.messageRequired;
             }
             if (value.length < 50) {
-              return 'Le message doit contenir au moins 50 caractères';
+              return l10n.messageMinLength;
             }
             return null;
           },
@@ -354,13 +363,15 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildOptionsSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Options et garanties',
+      title: l10n.optionsAndWarranties,
       icon: Icons.security,
       children: [
         CheckboxListTile(
-          title: const Text('Matériaux inclus'),
-          subtitle: const Text('Le prix inclut les matériaux nécessaires'),
+          title: Text(l10n.materialsIncluded),
+          subtitle: Text(l10n.priceIncludesMaterials),
           value: _includesMaterials,
           onChanged: (bool? value) {
             setState(() {
@@ -371,8 +382,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
           contentPadding: EdgeInsets.zero,
         ),
         CheckboxListTile(
-          title: const Text('Frais de déplacement inclus'),
-          subtitle: const Text('Aucun frais supplémentaire pour les déplacements'),
+          title: Text(l10n.travelCostsIncluded),
+          subtitle: Text(l10n.noAdditionalTravelCosts),
           value: _travelCostsIncluded,
           onChanged: (bool? value) {
             setState(() {
@@ -385,12 +396,12 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _warrantyController,
-          decoration: const InputDecoration(
-            labelText: 'Garantie (mois)',
+          decoration: InputDecoration(
+            labelText: l10n.warrantyMonths,
             hintText: 'Ex: 12',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.verified_user),
-            suffixText: 'mois',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.verified_user),
+            suffixText: l10n.months,
           ),
           keyboardType: TextInputType.number,
         ),
@@ -399,6 +410,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildTipsSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -413,9 +426,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             children: [
               const Icon(Icons.lightbulb, color: Colors.blue, size: 20),
               const SizedBox(width: 8),
-              const Text(
-                'Conseils pour une offre attractive',
-                style: TextStyle(
+              Text(
+                l10n.attractiveOfferTips,
+                style: const TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.w600,
                 ),
@@ -423,13 +436,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            '• Soyez précis dans votre description\n'
-            '• Montrez votre compréhension du projet\n'
-            '• Mettez en avant vos compétences clés\n'
-            '• Proposez un prix compétitif mais juste\n'
-            '• Respectez les délais demandés',
-            style: TextStyle(
+          Text(
+            l10n.offerTipsContent,
+            style: const TextStyle(
               color: Colors.blue,
               fontSize: 13,
               height: 1.4,
@@ -469,6 +478,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -505,9 +516,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text(
-                    'Envoyer mon offre',
-                    style: TextStyle(
+                : Text(
+                    l10n.sendMyOffer,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -519,6 +530,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   }
 
   Future<void> _submitOffer() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (!_formKey.currentState!.validate()) {
       _scrollController.animateTo(
         0,
@@ -551,8 +564,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Offre envoyée avec succès !'),
+          SnackBar(
+            content: Text(l10n.offerSentSuccessfully),
             backgroundColor: Colors.green,
           ),
         );
@@ -562,11 +575,11 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
+        String errorMessage = l10n.errorSendingOffer;
         if (e.toString().contains('déjà fait une offre')) {
-          errorMessage = 'Vous avez déjà fait une offre pour ce projet';
+          errorMessage = l10n.alreadyMadeOfferForProject;
         } else if (e.toString().contains('plus d\'offres')) {
-          errorMessage = 'Ce projet n\'accepte plus d\'offres';
+          errorMessage = l10n.projectNoLongerAcceptsOffers;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(

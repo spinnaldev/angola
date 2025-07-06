@@ -1,6 +1,7 @@
 // lib/ui/screens/messaging/conversation_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../providers/messaging_provider.dart';
 import '../../../core/models/conversation.dart';
 import '../../../core/models/message.dart';
@@ -75,6 +76,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -121,7 +124,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'En ligne',
+                        l10n.online,
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
@@ -161,7 +164,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 if (messages.isEmpty) {
                   return Center(
                     child: Text(
-                      'Aucun message. Commencez la conversation!',
+                      l10n.noMessagesStartConversation,
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -243,10 +246,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       maxLines: null, // Permet d'agrandir automatiquement
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
-                        hintText: 'Votre message...',
+                      decoration: InputDecoration(
+                        hintText: l10n.yourMessage,
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       ),
                       onSubmitted: (text) => _handleSubmitted(text),
                     ),
@@ -270,6 +273,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
   
   Widget _buildDateHeader(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = DateTime(now.year, now.month, now.day - 1);
@@ -277,9 +281,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     
     String text;
     if (messageDate == today) {
-      text = "Aujourd'hui";
+      text = l10n.today;
     } else if (messageDate == yesterday) {
-      text = "Hier";
+      text = l10n.yesterday;
     } else {
       text = DateFormat('dd/MM/yyyy').format(date);
     }

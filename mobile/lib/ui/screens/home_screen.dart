@@ -1,6 +1,6 @@
-// lib/ui/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
@@ -79,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen>
       _hasFetchedReviews = true;
     }
   }
-
 
   @override
   void initState() {
@@ -188,22 +187,6 @@ class _HomeScreenState extends State<HomeScreen>
       }).toList();
     } else {
       _nearbyServices = [];
-      // _nearbyServices = List.generate(
-      //   6,
-      //   (index) => Service(
-      //     id: 200 + index,
-      //     title: serviceNames[random.nextInt(serviceNames.length)],
-      //     description: 'Service de proximité disponible rapidement',
-      //     imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
-      //     rating: 3.5 + random.nextDouble() * 1.5,
-      //     reviewCount: 5 + random.nextInt(30),
-      //     provider_id: 300 + index,
-      //     businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
-      //     price: 50.0 + random.nextInt(150) * 1.0,
-      //     categoryId: 1 + random.nextInt(5),
-      //     priceType: random.nextBool() ? 'quote' : 'fixed',
-      //   ),
-      // );
     }
   }
 
@@ -245,32 +228,6 @@ class _HomeScreenState extends State<HomeScreen>
           _recentProjects = allUserProjects.take(8).toList();
         }
       }
-
-      // Simuler des projets à proximité seulement si nécessaire
-      // _nearbyProjects = List.generate(
-      //   6,
-      //   (index) => ClientProject(
-      //     id: 300 + index,
-      //     title: 'Projet local ${index + 1}',
-      //     description: 'Projet à proximité nécessitant une intervention locale',
-      //     clientName: 'Client Local ${index + 1}',
-      //     categoryName: _getProjectCategory(index),
-      //     budgetRange: _getBudgetRange(index),
-      //     budgetDisplay:
-      //         '${_getBudgetMin(index)} - ${_getBudgetMax(index)} FCFA',
-      //     location: 'Cotonou, Littoral',
-      //     remotePossible: false,
-      //     urgency: 'medium',
-      //     status: 'open',
-      //     contactViaPlatform: true,
-      //     showEmail: false,
-      //     showPhone: false,
-      //     requiredSkills: _getRequiredSkills(index),
-      //     offersCount: random.nextInt(8),
-      //     viewsCount: 10 + random.nextInt(50),
-      //     createdAt: DateTime.now().subtract(Duration(days: random.nextInt(3))),
-      //   ),
-      // );
     } catch (e) {
       print('Erreur lors du chargement des projets: $e');
       // En cas d'erreur, utiliser des données de fallback
@@ -398,6 +355,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return BaseScreen(
       currentIndex: 0, // Accueil est sélectionné
       body: Stack(
@@ -412,6 +371,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildMainContent() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,8 +431,8 @@ class _HomeScreenState extends State<HomeScreen>
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: _isProviderMode()
-                      ? 'Rechercher un projet...'
-                      : 'Rechercher un service...',
+                      ? l10n.searchProject
+                      : l10n.searchService,
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
@@ -492,16 +453,16 @@ class _HomeScreenState extends State<HomeScreen>
             unselectedLabelColor: Colors.grey,
             indicatorColor: const Color(0xFF142FE2),
             tabs: _isProviderMode()
-                ? const [
-                    Tab(text: 'Accueil'),
-                    Tab(text: 'Récents'),
-                    Tab(text: 'Proximité'),
+                ? [
+                    Tab(text: l10n.home),
+                    Tab(text: l10n.recent),
+                    Tab(text: l10n.nearby),
                   ]
-                : const [
-                    Tab(text: 'Accueil'),
-                    Tab(text: 'Meilleurs'),
-                    Tab(text: 'Récents'),
-                    Tab(text: 'Proximité'),
+                : [
+                    Tab(text: l10n.home),
+                    Tab(text: l10n.best),
+                    Tab(text: l10n.recent),
+                    Tab(text: l10n.nearby),
                   ],
           ),
 
@@ -532,6 +493,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab d'accueil pour les clients
   Widget _buildClientHomeTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,18 +532,18 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Trouvez les meilleurs prestataires',
-                        style: TextStyle(
+                      Text(
+                        l10n.findBestProviders,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Réservez facilement des services de qualité',
-                        style: TextStyle(
+                      Text(
+                        l10n.bookQualityServices,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                         ),
@@ -599,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen>
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: const Text('Explorer'),
+                        child: Text(l10n.explore),
                       ),
                     ],
                   ),
@@ -612,23 +575,23 @@ class _HomeScreenState extends State<HomeScreen>
           _buildCategories(),
 
           // Meilleurs prestations de la semaine
-          _buildSectionTitle('Meilleurs prestations de la semaine'),
+          _buildSectionTitle(l10n.bestServicesWeek),
           _buildHorizontalServicesList(
-              _topRatedServices, 'Aucune prestation populaire pour le moment'),
+              _topRatedServices, l10n.noPopularServicesMoment),
 
           // Annonces récentes
-          _buildSectionTitle('Annonces récentes'),
+          _buildSectionTitle(l10n.recentAnnouncements),
           _buildHorizontalServicesList(
-              _recentServices, 'Aucune annonce récente disponible'),
+              _recentServices, l10n.noRecentAnnouncementsAvailable),
 
           // Meilleurs avis
-          _buildSectionTitle('Meilleurs avis'),
+          _buildSectionTitle(l10n.bestReviews),
           _buildReviewsSection(),
 
           // Services à proximité
-          _buildSectionTitle('À proximité de vous'),
+          _buildSectionTitle(l10n.nearbyServices),
           _buildVerticalServicesList(
-              _nearbyServices, 3, 'Aucun service disponible dans votre région'),
+              _nearbyServices, 3, l10n.noServicesAvailableRegion),
 
           // Voir tous les services
           Center(
@@ -639,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen>
                   Navigator.pushNamed(context, '/explore');
                 },
                 icon: const Icon(Icons.explore),
-                label: const Text('Explorer tous les services'),
+                label: Text(l10n.exploreAllServices),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -664,6 +627,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab d'accueil pour les prestataires
   Widget _buildProviderHomeTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,18 +666,18 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Découvrez de nouveaux projets',
-                        style: TextStyle(
+                      Text(
+                        l10n.discoverNewProjects,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Trouvez des clients et développez votre activité',
-                        style: TextStyle(
+                      Text(
+                        l10n.findClientsDevelopBusiness,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                         ),
@@ -736,7 +701,7 @@ class _HomeScreenState extends State<HomeScreen>
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: const Text('Voir projets'),
+                        child: Text(l10n.viewProjects),
                       ),
                     ],
                   ),
@@ -749,14 +714,14 @@ class _HomeScreenState extends State<HomeScreen>
           _buildProviderStats(),
 
           // Projets récents
-          _buildSectionTitle('Projets récents'),
+          _buildSectionTitle(l10n.recentProjects),
           _buildHorizontalProjectsList(
-              _recentProjects, 'Aucun projet récent disponible'),
+              _recentProjects, l10n.noRecentProjectsAvailable),
 
           // Projets à proximité
-          _buildSectionTitle('À proximité de vous'),
+          _buildSectionTitle(l10n.nearbyServices),
           _buildVerticalProjectsList(
-              _nearbyProjects, 3, 'Aucun projet disponible dans votre région'),
+              _nearbyProjects, 3, l10n.noProjectsAvailableRegion),
 
           // Voir tous les projets
           Center(
@@ -772,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen>
                   );
                 },
                 icon: const Icon(Icons.work),
-                label: const Text('Voir tous les projets'),
+                label: Text(l10n.viewAllProjects),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -793,24 +758,25 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Tab des projets récents (mode prestataire)
   Widget _buildRecentProjectsTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          const Text(
-            'Projets les plus récents',
-            style: TextStyle(
+          Text(
+            l10n.mostRecentProjects,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           _buildVerticalProjectsList(_recentProjects, _recentProjects.length,
-              'Aucun nouveau projet disponible'),
+              l10n.noNewProjectsAvailable),
         ],
       ),
     );
@@ -818,6 +784,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des projets à proximité (mode prestataire)
   Widget _buildNearbyProjectsTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -827,9 +795,9 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Projets à proximité',
-                style: TextStyle(
+              Text(
+                l10n.nearbyProjectsTab,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -841,7 +809,7 @@ class _HomeScreenState extends State<HomeScreen>
                   });
                 },
                 icon: const Icon(Icons.map, size: 16),
-                label: const Text('Carte'),
+                label: Text(l10n.map),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -856,7 +824,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 16),
           _buildVerticalProjectsList(_nearbyProjects, _nearbyProjects.length,
-              'Aucun projet disponible dans votre région'),
+              l10n.noProjectsAvailableRegion),
         ],
       ),
     );
@@ -864,6 +832,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Statistiques du prestataire
   Widget _buildProviderStats() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
@@ -885,9 +855,9 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Vos statistiques',
-                style: TextStyle(
+              Text(
+                l10n.yourStatistics,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -905,7 +875,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Prestations terminées',
+                  l10n.completedServices,
                   _providerStats['prestations_completed_this_month']
                           ?.toString() ??
                       '0',
@@ -916,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'En cours',
+                  l10n.inProgress,
                   _providerStats['prestations_in_progress']?.toString() ?? '0',
                   Icons.work,
                   Colors.blue,
@@ -929,7 +899,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Messages non lus',
+                  l10n.unreadMessages,
                   _providerStats['unread_messages']?.toString() ?? '0',
                   Icons.message,
                   Colors.orange,
@@ -938,7 +908,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Revenus ce mois',
+                  l10n.revenueThisMonth,
                   '${(_providerStats['total_earnings_this_month'] ?? 0.0).toStringAsFixed(0)}K',
                   Icons.attach_money,
                   Colors.green,
@@ -951,7 +921,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Note moyenne',
+                  l10n.averageRating,
                   (_providerStats['avg_rating'] ?? 0.0).toStringAsFixed(1),
                   Icons.star,
                   Colors.amber,
@@ -960,7 +930,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Total avis',
+                  l10n.totalReviews,
                   _providerStats['total_reviews']?.toString() ?? '0',
                   Icons.rate_review,
                   Colors.purple,
@@ -1010,15 +980,17 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des meilleurs services (mode client uniquement)
   Widget _buildTopRatedTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          const Text(
-            'Meilleurs prestataires par note',
-            style: TextStyle(
+          Text(
+            l10n.bestProvidersByRating,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -1027,7 +999,7 @@ class _HomeScreenState extends State<HomeScreen>
           _buildVerticalServicesList(
               _topRatedServices,
               _topRatedServices.length,
-              'Aucun service bien noté disponible pour le moment'),
+              l10n.noWellRatedServicesMoment),
         ],
       ),
     );
@@ -1035,22 +1007,24 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des services récents (mode client uniquement)
   Widget _buildRecentTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          const Text(
-            'Annonces les plus récentes',
-            style: TextStyle(
+          Text(
+            l10n.mostRecentAnnouncements,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           _buildVerticalServicesList(_recentServices, _recentServices.length,
-              'Aucune nouvelle annonce disponible'),
+              l10n.noNewAnnouncementsAvailable),
         ],
       ),
     );
@@ -1058,6 +1032,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des services à proximité (mode client uniquement)
   Widget _buildNearbyTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -1067,9 +1043,9 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Services à proximité',
-                style: TextStyle(
+              Text(
+                l10n.nearbyServicesTab,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1081,7 +1057,7 @@ class _HomeScreenState extends State<HomeScreen>
                   });
                 },
                 icon: const Icon(Icons.map, size: 16),
-                label: const Text('Carte'),
+                label: Text(l10n.map),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -1096,7 +1072,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 16),
           _buildVerticalServicesList(_nearbyServices, _nearbyServices.length,
-              'Aucun service disponible dans votre région'),
+              l10n.noServicesAvailableRegion),
         ],
       ),
     );
@@ -1104,14 +1080,16 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Widget pour afficher les catégories (mode client uniquement)
   Widget _buildCategories() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
           child: Text(
-            'Catégories populaires',
-            style: TextStyle(
+            l10n.popularCategories,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -1133,7 +1111,7 @@ class _HomeScreenState extends State<HomeScreen>
             if (categoryProvider.categories.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.category_outlined,
-                message: 'Aucune catégorie disponible pour le moment',
+                message: l10n.noCategoriesAvailableMoment,
                 height: 120,
               );
             }
@@ -1206,9 +1184,9 @@ class _HomeScreenState extends State<HomeScreen>
             onPressed: () {
               Navigator.pushNamed(context, '/explore');
             },
-            child: const Text(
-              'Voir toutes les catégories',
-              style: TextStyle(
+            child: Text(
+              l10n.viewAllCategories,
+              style: const TextStyle(
                 color: Color(0xFF142FE2),
                 fontWeight: FontWeight.w500,
               ),
@@ -1236,6 +1214,8 @@ class _HomeScreenState extends State<HomeScreen>
   // Widget pour afficher une liste horizontale de services
   Widget _buildHorizontalServicesList(
       List<Service> services, String emptyMessage) {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_isLoading) {
       return const SizedBox(
         height: 220,
@@ -1360,7 +1340,7 @@ class _HomeScreenState extends State<HomeScreen>
                           const SizedBox(height: 4),
                           Text(
                             service.priceType == 'quote'
-                                ? 'Sur devis'
+                                ? l10n.onQuote
                                 : '${service.price.toInt()} FCFA',
                             style: const TextStyle(
                               fontSize: 12,
@@ -1384,6 +1364,8 @@ class _HomeScreenState extends State<HomeScreen>
   // Widget pour afficher une liste horizontale de projets
   Widget _buildHorizontalProjectsList(
       List<ClientProject> projects, String emptyMessage) {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_isLoading) {
       return const SizedBox(
         height: 220,
@@ -1519,7 +1501,7 @@ class _HomeScreenState extends State<HomeScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          project.status == 'open' ? 'Ouvert' : 'Fermé',
+                          project.status == 'open' ? l10n.open : l10n.closed,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
@@ -2153,41 +2135,3 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

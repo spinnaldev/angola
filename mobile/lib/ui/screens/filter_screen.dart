@@ -1,6 +1,7 @@
 // lib/ui/screens/filter_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/filter_provider.dart';
 
 class FilterScreen extends StatefulWidget {
@@ -13,15 +14,17 @@ class FilterScreen extends StatefulWidget {
 class _FilterScreenState extends State<FilterScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'Filtrer',
-          style: TextStyle(
+        title: Text(
+          l10n.filter,
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w500,
           ),
@@ -39,9 +42,9 @@ class _FilterScreenState extends State<FilterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Section Rang (Note)
-                const Text(
-                  'Rang',
-                  style: TextStyle(
+                Text(
+                  l10n.rating,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -59,9 +62,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 const SizedBox(height: 30),
                 
                 // Section Type
-                const Text(
-                  'Type',
-                  style: TextStyle(
+                Text(
+                  l10n.type,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -71,7 +74,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   children: [
                     Expanded(
                       child: _buildTypeButton(
-                        'Entreprise',
+                        l10n.company,
                         filterProvider.providerType == 'Entreprise',
                         () => filterProvider.setProviderType('Entreprise'),
                       ),
@@ -79,7 +82,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildTypeButton(
-                        'Freelance',
+                        l10n.freelance,
                         filterProvider.providerType == 'Freelance',
                         () => filterProvider.setProviderType('Freelance'),
                       ),
@@ -90,9 +93,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 const SizedBox(height: 30),
                 
                 // Section Localisation
-                const Text(
-                  'Localisation',
-                  style: TextStyle(
+                Text(
+                  l10n.location,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -112,7 +115,7 @@ class _FilterScreenState extends State<FilterScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          filterProvider.location.isEmpty ? 'Sélectionner une localisation' : filterProvider.location,
+                          filterProvider.location.isEmpty ? l10n.selectLocation : filterProvider.location,
                           style: TextStyle(
                             color: filterProvider.location.isEmpty ? Colors.grey : Colors.black,
                           ),
@@ -140,9 +143,9 @@ class _FilterScreenState extends State<FilterScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Retour',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.back,
+                          style: const TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
                           ),
@@ -163,9 +166,9 @@ class _FilterScreenState extends State<FilterScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Appliquer',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.apply,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
