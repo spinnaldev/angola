@@ -1,7 +1,8 @@
-// lib/ui/screens/auth/forgot_password_screen.dart
+// lib/ui/screens/auth/forgot_password_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import 'package:teyago/ui/widgets/custom_text_field.dart';
 import '../../../providers/auth_provider.dart';
 import '../../common/app_textfield.dart';
@@ -34,6 +35,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -62,7 +65,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    authProvider.errorMessage ?? 'Erreur de réinitialisation')),
+                    authProvider.errorMessage ?? l10n.resetError)), // TRADUIT
           );
         }
       } catch (e) {
@@ -81,6 +84,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
@@ -97,16 +102,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         child: Column(
           children: [
             const Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  // const Text(
-                  //   'Mot de passe oublié',
-                  //   style: TextStyle(
-                  //     fontSize: 18,
-                  //     fontWeight: FontWeight.w500,
-                  //   ),
-                  // ),
+                  // Titre retiré pour éviter la duplication
                 ],
               ),
             ),
@@ -118,18 +117,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Mot de passe oublié',
-                        style: TextStyle(
+                      Text(
+                        l10n.forgotPasswordTitle, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 16),
                       const Gap(80),
-                      const Text(
-                        'Veuillez entrer votre adresse e-mail. Vous recevrez un code pour créer un nouveau mot de passe par e-mail.',
-                        style: TextStyle(
+                      Text(
+                        l10n.forgotPasswordDescription, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black,
                         ),
@@ -137,15 +136,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const SizedBox(height: 30),
                       CustomTextField(
                         controller: _emailController,
-                        labelText: 'Email',
-                        hintText: 'Votre adresse email',
+                        labelText: l10n.email, // TRADUIT
+                        hintText: l10n.emailHint, // TRADUIT
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre email';
+                            return l10n.pleaseEnterEmail; // TRADUIT
                           }
                           if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                               .hasMatch(value)) {
-                            return 'Veuillez entrer un email valide';
+                            return l10n.pleaseEnterValidEmail; // TRADUIT
                           }
                           return null;
                         },
@@ -153,38 +152,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ? const Icon(Icons.check, color: Colors.green)
                             : null,
                       ),
-                      // TextFormField(
-                      //   controller: _emailController,
-                      //   keyboardType: TextInputType.emailAddress,
-                      //   onChanged: _validateEmail,
-                      //   decoration: InputDecoration(
-                      //     labelText: 'Email',
-                      //     filled: true,
-                      //     fillColor: Colors.grey[200],
-                      //     border: OutlineInputBorder(
-                      //       borderRadius: BorderRadius.circular(8.0),
-                      //       borderSide: BorderSide.none,
-                      //     ),
-                      //     suffixIcon: _emailController.text.isNotEmpty
-                      //         ? _isValidEmail
-                      //             ? const Icon(Icons.check, color: Colors.green)
-                      //             : const Icon(Icons.error, color: Colors.red)
-                      //         : null,
-                      //     contentPadding: const EdgeInsets.symmetric(
-                      //       horizontal: 16.0,
-                      //       vertical: 14.0,
-                      //     ),
-                      //   ),
-                      //   validator: (value) {
-                      //     if (value == null || value.isEmpty) {
-                      //       return 'Veuillez entrer votre email';
-                      //     }
-                      //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      //       return 'Veuillez entrer un email valide';
-                      //     }
-                      //     return null;
-                      //   },
-                      // ),
+                      
                       const SizedBox(height: 30),
                       const Gap(30),
                       SizedBox(
@@ -209,9 +177,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
-                                  'ENVOYER',
-                                  style: TextStyle(
+                              : Text(
+                                  l10n.sendButton, // TRADUIT
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),

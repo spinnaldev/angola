@@ -423,9 +423,11 @@
 //     );
 //   }
 // }
+// lib/ui/screens/auth/signup_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import 'package:teyago/ui/screens/auth/login_screen.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
@@ -462,7 +464,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.initState();
 
     if (widget.initialRole != null) {
-      print("On  récupéré le role a l'initialisation ");
+      print("On a récupéré le role à l'initialisation ");
       print(widget.initialRole);
       setState(() {
         _selectedRole = widget.initialRole!;
@@ -510,6 +512,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _register() async {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     setState(() {
       _isLoading = true;
     });
@@ -535,19 +539,22 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
-                Text(authProvider.errorMessage ?? 'Erreur d\'inscription')),
+                Text(authProvider.errorMessage ?? l10n.registrationError)), // TRADUIT
       );
     }
   }
 
   String _getRoleDescription() {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
     return _selectedRole == 'client'
-        ? 'J\'ai un projet à réaliser'
-        : 'Je propose mes services';
+        ? l10n.clientDescription  // TRADUIT
+        : l10n.providerDescription; // TRADUIT
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       backgroundColor: const Color(0xfff9f9f9),
       extendBodyBehindAppBar: true,
@@ -570,7 +577,7 @@ class _SignupScreenState extends State<SignupScreen> {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  _selectedRole == 'client' ? 'Client' : 'Prestataire',
+                  _selectedRole == 'client' ? l10n.client : l10n.provider, // TRADUIT
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -583,40 +590,35 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: Colors.grey,
                   ),
                 ),
-                // const Text(
-                //   "S'inscrire",
-                //   style: TextStyle(
-                //     fontSize: 28,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
+                
                 const Gap(36),
                 const SizedBox(height: 30),
                 CustomTextField(
                   controller: _firstNameController,
-                  labelText: 'Nom',
-                  hintText: 'Votre nom',
+                  labelText: l10n.lastName, // TRADUIT
+                  hintText: l10n.lastNameHint, // TRADUIT
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre nom';
+                      return l10n.pleaseEnterLastName; // TRADUIT
                     }
+                    return null;
                   },
-                  suffixIcon: _emailController.text.isNotEmpty
+                  suffixIcon: _firstNameController.text.isNotEmpty
                       ? const Icon(Icons.check, color: Colors.green)
                       : null,
                 ),
                 const Gap(8),
                 CustomTextField(
                   controller: _emailController,
-                  labelText: 'Email',
-                  hintText: 'Votre adresse email',
+                  labelText: l10n.email, // TRADUIT
+                  hintText: l10n.emailHint, // TRADUIT
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre email';
+                      return l10n.pleaseEnterEmail; // TRADUIT
                     }
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                         .hasMatch(value)) {
-                      return 'Veuillez entrer un email valide';
+                      return l10n.pleaseEnterValidEmail; // TRADUIT
                     }
                     return null;
                   },
@@ -624,209 +626,55 @@ class _SignupScreenState extends State<SignupScreen> {
                       ? const Icon(Icons.check, color: Colors.green)
                       : null,
                 ),
-                // AppTextField(
-                //   label: 'Nom',
-                //   controller: _firstNameController,
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Veuillez entrer votre nom';
-                //     }
-                //     return null;
-                //   },
-                //   suffixIcon: _firstNameController.text.isNotEmpty
-                //       ? Icon(Icons.check, color: Colors.green)
-                //       : null,
-                // ),
-                // const SizedBox(height: 16),
-                // AppTextField(
-                //   label: 'Email',
-                //   controller: _emailController,
-                //   keyboardType: TextInputType.emailAddress,
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Veuillez entrer votre email';
-                //     }
-                //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                //         .hasMatch(value)) {
-                //       return 'Veuillez entrer un email valide';
-                //     }
-                //     return null;
-                //   },
-                // ),
+                
                 const Gap(8),
                 CustomTextField(
                   controller: _usernameController,
-                  labelText: 'Nom d\'utilisateur',
-                  hintText: 'Votre nom d\'utilisateur',
+                  labelText: l10n.username, // TRADUIT
+                  hintText: l10n.usernameHint, // TRADUIT
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre nom d\'utilisateur';
+                      return l10n.pleaseEnterUsername; // TRADUIT
                     }
+                    return null;
                   },
-                  suffixIcon: _emailController.text.isNotEmpty
+                  suffixIcon: _usernameController.text.isNotEmpty
                       ? const Icon(Icons.check, color: Colors.green)
                       : null,
                 ),
                 const Gap(8),
                 CustomTextField(
                   controller: _passwordController,
-                  labelText: 'Mot de passe',
-                  hintText: 'Votre mot de passe',
+                  labelText: l10n.password, // TRADUIT
+                  hintText: l10n.passwordHint, // TRADUIT
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre mot de passe';
+                      return l10n.pleaseEnterPassword; // TRADUIT
                     }
                     return null;
                   },
                 ),
-                // AppTextField(
-                //   label: 'Nom d\'utilisateur',
-                //   controller: _usernameController,
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Veuillez entrer un nom d\'utilisateur';
-                //     }
-                //     return null;
-                //   },
-                // ),
-                // const SizedBox(height: 16),
-                // AppTextField(
-                //   label: 'Mot de passe',
-                //   controller: _passwordController,
-                //   obscureText: !_showPassword,
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Veuillez entrer un mot de passe';
-                //     }
-                //     if (value.length < 6) {
-                //       return 'Le mot de passe doit contenir au moins 6 caractères';
-                //     }
-                //     return null;
-                //   },
-                //   suffixIcon: IconButton(
-                //     icon: Icon(
-                //       _showPassword
-                //           ? Icons.visibility_off
-                //           : Icons.visibility,
-                //       color: Colors.grey,
-                //     ),
-                //     onPressed: () {
-                //       setState(() {
-                //         _showPassword = !_showPassword;
-                //       });
-                //     },
-                //   ),
-                // ),
+                
                 const Gap(8),
                 CustomTextField(
                   controller: _phoneController,
-                  labelText: 'Numéro de téléphone',
+                  labelText: l10n.phoneNumber, // TRADUIT
                   keyboardType: TextInputType.number,
-                  hintText: 'Votre numéro de téléphone',
+                  hintText: l10n.phoneNumberHint, // TRADUIT
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre numéro de téléphone';
+                      return l10n.pleaseEnterPhoneNumber; // TRADUIT
                     }
+                    return null;
                   },
-                  suffixIcon: _emailController.text.isNotEmpty
+                  suffixIcon: _phoneController.text.isNotEmpty
                       ? const Icon(Icons.check, color: Colors.green)
                       : null,
                 ),
-                // AppTextField(
-                //   label: 'Numéro de téléphone',
-                //   controller: _phoneController,
-                //   keyboardType: TextInputType.phone,
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Veuillez entrer votre numéro de téléphone';
-                //     }
-                //     return null;
-                //   },
-                // ),
-                // const SizedBox(height: 24),
+                
                 const Gap(20),
-                // const Text(
-                //   'Inscrivez-vous en choisissant votre profil',
-                //   style: TextStyle(
-                //     fontSize: 16,
-                //     fontWeight: FontWeight.w500,
-                //   ),
-                // ),
-                // const SizedBox(height: 16),
-                // Row(
-                //   children: [
-                //     Expanded(
-                //       child: ElevatedButton(
-                //         onPressed: () {
-                //           setState(() {
-                //             _selectedRole = 'client';
-                //           });
-                //         },
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: _selectedRole == 'client'
-                //               ? const Color(0xFF142FE2)
-                //               : Colors.grey[300],
-                //           padding:
-                //               const EdgeInsets.symmetric(vertical: 12),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(30),
-                //             side: BorderSide(
-                //               color: _selectedRole == 'client'
-                //                   ? Colors.transparent
-                //                   : Colors.grey.shade300,
-                //             ),
-                //           ),
-                //           elevation: 0,
-                //         ),
-                //         child: Text(
-                //           'CLIENT',
-                //           style: TextStyle(
-                //             color: _selectedRole == 'client'
-                //                 ? Colors.white
-                //                 : Colors.black,
-                //             fontWeight: FontWeight.bold,
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //     const SizedBox(width: 16),
-                //     Expanded(
-                //       child: ElevatedButton(
-                //         onPressed: () {
-                //           setState(() {
-                //             _selectedRole = 'provider';
-                //           });
-                //         },
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: _selectedRole == 'provider'
-                //               ? const Color(0xFF142FE2)
-                //               : Colors.white,
-                //           padding:
-                //               const EdgeInsets.symmetric(vertical: 12),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(30),
-                //             side: BorderSide(
-                //               color: _selectedRole == 'provider'
-                //                   ? Colors.transparent
-                //                   : Colors.grey.shade300,
-                //             ),
-                //           ),
-                //           elevation: 0,
-                //         ),
-                //         child: Text(
-                //           'PRESTATAIRE',
-                //           style: TextStyle(
-                //             color: _selectedRole == 'provider'
-                //                 ? Colors.white
-                //                 : Colors.black,
-                //             fontWeight: FontWeight.bold,
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
+                
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -836,19 +684,19 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     );
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        'Vous avez déja un compte ?',
-                        style: TextStyle(
+                        l10n.alreadyHaveAccountQuestion, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black,
                         ),
                       ),
-                      Gap(8),
-                      Icon(
+                      const Gap(8),
+                      const Icon(
                         Icons.arrow_right_alt,
                         color: Color(0xFF142FE2),
                         size: 20,
@@ -856,26 +704,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     ],
                   ),
                 ),
-                // const Row(
-                //   mainAxisSize: MainAxisSize.min,
-                //   mainAxisAlignment: MainAxisAlignment.end,
-                //   children: [
-                //     Text(
-                //       'Vous avez déjà un compte ?',
-                //       style: TextStyle(
-                //         fontSize: 14,
-                //         color: Colors.black,
-                //       ),
-                //     ),
-                //     Gap(8),
-                //     Icon(
-                //       Icons.arrow_right_alt, // Or Icons.arrow_forward
-                //       color: const Color(0xFF142FE2),
-                //       size: 20,
-                //     ),
-                //   ],
-                // ),
-
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -893,8 +721,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
                             _selectedRole == 'client'
-                                ? 'S\'INSCRIRE'
-                                : 'SUIVANT',
+                                ? l10n.signUpButton // TRADUIT
+                                : l10n.nextButton, // TRADUIT
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -908,8 +736,8 @@ class _SignupScreenState extends State<SignupScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text(
-                        'Ou connectez-vous avec un compte social',
-                        style: TextStyle(
+                        l10n.orLoginWithSocial, // TRADUIT
+                        style: const TextStyle(
                           color: Colors.black,
                           fontSize: 16,
                         ),

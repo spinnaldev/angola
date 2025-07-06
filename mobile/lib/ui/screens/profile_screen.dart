@@ -1,6 +1,7 @@
-// lib/ui/screens/profile_screen.dart - Version corrigée
+// lib/ui/screens/profile_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import '../../providers/auth_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/project_provider.dart';
@@ -68,6 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfilContent() {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: Consumer<AuthProvider>(
@@ -82,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 // Header avec titre et crayon d'édition
-                _buildHeader(),
+                _buildHeader(l10n),
                 
                 Expanded(
                   child: SingleChildScrollView(
@@ -91,17 +94,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 20),
                         
                         // Section profil utilisateur
-                        _buildUserProfileSection(user),
+                        _buildUserProfileSection(user, l10n),
                         
                         _buildDivider(),
                         
                         // Section adresse et membre depuis
-                        _buildLocationAndMemberSection(user),
+                        _buildLocationAndMemberSection(user, l10n),
                         
                         _buildDivider(),
                         
                         // Section Mes projets/services
-                        _buildProjectsSection(user),
+                        _buildProjectsSection(user, l10n),
                         
                         const SizedBox(height: 100), // Espace pour la bottom nav
                       ],
@@ -116,15 +119,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Mon profil',
-            style: TextStyle(
+          Text(
+            l10n.myProfile, // TRADUIT
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black,
@@ -150,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildUserProfileSection(User user) {
+  Widget _buildUserProfileSection(User user, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -180,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'En ligne • il y a une minute',
+                      l10n.onlineOneMinuteAgo, // TRADUIT
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -198,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    user.role == 'provider' ? 'Prestataire' : 'Client',
+                    user.role == 'provider' ? l10n.provider : l10n.client, // TRADUIT
                     style: TextStyle(
                       color: user.role == 'provider' 
                           ? const Color(0xFF142FE2)
@@ -242,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildLocationAndMemberSection(User user) {
+  Widget _buildLocationAndMemberSection(User user, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -267,9 +270,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Localisation',
-                      style: TextStyle(
+                    Text(
+                      l10n.locationLabel, // TRADUIT
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -277,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.location ?? 'Cotonou, Littoral, Bénin',
+                      user.location ?? l10n.defaultLocation, // TRADUIT
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -311,9 +314,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Membre depuis',
-                      style: TextStyle(
+                    Text(
+                      l10n.memberSince, // TRADUIT
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -321,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      DateFormat('MMMM yyyy', 'fr_FR').format(user.dateJoined),
+                      _getFormattedMemberDate(user.dateJoined, l10n),
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -337,7 +340,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProjectsSection(User user) {
+  String _getFormattedMemberDate(DateTime date, AppLocalizations l10n) {
+    // Formater la date selon la langue
+    final locale = l10n.localeName;
+    switch (locale) {
+      case 'fr':
+        return DateFormat('MMMM yyyy', 'fr_FR').format(date);
+      case 'en':
+        return DateFormat('MMMM yyyy', 'en_US').format(date);
+      case 'pt':
+        return DateFormat('MMMM yyyy', 'pt_PT').format(date);
+      default:
+        return DateFormat('MMMM yyyy').format(date);
+    }
+  }
+
+  Widget _buildProjectsSection(User user, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -346,7 +364,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               Text(
-                user.role == 'provider' ? 'Mes services' : 'Mes projets',
+                user.role == 'provider' ? l10n.myServices : l10n.myProjects, // TRADUIT
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -369,9 +387,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   }
                 },
-                child: const Text(
-                  'Voir tout',
-                  style: TextStyle(
+                child: Text(
+                  l10n.viewAll, // TRADUIT
+                  style: const TextStyle(
                     color: Color(0xFF6366F1),
                     fontWeight: FontWeight.w600,
                   ),
@@ -382,15 +400,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           
           if (user.role == 'provider')
-            _buildProviderServicesCarousel()
+            _buildProviderServicesCarousel(l10n)
           else
-            _buildClientProjectsCarousel(),
+            _buildClientProjectsCarousel(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildProviderServicesCarousel() {
+  Widget _buildProviderServicesCarousel(AppLocalizations l10n) {
     return Consumer<ServiceProvider>(
       builder: (context, serviceProvider, child) {
         if (serviceProvider.isLoading) {
@@ -423,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Aucun service ajouté',
+                    l10n.noServiceAdded, // TRADUIT
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -432,7 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Créez votre premier service',
+                    l10n.createFirstService, // TRADUIT
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -451,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             itemCount: services.length.clamp(0, 5), // Limiter à 5 services
             itemBuilder: (context, index) {
               final service = services[index];
-              return _buildServiceCard(service);
+              return _buildServiceCard(service, l10n);
             },
           ),
         );
@@ -459,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildClientProjectsCarousel() {
+  Widget _buildClientProjectsCarousel(AppLocalizations l10n) {
     return Consumer<ProjectProvider>(
       builder: (context, projectProvider, child) {
         if (projectProvider.isLoadingUserProjects) {
@@ -492,7 +510,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // ),
                   const SizedBox(height: 8),
                   Text(
-                    'Aucun projet créé',
+                    l10n.noProjectCreated, // TRADUIT
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -501,7 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Créez votre premier projet',
+                    l10n.createFirstProject, // TRADUIT
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -520,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             itemCount: projects.length.clamp(0, 5), // Limiter à 5 projets
             itemBuilder: (context, index) {
               final project = projects[index];
-              return _buildProjectCard(project);
+              return _buildProjectCard(project, l10n);
             },
           ),
         );
@@ -528,7 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildServiceCard(Service service) {
+  Widget _buildServiceCard(Service service, AppLocalizations l10n) {
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
@@ -614,7 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 4),
                     Text(
                       service.priceType == 'quote' 
-                          ? 'Sur devis' 
+                          ? l10n.onQuote // TRADUIT
                           : '${service.price.toInt()}€',
                       style: const TextStyle(
                         fontSize: 12,
@@ -632,7 +650,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProjectCard(ClientProject project) {
+  Widget _buildProjectCard(ClientProject project, AppLocalizations l10n) {
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 12),
@@ -688,7 +706,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      project.statusDisplay,
+                      _getProjectStatusText(project, l10n), // TRADUIT
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -739,7 +757,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${project.offersCount} offres',
+                    l10n.offersCount(project.offersCount), // TRADUIT
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -752,6 +770,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  String _getProjectStatusText(ClientProject project, AppLocalizations l10n) {
+    if (project.isOpen) return l10n.open;
+    if (project.isCompleted) return l10n.completed;
+    return l10n.inProgress;
   }
 
   Widget _buildDivider() {

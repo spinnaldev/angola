@@ -1,4 +1,4 @@
-// lib/ui/screens/settings_screen.dart
+// lib/ui/screens/settings_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -78,12 +78,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
 
             // Section Préférences
-            // _buildPreferencesSection(context, l10n),
-            // const SizedBox(height: 24),
+            _buildPreferencesSection(context, l10n),
+            const SizedBox(height: 24),
 
             // Section Support et Aide
-            // _buildSupportSection(context, l10n),
-            // const SizedBox(height: 24),
+            _buildSupportSection(context, l10n),
+            const SizedBox(height: 24),
 
             // Section Légal
             _buildLegalSection(context, l10n),
@@ -275,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsTile(
               icon: Icons.notifications,
               title: l10n.notifications,
-              subtitle: _notificationsEnabled ? 'Activées' : 'Désactivées',
+              subtitle: _notificationsEnabled ? l10n.enabled : l10n.disabled,
               trailing: Switch(
                 value: _notificationsEnabled,
                 onChanged: (value) {
@@ -297,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(height: 1),
               _buildSettingsTile(
                 icon: Icons.email,
-                title: 'Notifications par email',
+                title: l10n.emailNotifications,
                 trailing: Switch(
                   value: _emailNotifications,
                   onChanged: (value) {
@@ -318,7 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(height: 1),
               _buildSettingsTile(
                 icon: Icons.phone_android,
-                title: 'Notifications push',
+                title: l10n.pushNotifications,
                 trailing: Switch(
                   value: _pushNotifications,
                   onChanged: (value) {
@@ -347,13 +347,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Préférences'),
+        _buildSectionTitle(l10n.preferences),
         _buildSettingsCard(
           children: [
             _buildSettingsTile(
               icon: Icons.dark_mode,
-              title: 'Mode sombre',
-              subtitle: _darkModeEnabled ? 'Activé' : 'Désactivé',
+              title: l10n.darkMode,
+              subtitle: _darkModeEnabled ? l10n.enabled : l10n.disabled,
               trailing: Switch(
                 value: _darkModeEnabled,
                 onChanged: (value) {
@@ -376,12 +376,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsTile(
               icon: Icons.location_on,
               title: l10n.location,
-              subtitle: 'Gérer vos préférences de localisation',
+              subtitle: l10n.manageLocationPreferences,
               onTap: () {
-                // TODO: Ouvrir les paramètres de localisation
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Paramètres de localisation - À venir'),
+                  SnackBar(
+                    content: Text(l10n.locationSettingsComingSoon),
                   ),
                 );
               },
@@ -396,13 +395,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Support et Aide'),
+        _buildSectionTitle(l10n.supportAndHelp),
         _buildSettingsCard(
           children: [
             _buildSettingsTile(
               icon: Icons.help_outline,
-              title: 'Aide et FAQ',
-              subtitle: 'Questions fréquemment posées',
+              title: l10n.helpAndFAQ,
+              subtitle: l10n.frequentlyAskedQuestions,
               onTap: () {
                 Navigator.push(
                   context,
@@ -415,13 +414,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             _buildSettingsTile(
               icon: Icons.contact_support,
-              title: 'Nous contacter',
-              subtitle: 'Support client et assistance',
+              title: l10n.contactUs,
+              subtitle: l10n.customerSupportAssistance,
               onTap: () {
-                // TODO: Ouvrir le support client
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Support client - À venir'),
+                  SnackBar(
+                    content: Text(l10n.customerSupportComingSoon),
                   ),
                 );
               },
@@ -429,13 +427,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             _buildSettingsTile(
               icon: Icons.feedback,
-              title: 'Donner un avis',
-              subtitle: 'Aidez-nous à améliorer l\'application',
+              title: l10n.giveFeedback,
+              subtitle: l10n.helpUsImproveApp,
               onTap: () {
-                // TODO: Ouvrir le formulaire de feedback
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Feedback - À venir'),
+                  SnackBar(
+                    content: Text(l10n.feedbackComingSoon),
                   ),
                 );
               },
@@ -450,12 +447,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Légal'),
+        _buildSectionTitle(l10n.legal),
         _buildSettingsCard(
           children: [
             _buildSettingsTile(
               icon: Icons.privacy_tip,
-              title: 'Politique de confidentialité',
+              title: l10n.privacyPolicy,
               onTap: () {
                 Navigator.push(
                   context,
@@ -468,7 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             _buildSettingsTile(
               icon: Icons.description,
-              title: 'Conditions d\'utilisation',
+              title: l10n.termsOfService,
               onTap: () {
                 Navigator.push(
                   context,
@@ -481,12 +478,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             _buildSettingsTile(
               icon: Icons.info_outline,
-              title: 'À propos',
-              subtitle: 'Version 1.0.0',
+              title: l10n.about,
+              subtitle: l10n.version('1.0.0'),
               onTap: () {
                 showAboutDialog(
                   context: context,
-                  applicationName: 'Angola Services',
+                  applicationName: l10n.appName,
                   applicationVersion: '1.0.0',
                   applicationIcon: const Icon(
                     Icons.home_repair_service,
@@ -494,7 +491,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: Color(0xFF142FE2),
                   ),
                   children: [
-                    const Text('Plateforme de mise en relation entre clients et prestataires de services.'),
+                    Text(l10n.appDescription),
                   ],
                 );
               },
@@ -509,41 +506,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Compte'),
+        _buildSectionTitle(l10n.account),
         _buildSettingsCard(
           children: [
-            // _buildSettingsTile(
-            //   icon: Icons.lock_outline,
-            //   title: 'Changer le mot de passe',
-            //   onTap: () {
-            //     // TODO: Implémenter le changement de mot de passe
-            //     ScaffoldMessenger.of(context).showSnackBar(
-            //       const SnackBar(
-            //         content: Text('Changement de mot de passe - À venir'),
-            //       ),
-            //     );
-            //   },
-            // ),
-            const Divider(height: 1),
             _buildSettingsTile(
               icon: Icons.logout,
-              title: 'Déconnexion',
+              title: l10n.logout,
               iconColor: Colors.red,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
               onTap: () {
-                _showLogoutDialog(context, authProvider);
+                _showLogoutDialog(context, authProvider, l10n);
               },
             ),
-            // const Divider(height: 1),
-            // _buildSettingsTile(
-            //   icon: Icons.delete_outline,
-            //   title: 'Supprimer le compte',
-            //   iconColor: Colors.red,
-            //   trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
-            //   onTap: () {
-            //     _showDeleteAccountDialog(context);
-            //   },
-            // ),
           ],
         ),
       ],
@@ -554,13 +528,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Authentification'),
+        _buildSectionTitle(l10n.authentication),
         _buildSettingsCard(
           children: [
             _buildSettingsTile(
               icon: Icons.login,
               title: l10n.login,
-              subtitle: 'Connectez-vous pour accéder à toutes les fonctionnalités',
+              subtitle: l10n.loginToAccessAllFeatures,
               onTap: () {
                 Navigator.push(
                   context,
@@ -576,17 +550,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+  void _showLogoutDialog(BuildContext context, AuthProvider authProvider, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Déconnexion'),
-          content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+          title: Text(l10n.logout),
+          content: Text(l10n.confirmLogout),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text(l10n.cancel),
             ),
             TextButton(
               onPressed: () async {
@@ -599,9 +573,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }
               },
-              child: const Text(
-                'Déconnexion',
-                style: TextStyle(color: Colors.red),
+              child: Text(
+                l10n.logout,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           ],
@@ -610,37 +584,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
+  void _showDeleteAccountDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Supprimer le compte',
-            style: TextStyle(color: Colors.red),
+          title: Text(
+            l10n.deleteAccount,
+            style: const TextStyle(color: Colors.red),
           ),
-          content: const Text(
-            'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
-          ),
+          content: Text(l10n.deleteAccountWarning),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text(l10n.cancel),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // TODO: Implémenter la suppression du compte
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Suppression de compte - À implémenter'),
+                  SnackBar(
+                    content: Text(l10n.deleteAccountToImplement),
                     backgroundColor: Colors.red,
                   ),
                 );
               },
-              child: const Text(
-                'Supprimer',
-                style: TextStyle(color: Colors.red),
+              child: Text(
+                l10n.delete,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           ],

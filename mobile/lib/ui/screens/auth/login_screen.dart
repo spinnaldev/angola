@@ -415,12 +415,13 @@
 //   }
 // }
 // lib/features/auth/screens/login_screen.dart
+// lib/ui/screens/auth/login_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import 'package:teyago/ui/screens/auth/profile_selector_screen.dart';
 import 'package:teyago/ui/screens/auth/signup_screen.dart';
-// import '../providers/auth_provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/custom_button.dart';
@@ -456,6 +457,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -485,7 +488,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(authProvider.errorMessage ??
-                  'Échec de la connexion. Vérifiez vos identifiants.'),
+                  l10n.loginFailedCheckCredentials),
               backgroundColor: const Color(0xFFDB3022),
               duration: const Duration(seconds: 4),
             ),
@@ -501,7 +504,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur de connexion: ${error.toString()}'),
+            content: Text('${l10n.connectionError}: ${error.toString()}'),
             backgroundColor: const Color(0xFFDB3022),
             duration: const Duration(seconds: 4),
           ),
@@ -512,6 +515,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       backgroundColor: const Color(0xfff9f9f9),
       extendBodyBehindAppBar: true,
@@ -533,9 +538,9 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                const Text(
-                  'Se connecter',
-                  style: TextStyle(
+                Text(
+                  l10n.loginTitle, // TRADUIT
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
@@ -543,15 +548,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Gap(40),
                 CustomTextField(
                   controller: _emailController,
-                  labelText: 'Email',
-                  hintText: 'Votre adresse email',
+                  labelText: l10n.email, // TRADUIT
+                  hintText: l10n.emailHint, // TRADUIT
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre email';
+                      return l10n.pleaseEnterEmail; // TRADUIT
                     }
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                         .hasMatch(value)) {
-                      return 'Veuillez entrer un email valide';
+                      return l10n.pleaseEnterValidEmail; // TRADUIT
                     }
                     return null;
                   },
@@ -562,12 +567,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Gap(8),
                 CustomTextField(
                   controller: _passwordController,
-                  labelText: 'Mot de passe',
-                  hintText: 'Votre mot de passe',
+                  labelText: l10n.password, // TRADUIT
+                  hintText: l10n.passwordHint, // TRADUIT
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre mot de passe';
+                      return l10n.pleaseEnterPassword; // TRADUIT
                     }
                     return null;
                   },
@@ -582,19 +587,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        'Mot de passe oublié ?',
-                        style: TextStyle(
+                        l10n.forgotPassword, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black,
                         ),
                       ),
-                      Gap(8),
-                      Icon(
+                      const Gap(8),
+                      const Icon(
                         Icons.arrow_right_alt,
                         color: Color(0xFF142FE2),
                         size: 20,
@@ -604,7 +609,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 CustomButton(
-                  text: 'Se connecter',
+                  text: l10n.loginButton, // TRADUIT
                   isLoading: _isLoading,
                   onPressed: _login,
                 ),
@@ -615,8 +620,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text(
-                        'Ou connectez-vous avec un compte social',
-                        style: TextStyle(
+                        l10n.orLoginWithSocial, // TRADUIT
+                        style: const TextStyle(
                           color: Colors.black,
                           fontSize: 16,
                         ),
@@ -648,11 +653,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Vous avez déjà un compte ?',
+                      l10n.dontHaveAccount, // TRADUIT
                       style: TextStyle(
                         color: Colors.grey[600],
                       ),
                     ),
+                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -663,25 +669,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: Text(
-                        'S\'inscrire',
+                        l10n.signUp, // TRADUIT
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    // TextButton(
-                    //   onPressed: () {
-                    //     Navigator.pushReplacementNamed(context, '/register');
-                    //   },
-                    //   child: Text(
-                    //     'S\'inscrire',
-                    //     style: TextStyle(
-                    //       color: Theme.of(context).primaryColor,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ],

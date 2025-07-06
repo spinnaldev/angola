@@ -1,7 +1,6 @@
-// lib/ui/screens/home_screen.dart - VERSION MULTILINGUE COMPLÈTE
+// lib/ui/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
@@ -55,24 +54,21 @@ class _HomeScreenState extends State<HomeScreen>
   // Add the missing random instance
   final math.Random random = math.Random();
 
-  // Add the missing serviceNames list - MAINTENANT MULTILINGUE
-  List<String> get serviceNames {
-    final l10n = AppLocalizations.of(context)!;
-    return [
-      l10n.serviceInteriorRenovation,
-      l10n.serviceEmergencyPlumbing,
-      l10n.serviceElectricalInstallation,
-      l10n.serviceFacadePainting,
-      l10n.serviceHomeCleaning,
-      l10n.serviceGardening,
-      l10n.serviceConstruction,
-      l10n.serviceHomeHairdressing,
-      l10n.serviceMassage,
-      l10n.serviceCarRepair,
-      l10n.serviceAccounting,
-      l10n.serviceSportsCoaching,
-    ];
-  }
+  // Add the missing serviceNames list
+  final List<String> serviceNames = [
+    'Rénovation d\'intérieur',
+    'Plomberie urgente',
+    'Installation électrique',
+    'Peinture de façade',
+    'Ménage à domicile',
+    'Jardinage & Entretien',
+    'Construction',
+    'Coiffure à domicile',
+    'Massage',
+    'Réparation automobile',
+    'Expertise comptable',
+    'Coaching sportif',
+  ];
 
   @override
   void didChangeDependencies() {
@@ -83,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen>
       _hasFetchedReviews = true;
     }
   }
+
 
   @override
   void initState() {
@@ -191,6 +188,22 @@ class _HomeScreenState extends State<HomeScreen>
       }).toList();
     } else {
       _nearbyServices = [];
+      // _nearbyServices = List.generate(
+      //   6,
+      //   (index) => Service(
+      //     id: 200 + index,
+      //     title: serviceNames[random.nextInt(serviceNames.length)],
+      //     description: 'Service de proximité disponible rapidement',
+      //     imageUrl: 'https://picsum.photos/id/${1010 + index}/300/200',
+      //     rating: 3.5 + random.nextDouble() * 1.5,
+      //     reviewCount: 5 + random.nextInt(30),
+      //     provider_id: 300 + index,
+      //     businessType: random.nextBool() ? 'Entreprise' : 'Freelance',
+      //     price: 50.0 + random.nextInt(150) * 1.0,
+      //     categoryId: 1 + random.nextInt(5),
+      //     priceType: random.nextBool() ? 'quote' : 'fixed',
+      //   ),
+      // );
     }
   }
 
@@ -232,6 +245,32 @@ class _HomeScreenState extends State<HomeScreen>
           _recentProjects = allUserProjects.take(8).toList();
         }
       }
+
+      // Simuler des projets à proximité seulement si nécessaire
+      // _nearbyProjects = List.generate(
+      //   6,
+      //   (index) => ClientProject(
+      //     id: 300 + index,
+      //     title: 'Projet local ${index + 1}',
+      //     description: 'Projet à proximité nécessitant une intervention locale',
+      //     clientName: 'Client Local ${index + 1}',
+      //     categoryName: _getProjectCategory(index),
+      //     budgetRange: _getBudgetRange(index),
+      //     budgetDisplay:
+      //         '${_getBudgetMin(index)} - ${_getBudgetMax(index)} FCFA',
+      //     location: 'Cotonou, Littoral',
+      //     remotePossible: false,
+      //     urgency: 'medium',
+      //     status: 'open',
+      //     contactViaPlatform: true,
+      //     showEmail: false,
+      //     showPhone: false,
+      //     requiredSkills: _getRequiredSkills(index),
+      //     offersCount: random.nextInt(8),
+      //     viewsCount: 10 + random.nextInt(50),
+      //     createdAt: DateTime.now().subtract(Duration(days: random.nextInt(3))),
+      //   ),
+      // );
     } catch (e) {
       print('Erreur lors du chargement des projets: $e');
       // En cas d'erreur, utiliser des données de fallback
@@ -300,29 +339,27 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   String _getProjectType(int index) {
-    final l10n = AppLocalizations.of(context)!;
     final types = [
-      l10n.projectTypeWebDev,
-      l10n.projectTypeRenovation,
-      l10n.projectTypeGraphicDesign,
-      l10n.projectTypePlumbing,
-      l10n.projectTypeElectricity,
-      l10n.projectTypeGardening,
-      l10n.projectTypeCleaning,
-      l10n.projectTypeCoaching,
+      'développement web',
+      'rénovation',
+      'design graphique',
+      'plomberie',
+      'électricité',
+      'jardinage',
+      'nettoyage',
+      'coaching'
     ];
     return types[index % types.length];
   }
 
   String _getProjectCategory(int index) {
-    final l10n = AppLocalizations.of(context)!;
     final categories = [
-      l10n.categoryIT,
-      l10n.categoryHomeGarden,
-      l10n.categoryProfessionalServices,
-      l10n.categoryCrafts,
-      l10n.categoryWellness,
-      l10n.categoryTransport,
+      'Informatique',
+      'Maison & Jardin',
+      'Services Pro',
+      'Artisanat',
+      'Bien-être',
+      'Transport'
     ];
     return categories[index % categories.length];
   }
@@ -375,8 +412,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildMainContent() {
-    final l10n = AppLocalizations.of(context)!; // AJOUT
-    
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,8 +470,8 @@ class _HomeScreenState extends State<HomeScreen>
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: _isProviderMode()
-                      ? l10n.searchProject // 'Rechercher un projet...'
-                      : l10n.searchService, // 'Rechercher un service...'
+                      ? 'Rechercher un projet...'
+                      : 'Rechercher un service...',
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
@@ -457,16 +492,16 @@ class _HomeScreenState extends State<HomeScreen>
             unselectedLabelColor: Colors.grey,
             indicatorColor: const Color(0xFF142FE2),
             tabs: _isProviderMode()
-                ? [
-                    Tab(text: l10n.home), // 'Accueil'
-                    Tab(text: l10n.recent), // 'Récents'
-                    Tab(text: l10n.nearby), // 'Proximité'
+                ? const [
+                    Tab(text: 'Accueil'),
+                    Tab(text: 'Récents'),
+                    Tab(text: 'Proximité'),
                   ]
-                : [
-                    Tab(text: l10n.home), // 'Accueil'
-                    Tab(text: l10n.bestRated), // 'Meilleurs'
-                    Tab(text: l10n.recent), // 'Récents'
-                    Tab(text: l10n.nearby), // 'Proximité'
+                : const [
+                    Tab(text: 'Accueil'),
+                    Tab(text: 'Meilleurs'),
+                    Tab(text: 'Récents'),
+                    Tab(text: 'Proximité'),
                   ],
           ),
 
@@ -497,8 +532,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab d'accueil pour les clients
   Widget _buildClientHomeTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,18 +569,18 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        l10n.findBestProviders, // 'Trouvez les meilleurs prestataires'
-                        style: const TextStyle(
+                      const Text(
+                        'Trouvez les meilleurs prestataires',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        l10n.bookQualityServices, // 'Réservez facilement des services de qualité'
-                        style: const TextStyle(
+                      const Text(
+                        'Réservez facilement des services de qualité',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                         ),
@@ -566,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen>
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: Text(l10n.explore), // 'Explorer'
+                        child: const Text('Explorer'),
                       ),
                     ],
                   ),
@@ -579,23 +612,23 @@ class _HomeScreenState extends State<HomeScreen>
           _buildCategories(),
 
           // Meilleurs prestations de la semaine
-          _buildSectionTitle(l10n.bestServicesWeek), // 'Meilleurs prestations de la semaine'
+          _buildSectionTitle('Meilleurs prestations de la semaine'),
           _buildHorizontalServicesList(
-              _topRatedServices, l10n.noPopularServicesMoment), // 'Aucune prestation populaire pour le moment'
+              _topRatedServices, 'Aucune prestation populaire pour le moment'),
 
           // Annonces récentes
-          _buildSectionTitle(l10n.recentAnnouncements), // 'Annonces récentes'
+          _buildSectionTitle('Annonces récentes'),
           _buildHorizontalServicesList(
-              _recentServices, l10n.noRecentAnnouncementsAvailable), // 'Aucune annonce récente disponible'
+              _recentServices, 'Aucune annonce récente disponible'),
 
           // Meilleurs avis
-          _buildSectionTitle(l10n.bestReviews), // 'Meilleurs avis'
+          _buildSectionTitle('Meilleurs avis'),
           _buildReviewsSection(),
 
           // Services à proximité
-          _buildSectionTitle(l10n.nearbyServices), // 'À proximité de vous'
+          _buildSectionTitle('À proximité de vous'),
           _buildVerticalServicesList(
-              _nearbyServices, 3, l10n.noServicesAvailableRegion), // 'Aucun service disponible dans votre région'
+              _nearbyServices, 3, 'Aucun service disponible dans votre région'),
 
           // Voir tous les services
           Center(
@@ -606,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen>
                   Navigator.pushNamed(context, '/explore');
                 },
                 icon: const Icon(Icons.explore),
-                label: Text(l10n.exploreAllServices), // 'Explorer tous les services'
+                label: const Text('Explorer tous les services'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -631,8 +664,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab d'accueil pour les prestataires
   Widget _buildProviderHomeTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,18 +701,18 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        l10n.discoverNewProjects, // 'Découvrez de nouveaux projets'
-                        style: const TextStyle(
+                      const Text(
+                        'Découvrez de nouveaux projets',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        l10n.findClientsDevelop, // 'Trouvez des clients et développez votre activité'
-                        style: const TextStyle(
+                      const Text(
+                        'Trouvez des clients et développez votre activité',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                         ),
@@ -705,7 +736,7 @@ class _HomeScreenState extends State<HomeScreen>
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: Text(l10n.viewProjects), // 'Voir projets'
+                        child: const Text('Voir projets'),
                       ),
                     ],
                   ),
@@ -718,14 +749,14 @@ class _HomeScreenState extends State<HomeScreen>
           _buildProviderStats(),
 
           // Projets récents
-          _buildSectionTitle(l10n.recentProjects), // 'Projets récents'
+          _buildSectionTitle('Projets récents'),
           _buildHorizontalProjectsList(
-              _recentProjects, l10n.noRecentProjectsAvailable), // 'Aucun projet récent disponible'
+              _recentProjects, 'Aucun projet récent disponible'),
 
           // Projets à proximité
-          _buildSectionTitle(l10n.nearbyProjects), // 'À proximité de vous'
+          _buildSectionTitle('À proximité de vous'),
           _buildVerticalProjectsList(
-              _nearbyProjects, 3, l10n.noProjectsAvailableRegion), // 'Aucun projet disponible dans votre région'
+              _nearbyProjects, 3, 'Aucun projet disponible dans votre région'),
 
           // Voir tous les projets
           Center(
@@ -741,7 +772,7 @@ class _HomeScreenState extends State<HomeScreen>
                   );
                 },
                 icon: const Icon(Icons.work),
-                label: Text(l10n.viewAllProjects), // 'Voir tous les projets'
+                label: const Text('Voir tous les projets'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -764,24 +795,22 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des projets récents (mode prestataire)
   Widget _buildRecentProjectsTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text(
-            l10n.mostRecentProjects, // 'Projets les plus récents'
-            style: const TextStyle(
+          const Text(
+            'Projets les plus récents',
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           _buildVerticalProjectsList(_recentProjects, _recentProjects.length,
-              l10n.noNewProjectsAvailable), // 'Aucun nouveau projet disponible'
+              'Aucun nouveau projet disponible'),
         ],
       ),
     );
@@ -789,8 +818,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des projets à proximité (mode prestataire)
   Widget _buildNearbyProjectsTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -800,9 +827,67 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                l10n.yourStatistics, // 'Vos statistiques'
-                style: const TextStyle(
+              const Text(
+                'Projets à proximité',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showMapView = true;
+                  });
+                },
+                icon: const Icon(Icons.map, size: 16),
+                label: const Text('Carte'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF142FE2),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildVerticalProjectsList(_nearbyProjects, _nearbyProjects.length,
+              'Aucun projet disponible dans votre région'),
+        ],
+      ),
+    );
+  }
+
+  // Statistiques du prestataire
+  Widget _buildProviderStats() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Vos statistiques',
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -820,7 +905,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  l10n.completedServices, // 'Prestations terminées'
+                  'Prestations terminées',
                   _providerStats['prestations_completed_this_month']
                           ?.toString() ??
                       '0',
@@ -831,7 +916,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.inProgress, // 'En cours'
+                  'En cours',
                   _providerStats['prestations_in_progress']?.toString() ?? '0',
                   Icons.work,
                   Colors.blue,
@@ -844,7 +929,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  l10n.unreadMessages, // 'Messages non lus'
+                  'Messages non lus',
                   _providerStats['unread_messages']?.toString() ?? '0',
                   Icons.message,
                   Colors.orange,
@@ -853,7 +938,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.revenueThisMonth, // 'Revenus ce mois'
+                  'Revenus ce mois',
                   '${(_providerStats['total_earnings_this_month'] ?? 0.0).toStringAsFixed(0)}K',
                   Icons.attach_money,
                   Colors.green,
@@ -866,7 +951,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  l10n.averageRating, // 'Note moyenne'
+                  'Note moyenne',
                   (_providerStats['avg_rating'] ?? 0.0).toStringAsFixed(1),
                   Icons.star,
                   Colors.amber,
@@ -875,7 +960,7 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.totalReviews, // 'Total avis'
+                  'Total avis',
                   _providerStats['total_reviews']?.toString() ?? '0',
                   Icons.rate_review,
                   Colors.purple,
@@ -925,17 +1010,15 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des meilleurs services (mode client uniquement)
   Widget _buildTopRatedTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text(
-            l10n.bestProvidersByRating, // 'Meilleurs prestataires par note'
-            style: const TextStyle(
+          const Text(
+            'Meilleurs prestataires par note',
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -944,7 +1027,7 @@ class _HomeScreenState extends State<HomeScreen>
           _buildVerticalServicesList(
               _topRatedServices,
               _topRatedServices.length,
-              l10n.noWellRatedServicesMoment), // 'Aucun service bien noté disponible pour le moment'
+              'Aucun service bien noté disponible pour le moment'),
         ],
       ),
     );
@@ -952,24 +1035,22 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des services récents (mode client uniquement)
   Widget _buildRecentTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text(
-            l10n.mostRecentAnnouncements, // 'Annonces les plus récentes'
-            style: const TextStyle(
+          const Text(
+            'Annonces les plus récentes',
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           _buildVerticalServicesList(_recentServices, _recentServices.length,
-              l10n.noNewAnnouncementsAvailable), // 'Aucune nouvelle annonce disponible'
+              'Aucune nouvelle annonce disponible'),
         ],
       ),
     );
@@ -977,8 +1058,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Tab des services à proximité (mode client uniquement)
   Widget _buildNearbyTab() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -988,9 +1067,9 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                l10n.nearbyServices, // 'Services à proximité'
-                style: const TextStyle(
+              const Text(
+                'Services à proximité',
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1002,7 +1081,7 @@ class _HomeScreenState extends State<HomeScreen>
                   });
                 },
                 icon: const Icon(Icons.map, size: 16),
-                label: Text(l10n.map), // 'Carte'
+                label: const Text('Carte'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                   foregroundColor: Colors.white,
@@ -1017,7 +1096,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 16),
           _buildVerticalServicesList(_nearbyServices, _nearbyServices.length,
-              l10n.noServicesAvailableRegion), // 'Aucun service disponible dans votre région'
+              'Aucun service disponible dans votre région'),
         ],
       ),
     );
@@ -1025,16 +1104,14 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Widget pour afficher les catégories (mode client uniquement)
   Widget _buildCategories() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           child: Text(
-            l10n.popularCategories, // 'Catégories populaires'
-            style: const TextStyle(
+            'Catégories populaires',
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -1056,7 +1133,7 @@ class _HomeScreenState extends State<HomeScreen>
             if (categoryProvider.categories.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.category_outlined,
-                message: l10n.noCategoriesAvailableMoment, // 'Aucune catégorie disponible pour le moment'
+                message: 'Aucune catégorie disponible pour le moment',
                 height: 120,
               );
             }
@@ -1108,6 +1185,684 @@ class _HomeScreenState extends State<HomeScreen>
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            );
+          },
+        ),
+
+        // Voir toutes les catégories
+        Center(
+          child: TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/explore');
+            },
+            child: const Text(
+              'Voir toutes les catégories',
+              style: TextStyle(
+                color: Color(0xFF142FE2),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget pour afficher le titre d'une section
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  // Widget pour afficher une liste horizontale de services
+  Widget _buildHorizontalServicesList(
+      List<Service> services, String emptyMessage) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 220,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (services.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.home_repair_service_outlined,
+        message: emptyMessage,
+        height: 220,
+      );
+    }
+
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        scrollDirection: Axis.horizontal,
+        itemCount: services.length,
+        itemBuilder: (context, index) {
+          final service = services[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ServiceDetailScreen(
+                      serviceId: service.id,
+                      providerId: service.provider_id,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Image.network(
+                        service.imageUrl,
+                        width: 160,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 160,
+                            height: 100,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, color: Colors.grey),
+                          );
+                        },
+                      ),
+                    ),
+                    // Contenu
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            service.businessType,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.star,
+                                  color: Colors.amber, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                service.rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "(${service.reviewCount})",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            service.priceType == 'quote'
+                                ? 'Sur devis'
+                                : '${service.price.toInt()} FCFA',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF142FE2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Widget pour afficher une liste horizontale de projets
+  Widget _buildHorizontalProjectsList(
+      List<ClientProject> projects, String emptyMessage) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 220,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (projects.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.work_outline,
+        message: emptyMessage,
+        height: 220,
+      );
+    }
+
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        scrollDirection: Axis.horizontal,
+        itemCount: projects.length,
+        itemBuilder: (context, index) {
+          final project = projects[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProjectDetailScreen(
+                      project: project,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Icône du projet
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF142FE2).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.work,
+                          color: Color(0xFF142FE2),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Titre du projet
+                      Text(
+                        project.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Localisation
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              project.location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Budget
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          project.budgetDisplay,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+
+                      const Spacer(),
+
+                      // Statut
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: project.status == 'open'
+                              ? Colors.blue.withOpacity(0.1)
+                              : Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          project.status == 'open' ? 'Ouvert' : 'Fermé',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: project.status == 'open'
+                                ? Colors.blue
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Widget pour afficher une liste verticale de services
+  Widget _buildVerticalServicesList(
+      List<Service> services, int limit, String emptyMessage) {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (services.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.search_off,
+        message: emptyMessage,
+        height: 200,
+      );
+    }
+
+    final displayServices =
+        services.length > limit ? services.sublist(0, limit) : services;
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: displayServices.length,
+      itemBuilder: (context, index) {
+        final service = displayServices[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ServiceDetailScreen(
+                    serviceId: service.id,
+                    providerId: service.provider_id,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      service.imageUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 80,
+                          height: 80,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image, color: Colors.grey),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Détails du service
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            service.businessType,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.star,
+                                  color: Colors.amber, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                service.rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "(${service.reviewCount})",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Prix et bouton
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          service.priceType == 'quote'
+                              ? 'Sur devis'
+                              : '${service.price.toInt()} FCFA',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF142FE2),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ServiceDetailScreen(
+                                  serviceId: service.id,
+                                  providerId: service.provider_id,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF142FE2),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            minimumSize: const Size(60, 30),
+                          ),
+                          child: const Text(
+                            'Voir',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Widget pour afficher une liste verticale de projets
+  Widget _buildVerticalProjectsList(
+      List<ClientProject> projects, int limit, String emptyMessage) {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (projects.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.work_off,
+        message: emptyMessage,
+        height: 200,
+      );
+    }
+
+    final displayProjects =
+        projects.length > limit ? projects.sublist(0, limit) : projects;
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: displayProjects.length,
+      itemBuilder: (context, index) {
+        final project = displayProjects[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProjectDetailScreen(
+                    project: project,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF142FE2).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.work,
+                            color: Color(0xFF142FE2),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                project.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Par ${project.clientName}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: project.status == 'open'
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: project.status == 'open'
+                                  ? Colors.green
+                                  : Colors.grey,
+                            ),
+                          ),
+                          child: Text(
+                            project.status == 'open' ? 'Ouvert' : 'Fermé',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: project.status == 'open'
+                                  ? Colors.green
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      project.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[700],
@@ -1157,10 +1912,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Widget pour afficher la section des meilleurs avis
   Widget _buildReviewsSection() {
-    final l10n = AppLocalizations.of(context)!;
-    
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
+        // Load reviews if they're empty and not already loading
+        // if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
+        //   reviewProvider.fetchTopReviews();
+        // }
+
         final reviews = reviewProvider.topReviews;
         print("Reviews loaded: ${reviews.length}");
 
@@ -1176,7 +1934,7 @@ class _HomeScreenState extends State<HomeScreen>
         if (reviews.isEmpty) {
           return _buildEmptyState(
             icon: Icons.rate_review_outlined,
-            message: l10n.noReviewsAvailableMoment, // 'Aucun avis disponible pour le moment'
+            message: 'Aucun avis disponible pour le moment',
             height: 200,
           );
         }
@@ -1231,7 +1989,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ),
                                 Text(
-                                  l10n.service, // "Service"
+                                  "Service",
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 12,
@@ -1394,750 +2152,42 @@ class _HomeScreenState extends State<HomeScreen>
         return Icons.category;
     }
   }
-}.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            );
-          },
-        ),
+}
 
-        // Voir toutes les catégories
-        Center(
-          child: TextButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/explore');
-            },
-            child: Text(
-              l10n.viewAllCategories, // 'Voir toutes les catégories'
-              style: const TextStyle(
-                color: Color(0xFF142FE2),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  // Widget pour afficher le titre d'une section
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
 
-  // Widget pour afficher une liste horizontale de services
-  Widget _buildHorizontalServicesList(
-      List<Service> services, String emptyMessage) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (_isLoading) {
-      return const SizedBox(
-        height: 220,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
 
-    if (services.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.home_repair_service_outlined,
-        message: emptyMessage,
-        height: 220,
-      );
-    }
 
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        scrollDirection: Axis.horizontal,
-        itemCount: services.length,
-        itemBuilder: (context, index) {
-          final service = services[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ServiceDetailScreen(
-                      serviceId: service.id,
-                      providerId: service.provider_id,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 160,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        service.imageUrl,
-                        width: 160,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 160,
-                            height: 100,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, color: Colors.grey),
-                          );
-                        },
-                      ),
-                    ),
-                    // Contenu
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            service.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            service.businessType,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                service.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "(${service.reviewCount})",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            service.priceType == 'quote'
-                                ? l10n.onQuote // 'Sur devis'
-                                : '${service.price.toInt()} FCFA',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF142FE2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
-  // Widget pour afficher une liste horizontale de projets
-  Widget _buildHorizontalProjectsList(
-      List<ClientProject> projects, String emptyMessage) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (_isLoading) {
-      return const SizedBox(
-        height: 220,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
 
-    if (projects.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.work_outline,
-        message: emptyMessage,
-        height: 220,
-      );
-    }
 
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        scrollDirection: Axis.horizontal,
-        itemCount: projects.length,
-        itemBuilder: (context, index) {
-          final project = projects[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProjectDetailScreen(
-                      project: project,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 160,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Icône du projet
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF142FE2).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.work,
-                          color: Color(0xFF142FE2),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
 
-                      // Titre du projet
-                      Text(
-                        project.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
 
-                      // Localisation
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 14, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              project.location,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
 
-                      // Budget
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          project.budgetDisplay,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ),
 
-                      const Spacer(),
 
-                      // Statut
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: project.status == 'open'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          project.status == 'open' ? l10n.open : l10n.closed, // 'Ouvert' : 'Fermé'
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: project.status == 'open'
-                                ? Colors.blue
-                                : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
-  // Widget pour afficher une liste verticale de services
-  Widget _buildVerticalServicesList(
-      List<Service> services, int limit, String emptyMessage) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
 
-    if (services.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.search_off,
-        message: emptyMessage,
-        height: 200,
-      );
-    }
 
-    final displayServices =
-        services.length > limit ? services.sublist(0, limit) : services;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayServices.length,
-      itemBuilder: (context, index) {
-        final service = displayServices[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ServiceDetailScreen(
-                    serviceId: service.id,
-                    providerId: service.provider_id,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      service.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  ),
 
-                  // Détails du service
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            service.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            service.businessType,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                service.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "(${service.reviewCount})",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  // Prix et bouton
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          service.priceType == 'quote'
-                              ? l10n.onQuote // 'Sur devis'
-                              : '${service.price.toInt()} FCFA',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF142FE2),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ServiceDetailScreen(
-                                  serviceId: service.id,
-                                  providerId: service.provider_id,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF142FE2),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            minimumSize: const Size(60, 30),
-                          ),
-                          child: Text(
-                            l10n.view, // 'Voir'
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
-  // Widget pour afficher une liste verticale de projets
-  Widget _buildVerticalProjectsList(
-      List<ClientProject> projects, int limit, String emptyMessage) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
 
-    if (projects.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.work_off,
-        message: emptyMessage,
-        height: 200,
-      );
-    }
 
-    final displayProjects =
-        projects.length > limit ? projects.sublist(0, limit) : projects;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayProjects.length,
-      itemBuilder: (context, index) {
-        final project = displayProjects[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProjectDetailScreen(
-                    project: project,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF142FE2).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.work,
-                            color: Color(0xFF142FE2),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                project.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${l10n.by} ${project.clientName}', // 'Par ${project.clientName}'
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: project.status == 'open'
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: project.status == 'open'
-                                  ? Colors.green
-                                  : Colors.grey,
-                            ),
-                          ),
-                          child: Text(
-                            project.status == 'open' ? l10n.open : l10n.closed, // 'Ouvert' : 'Fermé'
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: project.status == 'open'
-                                  ? Colors.green
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      project.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.nearbyProjects, // 'Projets à proximité'
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showMapView = true;
-                  });
-                },
-                icon: const Icon(Icons.map, size: 16),
-                label: Text(l10n.map), // 'Carte'
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF142FE2),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildVerticalProjectsList(_nearbyProjects, _nearbyProjects.length,
-              l10n.noProjectsAvailableRegion), // 'Aucun projet disponible dans votre région'
-        ],
-      ),
-    );
-  }
 
-  // Statistiques du prestataire
-  Widget _buildProviderStats() {
-    final l10n = AppLocalizations.of(context)!;
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                l10n
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,7 @@
-// lib/ui/widgets/side_menu.dart
+// lib/ui/widgets/side_menu.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import 'package:teyago/ui/screens/help_faq_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
@@ -22,6 +23,8 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
@@ -29,15 +32,15 @@ class SideMenu extends StatelessWidget {
         return Container(
           color: Colors.white,
           child: user != null
-              ? _buildAuthenticatedMenu(context, user)
-              : _buildGuestMenu(context),
+              ? _buildAuthenticatedMenu(context, user, l10n)
+              : _buildGuestMenu(context, l10n),
         );
       },
     );
   }
 
   /// Menu pour les utilisateurs connectés
-  Widget _buildAuthenticatedMenu(BuildContext context, User user) {
+  Widget _buildAuthenticatedMenu(BuildContext context, User user, AppLocalizations l10n) {
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,14 +98,14 @@ class SideMenu extends StatelessWidget {
                   children: [
                     const SizedBox(height: 20),
                     if (ProfileManager.isProviderMode()) ...[
-                      _buildProviderMenu(context),
+                      _buildProviderMenu(context, l10n),
                     ] else ...[
-                      _buildClientMenu(context),
+                      _buildClientMenu(context, l10n),
                     ],
                     const SizedBox(height: 16),
-                    _buildCommonMenu(context),
+                    _buildCommonMenu(context, l10n),
                     const SizedBox(height: 16),
-                    _buildProfileSection(context),
+                    _buildProfileSection(context, l10n),
                   ],
                 ),
               ),
@@ -112,7 +115,7 @@ class SideMenu extends StatelessWidget {
           // Menu de bas de page
           Padding(
             padding: const EdgeInsets.only(left: 24.0, bottom: 24.0),
-            child: _buildBottomMenu(context),
+            child: _buildBottomMenu(context, l10n),
           ),
         ],
       ),
@@ -191,14 +194,14 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Menu spécifique aux prestataires
-  Widget _buildProviderMenu(BuildContext context) {
+  Widget _buildProviderMenu(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildMenuItem(
           context,
           icon: Icons.person_outline,
-          text: 'Mon profil',
+          text: l10n.myProfile,
           onTap: () {
             onClose();
             Navigator.push(
@@ -210,7 +213,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.home_repair_service_outlined,
-          text: 'Mes services',
+          text: l10n.myServices,
           onTap: () {
             onClose();
             Navigator.push(
@@ -224,7 +227,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.request_quote_outlined,
-          text: 'Demandes reçues',
+          text: l10n.receivedRequests,
           onTap: () {
             onClose();
             Navigator.push(
@@ -238,7 +241,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.work_outline,
-          text: 'Mes offres',
+          text: l10n.myOffers,
           onTap: () {
             onClose();
             Navigator.pushNamed(context, '/');
@@ -249,14 +252,14 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Menu spécifique aux clients
-  Widget _buildClientMenu(BuildContext context) {
+  Widget _buildClientMenu(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildMenuItem(
           context,
           icon: Icons.home_outlined,
-          text: 'Accueil',
+          text: l10n.home,
           onTap: () {
             onClose();
             Navigator.pushNamedAndRemoveUntil(
@@ -266,7 +269,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.search_outlined,
-          text: 'Explorer',
+          text: l10n.explore,
           onTap: () {
             onClose();
             Navigator.pushNamed(context, '/explore');
@@ -275,7 +278,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.person_outline,
-          text: 'Mon profil',
+          text: l10n.myProfile,
           onTap: () {
             onClose();
             Navigator.push(
@@ -289,7 +292,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.chat_bubble_outline,
-          text: 'Message',
+          text: l10n.messages,
           onTap: () {
             onClose();
             Navigator.pushNamed(context, '/messages');
@@ -298,7 +301,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.work_outline,
-          text: 'Mes projets',
+          text: l10n.myProjects,
           onTap: () {
             onClose();
             Navigator.push(
@@ -312,7 +315,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.receipt_long_outlined,
-          text: 'Devis',
+          text: l10n.quotes,
           onTap: () {
             onClose();
             Navigator.push(
@@ -328,7 +331,7 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Menu commun à tous les profils
-  Widget _buildCommonMenu(BuildContext context) {
+  Widget _buildCommonMenu(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,8 +339,8 @@ class SideMenu extends StatelessWidget {
           context,
           icon: Icons.gavel,
           text: ProfileManager.isProviderMode()
-              ? 'Mes réclamations'
-              : 'Mes litiges',
+              ? l10n.myComplaints
+              : l10n.myDisputes,
           onTap: () {
             onClose();
             Navigator.push(
@@ -351,11 +354,11 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.notifications_none,
-          text: 'Notifications',
+          text: l10n.notifications,
           onTap: () {
             onClose();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Notifications - À venir')),
+              SnackBar(content: Text(l10n.notificationsComingSoon)),
             );
           },
         ),
@@ -364,7 +367,7 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Section Profil et Compte
-  Widget _buildProfileSection(BuildContext context) {
+  Widget _buildProfileSection(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,14 +377,14 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Menu de bas de page
-  Widget _buildBottomMenu(BuildContext context) {
+  Widget _buildBottomMenu(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildMenuItem(
           context,
           icon: Icons.settings_outlined,
-          text: 'Paramètres',
+          text: l10n.settings,
           onTap: () {
             onClose();
             Navigator.push(
@@ -395,7 +398,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.help_outline,
-          text: 'Aide et FAQ',
+          text: l10n.helpAndFAQ,
           onTap: () {
             Navigator.push(
               context,
@@ -408,7 +411,7 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.logout,
-          text: 'Déconnexion',
+          text: l10n.logout,
           onTap: () async {
             onClose();
             final authProvider =
@@ -428,7 +431,7 @@ class SideMenu extends StatelessWidget {
   }
 
   /// Menu pour les utilisateurs non connectés
-  Widget _buildGuestMenu(BuildContext context) {
+  Widget _buildGuestMenu(BuildContext context, AppLocalizations l10n) {
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,7 +450,7 @@ class SideMenu extends StatelessWidget {
                   _buildMenuItem(
                     context,
                     icon: Icons.home_outlined,
-                    text: 'Accueil',
+                    text: l10n.home,
                     onTap: () {
                       onClose();
                       Navigator.pushNamedAndRemoveUntil(
@@ -457,7 +460,7 @@ class SideMenu extends StatelessWidget {
                   _buildMenuItem(
                     context,
                     icon: Icons.search,
-                    text: 'Explorer',
+                    text: l10n.explore,
                     onTap: () {
                       onClose();
                       Navigator.pushNamed(context, '/explore');
@@ -482,7 +485,7 @@ class SideMenu extends StatelessWidget {
                       onClose();
                       Navigator.pushNamed(context, '/login');
                     },
-                    child: const Text('Se connecter'),
+                    child: Text(l10n.login),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -493,7 +496,7 @@ class SideMenu extends StatelessWidget {
                       onClose();
                       Navigator.pushNamed(context, '/register');
                     },
-                    child: const Text('S\'inscrire'),
+                    child: Text(l10n.register),
                   ),
                 ),
               ],

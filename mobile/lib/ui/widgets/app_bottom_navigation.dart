@@ -1,6 +1,7 @@
-// lib/ui/widgets/app_bottom_navigation.dart - CORRIGÉ
+// lib/ui/widgets/app_bottom_navigation.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import '../../providers/messaging_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
@@ -17,6 +18,8 @@ class AppBottomNavigation extends StatelessWidget {
 
   /// Récupère les éléments de navigation selon le profil actuel
   List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     // Vérifier si l'utilisateur est connecté
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAuthenticated = authProvider.isAuthenticated;
@@ -30,50 +33,50 @@ class AppBottomNavigation extends StatelessWidget {
       // ✅ Navigation pour PRESTATAIRES : Accueil, Projets, Messages, Profil
       print("   → Menu PRESTATAIRE: Accueil(0), Projets(1), Messages(2), Profil(3)");
       return [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Accueil',  // Index 0
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.home_outlined),
+          activeIcon: const Icon(Icons.home),
+          label: l10n.home,  // Index 0 - TRADUIT
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.work_outline),
-          activeIcon: Icon(Icons.work),
-          label: 'Projets',  // Index 1
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.work_outline),
+          activeIcon: const Icon(Icons.work),
+          label: l10n.projects,  // Index 1 - TRADUIT
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
           activeIcon: _buildMessagesActiveIcon(context),
-          label: 'Messages',  // Index 2
+          label: l10n.messages,  // Index 2 - TRADUIT
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profil',   // Index 3
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person_outline),
+          activeIcon: const Icon(Icons.person),
+          label: l10n.profile,   // Index 3 - TRADUIT
         ),
       ];
     } else {
       // ✅ Navigation pour CLIENTS ou utilisateurs non connectés : Accueil, Explorer, Messages, Profil
       print("   → Menu CLIENT: Accueil(0), Explorer(1), Messages(2), Profil(3)");
       return [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Accueil',   // Index 0
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.home_outlined),
+          activeIcon: const Icon(Icons.home),
+          label: l10n.home,   // Index 0 - TRADUIT
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.search_outlined),
-          activeIcon: Icon(Icons.search),
-          label: 'Explorer',  // Index 1
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.search_outlined),
+          activeIcon: const Icon(Icons.search),
+          label: l10n.explore,  // Index 1 - TRADUIT
         ),
         BottomNavigationBarItem(
           icon: _buildMessagesIcon(context),
           activeIcon: _buildMessagesActiveIcon(context),
-          label: 'Messages',  // Index 2
+          label: l10n.messages,  // Index 2 - TRADUIT
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profil',    // Index 3
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person_outline),
+          activeIcon: const Icon(Icons.person),
+          label: l10n.profile,    // Index 3 - TRADUIT
         ),
       ];
     }

@@ -1,4 +1,6 @@
+// lib/ui/screens/auth/profile_selector_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import 'login_screen.dart';
 import 'signup_screen.dart';
 
@@ -7,6 +9,8 @@ class ProfileSelectorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -38,9 +42,9 @@ class ProfileSelectorScreen extends StatelessWidget {
                   
                 ),
                 const Spacer(),
-                const Text(
-                  'Inscrivez vous en choisissant votre profil',
-                  style: TextStyle(
+                Text(
+                  l10n.signUpChooseProfile, // TRADUIT
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
                     color: Colors.white,  // Couleur du texte adaptée à votre image
@@ -50,7 +54,7 @@ class ProfileSelectorScreen extends StatelessWidget {
                 const SizedBox(height: 30),
                 _buildProfileButton(
                   context, 
-                  'CLIENT', 
+                  l10n.clientProfile, // TRADUIT
                   true, 
                   () => Navigator.push(
                     context,
@@ -59,22 +63,10 @@ class ProfileSelectorScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                // _buildProfileButton(
-                //   context, 
-                //   'CLIENT', 
-                //   true, 
-                //   () => Navigator.pushNamed(context, '/signup', arguments: 'client'),
-                // ),
                 const SizedBox(height: 16),
-                // _buildProfileButton(
-                //   context, 
-                //   'PRESTATAIRE', 
-                //   false, 
-                //   () => Navigator.pushNamed(context, '/signup', arguments: 'provider'),
-                // ),
                 _buildProfileButton(
                   context, 
-                  'PRESTATAIRE', 
+                  l10n.providerProfile, // TRADUIT
                   false, 
                   () => Navigator.push(
                     context,
@@ -87,9 +79,9 @@ class ProfileSelectorScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Vous avez déjà un compte ?',
-                      style: TextStyle(
+                    Text(
+                      l10n.alreadyHaveAccount, // TRADUIT
+                      style: const TextStyle(
                         color: Colors.white,  // Couleur du texte adaptée à votre image
                       ),
                     ),
@@ -103,11 +95,11 @@ class ProfileSelectorScreen extends StatelessWidget {
                         minimumSize: const Size(0, 36),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Se connecter'),
-                          Icon(Icons.arrow_forward, size: 16),
+                          Text(l10n.loginAction), // TRADUIT
+                          const Icon(Icons.arrow_forward, size: 16),
                         ],
                       ),
                     ),

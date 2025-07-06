@@ -1,8 +1,9 @@
-// lib/ui/screens/edit_profile_screen.dart
+// lib/ui/screens/edit_profile_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import '../../providers/auth_provider.dart';
 import '../../core/models/user.dart';
 import '../common/app_button.dart';
@@ -76,6 +77,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -89,7 +92,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final user = authProvider.currentUser;
       
       if (user == null) {
-        throw Exception('Aucun utilisateur connecté');
+        throw Exception(l10n.noLoggedInUser); // TRADUIT
       }
       
       // Appeler la méthode de mise à jour
@@ -107,8 +110,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil mis à jour avec succès'),
+          SnackBar(
+            content: Text(l10n.profileUpdatedSuccessfully), // TRADUIT
             backgroundColor: Colors.green,
           ),
         );
@@ -116,7 +119,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Erreur lors de la mise à jour'),
+            content: Text(authProvider.errorMessage ?? l10n.updateError), // TRADUIT
             backgroundColor: Colors.red,
           ),
         );
@@ -125,7 +128,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.error}: ${e.toString()}'), // TRADUIT
             backgroundColor: Colors.red,
           ),
         );
@@ -141,6 +144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
     final user = Provider.of<AuthProvider>(context).currentUser;
     
     return Scaffold(
@@ -152,9 +156,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Modifier le profil',
-          style: TextStyle(
+        title: Text(
+          l10n.editProfile, // TRADUIT
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -206,7 +210,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     TextButton.icon(
                       onPressed: _pickImage,
                       icon: const Icon(Icons.camera_alt),
-                      label: const Text('Changer la photo'),
+                      label: Text(l10n.changePhoto), // TRADUIT
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF142FE2),
                       ),
@@ -220,7 +224,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               // Nom de l'entreprise (si prestataire)
               if (user?.role == 'provider') ...[
                 AppTextField(
-                  label: 'Nom de l\'entreprise',
+                  label: l10n.companyName, // TRADUIT
                   controller: _companyNameController,
                   keyboardType: TextInputType.text,
                 ),
@@ -229,12 +233,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Prénom
               AppTextField(
-                label: 'Prénom',
+                label: l10n.firstName, // TRADUIT
                 controller: _firstNameController,
                 keyboardType: TextInputType.text,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer votre prénom';
+                    return l10n.pleaseEnterFirstName; // TRADUIT
                   }
                   return null;
                 },
@@ -243,12 +247,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Nom
               AppTextField(
-                label: 'Nom',
+                label: l10n.lastName, // TRADUIT
                 controller: _lastNameController,
                 keyboardType: TextInputType.text,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer votre nom';
+                    return l10n.pleaseEnterLastName; // TRADUIT
                   }
                   return null;
                 },
@@ -257,7 +261,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Téléphone
               AppTextField(
-                label: 'Téléphone',
+                label: l10n.phone, // TRADUIT
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
               ),
@@ -265,7 +269,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Localisation
               AppTextField(
-                label: 'Adresse',
+                label: l10n.address, // TRADUIT
                 controller: _locationController,
                 keyboardType: TextInputType.text,
               ),
@@ -275,9 +279,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Bio',
-                    style: TextStyle(
+                  Text(
+                    l10n.bio, // TRADUIT
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -289,7 +293,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     keyboardType: TextInputType.multiline,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Parlez-nous un peu de vous...',
+                      hintText: l10n.bioHint, // TRADUIT
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: BorderSide.none,
@@ -309,7 +313,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Bouton sauvegarder
               AppButton(
-                text: 'Sauvegarder',
+                text: l10n.saveButton, // TRADUIT
                 onPressed: _saveProfile,
                 isLoading: _isLoading,
               ),

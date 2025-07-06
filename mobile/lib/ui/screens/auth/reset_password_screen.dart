@@ -1,6 +1,7 @@
-// lib/ui/screens/auth/reset_password_screen.dart
+// lib/ui/screens/auth/reset_password_screen.dart - VERSION MULTILINGUE COMPLÈTE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
 import '../../../providers/auth_provider.dart';
 import 'login_screen.dart';
 
@@ -64,6 +65,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   String _getStrengthText() {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
     int strength = 0;
     if (_hasMinLength) strength++;
     if (_hasUppercase) strength++;
@@ -71,9 +73,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (_hasDigit) strength++;
     if (_hasSpecialChar) strength++;
     
-    if (strength <= 2) return 'Faible';
-    if (strength <= 4) return 'Moyen';
-    return 'Fort';
+    if (strength <= 2) return l10n.weakPassword; // TRADUIT
+    if (strength <= 4) return l10n.mediumPassword; // TRADUIT
+    return l10n.strongPassword; // TRADUIT
   }
 
   @override
@@ -85,6 +87,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -104,8 +108,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         if (success && mounted) {
           // Afficher un message de succès et rediriger vers la page de connexion
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mot de passe réinitialisé avec succès'),
+            SnackBar(
+              content: Text(l10n.passwordResetSuccess), // TRADUIT
               backgroundColor: Colors.green,
             ),
           );
@@ -122,7 +126,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(authProvider.errorMessage ?? 'Erreur de réinitialisation'),
+              content: Text(authProvider.errorMessage ?? l10n.resetError), // TRADUIT
               backgroundColor: Colors.red,
             ),
           );
@@ -146,6 +150,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // AJOUT
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -161,9 +167,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       Navigator.pop(context);
                     },
                   ),
-                  const Text(
-                    'Nouveau mot de passe',
-                    style: TextStyle(
+                  Text(
+                    l10n.newPasswordTitle, // TRADUIT
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -179,17 +185,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Créer un nouveau mot de passe',
-                        style: TextStyle(
+                      Text(
+                        l10n.createNewPassword, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Votre nouveau mot de passe doit être différent des mots de passe précédemment utilisés.',
-                        style: TextStyle(
+                      Text(
+                        l10n.newPasswordDescription, // TRADUIT
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
                         ),
@@ -201,7 +207,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         controller: _passwordController,
                         obscureText: !_showPassword,
                         decoration: InputDecoration(
-                          labelText: 'Nouveau mot de passe',
+                          labelText: l10n.newPassword, // TRADUIT
                           filled: true,
                           fillColor: Colors.grey[200],
                           border: OutlineInputBorder(
@@ -226,10 +232,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer un mot de passe';
+                            return l10n.pleaseEnterPassword; // TRADUIT
                           }
                           if (!_isPasswordStrong) {
-                            return 'Votre mot de passe n\'est pas assez fort';
+                            return l10n.passwordNotStrongEnough; // TRADUIT
                           }
                           return null;
                         },
@@ -265,23 +271,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         
                         // Critères de mot de passe
                         PasswordCriteriaItem(
-                          text: 'Au moins 8 caractères',
+                          text: l10n.atLeast8Characters, // TRADUIT
                           isMet: _hasMinLength,
                         ),
                         PasswordCriteriaItem(
-                          text: 'Au moins une lettre majuscule',
+                          text: l10n.atLeastOneUppercase, // TRADUIT
                           isMet: _hasUppercase,
                         ),
                         PasswordCriteriaItem(
-                          text: 'Au moins une lettre minuscule',
+                          text: l10n.atLeastOneLowercase, // TRADUIT
                           isMet: _hasLowercase,
                         ),
                         PasswordCriteriaItem(
-                          text: 'Au moins un chiffre',
+                          text: l10n.atLeastOneDigit, // TRADUIT
                           isMet: _hasDigit,
                         ),
                         PasswordCriteriaItem(
-                          text: 'Au moins un caractère spécial',
+                          text: l10n.atLeastOneSpecialChar, // TRADUIT
                           isMet: _hasSpecialChar,
                         ),
                       ],
@@ -293,7 +299,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         controller: _confirmPasswordController,
                         obscureText: !_showConfirmPassword,
                         decoration: InputDecoration(
-                          labelText: 'Confirmer le mot de passe',
+                          labelText: l10n.confirmPassword, // TRADUIT
                           filled: true,
                           fillColor: Colors.grey[200],
                           border: OutlineInputBorder(
@@ -318,10 +324,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez confirmer le mot de passe';
+                            return l10n.pleaseConfirmPassword; // TRADUIT
                           }
                           if (value != _passwordController.text) {
-                            return 'Les mots de passe ne correspondent pas';
+                            return l10n.passwordsDoNotMatch; // TRADUIT
                           }
                           return null;
                         },
@@ -350,9 +356,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
-                                  'RÉINITIALISER LE MOT DE PASSE',
-                                  style: TextStyle(
+                              : Text(
+                                  l10n.resetPasswordButton, // TRADUIT
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
