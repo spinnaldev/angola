@@ -275,7 +275,7 @@
   "online": "En ligne",
   "noMessagesStartConversation": "Aucun message. Commencez la conversation!",
   "today": "Aujourd'hui",
-  "yourMessage": "Votre message..."
+  "yourMessage": "Votre message...",
   "searchForServices": "Recherche de services...",
   "allServices": "Tous les services",
   "noCategoriesAvailable": "Aucune catégorie disponible",
@@ -380,6 +380,10 @@
   "alreadyMadeOfferForProject": "Vous avez déjà fait une offre pour ce projet",
   "projectNoLongerAcceptsOffers": "Ce projet n'accepte plus d'offres",
   "days": "jours",
-  "months": "mois"
+  "months": "mois",
+  "fcfa": "FCFA",
+  "best": "Meilleurs",
+  "nearbyProjectsTab": "Projets à proximité", 
+  "nearbyServicesTab": "Services à proximité"
 
 }

@@ -424,6 +424,10 @@
   "alreadyMadeOfferForProject": "Você já fez uma oferta para este projeto",
   "projectNoLongerAcceptsOffers": "Este projeto não aceita mais ofertas",
   "days": "dias",
-  "months": "meses"
+  "months": "meses",
+  "fcfa": "FCFA",
+  "best": "Melhores",
+  "nearbyProjectsTab": "Projetos Próximos",
+  "nearbyServicesTab": "Serviços Próximos"
 
 }

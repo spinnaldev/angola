@@ -380,6 +380,9 @@
   "alreadyMadeOfferForProject": "You have already made an offer for this project",
   "projectNoLongerAcceptsOffers": "This project no longer accepts offers",
   "days": "days",
-  "months": "months"
-
+  "months": "months",
+  "fcfa": "FCFA",
+  "best": "Best",
+  "nearbyProjectsTab": "Nearby Projects",
+  "nearbyServicesTab": "Nearby Services"
 }

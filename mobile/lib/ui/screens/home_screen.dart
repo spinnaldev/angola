@@ -1523,6 +1523,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // Widget pour afficher une liste verticale de services
+  // Widget pour afficher une liste verticale de services
   Widget _buildVerticalServicesList(
       List<Service> services, int limit, String emptyMessage) {
     if (_isLoading) {
@@ -1662,8 +1663,8 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Text(
                           service.priceType == 'quote'
-                              ? 'Sur devis'
-                              : '${service.price.toInt()} FCFA',
+                              ? AppLocalizations.of(context)!.onQuote
+                              : '${service.price.toInt()} ${AppLocalizations.of(context)!.fcfa}',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -1693,9 +1694,9 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             minimumSize: const Size(60, 30),
                           ),
-                          child: const Text(
-                            'Voir',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context)!.view,
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1804,7 +1805,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Par ${project.clientName}',
+                                '${AppLocalizations.of(context)!.by} ${project.clientName}',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -1828,7 +1829,9 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                           child: Text(
-                            project.status == 'open' ? 'Ouvert' : 'Fermé',
+                            project.status == 'open' 
+                                ? AppLocalizations.of(context)!.open 
+                                : AppLocalizations.of(context)!.closed,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -1896,11 +1899,6 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildReviewsSection() {
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
-        // Load reviews if they're empty and not already loading
-        // if (reviewProvider.topReviews.isEmpty && !reviewProvider.isLoading) {
-        //   reviewProvider.fetchTopReviews();
-        // }
-
         final reviews = reviewProvider.topReviews;
         print("Reviews loaded: ${reviews.length}");
 
@@ -1916,7 +1914,7 @@ class _HomeScreenState extends State<HomeScreen>
         if (reviews.isEmpty) {
           return _buildEmptyState(
             icon: Icons.rate_review_outlined,
-            message: 'Aucun avis disponible pour le moment',
+            message: AppLocalizations.of(context)!.noReviewsAvailableMoment,
             height: 200,
           );
         }
@@ -1971,7 +1969,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ),
                                 Text(
-                                  "Service",
+                                  AppLocalizations.of(context)!.service,
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 12,
@@ -2083,7 +2081,6 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
-
   // Méthodes pour obtenir la couleur et l'icône de chaque catégorie
   Color _getCategoryColor(int categoryId) {
     switch (categoryId) {
