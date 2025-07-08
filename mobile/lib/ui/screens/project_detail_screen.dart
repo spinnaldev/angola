@@ -26,9 +26,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   late TabController _tabController;
   bool _isFavorited = false;
   bool _isLoadingOffers = false;
-  bool _isSubmittingOffer = false;
   List<dynamic> _offers = [];
   bool _viewCounted = false;
+  bool _isSubmittingOffer = false;  // Contrôle l'état de soumission
+bool _showOfferForm = false;   
 
   // VARIABLES MANQUANTES AJOUTÉES
   bool _includesMaterials = false;
@@ -108,190 +109,358 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     }
   }
 
-  Future<void> _submitOffer() async {
-    if (!mounted) return;
+  // Future<void> _submitOffer() async {
+  //   if (!mounted) return;
 
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-    if (user == null || user.role != 'provider') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vous devez être connecté en tant que prestataire'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+  //   final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+  //   if (user == null || user.role != 'provider') {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Vous devez être connecté en tant que prestataire'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     return;
+  //   }
 
+  //   // Validation des champs
+  //   if (_offerMessageController.text.trim().isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Veuillez saisir un message pour votre offre'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   if (_offerPriceController.text.trim().isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Veuillez indiquer un prix pour votre offre'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   if (_offerDeliveryController.text.trim().isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Veuillez indiquer un délai de livraison'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   // Validation du format des nombres
+  //   final double? price = double.tryParse(_offerPriceController.text.trim());
+  //   if (price == null || price <= 0) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Veuillez saisir un prix valide'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   final int? deliveryTime =
+  //       int.tryParse(_offerDeliveryController.text.trim());
+  //   if (deliveryTime == null || deliveryTime <= 0) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Veuillez saisir un délai valide (en jours)'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   // Afficher le loader et désactiver les interactions
+  //   setState(() {
+  //     _isSubmittingOffer = true;
+  //   });
+
+  //   // Préparer les données de l'offre
+  //   final offerData = {
+  //     'proposed_price': price,
+  //     'delivery_time': deliveryTime,
+  //     'message': _offerMessageController.text.trim(),
+  //     'includes_materials': _includesMaterials,
+  //     'travel_costs_included': _travelCostsIncluded,
+  //   };
+
+  //   try {
+  //     final apiService = Provider.of<ApiService>(context, listen: false);
+
+  //     // Envoyer l'offre
+  //     await apiService.submitOffer(widget.project.id, offerData);
+
+  //     if (mounted) {
+  //       // Fermer le bottom sheet avec un délai pour montrer le succès
+  //       Navigator.pop(context);
+
+  //       // Vider les champs pour la prochaine fois
+  //       _offerMessageController.clear();
+  //       _offerPriceController.clear();
+  //       _offerDeliveryController.clear();
+  //       _includesMaterials = false;
+  //       _travelCostsIncluded = false;
+
+  //       // Afficher le message de succès
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Row(
+  //             children: [
+  //               Icon(Icons.check_circle, color: Colors.white),
+  //               SizedBox(width: 8),
+  //               Text('Offre envoyée avec succès !'),
+  //             ],
+  //           ),
+  //           backgroundColor: Colors.green,
+  //           duration: Duration(seconds: 3),
+  //         ),
+  //       );
+
+  //       // Recharger les offres pour afficher la nouvelle
+  //       _loadOffers();
+  //     }
+  //   } catch (e) {
+  //     print('Erreur lors de l\'envoi de l\'offre: $e');
+
+  //     if (mounted) {
+  //       // Afficher l'erreur dans une snackbar ou un dialog
+  //       String errorMessage = e.toString();
+  //       if (errorMessage.startsWith('Exception: ')) {
+  //         errorMessage = errorMessage.substring(11);
+  //       }
+
+  //       // Si l'erreur est longue, l'afficher dans un dialog
+  //       if (errorMessage.length > 100) {
+  //         showDialog(
+  //           context: context,
+  //           builder: (context) => AlertDialog(
+  //             title: const Row(
+  //               children: [
+  //                 Icon(Icons.error, color: Colors.red),
+  //                 SizedBox(width: 8),
+  //                 Text('Erreur'),
+  //               ],
+  //             ),
+  //             content: SingleChildScrollView(
+  //               child: Text(errorMessage),
+  //             ),
+  //             actions: [
+  //               TextButton(
+  //                 onPressed: () => Navigator.pop(context),
+  //                 child: const Text('OK'),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       } else {
+  //         // Sinon, utiliser une snackbar
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(
+  //             content: Row(
+  //               children: [
+  //                 const Icon(Icons.error, color: Colors.white),
+  //                 const SizedBox(width: 8),
+  //                 Expanded(child: Text(errorMessage)),
+  //               ],
+  //             ),
+  //             backgroundColor: Colors.red,
+  //             duration: const Duration(seconds: 5),
+  //             action: SnackBarAction(
+  //               label: 'Fermer',
+  //               textColor: Colors.white,
+  //               onPressed: () {
+  //                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  //               },
+  //             ),
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isSubmittingOffer = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+  // Fonction pour soumettre l'offre - Version corrigée
+  Future<void> _submitOffer(StateSetter setBottomSheetState) async {
     // Validation des champs
-    if (_offerMessageController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez saisir un message pour votre offre'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     if (_offerPriceController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez indiquer un prix pour votre offre'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showErrorInBottomSheet('Veuillez saisir un prix', setBottomSheetState);
       return;
     }
 
     if (_offerDeliveryController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez indiquer un délai de livraison'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showErrorInBottomSheet('Veuillez saisir un délai de livraison', setBottomSheetState);
       return;
     }
 
-    // Validation du format des nombres
+    if (_offerMessageController.text.trim().isEmpty) {
+      _showErrorInBottomSheet('Veuillez saisir un message', setBottomSheetState);
+      return;
+    }
+
+    if (_offerMessageController.text.trim().length < 50) {
+      _showErrorInBottomSheet('Le message doit contenir au moins 50 caractères', setBottomSheetState);
+      return;
+    }
+
     final double? price = double.tryParse(_offerPriceController.text.trim());
     if (price == null || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez saisir un prix valide'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showErrorInBottomSheet('Veuillez saisir un prix valide', setBottomSheetState);
       return;
     }
 
-    final int? deliveryTime =
-        int.tryParse(_offerDeliveryController.text.trim());
+    final int? deliveryTime = int.tryParse(_offerDeliveryController.text.trim());
     if (deliveryTime == null || deliveryTime <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez saisir un délai valide (en jours)'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showErrorInBottomSheet('Veuillez saisir un délai valide (en jours)', setBottomSheetState);
       return;
     }
 
-    // Afficher le loader et désactiver les interactions
+    // Activer le loader
+    setBottomSheetState(() {
+      _isSubmittingOffer = true;
+    });
+
     setState(() {
       _isSubmittingOffer = true;
     });
 
-    // Préparer les données de l'offre
-    final offerData = {
-      'proposed_price': price,
-      'delivery_time': deliveryTime,
-      'message': _offerMessageController.text.trim(),
-      'includes_materials': _includesMaterials,
-      'travel_costs_included': _travelCostsIncluded,
-    };
-
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // Préparer les données de l'offre
+      final offerData = {
+        'proposed_price': price,
+        'delivery_time': deliveryTime,
+        'message': _offerMessageController.text.trim(),
+        'includes_materials': _includesMaterials,
+        'travel_costs_included': _travelCostsIncluded,
+      };
 
       // Envoyer l'offre
       await apiService.submitOffer(widget.project.id, offerData);
 
       if (mounted) {
-        // Fermer le bottom sheet avec un délai pour montrer le succès
+        // FERMER D'ABORD la BottomSheet
         Navigator.pop(context);
 
-        // Vider les champs pour la prochaine fois
-        _offerMessageController.clear();
-        _offerPriceController.clear();
-        _offerDeliveryController.clear();
-        _includesMaterials = false;
-        _travelCostsIncluded = false;
-
-        // Afficher le message de succès
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Offre envoyée avec succès !'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        // Recharger les offres pour afficher la nouvelle
-        _loadOffers();
-      }
-    } catch (e) {
-      print('Erreur lors de l\'envoi de l\'offre: $e');
-
-      if (mounted) {
-        // Afficher l'erreur dans une snackbar ou un dialog
-        String errorMessage = e.toString();
-        if (errorMessage.startsWith('Exception: ')) {
-          errorMessage = errorMessage.substring(11);
-        }
-
-        // Si l'erreur est longue, l'afficher dans un dialog
-        if (errorMessage.length > 100) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.error, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Erreur'),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Text(errorMessage),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          // Sinon, utiliser une snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.error, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(errorMessage)),
-                ],
-              ),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Fermer',
-                textColor: Colors.white,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
-            ),
-          );
-        }
-      }
-    } finally {
-      if (mounted) {
+        // Réinitialiser les états
         setState(() {
           _isSubmittingOffer = false;
+          _showOfferForm = false;
         });
+
+        // Réinitialiser les champs
+        _clearOfferForm();
+
+        // ENSUITE afficher le message de succès (visible maintenant)
+        await Future.delayed(const Duration(milliseconds: 300));
+        _showSuccessSnackBar('Offre envoyée avec succès !');
+
+        // Optionnel : Rafraîchir les données du projet
+        // await _refreshProjectData();
+      }
+    } catch (e) {
+      if (mounted) {
+        // FERMER D'ABORD la BottomSheet même en cas d'erreur
+        Navigator.pop(context);
+
+        // Réinitialiser les états
+        setState(() {
+          _isSubmittingOffer = false;
+          _showOfferForm = false;
+        });
+
+        // Déterminer le message d'erreur
+        String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
+        
+        if (e.toString().contains('déjà fait une offre')) {
+          errorMessage = 'Vous avez déjà fait une offre pour ce projet';
+        } else if (e.toString().contains('n\'accepte plus d\'offres')) {
+          errorMessage = 'Ce projet n\'accepte plus d\'offres';
+        }
+
+        // ENSUITE afficher le message d'erreur (visible maintenant)
+        await Future.delayed(const Duration(milliseconds: 300));
+        _showErrorSnackBar(errorMessage);
       }
     }
   }
 
+  void _showErrorInBottomSheet(String message, StateSetter setBottomSheetState) {
+    // Vous pouvez soit :
+    // 1. Afficher un widget d'erreur dans la BottomSheet
+    // 2. Ou utiliser un ScaffoldMessenger temporaire dans la BottomSheet
+    
+    // Option 1: Afficher une alerte simple dans la BottomSheet
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Erreur'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Fonction pour afficher les messages d'erreur APRÈS fermeture de la BottomSheet
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  // Fonction pour afficher les messages de succès APRÈS fermeture de la BottomSheet
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
   Future<void> _toggleFavorite() async {
     if (!mounted) return;
 
@@ -500,7 +669,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                           });
 
                           // Appeler la méthode de soumission
-                          _submitOffer();
+                          _submitOffer(setBottomSheetState);
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
@@ -985,6 +1154,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     );
   }
 
+  // Fonction pour vider le formulaire
+  void _clearOfferForm() {
+    _offerMessageController.clear();
+    _offerPriceController.clear();
+    _offerDeliveryController.clear();
+    _includesMaterials = false;
+    _travelCostsIncluded = false;
+  }
   Widget _buildTabBar() {
     return Container(
       color: Colors.grey[50],

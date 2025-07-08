@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -8,7 +9,24 @@ class ApiClient {
 
   ApiClient({required this.baseUrl});
 
-  Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {  // Enlever le _
+  // Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {  // Enlever le _
+  //   Map<String, String> headers = {
+  //     'Content-Type': 'application/json; charset=utf-8',
+  //     'Accept': 'application/json',
+  //     'Accept-Charset': 'utf-8',
+  //   };
+
+  //   if (requireAuth) {
+  //     final token = await _secureStorage.read(key: 'access_token');
+  //     if (token != null) {
+  //       headers['Authorization'] = 'Bearer $token';
+  //     }
+  //   }
+
+  //   return headers;
+  // }
+
+  Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {
     Map<String, String> headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Accept': 'application/json',
@@ -17,14 +35,49 @@ class ApiClient {
 
     if (requireAuth) {
       final token = await _secureStorage.read(key: 'access_token');
-      if (token != null) {
+      print('🔑 Token lu depuis storage: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}'); // Debug
+      
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
+        print('✅ Header Authorization ajouté: Bearer ${token.substring(0, 20)}...'); // Debug
+      } else {
+        print('❌ Aucun token trouvé dans le storage'); // Debug
       }
     }
 
+    print('📤 Headers finaux: ${headers.keys.toList()}'); // Debug
     return headers;
   }
 
+  Future<void> debugToken() async {
+    final token = await _secureStorage.read(key: 'access_token');
+    final refresh = await _secureStorage.read(key: 'refresh_token');
+    
+    print('=== DEBUG TOKEN INFO ===');
+    print('Access Token: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}');
+    print('Refresh Token: ${refresh != null ? "EXISTS (${refresh.length} chars)" : "NULL"}');
+    
+    if (token != null) {
+      print('Token preview: ${token.substring(0, math.min(50, token.length))}...');
+    }
+    print('========================');
+  }
+
+  Future<void> testTokenAndAPI() async {
+    final apiClient = ApiClient(baseUrl: 'https://teyago.com/api');
+    
+    // Debug du token
+    await apiClient.debugToken();
+    
+    // Test d'appel API avec logs détaillés
+    try {
+      print('🧪 Test appel API /users/me/...');
+      final response = await apiClient.get('users/me/', requireAuth: true);
+      print('✅ Succès: $response');
+    } catch (e) {
+      print('❌ Erreur: $e');
+    }
+  }
   Future<dynamic> get(String endpoint, {bool requireAuth = true}) async {
     final headers = await getHeaders(requireAuth: requireAuth);
     final response = await http.get(
@@ -187,11 +240,17 @@ class ApiClient {
 
   Future<bool> resetPasswordRequest(String email) async {
     try {
+      print('Envoi de la demande de réinitialisation pour: $email'); // Debug
+      
       final response = await post(
         'auth/password-reset-request/',
         data: {'email': email},
         requireAuth: false
       );
+      
+      print('Réponse reçue: $response'); // Debug
+      
+      // Si on arrive ici, c'est que la requête a réussi (pas d'exception)
       return true;
     } catch (e) {
       print('Erreur de demande de réinitialisation de mot de passe: $e');
@@ -201,6 +260,8 @@ class ApiClient {
 
   Future<bool> verifyResetCode(String email, String code) async {
     try {
+      print('Vérification du code: $code pour: $email'); // Debug
+      
       final response = await post(
         'auth/verify-reset-code/',
         data: {
@@ -209,6 +270,9 @@ class ApiClient {
         },
         requireAuth: false
       );
+      
+      print('Réponse vérification: $response'); // Debug
+      
       return true;
     } catch (e) {
       print('Erreur de vérification du code: $e');
@@ -218,6 +282,8 @@ class ApiClient {
 
   Future<bool> resetPasswordConfirm(String email, String code, String newPassword) async {
     try {
+      print('Confirmation reset pour: $email'); // Debug
+      
       final response = await post(
         'auth/password-reset-confirm/',
         data: {
@@ -227,6 +293,9 @@ class ApiClient {
         },
         requireAuth: false
       );
+      
+      print('Réponse confirmation: $response'); // Debug
+      
       return true;
     } catch (e) {
       print('Erreur de réinitialisation du mot de passe: $e');

@@ -13,6 +13,7 @@ import '../screens/client/my_quote_requests_screen.dart';
 import '../screens/disputes/disputes_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
+import 'package:teyago/ui/screens/auth/profile_selector_screen.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -481,6 +482,11 @@ class SideMenu extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                    ),
                     onPressed: () {
                       onClose();
                       Navigator.pushNamed(context, '/login');
@@ -494,7 +500,14 @@ class SideMenu extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {
                       onClose();
-                      Navigator.pushNamed(context, '/register');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileSelectorScreen(),
+                        ),
+                      );
+                      
+                      // Navigator.pushNamed(context, '/register');
                     },
                     child: Text(l10n.register),
                   ),
