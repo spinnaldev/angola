@@ -121,7 +121,7 @@ class _MyQuoteRequestsScreenState extends State<MyQuoteRequestsScreen> {
                           children: [
                             Text(
                               request.budget > 0
-                                  ? 'Budget: ${request.budget.toStringAsFixed(0)} FCFA'
+                                  ? 'Budget: ${request.budget.toStringAsFixed(0)} AOA'
                                   : 'Budget: Non spécifié',
                               style: TextStyle(
                                 color: Colors.grey[700],
@@ -243,7 +243,7 @@ class _MyQuoteRequestsScreenState extends State<MyQuoteRequestsScreen> {
               SizedBox(height: 8),
               Text(
                 request.budget > 0
-                    ? 'Budget: ${request.budget.toStringAsFixed(0)} FCFA'
+                    ? 'Budget: ${request.budget.toStringAsFixed(0)} AOA'
                     : 'Budget: Non spécifié',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,

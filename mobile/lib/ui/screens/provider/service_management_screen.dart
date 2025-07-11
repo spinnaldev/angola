@@ -153,7 +153,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
                       Text(
                         service.priceType == 'quote' 
                           ? 'Sur devis' 
-                          : '${service.price} FCFA',
+                          : '${service.price} AOA',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).primaryColor,

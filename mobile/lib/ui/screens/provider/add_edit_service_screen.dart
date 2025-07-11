@@ -584,7 +584,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppTextField(
-                            label: 'Prix (FCFA)',
+                            label: 'Prix (AOA)',
                             controller: _priceController,
                             keyboardType: TextInputType.number,
                             validator: (value) {
@@ -959,7 +959,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
               TextField(
                 controller: priceController,
                 decoration: InputDecoration(
-                  labelText: 'Prix supplémentaire (FCFA)',
+                  labelText: 'Prix supplémentaire (AOA)',
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,

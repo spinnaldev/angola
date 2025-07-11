@@ -330,10 +330,10 @@ class Report(TimeStampMixin):
 class ClientProject(TimeStampMixin):
     """Modèle pour les projets des clients - Version mise à jour"""
     BUDGET_CHOICES = (
-        ('moins_500', 'Moins de 500 €'),
-        ('500_1000', '500 à 1000 €'),
-        ('1000_10000', '1000 à 10 000 €'),
-        ('10000_plus', '10 000 € et plus'),
+        ('moins_500', 'Moins de 500 AOA'),
+        ('500_1000', '500 à 1000 AOA'),
+        ('1000_10000', '1000 à 10 000 AOA'),
+        ('10000_plus', '10 000 AOA et plus'),
         ('sur_devis', 'Demande de devis'),
     )
     
@@ -354,11 +354,11 @@ class ClientProject(TimeStampMixin):
     
     # BUDGET_CHOICES = (
     #     ('sur_devis', 'Sur devis'),
-    #     ('0_500', 'Moins de 500€'),
-    #     ('500_1000', '500€ - 1000€'),
-    #     ('1000_5000', '1000€ - 5000€'),
-    #     ('5000_15000', '5000€ - 15000€'),
-    #     ('15000_plus', 'Plus de 15000€'),
+    #     ('0_500', 'Moins de 500AOA'),
+    #     ('500_1000', '500AOA - 1000AOA'),
+    #     ('1000_5000', '1000AOA - 5000AOA'),
+    #     ('5000_15000', '5000AOA - 15000AOA'),
+    #     ('15000_plus', 'Plus de 15000AOA'),
     # )
     
     URGENCY_CHOICES = (
@@ -455,27 +455,27 @@ class ClientProject(TimeStampMixin):
     def budget_display(self):
         """Génère l'affichage formaté du budget"""
         budget_ranges = {
-            'moins_500': 'Moins de 500 €',
-            '500_1000': '500 à 1 000 €',
-            '1000_10000': '1 000 à 10 000 €',
-            '10000_plus': '10 000 € et plus',
+            'moins_500': 'Moins de 500 AOA',
+            '500_1000': '500 à 1 000 AOA',
+            '1000_10000': '1 000 à 10 000 AOA',
+            '10000_plus': '10 000 AOA et plus',
             'sur_devis': 'Sur devis'
         }
         
         # Si on a des valeurs min/max budget définies
         if self.min_budget is not None and self.max_budget is not None:
             if self.min_budget == self.max_budget:
-                return f"{int(self.min_budget)} €"
+                return f"{int(self.min_budget)} AOA"
             else:
-                return f"{int(self.min_budget)} € - {int(self.max_budget)} €"
+                return f"{int(self.min_budget)} - {int(self.max_budget)} AOA"
         
         # Si on a seulement un budget minimum
         elif self.min_budget is not None:
-            return f"À partir de {int(self.min_budget)} €"
+            return f"À partir de {int(self.min_budget)} AOA"
         
         # Si on a seulement un budget maximum
         elif self.max_budget is not None:
-            return f"Jusqu'à {int(self.max_budget)} €"
+            return f"Jusqu'à {int(self.max_budget)} AOA"
         
         # Sinon utiliser la plage prédéfinie
         return budget_ranges.get(self.budget_range, 'Budget à discuter')

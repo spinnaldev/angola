@@ -10,6 +10,7 @@ import '../../core/services/api_service.dart';
 import '../widgets/project_card.dart';
 import './base_screen.dart';
 import 'project_detail_screen.dart';
+import 'search_results_screen.dart';
 
 class ProjectsListScreen extends StatefulWidget {
   final int? categoryId;
@@ -35,7 +36,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   bool _isLoadingMore = false;
   int _currentPage = 1;
   bool _hasMore = true;
-  
+
   // Statistiques prestataire
   Map<String, dynamic>? _providerStats;
   bool _isLoadingStats = false;
@@ -113,7 +114,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         'page': _currentPage,
         'page_size': 10,
       });
-      
+
       if (mounted) {
         setState(() {
           _projects = result['projects'] ?? _getMockProjects();
@@ -134,7 +135,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   Future<void> _loadCategories() async {
     try {
-      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+      final categoryProvider =
+          Provider.of<CategoryProvider>(context, listen: false);
       await categoryProvider.fetchCategories();
       if (mounted) {
         setState(() {
@@ -147,7 +149,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMoreProjects();
     }
   }
@@ -194,14 +197,32 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   void _performSearch(String query) {
-    // Logique de recherche
-    print('Recherche: $query');
+    final searchQuery = query.trim();
+
+    if (searchQuery.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultsScreen(
+            query: searchQuery,
+            type: 'projects', // Recherche de projets
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un terme de recherche'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return BaseScreen(
       currentIndex: 1, // Projets sélectionné
       appBar: AppBar(
@@ -224,17 +245,17 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
             // SliverToBoxAdapter(
             //   child: _buildProjectsPromoCard(),
             // ),
-            
+
             // // Statistiques prestataire
             // SliverToBoxAdapter(
             //   child: _buildProviderStatsSection(),
             // ),
-            
+
             // Barre de recherche
             SliverToBoxAdapter(
               child: _buildSearchSection(),
             ),
-            
+
             // Liste des projets
             if (_isLoading)
               const SliverToBoxAdapter(
@@ -269,8 +290,10 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: ProjectCard(
                           project: _projects[index],
-                          onTap: () => _navigateToProjectDetail(_projects[index]),
-                          onFavoriteToggle: (project) => _toggleProjectFavorite(project),
+                          onTap: () =>
+                              _navigateToProjectDetail(_projects[index]),
+                          onFavoriteToggle: (project) =>
+                              _toggleProjectFavorite(project),
                         ),
                       );
                     },
@@ -279,7 +302,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                 ),
               ),
             ],
-            
+
             // Espacement en bas
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
@@ -293,7 +316,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   /// Carte promotionnelle pour les projets
   Widget _buildProjectsPromoCard() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -356,7 +379,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   /// Section des statistiques prestataire
   Widget _buildProviderStatsSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoadingStats) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -419,7 +442,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
               Expanded(
                 child: _buildStatCard(
                   l10n.monthlyEarnings,
-                  '${_providerStats!['total_earnings_this_month']?.toStringAsFixed(0) ?? 0}€',
+                  '${_providerStats!['total_earnings_this_month']?.toStringAsFixed(0) ?? 0}AOA',
                   Colors.purple,
                   Icons.euro,
                 ),
@@ -449,7 +472,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
+  Widget _buildStatCard(
+      String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -487,7 +511,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   /// Section de recherche
   Widget _buildSearchSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -531,7 +555,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -574,22 +598,20 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   Future<void> _toggleProjectFavorite(ClientProject project) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       await apiService.toggleProjectFavorite(project.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              project.isFavorited ?? false 
-                  ? l10n.projectRemovedFromFavorites
-                  : l10n.projectAddedToFavorites
-            ),
+            content: Text(project.isFavorited ?? false
+                ? l10n.projectRemovedFromFavorites
+                : l10n.projectAddedToFavorites),
           ),
         );
-        
+
         _refreshProjects();
       }
     } catch (e) {
@@ -607,11 +629,12 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       ClientProject(
         id: 1,
         title: 'Développement application mobile',
-        description: 'Création d\'une application mobile cross-platform pour service de livraison.',
+        description:
+            'Création d\'une application mobile cross-platform pour service de livraison.',
         clientName: 'TechStart SARL',
         categoryName: 'Développement mobile',
         budgetRange: '5000_15000',
-        budgetDisplay: '8000€ - 12000€',
+        budgetDisplay: '8000AOA - 12000AOA',
         location: 'Remote',
         remotePossible: true,
         urgency: 'medium',
@@ -630,11 +653,12 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       ClientProject(
         id: 2,
         title: 'Site web e-commerce',
-        description: 'Création d\'un site e-commerce pour vente de produits artisanaux.',
+        description:
+            'Création d\'un site e-commerce pour vente de produits artisanaux.',
         clientName: 'Artisan Shop',
         categoryName: 'Développement web',
         budgetRange: '2000_8000',
-        budgetDisplay: '3000€ - 6000€',
+        budgetDisplay: '3000AOA - 6000AOA',
         location: 'Paris',
         remotePossible: true,
         urgency: 'low',

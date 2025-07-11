@@ -556,27 +556,27 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
     def get_budget_display(self, obj):
         """Génère l'affichage formaté du budget"""
         budget_ranges = {
-            'moins_500': 'Moins de 500 €',
-            '500_1000': '500 à 1 000 €',
-            '1000_10000': '1 000 à 10 000 €',
-            '10000_plus': '10 000 € et plus',
+            'moins_500': 'Moins de 500 AOA',
+            '500_1000': '500 à 1 000 AOA',
+            '1000_10000': '1 000 à 10 000 AOA',
+            '10000_plus': '10 000 AOA et plus',
             'sur_devis': 'Sur devis'
         }
         
         # Si on a des valeurs min/max budget définies
         if obj.min_budget is not None and obj.max_budget is not None:
             if obj.min_budget == obj.max_budget:
-                return f"{int(obj.min_budget)} €"
+                return f"{int(obj.min_budget)} AOA"
             else:
-                return f"{int(obj.min_budget)} € - {int(obj.max_budget)} €"
+                return f"{int(obj.min_budget)} AOA - {int(obj.max_budget)} AOA"
         
         # Si on a seulement un budget minimum
         elif obj.min_budget is not None:
-            return f"À partir de {int(obj.min_budget)} €"
+            return f"À partir de {int(obj.min_budget)} AOA"
         
         # Si on a seulement un budget maximum
         elif obj.max_budget is not None:
-            return f"Jusqu'à {int(obj.max_budget)} €"
+            return f"Jusqu'à {int(obj.max_budget)} AOA"
         
         # Sinon utiliser la plage prédéfinie
         return budget_ranges.get(obj.budget_range, 'Budget à discuter')

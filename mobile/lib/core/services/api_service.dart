@@ -2141,7 +2141,7 @@
 //   //       clientName: 'Marie Dubois',
 //   //       categoryName: 'Développement web',
 //   //       budgetRange: '1000_10000',
-//   //       budgetDisplay: '3000€ - 8000€',
+//   //       budgetDisplay: '3000AOA - 8000AOA',
 //   //       location: 'Paris',
 //   //       remotePossible: true,
 //   //       urgency: 'medium',
@@ -2198,7 +2198,7 @@
 //   //       clientName: 'Sophie Laurent',
 //   //       categoryName: 'Rénovation',
 //   //       budgetRange: '10000_plus',
-//   //       budgetDisplay: '15000€ - 25000€',
+//   //       budgetDisplay: '15000AOA - 25000AOA',
 //   //       location: 'Marseille',
 //   //       remotePossible: false,
 //   //       urgency: 'low',
@@ -2298,6 +2298,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/category.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
@@ -2394,20 +2395,71 @@ class ApiService {
   // ===============================
   // MÉTHODES POUR LES UTILISATEURS
   // ===============================
+  Future<User> getUserById(int userId) async {
+    try {
+      print('👤 Récupération utilisateur par ID: $userId...');
 
+      // ✅ UTILISER LE NOUVEAU ENDPOINT AVEC ID
+      final data = await _apiClient.get('user/$userId/',
+          requireAuth: false); // Pas d'auth requise
+
+      // Vérifier la structure de la réponse
+      if (data != null && data['user'] != null) {
+        final user = User.fromJson(data['user']);
+        print('✅ Utilisateur récupéré par ID: ${user.username}');
+        return user;
+      } else if (data != null) {
+        // Si la réponse est directement l'utilisateur
+        final user = User.fromJson(data);
+        print('✅ Utilisateur récupéré par ID: ${user.username}');
+        return user;
+      } else {
+        throw Exception('Réponse vide du serveur');
+      }
+    } catch (e) {
+      print('❌ Erreur dans getUserById: $e');
+      rethrow;
+    }
+  }
+
+  // Modifiez getCurrentUser pour utiliser getUserById :
   Future<User> getCurrentUser() async {
     try {
       print('👤 Récupération de l\'utilisateur actuel...');
 
-      final data = await _apiClient.get('users/me/', requireAuth: true);
+      // D'abord, essayez de récupérer l'ID utilisateur depuis le cache local
+      final prefs = await SharedPreferences.getInstance();
+      final userData = prefs.getString('user_data');
 
-      final user = User.fromJson(data);
-      print('✅ Utilisateur récupéré: ${user.username}');
+      if (userData != null) {
+        try {
+          final user = User.fromJsonString(userData);
+          print('📱 Utilisation du cache local pour user ID: ${user.id}');
 
-      return user;
+          // Utiliser getUserById avec l'ID du cache
+          return await getUserById(user.id);
+        } catch (e) {
+          print('❌ Erreur cache local: $e');
+        }
+      }
+
+      // Si pas de cache, essayer avec l'endpoint original
+      try {
+        final data = await _apiClient.get('current-user/', requireAuth: true);
+
+        if (data != null && data['user'] != null) {
+          final user = User.fromJson(data['user']);
+          print('✅ Utilisateur récupéré via current-user: ${user.username}');
+          return user;
+        }
+      } catch (e) {
+        print('❌ Échec current-user: $e');
+      }
+
+      throw Exception('Impossible de récupérer l\'utilisateur actuel');
     } catch (e) {
       print('❌ Erreur dans getCurrentUser: $e');
-      return _getMockUser();
+      rethrow;
     }
   }
 
@@ -3230,8 +3282,9 @@ class ApiService {
     try {
       print('🔍 Recherche de services: $query');
 
+      // ✅ CORRECTION: Utiliser l'endpoint réel du ViewSet avec search
       final data = await _apiClient.get(
-          'services/search/?q=${Uri.encodeComponent(query)}',
+          'services/?search=${Uri.encodeComponent(query)}',
           requireAuth: false);
 
       print(
@@ -3239,6 +3292,32 @@ class ApiService {
       return data ?? {'results': []};
     } catch (e) {
       print('❌ Erreur dans searchServices: $e');
+
+      // Gérer les erreurs spécifiques
+      if (e.toString().contains('404')) {
+        print('🔍 Tentative avec endpoint alternatif...');
+        try {
+          // Fallback: essayer avec l'endpoint sans search
+          final fallbackData =
+              await _apiClient.get('services/', requireAuth: false);
+          final allResults = fallbackData['results'] ?? [];
+
+          // Filtrer côté client
+          final filteredResults = allResults.where((service) {
+            final title = (service['title'] ?? '').toString().toLowerCase();
+            final description =
+                (service['description'] ?? '').toString().toLowerCase();
+            final searchLower = query.toLowerCase();
+            return title.contains(searchLower) ||
+                description.contains(searchLower);
+          }).toList();
+
+          return {'results': filteredResults};
+        } catch (e2) {
+          print('❌ Erreur fallback services: $e2');
+          return {'results': []};
+        }
+      }
       return {'results': []};
     }
   }
@@ -3247,15 +3326,45 @@ class ApiService {
     try {
       print('🔍 Recherche de projets: $query');
 
+      // ✅ CORRECTION: Utiliser l'endpoint réel du ViewSet avec search
       final data = await _apiClient.get(
-          'projects/search/?q=${Uri.encodeComponent(query)}',
-          requireAuth: true);
+          'projects/?search=${Uri.encodeComponent(query)}',
+          requireAuth: false); // Lecture publique selon le backend
 
       print(
           '✅ Résultats de recherche projets: ${data['results']?.length ?? 0}');
       return data ?? {'results': []};
     } catch (e) {
       print('❌ Erreur dans searchProjects: $e');
+
+      // Gérer les erreurs spécifiques
+      if (e.toString().contains('404')) {
+        print('🔍 Tentative avec endpoint alternatif...');
+        try {
+          // Fallback: essayer avec l'endpoint sans search
+          final fallbackData =
+              await _apiClient.get('projects/', requireAuth: false);
+          final allResults = fallbackData['results'] ?? [];
+
+          // Filtrer côté client
+          final filteredResults = allResults.where((project) {
+            final title = (project['title'] ?? '').toString().toLowerCase();
+            final description =
+                (project['description'] ?? '').toString().toLowerCase();
+            final location =
+                (project['location'] ?? '').toString().toLowerCase();
+            final searchLower = query.toLowerCase();
+            return title.contains(searchLower) ||
+                description.contains(searchLower) ||
+                location.contains(searchLower);
+          }).toList();
+
+          return {'results': filteredResults};
+        } catch (e2) {
+          print('❌ Erreur fallback projets: $e2');
+          return {'results': []};
+        }
+      }
       return {'results': []};
     }
   }

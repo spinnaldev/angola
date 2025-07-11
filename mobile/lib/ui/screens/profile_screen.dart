@@ -633,7 +633,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       service.priceType == 'quote' 
                           ? l10n.onQuote // TRADUIT
-                          : '${service.price.toInt()}€',
+                          : '${service.price.toInt()}AOA',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF6366F1),

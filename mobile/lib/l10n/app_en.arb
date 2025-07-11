@@ -351,7 +351,7 @@
   "makeOffer": "Make an Offer",
   "projectToHandle": "Project to Handle",
   "pricing": "Pricing",
-  "proposedPrice": "Proposed Price (€) *",
+  "proposedPrice": "Proposed Price (AOA) *",
   "allInclusivePrice": "Your all-inclusive price",
   "priceRequired": "Price is required",
   "enterValidPrice": "Please enter a valid price",
@@ -381,8 +381,294 @@
   "projectNoLongerAcceptsOffers": "This project no longer accepts offers",
   "days": "days",
   "months": "months",
-  "fcfa": "FCFA",
+  "fcfa": "AOA",
   "best": "Best",
   "nearbyProjectsTab": "Nearby Projects",
-  "nearbyServicesTab": "Nearby Services"
+  "nearbyServicesTab": "Nearby Services",
+
+
+  "providerProfile": "Provider Profile",
+  "reportProblem": "Report a Problem",
+  "requestQuote": "Request Quote", 
+  "presentation": "Presentation",
+  "evaluations": "Reviews",
+  "gallery": "Gallery",
+  "about": "About",
+  "servicesOffered": "Services Offered",
+  "availableOptions": "Available Options",
+  "verifiedEvaluations": "Verified Reviews",
+  "writeReview": "Write a Review",
+  "noReviewsForService": "No reviews for this service",
+  "noImagesAvailable": "No images available",
+  
+
+  "price": "Price",
+  "onQuotePrice": "On quote",
+  "fixedPrice": "Fixed price",
+  "hourlyPrice": "Hourly rate",
+  "dailyPrice": "Daily rate", 
+  "negotiablePrice": "Negotiable price",
+  "reviews": "reviews",
+  
+
+  "requestQuoteFor": "Request quote for \"{serviceTitle}\"",
+  "@requestQuoteFor": {
+    "placeholders": {
+      "serviceTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "requestSubject": "Request Subject",
+  "requestSubjectHint": "Ex: Complete renovation of my bathroom",
+  "yourBudgetOptional": "Your budget (optional)",
+  "budgetHint": "Ex: 500000",
+  "yourRequest": "Your Request",
+  "requestDescriptionHint": "Describe your project, needs and expectations...",
+  "send": "Send",
+  
+
+  "enterRequestSubject": "Please enter a subject for your request",
+  "describeYourRequest": "Please describe your request",
+  "quoteRequestSentSuccess": "Quote request sent successfully",
+  "errorSendingQuoteRequest": "Error sending quote request",
+  
+
+  "whatIsYourRating": "What is your rating?",
+  "shareYourOpinion": "Feel free to share your opinion\nabout the service",
+  "yourReview": "Your review",
+  "addPhotos": "Add photos",
+  "sendReview": "SEND REVIEW",
+  "pleaseGiveRating": "Please give a rating",
+  "pleaseWriteComment": "Please write a comment",
+  "reviewSentSuccess": "Review sent successfully",
+  "errorSendingReview": "Error sending review", 
+  "addImageFeatureNotImplemented": "Add image feature not yet implemented",
+
+  "servicesSearchTitle": "Services: \"{query}\"",
+  "@servicesSearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsSearchTitle": "Projects: \"{query}\"",
+  "@projectsSearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInProgress": "Search in progress...",
+  "retry": "Retry",
+  "newSearch": "New search",
+  
+  "searchError": "Search error",
+  "noServiceFound": "No service found for \"{query}\"",
+  "@noServiceFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noProjectFound": "No project found for \"{query}\"",
+  "@noProjectFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "resultFound": "{count} result found",
+  "@resultFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsFound": "{count} results found",
+  "@resultsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "serviceWithoutName": "Service without name",
+  "projectWithoutName": "Project without name",
+  "unknownClient": "Unknown client",
+  "onQuotePrice": "On quote",
+
+  "myProjects": "My Projects",
+  "addProject": "Add Project",
+  "addProjectTooltip": "Add a project",
+  "createProject": "Create Project",
+  
+  "all": "All",
+  "allProjects": "All",
+  "openProjects": "Open",
+  "inProgressProjects": "In Progress", 
+  "completedProjects": "Completed",
+  
+  "sessionExpired": "Session Expired",
+  "sessionExpiredMessage": "Your session has expired. Please log in again to access your projects.",
+  "cancel": "Cancel",
+  "reconnect": "Reconnect",
+  "errorLoading": "Loading Error",
+  "loadingError": "Error loading projects: {error}",
+  "@loadingError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "retryAction": "Retry",
+  "retry": "Retry",
+  
+  "noProjectsInCategory": "No projects in this category",
+  "noProjectsYet": "You don't have any projects yet",
+  "createFirstProject": "Create your first project to get started",
+  
+  "statusOpen": "Open",
+  "statusInProgress": "In Progress",
+  "statusCompleted": "Completed", 
+  "statusClosed": "Closed",
+  "statusPaused": "Paused",
+  "statusCancelled": "Cancelled",
+  
+  "views": "views",
+  "offers": "offers",
+  "viewsCount": "{count} views",
+  "@viewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offersCount": "{count} offers",
+  "@offersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "view": "View",
+  "close": "Close",
+  "delete": "Delete",
+  "closeProject": "Close Project",
+  "deleteProject": "Delete Project", 
+  "closeProjectConfirm": "Are you sure you want to close this project? Providers will no longer be able to submit offers.",
+  "deleteProjectConfirm": "Are you sure you want to delete this project? This action is irreversible.",
+  "confirm": "Confirm",
+  
+  "projectClosedSuccess": "Project closed successfully",
+  "projectDeletedSuccess": "Project deleted successfully", 
+  "projectCreatedSuccess": "Project created successfully",
+  
+  "errorMessage": "Error: {message}",
+  "@errorMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "unauthorizedError": "Unauthorized. Please log in again.",
+  "networkError": "Network error. Check your connection.",
+  "serverError": "Server error. Try again later.",
+  "postProject": "Post a Project",
+  "publish": "Publish",
+  "receiveQuotesDetail": "Receive at least 18 quotes by detailing your project",
+  
+  "basicInformation": "Basic Information",
+  "category": "Category",
+  "budget": "Budget",
+  "location": "Location",
+  "timingUrgency": "Timing & Urgency",
+  "requiredSkills": "Required Skills",
+  "attachments": "Attachments (optional)",
+  "contactPreferences": "Contact Preferences",
+  
+  "projectTitle": "Project Title *",
+  "projectTitleHint": "Ex: Creating an e-commerce website",
+  "detailedDescription": "Detailed Description *",
+  "detailedDescriptionHint": "Describe precisely your needs, expectations...",
+  "titleRequired": "Title is required",
+  "titleMinLength": "Title must contain at least 10 characters",
+  "descriptionRequired": "Description is required",
+  "descriptionMinLength": "Description must contain at least 50 characters",
+  
+  "chooseCategory": "Choose a category *",
+  "chooseCategoryValidation": "Please choose a category",
+  
+  "approximateBudget": "Approximate Budget *",
+  "lessThan500": "Less than 500 AOA",
+  "between500And1000": "500 to 1000 AOA",
+  "between1000And10000": "1000 to 10,000 AOA",
+  "moreThan10000": "10,000 AOA and more",
+  "requestQuote": "Request quote",
+  "maxBudget": "Max Budget (AOA)",
+  "budgetTip": "99% of clients find a freelancer within their budget",
+  
+  "interventionLocation": "Intervention Location *",
+  "locationHint": "Ex: Paris, Lyon, France...",
+  "locationRequired": "Location is required",
+  "remoteWorkPossible": "Remote work possible",
+  "remoteWorkDescription": "Provider can work remotely",
+  
+  "projectUrgency": "Project Urgency *",
+  "notUrgent": "Not urgent",
+  "moderatelyUrgent": "Moderately urgent",
+  "urgent": "Urgent",
+  "veryUrgent": "Very urgent",
+  "desiredDeadline": "Desired deadline (optional)",
+  "chooseDate": "Choose a date",
+  
+  "addSkill": "Add a skill",
+  "skillHint": "Ex: PHP, Graphic design...",
+  "add": "Add",
+  "noSkillsAdded": "No skills added. Skills help providers better understand your needs.",
+  
+  "attachmentsDescription": "Add documents to better explain your project (specifications, mockups, etc.)",
+  "file1": "File 1",
+  "file2": "File 2",
+  "file3": "File 3", 
+  "change": "Change",
+  "choose": "Choose",
+  "fileSelectionError": "File selection error: {error}",
+  "@fileSelectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "platformPrivateMessaging": "Platform private messaging",
+  "recommendedForSecurity": "Recommended for security",
+  "showEmailAddress": "Show my email address",
+  "emailVisibleToProviders": "(will be displayed to providers)",
+  "showPhoneNumber": "Show my phone number",
+  "phoneVisibleToProviders": "(will be displayed to providers)",
+  
+  "projectPublishedSuccess": "Project published successfully!",
+  "publishingError": "Publishing error: {error}",
+  "@publishingError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+
 }

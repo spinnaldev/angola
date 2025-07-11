@@ -226,7 +226,7 @@ const ProviderDetail = ({ provider, onClose }) => {
                             <div className="text-right">
                               <div className="rounded-md bg-blue-50 px-2 py-1 text-sm font-medium text-blue-700">
                                 {service.price
-                                  ? `${service.price} €`
+                                  ? `${service.price} AOA`
                                   : service.price_type === 'quote'
                                   ? 'Sur devis'
                                   : 'Prix non spécifié'}

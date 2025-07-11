@@ -351,7 +351,7 @@
   "makeOffer": "Proposer une offre",
   "projectToHandle": "Projet à traiter",
   "pricing": "Tarification",
-  "proposedPrice": "Prix proposé (€) *",
+  "proposedPrice": "Prix proposé (AOA) *",
   "allInclusivePrice": "Votre prix tout compris",
   "priceRequired": "Le prix est obligatoire",
   "enterValidPrice": "Veuillez entrer un prix valide",
@@ -381,9 +381,295 @@
   "projectNoLongerAcceptsOffers": "Ce projet n'accepte plus d'offres",
   "days": "jours",
   "months": "mois",
-  "fcfa": "FCFA",
+  "fcfa": "AOA",
   "best": "Meilleurs",
   "nearbyProjectsTab": "Projets à proximité", 
-  "nearbyServicesTab": "Services à proximité"
+  "nearbyServicesTab": "Services à proximité",
+
+ 
+  "providerProfile": "Profil prestataire",
+  "reportProblem": "Signaler un problème", 
+  "requestQuote": "Demander un devis",
+  "presentation": "Présentation",
+  "evaluations": "Évaluations",
+  "gallery": "Galerie",
+  "about": "À propos",
+  "servicesOffered": "Services proposés",
+  "availableOptions": "Options disponibles",
+  "verifiedEvaluations": "Évaluations vérifiées",
+  "writeReview": "Écrire un avis",
+  "noReviewsForService": "Aucun avis pour ce service",
+  "noImagesAvailable": "Aucune image disponible",
+  
+ 
+  "price": "Prix",
+  "onQuotePrice": "Sur devis",
+  "fixedPrice": "Prix fixe",
+  "hourlyPrice": "Prix horaire", 
+  "dailyPrice": "Prix journalier",
+  "negotiablePrice": "Prix négociable",
+  "reviews": "avis",
+  
+
+  "requestQuoteFor": "Demander un devis pour \"{serviceTitle}\"",
+  "@requestQuoteFor": {
+    "placeholders": {
+      "serviceTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "requestSubject": "Objet de demande",
+  "requestSubjectHint": "Ex: Rénovation complète de ma salle de bain",
+  "yourBudgetOptional": "Votre budget (optionnel)",
+  "budgetHint": "Ex: 500000",
+  "yourRequest": "Votre demande",
+  "requestDescriptionHint": "Décrivez votre projet, vos besoins et attentes...",
+  "send": "Envoyer",
+  
+
+  "enterRequestSubject": "Veuillez entrer un objet pour votre demande",
+  "describeYourRequest": "Veuillez décrire votre demande", 
+  "quoteRequestSentSuccess": "Demande de devis envoyée avec succès",
+  "errorSendingQuoteRequest": "Erreur lors de l'envoi de la demande",
+  
+
+  "whatIsYourRating": "Quelle est votre note ?",
+  "shareYourOpinion": "N'hésitez pas à partager votre opinion\nà propos du service",
+  "yourReview": "Votre avis",
+  "addPhotos": "Ajouter des photos",
+  "sendReview": "ENVOYER UN AVIS",
+  "pleaseGiveRating": "Veuillez attribuer une note",
+  "pleaseWriteComment": "Veuillez écrire un commentaire",
+  "reviewSentSuccess": "Avis envoyé avec succès",
+  "errorSendingReview": "Erreur lors de l'envoi de l'avis",
+  "addImageFeatureNotImplemented": "Fonctionnalité d'ajout d'images pas encore implémentée",
+
+  "servicesSearchTitle": "Services : \"{query}\"",
+  "@servicesSearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsSearchTitle": "Projets : \"{query}\"",
+  "@projectsSearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInProgress": "Recherche en cours...",
+  "retry": "Réessayer",
+  "newSearch": "Nouvelle recherche",
+  
+  "searchError": "Erreur lors de la recherche",
+  "noServiceFound": "Aucun service trouvé pour \"{query}\"",
+  "@noServiceFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noProjectFound": "Aucun projet trouvé pour \"{query}\"",
+  "@noProjectFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "resultFound": "{count} résultat trouvé",
+  "@resultFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsFound": "{count} résultats trouvés",
+  "@resultsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "serviceWithoutName": "Service sans nom",
+  "projectWithoutName": "Projet sans nom",
+  "unknownClient": "Client inconnu",
+  "onQuotePrice": "Sur devis",
+
+  "myProjects": "Mes projets",
+  "addProject": "Ajouter un projet",
+  "addProjectTooltip": "Ajouter un projet",
+  "createProject": "Créer un projet",
+  
+  "all": "Tous",
+  "allProjects": "Tous",
+  "openProjects": "Ouverts", 
+  "inProgressProjects": "En cours",
+  "completedProjects": "Terminés",
+  
+  "sessionExpired": "Session expirée",
+  "sessionExpiredMessage": "Votre session a expiré. Veuillez vous reconnecter pour accéder à vos projets.",
+  "cancel": "Annuler",
+  "reconnect": "Se reconnecter",
+  "errorLoading": "Erreur de chargement",
+  "loadingError": "Erreur lors du chargement des projets: {error}",
+  "@loadingError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "retryAction": "Réessayer",
+  "retry": "Réessayer",
+  
+  "noProjectsInCategory": "Aucun projet dans cette catégorie",
+  "noProjectsYet": "Vous n'avez pas encore de projets",
+  "createFirstProject": "Créez votre premier projet pour commencer",
+  
+  "statusOpen": "Ouvert",
+  "statusInProgress": "En cours", 
+  "statusCompleted": "Terminé",
+  "statusClosed": "Clôturé",
+  "statusPaused": "En pause",
+  "statusCancelled": "Annulé",
+  
+  "views": "vues",
+  "offers": "offres",
+  "viewsCount": "{count} vues",
+  "@viewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offersCount": "{count} offres",
+  "@offersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "view": "Voir",
+  "close": "Clôturer",
+  "delete": "Supprimer",
+  "closeProject": "Clôturer le projet",
+  "deleteProject": "Supprimer le projet",
+  "closeProjectConfirm": "Êtes-vous sûr de vouloir clôturer ce projet ? Les prestataires ne pourront plus soumettre d'offres.",
+  "deleteProjectConfirm": "Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.",
+  "confirm": "Confirmer",
+  
+  "projectClosedSuccess": "Projet clôturé avec succès",
+  "projectDeletedSuccess": "Projet supprimé avec succès",
+  "projectCreatedSuccess": "Projet créé avec succès",
+  
+  "errorMessage": "Erreur: {message}",
+  "@errorMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "unauthorizedError": "Non autorisé. Veuillez vous reconnecter.",
+  "networkError": "Erreur de réseau. Vérifiez votre connexion.",
+  "serverError": "Erreur serveur. Réessayez plus tard.",
+
+  "postProject": "Déposer un projet",
+  "publish": "Publier",
+  "receiveQuotesDetail": "Recevez au moins 18 devis en détaillant votre projet",
+  
+  "basicInformation": "Informations de base",
+  "category": "Catégorie",
+  "budget": "Budget",
+  "location": "Localisation",
+  "timingUrgency": "Délais et urgence",
+  "requiredSkills": "Compétences requises",
+  "attachments": "Fichiers joints (optionnel)",
+  "contactPreferences": "Préférences de contact",
+  
+  "projectTitle": "Titre du projet *",
+  "projectTitleHint": "Ex: Création d'un site web e-commerce",
+  "detailedDescription": "Description détaillée *",
+  "detailedDescriptionHint": "Décrivez précisément vos besoins, vos attentes...",
+  "titleRequired": "Le titre est obligatoire",
+  "titleMinLength": "Le titre doit contenir au moins 10 caractères",
+  "descriptionRequired": "La description est obligatoire",
+  "descriptionMinLength": "La description doit contenir au moins 50 caractères",
+  
+  "chooseCategory": "Choisir une catégorie *",
+  "chooseCategoryValidation": "Veuillez choisir une catégorie",
+  
+  "approximateBudget": "Budget approximatif *",
+  "lessThan500": "Moins de 500 AOA",
+  "between500And1000": "500 à 1000 AOA",
+  "between1000And10000": "1000 à 10 000 AOA",
+  "moreThan10000": "10 000 AOA et plus",
+  "requestQuote": "Demande de devis",
+  "maxBudget": "Budget max (AOA)",
+  "budgetTip": "99% des clients trouvent un freelance dans leur budget",
+  
+  "interventionLocation": "Lieu d'intervention *",
+  "locationHint": "Ex: Paris, Lyon, France...",
+  "locationRequired": "Le lieu est obligatoire",
+  "remoteWorkPossible": "Télétravail possible",
+  "remoteWorkDescription": "Le prestataire peut travailler à distance",
+  
+  "projectUrgency": "Urgence du projet *",
+  "notUrgent": "Pas urgent",
+  "moderatelyUrgent": "Modérément urgent",
+  "urgent": "Urgent",
+  "veryUrgent": "Très urgent",
+  "desiredDeadline": "Date limite souhaitée (optionnel)",
+  "chooseDate": "Choisir une date",
+  
+  "addSkill": "Ajouter une compétence",
+  "skillHint": "Ex: PHP, Design graphique...",
+  "add": "Ajouter",
+  "noSkillsAdded": "Aucune compétence ajoutée. Les compétences aident les prestataires à mieux comprendre vos besoins.",
+  
+  "attachmentsDescription": "Ajoutez des documents pour mieux expliquer votre projet (cahier des charges, maquettes, etc.)",
+  "file1": "Fichier 1",
+  "file2": "Fichier 2", 
+  "file3": "Fichier 3",
+  "change": "Changer",
+  "choose": "Choisir",
+  "fileSelectionError": "Erreur lors de la sélection du fichier: {error}",
+  "@fileSelectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "platformPrivateMessaging": "Messagerie privée de la plateforme",
+  "recommendedForSecurity": "Recommandé pour la sécurité",
+  "showEmailAddress": "Afficher mon adresse email",
+  "emailVisibleToProviders": "(sera affiché aux prestataires)",
+  "showPhoneNumber": "Afficher mon numéro de téléphone",
+  "phoneVisibleToProviders": "(sera affiché aux prestataires)",
+  
+  "projectPublishedSuccess": "Projet publié avec succès !",
+  "publishingError": "Erreur lors de la publication: {error}",
+  "@publishingError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 
 }

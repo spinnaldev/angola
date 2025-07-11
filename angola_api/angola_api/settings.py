@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'operation.middleware.JWTDebugMiddleware', 
 ]
 
 ROOT_URLCONF = 'angola_api.urls'
@@ -91,7 +92,7 @@ WSGI_APPLICATION = 'angola_api.wsgi.application'
 # Configuration de Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ✅ OBLIGATOIRE
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -103,7 +104,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
-
     'UNICODE_JSON': True,
     'COMPACT_JSON': True,
 }
@@ -119,7 +119,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
 
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,  # Utilise la clé secrète Django par défaut
+    'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
@@ -229,6 +229,24 @@ DATABASES = {
     #     "PORT": "5432",
     #     "PASS": "T4QjF2WRVBABrweDn1ROtG36ZEY9Xryn"
     # }
+
+    # {
+    #     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
+    #     "NAME": "angola_db_fzta",
+    #     "USER": "angola_db_user",
+    #     "HOST": "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com",
+    #     "PORT": "5432",
+    #     "PASS": "4qwsXj8nrYPbWCpT9sFnT3M14WcLTwpy"
+    # }
+
+    # {
+    #     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
+    #     "NAME": "angola_db",
+    #     "USER": "angola_db_user",
+    #     "HOST": "localhost",
+    #     "PORT": "5432",
+    #     "PASS": "4qwsXj8nrYPbWCpT9sFnT3M14WcLTwpy"
+    # }
 }
 
 
@@ -237,8 +255,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # Remplacez par votre serveur SMTP
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'spinnaldev@gmail.com'  # Remplacez par votre email
-EMAIL_HOST_PASSWORD = 'hswk yove ydfm sckm'  # Mot de passe d'application pour Gmail
+EMAIL_HOST_USER = 'spinnaldev@gmail.com'
+EMAIL_HOST_PASSWORD = 'zvzi foix bgnb juxn' 
 DEFAULT_FROM_EMAIL = 'Angola App <spinnaldev@gmail.com>'
 
 # Password validation
@@ -306,6 +324,56 @@ def validate_image(image):
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
+
+# Configuration des logs
+
+# Configuration des logs
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'django.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'operation': {  # Changé de 'myapp' à 'operation' selon votre app
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_CHARSET = 'utf-8'

@@ -367,7 +367,7 @@ class BaseScreen extends StatefulWidget {
   final int currentIndex;
   final PreferredSizeWidget? appBar;
   final bool hasBottomNavigation;
-
+  static AuthProvider? _authProvider;
   const BaseScreen({
     Key? key,
     required this.body,
@@ -425,6 +425,9 @@ class _BaseScreenState extends State<BaseScreen> {
   }
 
   void _handleProviderNavigation(int index) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAuthenticated = authProvider.isAuthenticated;
+
     switch (index) {
       case 0: // Accueil
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
@@ -437,17 +440,24 @@ class _BaseScreenState extends State<BaseScreen> {
         );
         break;
       case 2: // Messages
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MessagesScreen()),
-          (route) => false,
-        );
+        if (authProvider.isAuthenticated) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
+            (route) => false,
+          );
+        } else {
+          _redirectToLogin();
+        }
         break;
       // case 3 est géré plus haut pour ouvrir le menu
     }
   }
 
   void _handleClientNavigation(int index) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+
     switch (index) {
       case 0: // Accueil
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
@@ -460,16 +470,38 @@ class _BaseScreenState extends State<BaseScreen> {
         );
         break;
       case 2: // Messages
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MessagesScreen()),
-          (route) => false,
-        );
+        if (authProvider.isAuthenticated) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
+            (route) => false,
+          );
+        } else {
+          _redirectToLogin();
+        }
         break;
       // case 3 est géré plus haut pour ouvrir le menu
     }
   }
 
+  void _redirectToLogin() {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Afficher un message informatif
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.loginToAccessAllFeatures ?? 'Connectez-vous pour accéder à cette fonctionnalité'),
+        backgroundColor: const Color(0xFF142FE2),
+        action: SnackBarAction(
+          label: l10n.login ?? 'Se connecter',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.pushNamed(context, '/login');
+          },
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;

@@ -6,6 +6,7 @@ import '../../providers/category_provider.dart';
 import '../widgets/category_card.dart';
 import 'service_list_screen.dart';
 import 'base_screen.dart';
+import 'search_results_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -30,6 +31,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+  void _performSearch() {
+    final query = _searchController.text.trim();
+    
+    print('🔍 Recherche ExploreScreen: "$query"'); // Debug
+    
+    if (query.isNotEmpty) {
+      print('✅ Navigation vers SearchResultsScreen (services)'); // Debug
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultsScreen(
+            query: query,
+            type: 'services', // Explorer = toujours services
+          ),
+        ),
+      );
+    } else {
+      print('⚠️ Recherche vide'); // Debug
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un terme de recherche'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -76,6 +105,51 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
 
         // Champ de recherche
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        //   child: Container(
+        //     height: 50,
+        //     decoration: BoxDecoration(
+        //       color: Colors.grey[200],
+        //       borderRadius: BorderRadius.circular(8),
+        //     ),
+        //     child: TextField(
+        //       controller: _searchController,
+        //       decoration: InputDecoration(
+        //         hintText: l10n.searchForServices,
+        //         prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        //         border: InputBorder.none,
+        //         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        //       ),
+        //     ),
+        //   ),
+        // ),
+
+        
+        // Container(
+        //   height: 50,
+        //   decoration: BoxDecoration(
+        //     color: Colors.grey[200],
+        //     borderRadius: BorderRadius.circular(8),
+        //   ),
+        //   child: TextField(
+        //     controller: _searchController,
+        //     decoration: InputDecoration(
+        //       hintText: l10n.searchForServices,
+        //       prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        //       // ✅ AJOUT D'UN BOUTON DE RECHERCHE
+        //       suffixIcon: IconButton(
+        //         icon: const Icon(Icons.arrow_forward, color: Colors.grey),
+        //         onPressed: _performSearch,
+        //       ),
+        //       border: InputBorder.none,
+        //       contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        //     ),
+        //     // ✅ AJOUT DE onSubmitted
+        //     onSubmitted: (_) => _performSearch(),
+        //   ),
+        // ),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Container(
@@ -92,6 +166,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
               ),
+              onSubmitted: (_) => _performSearch(),
             ),
           ),
         ),

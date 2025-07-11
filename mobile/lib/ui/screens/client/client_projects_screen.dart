@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import '../../../providers/project_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/models/client_project.dart';
@@ -36,6 +37,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
 
   Future<void> _loadData() async {
     final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     
     try {
       await projectProvider.fetchUserProjects();
@@ -45,6 +47,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
       // Si l'erreur indique un problème d'authentification
       if (e.toString().contains('401') || 
           e.toString().contains('Unauthorized') || 
+          e.toString().contains('Non autorisé') ||
           e.toString().contains('Session expirée')) {
         
         // Afficher un dialog pour se reconnecter
@@ -56,10 +59,10 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur: ${e.toString()}'),
+              content: Text(l10n.loadingError(e.toString())),
               backgroundColor: Colors.red,
               action: SnackBarAction(
-                label: 'Réessayer',
+                label: l10n.retryAction,
                 textColor: Colors.white,
                 onPressed: _loadData,
               ),
@@ -71,27 +74,27 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   void _showAuthenticationDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Session expirée'),
+            const Icon(Icons.warning, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text(l10n.sessionExpired),
           ],
         ),
-        content: const Text(
-          'Votre session a expiré. Veuillez vous reconnecter pour accéder à vos projets.',
-        ),
+        content: Text(l10n.sessionExpiredMessage),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               Navigator.of(context).pop(); // Retourner à l'écran précédent
             },
-            child: const Text('Annuler'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -112,7 +115,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Se reconnecter'),
+            child: Text(l10n.reconnect),
           ),
         ],
       ),
@@ -121,9 +124,11 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes projets'),
+        title: Text(l10n.myProjects),
         elevation: 0,
         backgroundColor: const Color(0xFF142FE2),
         foregroundColor: Colors.white,
@@ -132,16 +137,16 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           IconButton(
             onPressed: _navigateToAddProject,
             icon: const Icon(Icons.add),
-            tooltip: 'Ajouter un projet',
+            tooltip: l10n.addProjectTooltip,
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Tous'),
-            Tab(text: 'Ouverts'),
-            Tab(text: 'En cours'),
-            Tab(text: 'Terminés'),
+          tabs: [
+            Tab(text: l10n.allProjects),
+            Tab(text: l10n.openProjects),
+            Tab(text: l10n.inProgressProjects),
+            Tab(text: l10n.completedProjects),
           ],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
@@ -186,13 +191,15 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         onPressed: _navigateToAddProject,
         backgroundColor: const Color(0xFF142FE2),
         foregroundColor: Colors.white,
+        tooltip: l10n.addProjectTooltip,
         child: const Icon(Icons.add),
-        tooltip: 'Ajouter un projet',
       ),
     );
   }
 
   void _navigateToAddProject() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -203,10 +210,19 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
     // Si un projet a été créé avec succès, recharger la liste
     if (result == true) {
       _loadData();
+      // Optionnel: afficher un message de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.projectCreatedSuccess),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
   Widget _buildProjectsList(List<ClientProject> projects) {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (projects.isEmpty) {
       return Center(
         child: Column(
@@ -219,7 +235,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucun projet dans cette catégorie',
+              l10n.noProjectsInCategory,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -244,6 +260,8 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Widget _buildProjectCard(ClientProject project) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -315,10 +333,9 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
             // Statistiques
             Row(
               children: [
-                _buildStatItem(Icons.visibility, '${project.viewsCount} vues'),
+                _buildStatItem(Icons.visibility, l10n.viewsCount(project.viewsCount)),
                 const SizedBox(width: 16),
-                _buildStatItem(
-                    Icons.local_offer, '${project.offersCount} offres'),
+                _buildStatItem(Icons.local_offer, l10n.offersCount(project.offersCount)),
                 const Spacer(),
                 Text(
                   DateFormat('dd/MM/yyyy').format(project.createdAt),
@@ -338,7 +355,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                   child: OutlinedButton.icon(
                     onPressed: () => _viewProject(project),
                     icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('Voir'),
+                    label: Text(l10n.view),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF142FE2),
                       side: const BorderSide(color: Color(0xFF142FE2)),
@@ -351,7 +368,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                     child: ElevatedButton.icon(
                       onPressed: () => _closeProject(project),
                       icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Clôturer'),
+                      label: Text(l10n.close),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
@@ -363,7 +380,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                     child: ElevatedButton.icon(
                       onPressed: () => _deleteProject(project),
                       icon: const Icon(Icons.delete, size: 16),
-                      label: const Text('Supprimer'),
+                      label: Text(l10n.delete),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
@@ -380,29 +397,34 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Widget _buildStatusChip(String status) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
 
     switch (status) {
       case 'open':
         color = Colors.green;
-        label = 'Ouvert';
+        label = l10n.statusOpen;
         break;
       case 'in_progress':
         color = Colors.blue;
-        label = 'En cours';
+        label = l10n.statusInProgress;
         break;
       case 'completed':
         color = Colors.purple;
-        label = 'Terminé';
+        label = l10n.statusCompleted;
         break;
       case 'closed':
         color = Colors.grey;
-        label = 'Clôturé';
+        label = l10n.statusClosed;
         break;
       case 'paused':
         color = Colors.orange;
-        label = 'En pause';
+        label = l10n.statusPaused;
+        break;
+      case 'cancelled':
+        color = Colors.red;
+        label = l10n.statusCancelled;
         break;
       default:
         color = Colors.grey;
@@ -444,6 +466,8 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -455,7 +479,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Vous n\'avez pas encore de projets',
+            l10n.noProjectsYet,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -464,7 +488,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Créez votre premier projet pour commencer',
+            l10n.createFirstProject,
             style: TextStyle(
               color: Colors.grey[500],
             ),
@@ -473,7 +497,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ElevatedButton.icon(
             onPressed: _navigateToAddProject,
             icon: const Icon(Icons.add),
-            label: const Text('Créer un projet'),
+            label: Text(l10n.createProject),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
@@ -489,6 +513,8 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Widget _buildErrorState(String error) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -500,7 +526,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Erreur de chargement',
+            l10n.errorLoading,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -520,7 +546,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ElevatedButton.icon(
             onPressed: _loadData,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(l10n.retry),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
@@ -545,9 +571,11 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   void _closeProject(ClientProject project) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     final confirmed = await _showConfirmDialog(
-      'Clôturer le projet',
-      'Êtes-vous sûr de vouloir clôturer ce projet ? Les prestataires ne pourront plus soumettre d\'offres.',
+      l10n.closeProject,
+      l10n.closeProjectConfirm,
     );
 
     if (confirmed) {
@@ -570,15 +598,15 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Projet clôturé avec succès'),
+          SnackBar(
+            content: Text(l10n.projectClosedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${projectProvider.errorMessage}'),
+            content: Text(l10n.errorMessage(projectProvider.errorMessage ?? 'Unknown error')),
             backgroundColor: Colors.red,
           ),
         );
@@ -587,9 +615,11 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   void _deleteProject(ClientProject project) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     final confirmed = await _showConfirmDialog(
-      'Supprimer le projet',
-      'Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.',
+      l10n.deleteProject,
+      l10n.deleteProjectConfirm,
     );
 
     if (confirmed) {
@@ -611,15 +641,15 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Projet supprimé avec succès'),
+          SnackBar(
+            content: Text(l10n.projectDeletedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${projectProvider.errorMessage}'),
+            content: Text(l10n.errorMessage(projectProvider.errorMessage ?? 'Unknown error')),
             backgroundColor: Colors.red,
           ),
         );
@@ -628,6 +658,8 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Future<bool> _showConfirmDialog(String title, String content) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
@@ -637,7 +669,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Annuler'),
+                  child: Text(l10n.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
@@ -645,7 +677,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Confirmer'),
+                  child: Text(l10n.confirm),
                 ),
               ],
             );

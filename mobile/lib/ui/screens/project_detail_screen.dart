@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import 'package:teyago/providers/project_provider.dart';
 import '../../core/models/client_project.dart';
 import '../../core/models/user.dart';
@@ -28,8 +29,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   bool _isLoadingOffers = false;
   List<dynamic> _offers = [];
   bool _viewCounted = false;
-  bool _isSubmittingOffer = false;  // Contrôle l'état de soumission
-bool _showOfferForm = false;   
+  bool _isSubmittingOffer = false; // Contrôle l'état de soumission
+  bool _showOfferForm = false;
 
   // VARIABLES MANQUANTES AJOUTÉES
   bool _includesMaterials = false;
@@ -109,222 +110,41 @@ bool _showOfferForm = false;
     }
   }
 
-  // Future<void> _submitOffer() async {
-  //   if (!mounted) return;
-
-  //   final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-  //   if (user == null || user.role != 'provider') {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Vous devez être connecté en tant que prestataire'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   // Validation des champs
-  //   if (_offerMessageController.text.trim().isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Veuillez saisir un message pour votre offre'),
-  //         backgroundColor: Colors.orange,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   if (_offerPriceController.text.trim().isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Veuillez indiquer un prix pour votre offre'),
-  //         backgroundColor: Colors.orange,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   if (_offerDeliveryController.text.trim().isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Veuillez indiquer un délai de livraison'),
-  //         backgroundColor: Colors.orange,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   // Validation du format des nombres
-  //   final double? price = double.tryParse(_offerPriceController.text.trim());
-  //   if (price == null || price <= 0) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Veuillez saisir un prix valide'),
-  //         backgroundColor: Colors.orange,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   final int? deliveryTime =
-  //       int.tryParse(_offerDeliveryController.text.trim());
-  //   if (deliveryTime == null || deliveryTime <= 0) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Veuillez saisir un délai valide (en jours)'),
-  //         backgroundColor: Colors.orange,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   // Afficher le loader et désactiver les interactions
-  //   setState(() {
-  //     _isSubmittingOffer = true;
-  //   });
-
-  //   // Préparer les données de l'offre
-  //   final offerData = {
-  //     'proposed_price': price,
-  //     'delivery_time': deliveryTime,
-  //     'message': _offerMessageController.text.trim(),
-  //     'includes_materials': _includesMaterials,
-  //     'travel_costs_included': _travelCostsIncluded,
-  //   };
-
-  //   try {
-  //     final apiService = Provider.of<ApiService>(context, listen: false);
-
-  //     // Envoyer l'offre
-  //     await apiService.submitOffer(widget.project.id, offerData);
-
-  //     if (mounted) {
-  //       // Fermer le bottom sheet avec un délai pour montrer le succès
-  //       Navigator.pop(context);
-
-  //       // Vider les champs pour la prochaine fois
-  //       _offerMessageController.clear();
-  //       _offerPriceController.clear();
-  //       _offerDeliveryController.clear();
-  //       _includesMaterials = false;
-  //       _travelCostsIncluded = false;
-
-  //       // Afficher le message de succès
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Row(
-  //             children: [
-  //               Icon(Icons.check_circle, color: Colors.white),
-  //               SizedBox(width: 8),
-  //               Text('Offre envoyée avec succès !'),
-  //             ],
-  //           ),
-  //           backgroundColor: Colors.green,
-  //           duration: Duration(seconds: 3),
-  //         ),
-  //       );
-
-  //       // Recharger les offres pour afficher la nouvelle
-  //       _loadOffers();
-  //     }
-  //   } catch (e) {
-  //     print('Erreur lors de l\'envoi de l\'offre: $e');
-
-  //     if (mounted) {
-  //       // Afficher l'erreur dans une snackbar ou un dialog
-  //       String errorMessage = e.toString();
-  //       if (errorMessage.startsWith('Exception: ')) {
-  //         errorMessage = errorMessage.substring(11);
-  //       }
-
-  //       // Si l'erreur est longue, l'afficher dans un dialog
-  //       if (errorMessage.length > 100) {
-  //         showDialog(
-  //           context: context,
-  //           builder: (context) => AlertDialog(
-  //             title: const Row(
-  //               children: [
-  //                 Icon(Icons.error, color: Colors.red),
-  //                 SizedBox(width: 8),
-  //                 Text('Erreur'),
-  //               ],
-  //             ),
-  //             content: SingleChildScrollView(
-  //               child: Text(errorMessage),
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () => Navigator.pop(context),
-  //                 child: const Text('OK'),
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       } else {
-  //         // Sinon, utiliser une snackbar
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           SnackBar(
-  //             content: Row(
-  //               children: [
-  //                 const Icon(Icons.error, color: Colors.white),
-  //                 const SizedBox(width: 8),
-  //                 Expanded(child: Text(errorMessage)),
-  //               ],
-  //             ),
-  //             backgroundColor: Colors.red,
-  //             duration: const Duration(seconds: 5),
-  //             action: SnackBarAction(
-  //               label: 'Fermer',
-  //               textColor: Colors.white,
-  //               onPressed: () {
-  //                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  //               },
-  //             ),
-  //           ),
-  //         );
-  //       }
-  //     }
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() {
-  //         _isSubmittingOffer = false;
-  //       });
-  //     }
-  //   }
-  // }
-
   // Fonction pour soumettre l'offre - Version corrigée
   Future<void> _submitOffer(StateSetter setBottomSheetState) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     // Validation des champs
     if (_offerPriceController.text.trim().isEmpty) {
-      _showErrorInBottomSheet('Veuillez saisir un prix', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.pleaseEnterPrice, setBottomSheetState);
       return;
     }
 
     if (_offerDeliveryController.text.trim().isEmpty) {
-      _showErrorInBottomSheet('Veuillez saisir un délai de livraison', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.pleaseEnterDeliveryTime, setBottomSheetState);
       return;
     }
 
     if (_offerMessageController.text.trim().isEmpty) {
-      _showErrorInBottomSheet('Veuillez saisir un message', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.pleaseEnterMessage, setBottomSheetState);
       return;
     }
 
     if (_offerMessageController.text.trim().length < 50) {
-      _showErrorInBottomSheet('Le message doit contenir au moins 50 caractères', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.messageMinLength50, setBottomSheetState);
       return;
     }
 
     final double? price = double.tryParse(_offerPriceController.text.trim());
     if (price == null || price <= 0) {
-      _showErrorInBottomSheet('Veuillez saisir un prix valide', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.pleaseEnterValidPrice, setBottomSheetState);
       return;
     }
 
-    final int? deliveryTime = int.tryParse(_offerDeliveryController.text.trim());
+    final int? deliveryTime =
+        int.tryParse(_offerDeliveryController.text.trim());
     if (deliveryTime == null || deliveryTime <= 0) {
-      _showErrorInBottomSheet('Veuillez saisir un délai valide (en jours)', setBottomSheetState);
+      _showErrorInBottomSheet(l10n.pleaseEnterValidDeliveryTime, setBottomSheetState);
       return;
     }
 
@@ -367,7 +187,7 @@ bool _showOfferForm = false;
 
         // ENSUITE afficher le message de succès (visible maintenant)
         await Future.delayed(const Duration(milliseconds: 300));
-        _showSuccessSnackBar('Offre envoyée avec succès !');
+        _showSuccessSnackBar(l10n.offerSentSuccessfully);
 
         // Optionnel : Rafraîchir les données du projet
         // await _refreshProjectData();
@@ -384,12 +204,12 @@ bool _showOfferForm = false;
         });
 
         // Déterminer le message d'erreur
-        String errorMessage = 'Erreur lors de l\'envoi de l\'offre';
-        
+        String errorMessage = l10n.offerSendingError;
+
         if (e.toString().contains('déjà fait une offre')) {
-          errorMessage = 'Vous avez déjà fait une offre pour ce projet';
+          errorMessage = l10n.alreadyMadeOfferProject;
         } else if (e.toString().contains('n\'accepte plus d\'offres')) {
-          errorMessage = 'Ce projet n\'accepte plus d\'offres';
+          errorMessage = l10n.projectNoLongerAcceptsOffers;
         }
 
         // ENSUITE afficher le message d'erreur (visible maintenant)
@@ -399,21 +219,20 @@ bool _showOfferForm = false;
     }
   }
 
-  void _showErrorInBottomSheet(String message, StateSetter setBottomSheetState) {
-    // Vous pouvez soit :
-    // 1. Afficher un widget d'erreur dans la BottomSheet
-    // 2. Ou utiliser un ScaffoldMessenger temporaire dans la BottomSheet
+  void _showErrorInBottomSheet(
+      String message, StateSetter setBottomSheetState) {
+    final l10n = AppLocalizations.of(context)!;
     
-    // Option 1: Afficher une alerte simple dans la BottomSheet
+    // Afficher une alerte simple dans la BottomSheet
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Erreur'),
+        title: Text(l10n.errorTitle),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(l10n.ok),
           ),
         ],
       ),
@@ -461,7 +280,10 @@ bool _showOfferForm = false;
       ),
     );
   }
+
   Future<void> _toggleFavorite() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (!mounted) return;
 
     try {
@@ -476,8 +298,8 @@ bool _showOfferForm = false;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isFavorited
-                ? 'Projet ajouté aux favoris'
-                : 'Projet retiré des favoris'),
+                ? l10n.addedToFavorites
+                : l10n.removedFromFavorites),
           ),
         );
       }
@@ -485,7 +307,7 @@ bool _showOfferForm = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('${l10n.errorTitle}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -494,21 +316,25 @@ bool _showOfferForm = false;
   }
 
   void _shareProject() {
+    final l10n = AppLocalizations.of(context)!;
+    
     Share.share(
-      'Découvrez ce projet: ${widget.project.title}\n\n${widget.project.description}',
+      l10n.discoverProject(widget.project.title, widget.project.description),
       subject: 'Projet sur Angola',
     );
   }
 
   void _openAttachment(String url) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impossible d\'ouvrir le fichier'),
+          SnackBar(
+            content: Text(l10n.cannotOpenFile),
             backgroundColor: Colors.red,
           ),
         );
@@ -522,6 +348,8 @@ bool _showOfferForm = false;
   }
 
   void _showOfferBottomSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    
     // Variables locales pour le bottom sheet
     bool localIncludesMaterials = _includesMaterials;
     bool localTravelCostsIncluded = _travelCostsIncluded;
@@ -562,25 +390,25 @@ bool _showOfferForm = false;
                   ),
                   const Spacer(),
                   if (_isSubmittingOffer)
-                    const Row(
+                    Row(
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        SizedBox(width: 8),
-                        Text('Envoi en cours...',
-                            style: TextStyle(color: Colors.grey)),
+                        const SizedBox(width: 8),
+                        Text(l10n.sendingInProgress,
+                            style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              const Text(
-                'Faire une offre',
-                style: TextStyle(
+              Text(
+                l10n.makeOffer,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -592,10 +420,10 @@ bool _showOfferForm = false;
                 controller: _offerPriceController,
                 keyboardType: TextInputType.number,
                 enabled: !_isSubmittingOffer,
-                decoration: const InputDecoration(
-                  labelText: 'Prix proposé (€)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.euro),
+                decoration: InputDecoration(
+                  labelText: l10n.proposedPrice,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.euro),
                 ),
               ),
               const SizedBox(height: 16),
@@ -605,10 +433,10 @@ bool _showOfferForm = false;
                 controller: _offerDeliveryController,
                 keyboardType: TextInputType.number,
                 enabled: !_isSubmittingOffer,
-                decoration: const InputDecoration(
-                  labelText: 'Délai de livraison (jours)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.schedule),
+                decoration: InputDecoration(
+                  labelText: l10n.deliveryTime,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.schedule),
                 ),
               ),
               const SizedBox(height: 16),
@@ -618,9 +446,9 @@ bool _showOfferForm = false;
                 controller: _offerMessageController,
                 maxLines: 4,
                 enabled: !_isSubmittingOffer,
-                decoration: const InputDecoration(
-                  labelText: 'Message pour le client',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.messageForClient,
+                  border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -628,7 +456,7 @@ bool _showOfferForm = false;
 
               // Options supplémentaires
               CheckboxListTile(
-                title: const Text('Matériaux inclus'),
+                title: Text(l10n.materialsIncluded),
                 value: localIncludesMaterials,
                 onChanged: _isSubmittingOffer
                     ? null
@@ -641,7 +469,7 @@ bool _showOfferForm = false;
               ),
 
               CheckboxListTile(
-                title: const Text('Frais de déplacement inclus'),
+                title: Text(l10n.travelCostsIncluded),
                 value: localTravelCostsIncluded,
                 onChanged: _isSubmittingOffer
                     ? null
@@ -680,10 +508,10 @@ bool _showOfferForm = false;
                     ),
                   ),
                   child: _isSubmittingOffer
-                      ? const Row(
+                      ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
@@ -692,13 +520,13 @@ bool _showOfferForm = false;
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
-                            SizedBox(width: 12),
-                            Text('Envoi en cours...'),
+                            const SizedBox(width: 12),
+                            Text(l10n.sendingInProgress),
                           ],
                         )
-                      : const Text(
-                          'Envoyer mon offre',
-                          style: TextStyle(
+                      : Text(
+                          l10n.sendMyOffer,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -999,14 +827,16 @@ bool _showOfferForm = false;
   }
 
   Widget _buildProjectDetails() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Description du projet',
-            style: TextStyle(
+          Text(
+            l10n.projectDescription,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -1023,9 +853,9 @@ bool _showOfferForm = false;
           ),
           const SizedBox(height: 20),
           if (widget.project.requiredSkills.isNotEmpty) ...[
-            const Text(
-              'Compétences requises',
-              style: TextStyle(
+            Text(
+              l10n.requiredSkills,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -1074,7 +904,7 @@ bool _showOfferForm = false;
               Icon(Icons.visibility, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                '${widget.project.viewsCount} vues',
+                '${widget.project.viewsCount} ${l10n.views}',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -1084,7 +914,7 @@ bool _showOfferForm = false;
               Icon(Icons.mail, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                '${widget.project.offersCount} offres',
+                '${widget.project.offersCount} ${l10n.offers}',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -1099,14 +929,16 @@ bool _showOfferForm = false;
   }
 
   Widget _buildAttachments() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Fichiers joints',
-            style: TextStyle(
+          Text(
+            l10n.attachments,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -1126,6 +958,8 @@ bool _showOfferForm = false;
   }
 
   Widget _buildAttachmentItem(String name, String url) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -1147,7 +981,7 @@ bool _showOfferForm = false;
           ),
           TextButton(
             onPressed: () => _openAttachment(url),
-            child: const Text('Ouvrir'),
+            child: Text(l10n.open),
           ),
         ],
       ),
@@ -1162,14 +996,17 @@ bool _showOfferForm = false;
     _includesMaterials = false;
     _travelCostsIncluded = false;
   }
+
   Widget _buildTabBar() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       color: Colors.grey[50],
       child: TabBar(
         controller: _tabController,
         tabs: [
-          Tab(text: 'Offres (${_offers.length})'),
-          const Tab(text: 'Activité'),
+          Tab(text: l10n.offersTab(_offers.length)),
+          Tab(text: l10n.activity),
         ],
         labelColor: const Color(0xFF142FE2),
         unselectedLabelColor: Colors.grey,
@@ -1189,6 +1026,8 @@ bool _showOfferForm = false;
   }
 
   Widget _buildOffersTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_isLoadingOffers) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1206,7 +1045,7 @@ bool _showOfferForm = false;
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucune offre reçue',
+              l10n.noOffersReceived,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1215,7 +1054,7 @@ bool _showOfferForm = false;
             ),
             const SizedBox(height: 8),
             Text(
-              'Les prestataires intéressés pourront vous envoyer leurs offres',
+              l10n.providersCanSendOffers,
               style: TextStyle(
                 color: Colors.grey[500],
               ),
@@ -1243,16 +1082,20 @@ bool _showOfferForm = false;
   }
 
   Widget _buildActivityTab() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(16),
-      child: const Text(
-        'Activité du projet - À implémenter',
-        style: TextStyle(color: Colors.grey),
+      child: Text(
+        l10n.projectActivityToImplement,
+        style: const TextStyle(color: Colors.grey),
       ),
     );
   }
 
   Widget _buildMakeOfferButton() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1278,9 +1121,9 @@ bool _showOfferForm = false;
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
-              'Envoyer une offre',
-              style: TextStyle(
+            child: Text(
+              l10n.sendOffer,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -1305,13 +1148,15 @@ bool _showOfferForm = false;
   }
 
   String _getUrgencyText() {
+    final l10n = AppLocalizations.of(context)!;
+    
     switch (widget.project.urgency) {
       case 'high':
-        return 'Urgent';
+        return l10n.urgent;
       case 'medium':
-        return 'Modéré';
+        return l10n.moderate;
       case 'low':
-        return 'Pas pressé';
+        return l10n.notRushed;
       default:
         return '';
     }

@@ -23,7 +23,7 @@ class OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).currentUser;
     final isClient = user?.role == 'client';
-    
+
     return Card(
       color: Colors.white,
       elevation: 2,
@@ -100,7 +100,8 @@ class OfferCard extends StatelessWidget {
                   if (offer['provider_verified'] == true) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -150,7 +151,7 @@ class OfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_parsePrice(offer['proposed_price'])}€',
+                  '${_parsePrice(offer['proposed_price'])}AOA',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -161,7 +162,7 @@ class OfferCard extends StatelessWidget {
             ),
           ),
           Container(
-            width: 1, 
+            width: 1,
             height: 30,
             color: Colors.grey[300],
           ),
@@ -198,7 +199,7 @@ class OfferCard extends StatelessWidget {
   Widget _buildMessage() {
     final message = offer['message'] ?? '';
     if (message.isEmpty) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -233,7 +234,7 @@ class OfferCard extends StatelessWidget {
 
   Widget _buildActionButtons(BuildContext context) {
     final status = offer['status']?.toString().toLowerCase() ?? 'pending';
-    
+
     return Column(
       children: [
         if (status == 'pending') ...[
@@ -269,7 +270,7 @@ class OfferCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-        
+
         // Bouton Contact prestataire (toujours visible)
         SizedBox(
           width: double.infinity,
@@ -369,7 +370,7 @@ class OfferCard extends StatelessWidget {
     final status = offer['status'] ?? 'pending';
     Color color;
     String text;
-    
+
     switch (status) {
       case 'accepted':
         color = Colors.green;
@@ -383,7 +384,7 @@ class OfferCard extends StatelessWidget {
         color = Colors.orange;
         text = 'En attente';
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -404,12 +405,15 @@ class OfferCard extends StatelessWidget {
   // NOUVELLE MÉTHODE : Contact du prestataire
   Future<void> _contactProvider(BuildContext context) async {
     try {
-      final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+      final messagingProvider =
+          Provider.of<MessagingProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vous devez être connecté pour contacter un prestataire')),
+          const SnackBar(
+              content: Text(
+                  'Vous devez être connecté pour contacter un prestataire')),
         );
         return;
       }
@@ -425,7 +429,7 @@ class OfferCard extends StatelessWidget {
 
       // ✅ CORRECTION PRINCIPALE : Gestion correcte de l'ID du prestataire
       int? providerId;
-      
+
       // Essayer différentes façons d'obtenir l'ID du prestataire
       if (offer['provider_id'] != null) {
         // Si provider_id existe directement
@@ -445,26 +449,29 @@ class OfferCard extends StatelessWidget {
 
       print('🔍 Provider ID trouvé: $providerId');
       print('🔍 Structure de l\'offre: ${offer.keys.toList()}');
-      
+
       if (providerId == null) {
         Navigator.pop(context); // Fermer le loading
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible d\'identifier le prestataire')),
+          const SnackBar(
+              content: Text('Impossible d\'identifier le prestataire')),
         );
         return;
       }
 
       // Créer le message initial avec contexte de l'offre
       String projectTitle = 'votre projet';
-      
+
       // Essayer d'obtenir le titre du projet
       if (offer['project_title'] != null) {
         projectTitle = offer['project_title'].toString();
-      } else if (offer['project'] != null && offer['project'] is Map<String, dynamic>) {
+      } else if (offer['project'] != null &&
+          offer['project'] is Map<String, dynamic>) {
         projectTitle = offer['project']['title']?.toString() ?? projectTitle;
       }
-      
-      final initialMessage = 'Bonjour, je suis intéressé(e) par votre offre pour le projet "$projectTitle". Pouvons-nous discuter des détails ?';
+
+      final initialMessage =
+          'Bonjour, je suis intéressé(e) par votre offre pour le projet "$projectTitle". Pouvons-nous discuter des détails ?';
 
       // Démarrer ou récupérer la conversation
       final conversation = await messagingProvider.startConversation(
@@ -487,7 +494,8 @@ class OfferCard extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de l\'ouverture de la conversation')),
+          const SnackBar(
+              content: Text('Erreur lors de l\'ouverture de la conversation')),
         );
       }
     } catch (e) {
@@ -500,24 +508,24 @@ class OfferCard extends StatelessWidget {
   }
 
   int? _parseId(dynamic value) {
-  if (value == null) return null;
-  
-  try {
-    if (value is int) {
-      return value;
-    } else if (value is String) {
-      return int.parse(value);
-    } else if (value is double) {
-      return value.toInt();
-    } else {
-      print('⚠️ Type inattendu pour ID: ${value.runtimeType} - $value');
-      return int.tryParse(value.toString());
+    if (value == null) return null;
+
+    try {
+      if (value is int) {
+        return value;
+      } else if (value is String) {
+        return int.parse(value);
+      } else if (value is double) {
+        return value.toInt();
+      } else {
+        print('⚠️ Type inattendu pour ID: ${value.runtimeType} - $value');
+        return int.tryParse(value.toString());
+      }
+    } catch (e) {
+      print('❌ Erreur parsing ID: $e pour valeur: $value');
+      return null;
     }
-  } catch (e) {
-    print('❌ Erreur parsing ID: $e pour valeur: $value');
-    return null;
   }
-}
 
   String _getInitials(String name) {
     final words = name.split(' ');
@@ -528,9 +536,10 @@ class OfferCard extends StatelessWidget {
     }
     return 'P';
   }
+
   int _parsePrice(dynamic price) {
     if (price == null) return 0;
-    
+
     try {
       if (price is int) {
         return price;
@@ -550,7 +559,7 @@ class OfferCard extends StatelessWidget {
 
   double _parseRating(dynamic rating) {
     if (rating == null) return 5.0;
-    
+
     try {
       if (rating is double) {
         return rating;
@@ -567,5 +576,4 @@ class OfferCard extends StatelessWidget {
       return 5.0;
     }
   }
-
 }

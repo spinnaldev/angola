@@ -322,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen>
         clientName: 'Client ${index + 1}',
         categoryName: _getProjectCategory(index),
         budgetRange: _getBudgetRange(index),
-        budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} FCFA',
+        budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} AOA',
         location: 'Cotonou, Bénin',
         remotePossible: random.nextBool(),
         urgency: _getUrgency(index),
@@ -1361,7 +1361,7 @@ class _HomeScreenState extends State<HomeScreen>
                           Text(
                             service.priceType == 'quote'
                                 ? 'Sur devis'
-                                : '${service.price.toInt()} FCFA',
+                                : '${service.price.toInt()} AOA',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -1681,7 +1681,7 @@ class _HomeScreenState extends State<HomeScreen>
                         Text(
                           service.priceType == 'quote'
                               ? 'Sur devis'
-                              : '${service.price.toInt()} FCFA',
+                              : '${service.price.toInt()} AOA',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,

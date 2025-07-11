@@ -22,6 +22,7 @@ import 'base_screen.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
+import 'search_results_screen.dart';
 
 class HomeScreen extends StatefulWidget  {
   const HomeScreen({Key? key}) : super(key: key);
@@ -101,6 +102,30 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isProviderMode() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     return authProvider.isAuthenticated && ProfileManager.isProviderMode();
+  }
+
+  void _performSearch() {
+    final query = _searchController.text.trim();
+    
+    if (query.isNotEmpty) {
+      final searchType = _isProviderMode() ? 'projects' : 'services';
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultsScreen(
+            query: query,
+            type: searchType,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un terme de recherche'),
+        ),
+      );
+    }
   }
 
   Future<void> _loadData() async {
@@ -279,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
         clientName: 'Client ${index + 1}',
         categoryName: _getProjectCategory(index),
         budgetRange: _getBudgetRange(index),
-        budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} FCFA',
+        budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} AOA',
         location: 'Cotonou, Bénin',
         remotePossible: random.nextBool(),
         urgency: _getUrgency(index),
@@ -437,11 +462,7 @@ class _HomeScreenState extends State<HomeScreen>
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                onSubmitted: (value) {
-                  if (value.isNotEmpty) {
-                    // Naviguer vers les résultats de recherche
-                  }
-                },
+                onSubmitted: (_) => _performSearch(),
               ),
             ),
           ),
@@ -1341,7 +1362,7 @@ class _HomeScreenState extends State<HomeScreen>
                           Text(
                             service.priceType == 'quote'
                                 ? l10n.onQuote
-                                : '${service.price.toInt()} FCFA',
+                                : '${service.price.toInt()} AOA',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,

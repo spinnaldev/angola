@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import 'package:teyago/providers/quote_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
@@ -113,18 +114,19 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   Future<void> _submitQuoteRequest(int providerId, int serviceId) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     // Validation des champs
     if (_subjectController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Veuillez entrer un objet pour votre demande')),
+        SnackBar(content: Text(l10n.enterRequestSubject)),
       );
       return;
     }
 
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez décrire votre demande')),
+        SnackBar(content: Text(l10n.describeYourRequest)),
       );
       return;
     }
@@ -157,16 +159,15 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         _closeQuoteRequestForm();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Demande de devis envoyée avec succès'),
+          SnackBar(
+            content: Text(l10n.quoteRequestSentSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(quoteProvider.errorMessage ??
-                'Erreur lors de l\'envoi de la demande'),
+            content: Text(quoteProvider.errorMessage ?? l10n.errorSendingQuoteRequest),
             backgroundColor: Colors.red,
           ),
         );
@@ -175,7 +176,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.errorSendingQuoteRequest}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -190,20 +191,22 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   Future<void> _submitReview(int providerId, int serviceId) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     print('Submitting review for providerId: $providerId');
     print('Submitting review for serviceId: $serviceId');
 
     // Validation des champs
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez attribuer une note')),
+        SnackBar(content: Text(l10n.pleaseGiveRating)),
       );
       return;
     }
 
     if (_reviewController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez écrire un commentaire')),
+        SnackBar(content: Text(l10n.pleaseWriteComment)),
       );
       return;
     }
@@ -235,16 +238,15 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         await reviewProvider.fetchProviderReviews(providerId);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Avis envoyé avec succès'),
+          SnackBar(
+            content: Text(l10n.reviewSentSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(reviewProvider.errorMessage ??
-                'Erreur lors de l\'envoi de l\'avis'),
+            content: Text(reviewProvider.errorMessage ?? l10n.errorSendingReview),
             backgroundColor: Colors.red,
           ),
         );
@@ -253,7 +255,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.errorSendingReview}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -268,6 +270,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   Future<void> _pickReviewImage() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     // Logique pour sélectionner une image depuis la galerie
     // Cette fonction serait implémentée avec ImagePicker
     // Pour l'instant, c'est une simulation
@@ -275,24 +279,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       // _selectedReviewImages.add(File('[Chemin de l\'image]'));
       // Montrer un message indiquant que la fonctionnalité n'est pas implémentée
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Fonctionnalité d\'ajout d\'images pas encore implémentée')),
+        SnackBar(content: Text(l10n.addImageFeatureNotImplemented)),
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'Profil prestataire',
-          style: TextStyle(
+        title: Text(
+          l10n.providerProfile,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -428,7 +432,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "(${provider.reviewCount} avis)",
+                              "(${provider.reviewCount} ${l10n.reviews})",
                               style: TextStyle(
                                 color: Colors.grey[700],
                                 fontSize: 14,
@@ -442,7 +446,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              "Prix: ${service.price.toStringAsFixed(0)} FCFA (${_getPriceTypeLabel(service.priceType)})",
+                              "${l10n.price}: ${service.price.toStringAsFixed(0)} AOA (${_getPriceTypeLabel(service.priceType, l10n)})",
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -454,7 +458,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              "Prix: Sur devis",
+                              "${l10n.price}: ${l10n.onQuotePrice}",
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -484,7 +488,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                                 },
                                 icon:
                                     const Icon(Icons.report_problem, size: 16),
-                                label: const Text('Signaler un problème'),
+                                label: Text(l10n.reportProblem),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.orange,
                                   side: const BorderSide(color: Colors.orange),
@@ -507,9 +511,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Demander un devis',
-                                  style: TextStyle(
+                                child: Text(
+                                  l10n.requestQuote,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -535,10 +539,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                       unselectedLabelColor: Colors.grey,
                       indicatorColor: const Color(0xFF142FE2),
                       indicatorWeight: 3,
-                      tabs: const [
-                        Tab(text: 'Présentation'),
-                        Tab(text: 'Évaluations'),
-                        Tab(text: 'Galerie'),
+                      tabs: [
+                        Tab(text: l10n.presentation),
+                        Tab(text: l10n.evaluations),
+                        Tab(text: l10n.gallery),
                       ],
                     ),
                   ),
@@ -549,13 +553,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                       controller: _tabController,
                       children: [
                         // Tab Présentation
-                        _buildPresentationTab(service, provider),
+                        _buildPresentationTab(service, provider, l10n),
 
                         // Tab Évaluations
-                        _buildEvaluationsTab(provider),
+                        _buildEvaluationsTab(provider, l10n),
 
                         // Tab Galerie
-                        _buildGalleryTab(service),
+                        _buildGalleryTab(service, l10n),
                       ],
                     ),
                   ),
@@ -564,11 +568,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
               // Modal de demande de devis
               if (_isQuoteRequestOpen)
-                _buildQuoteRequestModal(provider, service),
+                _buildQuoteRequestModal(provider, service, l10n),
 
               // Modal d'ajout d'avis
               if (_isReviewFormOpen)
-                _buildReviewFormModal(provider, service.id, widget.providerId),
+                _buildReviewFormModal(provider, service.id, widget.providerId, l10n),
             ],
           );
         },
@@ -576,32 +580,32 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     );
   }
 
-  String _getPriceTypeLabel(String priceType) {
+  String _getPriceTypeLabel(String priceType, AppLocalizations l10n) {
     switch (priceType) {
       case 'fixed':
-        return 'Prix fixe';
+        return l10n.fixedPrice;
       case 'hourly':
-        return 'Prix horaire';
+        return l10n.hourlyPrice;
       case 'daily':
-        return 'Prix journalier';
+        return l10n.dailyPrice;
       case 'negotiable':
-        return 'Prix négociable';
+        return l10n.negotiablePrice;
       case 'quote':
       default:
-        return 'Sur devis';
+        return l10n.onQuotePrice;
     }
   }
 
-  Widget _buildPresentationTab(service, provider) {
+  Widget _buildPresentationTab(service, provider, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section À propos
-          const Text(
-            'À propos',
-            style: TextStyle(
+          Text(
+            l10n.about,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF142FE2),
@@ -628,9 +632,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           const SizedBox(height: 24),
 
           // Section Services proposés
-          const Text(
-            'Services proposés',
-            style: TextStyle(
+          Text(
+            l10n.servicesOffered,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF142FE2),
@@ -665,7 +669,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                   ],
                   if (option.price != null && option.price! > 0)
                     Text(
-                      '${option.price!.toStringAsFixed(0)} FCFA',
+                      '${option.price!.toStringAsFixed(0)} AOA',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF142FE2),
@@ -675,82 +679,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
               ),
             );
           }).toList(),
-
-          const SizedBox(height: 24),
-
-          // Section Options de service (si disponibles)
-          // if (service.options.isNotEmpty) ...[
-          //   const Text(
-          //     'Options disponibles',
-          //     style: TextStyle(
-          //       fontSize: 16,
-          //       fontWeight: FontWeight.bold,
-          //       color: Color(0xFF142FE2),
-          //     ),
-          //   ),
-          //   const SizedBox(height: 8),
-
-          //   // Liste des options
-          //   ...service.options.map((option) {
-          //     return Container(
-          //       margin: const EdgeInsets.only(bottom: 8),
-          //       padding: const EdgeInsets.all(12),
-          //       decoration: BoxDecoration(
-          //         color: Colors.grey[50],
-          //         borderRadius: BorderRadius.circular(8),
-          //         border: Border.all(color: Colors.grey[200]!),
-          //       ),
-          //       child: Row(
-          //         children: [
-          //           Icon(
-          //             option.isIncluded ? Icons.check_circle : Icons.add_circle_outline,
-          //             color: option.isIncluded ? Colors.green : Colors.grey[700],
-          //             size: 20,
-          //           ),
-          //           const SizedBox(width: 8),
-          //           Expanded(
-          //             child: Column(
-          //               crossAxisAlignment: CrossAxisAlignment.start,
-          //               children: [
-          //                 Text(
-          //                   option.name,
-          //                   style: const TextStyle(
-          //                     fontWeight: FontWeight.bold,
-          //                     fontSize: 14,
-          //                   ),
-          //                 ),
-          //                 if (option.description.isNotEmpty) ...[
-          //                   const SizedBox(height: 4),
-          //                   Text(
-          //                     option.description,
-          //                     style: TextStyle(
-          //                       fontSize: 12,
-          //                       color: Colors.grey[600],
-          //                     ),
-          //                   ),
-          //                 ],
-          //               ],
-          //             ),
-          //           ),
-          //           if (option.price != null && option.price! > 0)
-          //             Text(
-          //               '${option.price!.toStringAsFixed(0)} FCFA',
-          //               style: const TextStyle(
-          //                 fontWeight: FontWeight.bold,
-          //                 color: Color(0xFF142FE2),
-          //               ),
-          //             ),
-          //         ],
-          //       ),
-          //     );
-          //   }).toList(),
-          // ],
         ],
       ),
     );
   }
 
-  Widget _buildEvaluationsTab(provider) {
+  Widget _buildEvaluationsTab(provider, AppLocalizations l10n) {
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, _) {
         final reviews = reviewProvider.reviews;
@@ -764,9 +698,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Évaluations vérifiées',
-                    style: TextStyle(
+                  Text(
+                    l10n.verifiedEvaluations,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF142FE2),
@@ -777,7 +711,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF142FE2),
                     ),
-                    child: const Text('Écrire un avis'),
+                    child: Text(l10n.writeReview),
                   ),
                 ],
               ),
@@ -793,12 +727,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                   ),
                 )
               else if (reviews.isEmpty)
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Text(
-                      'Aucun avis pour ce service',
-                      style: TextStyle(color: Colors.grey),
+                      l10n.noReviewsForService,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 )
@@ -923,7 +857,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     );
   }
 
-  Widget _buildGalleryTab(service) {
+  Widget _buildGalleryTab(service, AppLocalizations l10n) {
     final List<String> galleryImages;
 
     if (service.galleryImages != null && service.galleryImages.isNotEmpty) {
@@ -938,10 +872,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     return Padding(
       padding: const EdgeInsets.all(16),
       child: galleryImages.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
-                'Aucune image disponible',
-                style: TextStyle(color: Colors.grey),
+                l10n.noImagesAvailable,
+                style: const TextStyle(color: Colors.grey),
               ),
             )
           : GridView.builder(
@@ -1011,7 +945,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     );
   }
 
-  Widget _buildQuoteRequestModal(provider, service) {
+  Widget _buildQuoteRequestModal(provider, service, AppLocalizations l10n) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -1050,7 +984,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 ),
                 Center(
                   child: Text(
-                    'Demander un devis pour "${service.title}"',
+                    l10n.requestQuoteFor(service.title),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1061,9 +995,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 const SizedBox(height: 24),
 
                 // Formulaire
-                const Text(
-                  'Objet de demande',
-                  style: TextStyle(
+                Text(
+                  l10n.requestSubject,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1072,7 +1006,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 TextField(
                   controller: _subjectController,
                   decoration: InputDecoration(
-                    hintText: 'Ex: Rénovation complète de ma salle de bain',
+                    hintText: l10n.requestSubjectHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1083,9 +1017,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 ),
 
                 const SizedBox(height: 16),
-                const Text(
-                  'Votre budget (optionnel)',
-                  style: TextStyle(
+                Text(
+                  l10n.yourBudgetOptional,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1094,21 +1028,21 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 TextField(
                   controller: _budgetController,
                   decoration: InputDecoration(
-                    hintText: 'Ex: 500000',
+                    hintText: l10n.budgetHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
-                    suffixText: 'FCFA',
+                    suffixText: 'AOA',
                   ),
                   keyboardType: TextInputType.number,
                 ),
 
                 const SizedBox(height: 16),
-                const Text(
-                  'Votre demande',
-                  style: TextStyle(
+                Text(
+                  l10n.yourRequest,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1118,8 +1052,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                   controller: _descriptionController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText:
-                        'Décrivez votre projet, vos besoins et attentes...',
+                    hintText: l10n.requestDescriptionHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -1150,9 +1083,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'Envoyer',
-                            style: TextStyle(
+                        : Text(
+                            l10n.send,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -1169,7 +1102,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     );
   }
 
-  Widget _buildReviewFormModal(provider, int serviceId, providerId) {
+  Widget _buildReviewFormModal(provider, int serviceId, providerId, AppLocalizations l10n) {
     return StatefulBuilder(
       builder: (context, setState) {
         return AnimatedContainer(
@@ -1208,10 +1141,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                         ),
                       ),
                     ),
-                    const Center(
+                    Center(
                       child: Text(
-                        'Quelle est votre note ?',
-                        style: TextStyle(
+                        l10n.whatIsYourRating,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1239,16 +1172,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     ),
 
                     const SizedBox(height: 16),
-                    const Text(
-                      'N\'hésitez pas à partager votre opinion\nà propos du service',
-                      style: TextStyle(fontSize: 14),
+                    Text(
+                      l10n.shareYourOpinion,
+                      style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _reviewController,
                       maxLines: 5,
                       decoration: InputDecoration(
-                        hintText: 'Votre avis',
+                        hintText: l10n.yourReview,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -1260,7 +1193,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     OutlinedButton.icon(
                       onPressed: _pickReviewImage,
                       icon: const Icon(Icons.camera_alt),
-                      label: const Text('Ajouter des photos'),
+                      label: Text(l10n.addPhotos),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.blue,
                         side: const BorderSide(color: Colors.blue),
@@ -1320,9 +1253,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'ENVOYER UN AVIS',
-                                style: TextStyle(
+                            : Text(
+                                l10n.sendReview,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

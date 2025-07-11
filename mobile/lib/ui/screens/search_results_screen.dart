@@ -2,11 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import '../../core/services/api_service.dart';
 import '../../core/models/service.dart';
+import '../../core/models/client_project.dart'; // Import ajouté pour ClientProject
 import '../widgets/service_card.dart';
 import 'base_screen.dart';
 import 'service_detail_screen.dart';
+import 'project_detail_screen.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String query;
@@ -34,12 +37,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Future<void> _performSearch() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
+      print('🔍 Démarrage recherche: "${widget.query}" (type: ${widget.type})');
+      
       final apiService = Provider.of<ApiService>(context, listen: false);
       Map<String, dynamic> response;
 
@@ -49,20 +56,70 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         response = await apiService.searchProjects(widget.query);
       }
 
+      // Debug des résultats
+      print('📊 Réponse API: ${response.keys}');
+      print('📊 Nombre de résultats: ${response['results']?.length ?? 0}');
+
       setState(() {
         _results = response['results'] ?? [];
         _isLoading = false;
       });
+
+      // Log final
+      if (_results.isEmpty) {
+        print('⚠️ Aucun résultat trouvé pour "${widget.query}"');
+      } else {
+        print('✅ ${_results.length} résultat(s) trouvé(s)');
+      }
+
     } catch (e) {
+      print('❌ Erreur complète dans _performSearch: $e');
       setState(() {
-        _errorMessage = 'Erreur lors de la recherche: $e';
+        _errorMessage = '${l10n.searchError}: ${e.toString()}';
         _isLoading = false;
       });
     }
   }
 
+  // Helper method to convert Map to ClientProject
+  ClientProject _mapToClientProject(Map<String, dynamic> data) {
+    return ClientProject(
+      id: data['id'] ?? 0,
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      clientName: data['client_name'] ?? '',
+      categoryName: data['category_name'] ?? '',
+      subcategoryName: data['subcategory_name'],
+      budgetRange: data['budget_range'] ?? '',
+      minBudget: data['min_budget']?.toDouble(),
+      maxBudget: data['max_budget']?.toDouble(),
+      budgetDisplay: data['budget_display'] ?? '',
+      location: data['location'] ?? '',
+      remotePossible: data['remote_possible'] ?? false,
+      deadline: data['deadline'] != null ? DateTime.tryParse(data['deadline']) : null,
+      urgency: data['urgency'] ?? 'normal',
+      status: data['status'] ?? 'open',
+      contactViaPlatform: data['contact_via_platform'] ?? true,
+      showEmail: data['show_email'] ?? false,
+      showPhone: data['show_phone'] ?? false,
+      requiredSkills: data['required_skills'] != null 
+          ? List<String>.from(data['required_skills']) 
+          : [],
+      offersCount: data['offers_count'] ?? 0,
+      viewsCount: data['views_count'] ?? 0,
+      createdAt: data['created_at'] != null 
+          ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+          : DateTime.now(),
+      timeSincePosted: data['time_since_posted'],
+      isFavorited: data['is_favorited'],
+      hasUserOffered: data['has_user_offered'],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return BaseScreen(
       currentIndex: widget.type == 'services' ? 1 : 0, // Explorer pour services, Accueil pour projets
       body: Scaffold(
@@ -70,8 +127,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         appBar: AppBar(
           title: Text(
             widget.type == 'services' 
-                ? 'Services : "${widget.query}"'
-                : 'Projets : "${widget.query}"'
+                ? l10n.servicesSearchTitle(widget.query)
+                : l10n.projectsSearchTitle(widget.query)
           ),
           backgroundColor: const Color(0xFF142FE2),
           foregroundColor: Colors.white,
@@ -83,14 +140,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildSearchResults() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Recherche en cours...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(l10n.searchInProgress),
           ],
         ),
       );
@@ -118,7 +177,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _performSearch,
-              child: const Text('Réessayer'),
+              child: Text(l10n.retry),
             ),
           ],
         ),
@@ -138,8 +197,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             const SizedBox(height: 16),
             Text(
               widget.type == 'services'
-                  ? 'Aucun service trouvé pour "${widget.query}"'
-                  : 'Aucun projet trouvé pour "${widget.query}"',
+                  ? l10n.noServiceFound(widget.query)
+                  : l10n.noProjectFound(widget.query),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -149,7 +208,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Nouvelle recherche'),
+              child: Text(l10n.newSearch),
             ),
           ],
         ),
@@ -162,7 +221,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${_results.length} résultat${_results.length > 1 ? 's' : ''} trouvé${_results.length > 1 ? 's' : ''}',
+            _results.length == 1 
+                ? l10n.resultFound(_results.length)
+                : l10n.resultsFound(_results.length),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -208,6 +269,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildServiceCard(Map<String, dynamic> serviceData) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -253,7 +316,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      serviceData['title'] ?? 'Service sans nom',
+                      serviceData['title'] ?? l10n.serviceWithoutName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -272,7 +335,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.star, color: Colors.amber, size: 16),
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
                           '${serviceData['rating'] ?? 0.0}',
@@ -284,8 +347,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         const SizedBox(width: 16),
                         Text(
                           serviceData['price_type'] == 'quote'
-                              ? 'Sur devis'
-                              : '${serviceData['price'] ?? 0} FCFA',
+                              ? l10n.onQuotePrice
+                              : '${serviceData['price'] ?? 0} AOA',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF142FE2),
@@ -305,15 +368,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildProjectCard(Map<String, dynamic> projectData) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
+          // Convert Map to ClientProject before passing
+          final project = _mapToClientProject(projectData);
+          Navigator.push(
             context,
-            '/project-detail',
-            arguments: projectData['id'],
+            MaterialPageRoute(
+              builder: (context) => ProjectDetailScreen(project: project),
+            ),
           );
         },
         borderRadius: BorderRadius.circular(12),
@@ -326,7 +394,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      projectData['title'] ?? 'Projet sans nom',
+                      projectData['title'] ?? l10n.projectWithoutName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -336,14 +404,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: (projectData['status'] ?? 'open') == 'open'
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      projectData['status'] ?? 'open',
-                      style: const TextStyle(
+                      (projectData['status'] ?? 'open') == 'open' 
+                          ? l10n.open 
+                          : l10n.closed,
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.green,
+                        color: (projectData['status'] ?? 'open') == 'open'
+                            ? Colors.green
+                            : Colors.grey,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -363,19 +437,19 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                  const Icon(Icons.person_outline, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    projectData['client_name'] ?? 'Client inconnu',
+                    projectData['client_name'] ?? l10n.unknownClient,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const Spacer(),
-                  Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                  const Icon(Icons.attach_money, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     projectData['budget'] != null
-                        ? '${projectData['budget']} FCFA'
-                        : 'Sur devis',
+                        ? '${projectData['budget']} AOA'
+                        : l10n.onQuotePrice,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF4CAF50),

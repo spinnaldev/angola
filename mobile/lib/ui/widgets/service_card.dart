@@ -114,7 +114,7 @@ class ServiceCard extends StatelessWidget {
                       children: [
                         Text(
                           service.priceType == 'fixed'
-                              ? '${service.price.toInt()}€'
+                              ? '${service.price.toInt()}AOA'
                               : 'Sur devis',
                           style: TextStyle(
                             fontSize: 14,

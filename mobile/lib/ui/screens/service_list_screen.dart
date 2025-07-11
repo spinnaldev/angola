@@ -477,7 +477,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                   Text(
                     service.priceType == 'quote' 
                       ? 'Sur devis' 
-                      : '${service.price.toInt()} FCFA',
+                      : '${service.price.toInt()} AOA',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

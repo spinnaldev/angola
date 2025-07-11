@@ -23,6 +23,9 @@ from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from django.db.models import Sum
+import logging
+logger = logging.getLogger(__name__)
+
 # from django.contrib.gis.geos import Point
 # from django.contrib.gis.measure import D
 # from django.contrib.gis.db.models.functions import Distance
@@ -112,78 +115,111 @@ class PasswordResetRequestView(APIView):
     """
     Vue pour demander un code de réinitialisation de mot de passe
     """
+    permission_classes = [AllowAny]
+    
     def post(self, request):
-        email = request.data.get('email')
-        
-        if not email:
-            return Response(
-                {"detail": "Email est requis"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Vérifier si l'utilisateur existe
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # Pour des raisons de sécurité, ne pas révéler que l'email n'existe pas
-            return Response(
-                {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
-                status=status.HTTP_200_OK
-            )
-        
-        # Générer un code à 6 chiffres
-        code = ''.join(random.choices(string.digits, k=6))
-        
-        # Supprimer les anciens codes pour cet utilisateur
-        ResetPasswordCode.objects.filter(user=user).delete()
-        
-        # Créer un nouveau code
-        expiration = timezone.now() + timedelta(minutes=15)
-        reset_code = ResetPasswordCode.objects.create(
-            user=user,
-            code=code,
-            expires_at=expiration
-        )
-        
-        # Envoyer l'email
-        subject = 'Code de réinitialisation de mot de passe'
-        message = f"""
-        Bonjour,
-        
-        Vous avez demandé la réinitialisation de votre mot de passe.
-        Voici votre code de réinitialisation: {code}
-        
-        Ce code est valable pendant 15 minutes.
-        
-        Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.
-        
-        Cordialement,
-        L'équipe Angola
-        """
-        
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
+            logger.debug("Début de la demande de réinitialisation de mot de passe")
+            
+            email = request.data.get('email')
+            logger.debug(f"Email reçu: {email}")
+            
+            if not email:
+                logger.warning("Email manquant dans la requête")
+                return Response(
+                    {"detail": "Email est requis"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérifier si l'utilisateur existe
+            try:
+                user = User.objects.get(email=email)
+                logger.debug(f"Utilisateur trouvé: {user.username}")
+                
+                # Générer un code à 6 chiffres
+                code = ''.join(random.choices(string.digits, k=6))
+                logger.debug(f"Code généré: {code}")
+                
+                # Supprimer les anciens codes pour cet utilisateur
+                deleted_count = ResetPasswordCode.objects.filter(user=user).delete()[0]
+                logger.debug(f"Anciens codes supprimés: {deleted_count}")
+                
+                # Créer un nouveau code
+                expiration = timezone.now() + timedelta(minutes=15)
+                reset_code = ResetPasswordCode.objects.create(
+                    user=user,
+                    code=code,
+                    expires_at=expiration
+                )
+                logger.debug(f"Nouveau code créé avec expiration: {expiration}")
+                
+                # Envoyer l'email
+                subject = 'Code de réinitialisation - Angola Services'
+                message = f"""
+                Bonjour {user.first_name or user.username},
+
+                Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Angola Services.
+
+                Votre code de réinitialisation est : {code}
+
+                ⚠️ Important :
+                • Ce code est valable pendant 15 minutes uniquement
+                • Si vous n'avez pas demandé cette réinitialisation, ignorez cet email
+                • Ne partagez jamais ce code avec personne
+
+                Cordialement,
+                L'équipe Angola Services
+                                """
+                
+                try:
+                    logger.debug("Tentative d'envoi d'email...")
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    logger.info(f"Email envoyé avec succès à {email} avec le code {code}")
+                    
+                    return Response(
+                        {"detail": "Code de réinitialisation envoyé", "success": True}, 
+                        status=status.HTTP_200_OK
+                    )
+                    
+                except Exception as e:
+                    logger.error(f"Erreur envoi email: {str(e)}")
+                    # Même en cas d'erreur d'email, on retourne une réponse positive pour la sécurité
+                    return Response(
+                        {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
+                        status=status.HTTP_200_OK
+                    )
+                
+            except User.DoesNotExist:
+                logger.warning(f"Tentative de reset pour email inexistant: {email}")
+                # Pour des raisons de sécurité, ne pas révéler que l'email n'existe pas
+                return Response(
+                    {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
+                    status=status.HTTP_200_OK
+                )
+                
         except Exception as e:
+            logger.error(f"Erreur inattendue dans PasswordResetRequestView: {str(e)}")
+            logger.error(f"Type d'erreur: {type(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
             return Response(
-                {"detail": f"Erreur lors de l'envoi de l'email: {str(e)}"}, 
+                {"detail": "Erreur interne du serveur"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-        return Response(
-            {"detail": "Code de réinitialisation envoyé"}, 
-            status=status.HTTP_200_OK
-        )
 
 class VerifyResetCodeView(APIView):
     """
     Vue pour vérifier le code de réinitialisation
     """
+    permission_classes = [AllowAny] 
+
     def post(self, request):
         email = request.data.get('email')
         code = request.data.get('code')
@@ -230,6 +266,8 @@ class PasswordResetConfirmView(APIView):
     """
     Vue pour réinitialiser le mot de passe avec le code
     """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         email = request.data.get('email')
         code = request.data.get('code')
@@ -297,11 +335,82 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserUpdateSerializer
         return UserSerializer
     
-    @action(detail=False, methods=['get'])
-    def me(self, request):
-        """Récupérer le profil de l'utilisateur connecté"""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+    # @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    # def me(self, request):
+    #     """Récupérer le profil de l'utilisateur connecté"""
+    #     try:
+    #         logger.debug("=== ACTION ME DEBUG ===")
+    #         logger.debug(f"Request: {request}")
+    #         logger.debug(f"Request user: {request.user}")
+    #         logger.debug(f"User type: {type(request.user)}")
+    #         logger.debug(f"Is authenticated: {request.user.is_authenticated}")
+    #         logger.debug(f"Is anonymous: {request.user.is_anonymous}")
+    #         logger.debug(f"User ID: {getattr(request.user, 'id', 'None')}")
+    #         logger.debug(f"Username: {getattr(request.user, 'username', 'None')}")
+            
+    #         # Vérifier les headers
+    #         auth_header = request.META.get('HTTP_AUTHORIZATION', 'None')
+    #         logger.debug(f"Authorization header: {auth_header[:50] if auth_header != 'None' else 'None'}...")
+            
+    #         # Debug des métadonnées de la requête
+    #         logger.debug(f"Request META keys: {list(request.META.keys())}")
+            
+    #         # Vérification explicite de l'authentification
+    #         if not hasattr(request, 'user'):
+    #             logger.error("❌ request.user n'existe pas")
+    #             return Response(
+    #                 {"detail": "Authentication error: no user in request"}, 
+    #                 status=status.HTTP_401_UNAUTHORIZED
+    #             )
+            
+    #         if request.user is None:
+    #             logger.error("❌ request.user est None")
+    #             return Response(
+    #                 {"detail": "Authentication error: user is None"}, 
+    #                 status=status.HTTP_401_UNAUTHORIZED
+    #             )
+            
+    #         if not request.user.is_authenticated:
+    #             logger.warning("❌ Utilisateur non authentifié dans l'action me")
+    #             return Response(
+    #                 {"detail": "Authentication credentials were not provided."}, 
+    #                 status=status.HTTP_401_UNAUTHORIZED
+    #             )
+            
+    #         if request.user.is_anonymous:
+    #             logger.warning("❌ Utilisateur anonyme dans l'action me")
+    #             return Response(
+    #                 {"detail": "Anonymous user not allowed."}, 
+    #                 status=status.HTTP_401_UNAUTHORIZED
+    #             )
+            
+    #         # Vérifier que l'utilisateur existe en base
+    #         try:
+    #             user = User.objects.get(id=request.user.id)
+    #             logger.debug(f"✅ Utilisateur trouvé en base: {user}")
+    #         except User.DoesNotExist:
+    #             logger.error(f"❌ Utilisateur {request.user.id} non trouvé en base")
+    #             return Response(
+    #                 {"detail": "User not found in database"}, 
+    #                 status=status.HTTP_404_NOT_FOUND
+    #             )
+            
+    #         logger.debug(f"✅ Sérialisation de l'utilisateur: {request.user}")
+    #         serializer = self.get_serializer(request.user)
+    #         logger.debug(f"✅ Données sérialisées: {serializer.data}")
+            
+    #         return Response(serializer.data)
+            
+    #     except Exception as e:
+    #         logger.error(f"❌ Erreur dans l'action me: {str(e)}")
+    #         logger.error(f"Type d'erreur: {type(e)}")
+    #         import traceback
+    #         logger.error(f"Traceback: {traceback.format_exc()}")
+            
+    #         return Response(
+    #             {"detail": f"Internal server error: {str(e)}"}, 
+    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #         )
     
     @action(detail=False, methods=['put', 'patch'])
     def update_me(self, request):
@@ -469,6 +578,107 @@ class UserViewSet(viewsets.ModelViewSet):
             "user": response_serializer.data
         })
 
+class GetUserByIdView(APIView):
+    """
+    Vue pour récupérer un utilisateur par son ID
+    """
+    permission_classes = [AllowAny]  # Pas d'auth pour éviter les problèmes
+    
+    def get(self, request, user_id):
+        """Récupérer un utilisateur par son ID"""
+        try:
+            logger.debug(f"=== GET USER BY ID: {user_id} ===")
+            
+            # Vérifier que l'ID est valide
+            try:
+                user_id = int(user_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {"detail": "ID utilisateur invalide"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Chercher l'utilisateur
+            try:
+                user = User.objects.get(id=user_id)
+                logger.debug(f"✅ Utilisateur trouvé: {user.username}")
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": "Utilisateur non trouvé"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Sérialiser les données
+            serializer = UserSerializer(user)
+            
+            return Response({
+                "success": True,
+                "user": serializer.data,
+                "message": f"Utilisateur {user.username} récupéré avec succès"
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur dans GetUserByIdView: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            return Response(
+                {"detail": f"Erreur serveur: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class CurrentUserView(APIView):
+    """
+    Vue simple pour récupérer les informations de l'utilisateur connecté
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Récupérer le profil de l'utilisateur connecté"""
+        try:
+            logger.debug("=== CURRENT USER VIEW DEBUG ===")
+            logger.debug(f"Request user: {request.user}")
+            logger.debug(f"Is authenticated: {request.user.is_authenticated}")
+            logger.debug(f"User ID: {getattr(request.user, 'id', 'None')}")
+            logger.debug(f"Username: {getattr(request.user, 'username', 'None')}")
+            
+            # Vérifier les headers
+            auth_header = request.META.get('HTTP_AUTHORIZATION', 'None')
+            logger.debug(f"Authorization header: {auth_header[:50] if auth_header != 'None' else 'None'}...")
+            
+            if not request.user.is_authenticated:
+                logger.warning("❌ Utilisateur non authentifié")
+                return Response(
+                    {"detail": "Authentication credentials were not provided."}, 
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            if request.user.is_anonymous:
+                logger.warning("❌ Utilisateur anonyme")
+                return Response(
+                    {"detail": "Anonymous user not allowed."}, 
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Sérialiser les données utilisateur
+            serializer = UserSerializer(request.user)
+            logger.debug(f"✅ Données sérialisées: {serializer.data}")
+            
+            return Response({
+                "success": True,
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur dans CurrentUserView: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            return Response(
+                {"detail": f"Internal server error: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_profile_stats(request):

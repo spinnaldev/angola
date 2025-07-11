@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='clientproject',
             name='budget_range',
-            field=models.CharField(choices=[('sur_devis', 'Sur devis'), ('0_500', 'Moins de 500€'), ('500_1000', '500€ - 1000€'), ('1000_5000', '1000€ - 5000€'), ('5000_15000', '5000€ - 15000€'), ('15000_plus', 'Plus de 15000€')], max_length=20),
+            field=models.CharField(choices=[('sur_devis', 'Sur devis'), ('0_500', 'Moins de 500AOA'), ('500_1000', '500AOA - 1000AOA'), ('1000_5000', '1000AOA - 5000AOA'), ('5000_15000', '5000AOA - 15000AOA'), ('15000_plus', 'Plus de 15000AOA')], max_length=20),
         ),
         migrations.AlterField(
             model_name='clientproject',

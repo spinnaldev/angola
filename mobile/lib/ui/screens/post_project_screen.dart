@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import '../../core/models/category.dart';
 import '../../core/models/subcategory.dart';
 import '../../providers/category_provider.dart';
@@ -10,7 +11,6 @@ import '../../providers/subcategory_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
 import 'dart:io';
-import '../../core/models/subcategory.dart';
 
 class PostProjectScreen extends StatefulWidget {
   const PostProjectScreen({Key? key}) : super(key: key);
@@ -66,12 +66,14 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Déposer un projet',
-          style: TextStyle(
+        title: Text(
+          l10n.postProject,
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.w600,
           ),
@@ -88,9 +90,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
-                    'Publier',
-                    style: TextStyle(
+                : Text(
+                    l10n.publish,
+                    style: const TextStyle(
                       color: Color(0xFF6366F1),
                       fontWeight: FontWeight.w600,
                     ),
@@ -132,6 +134,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildStepIndicator() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -147,10 +151,10 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
             size: 20,
           ),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Recevez au moins 18 devis en détaillant votre projet',
-              style: TextStyle(
+              l10n.receiveQuotesDetail,
+              style: const TextStyle(
                 color: Color(0xFF6366F1),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -163,22 +167,24 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildBasicInfoSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Informations de base',
+      title: l10n.basicInformation,
       children: [
         TextFormField(
           controller: _titleController,
-          decoration: const InputDecoration(
-            labelText: 'Titre du projet *',
-            hintText: 'Ex: Création d\'un site web e-commerce',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.projectTitle,
+            hintText: l10n.projectTitleHint,
+            border: const OutlineInputBorder(),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Le titre est obligatoire';
+              return l10n.titleRequired;
             }
             if (value.length < 10) {
-              return 'Le titre doit contenir au moins 10 caractères';
+              return l10n.titleMinLength;
             }
             return null;
           },
@@ -187,19 +193,19 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
-          decoration: const InputDecoration(
-            labelText: 'Description détaillée *',
-            hintText: 'Décrivez précisément vos besoins, vos attentes...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.detailedDescription,
+            hintText: l10n.detailedDescriptionHint,
+            border: const OutlineInputBorder(),
             alignLabelWithHint: true,
           ),
           maxLines: 6,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'La description est obligatoire';
+              return l10n.descriptionRequired;
             }
             if (value.length < 50) {
-              return 'La description doit contenir au moins 50 caractères';
+              return l10n.descriptionMinLength;
             }
             return null;
           },
@@ -210,16 +216,18 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildCategorySection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Catégorie',
+      title: l10n.category,
       children: [
         Consumer<CategoryProvider>(
           builder: (context, categoryProvider, child) {
             return DropdownButtonFormField<Category>(
               value: _selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Choisir une catégorie *',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.chooseCategory,
+                border: const OutlineInputBorder(),
               ),
               items: categoryProvider.categories.map((category) {
                 return DropdownMenuItem(
@@ -238,37 +246,39 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               },
               validator: (value) {
                 if (value == null) {
-                  return 'Veuillez choisir une catégorie';
+                  return l10n.chooseCategoryValidation;
                 }
                 return null;
               },
             );
           },
         ),
-        
       ],
     );
   }
 
   Widget _buildBudgetSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Budget',
+      title: l10n.budget,
       children: [
         DropdownButtonFormField<String>(
           value: _selectedBudgetRange,
-          decoration: const InputDecoration(
-            labelText: 'Budget approximatif *',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.approximateBudget,
+            border: const OutlineInputBorder(),
           ),
-          items: const [
-            DropdownMenuItem(value: 'moins_500', child: Text('Moins de 500 €')),
-            DropdownMenuItem(value: '500_1000', child: Text('500 à 1000 €')),
+          items: [
             DropdownMenuItem(
-                value: '1000_10000', child: Text('1000 à 10 000 €')),
+                value: 'moins_500', child: Text(l10n.lessThan500)),
+            DropdownMenuItem(value: '500_1000', child: Text(l10n.between500And1000)),
             DropdownMenuItem(
-                value: '10000_plus', child: Text('10 000 € et plus')),
+                value: '1000_10000', child: Text(l10n.between1000And10000)),
             DropdownMenuItem(
-                value: 'sur_devis', child: Text('Demande de devis')),
+                value: '10000_plus', child: Text(l10n.moreThan10000)),
+            DropdownMenuItem(
+                value: 'sur_devis', child: Text(l10n.requestQuote)),
           ],
           onChanged: (String? value) {
             setState(() {
@@ -283,9 +293,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _maxBudgetController,
-                  decoration: const InputDecoration(
-                    labelText: 'Budget max (€)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.maxBudget,
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -303,12 +313,12 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.star, color: Colors.orange, size: 20),
+              const Icon(Icons.star, color: Colors.orange, size: 20),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '99% des clients trouvent un freelance dans leur budget',
-                  style: TextStyle(
+                  l10n.budgetTip,
+                  style: const TextStyle(
                     color: Colors.orange,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -323,27 +333,29 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildLocationSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Localisation',
+      title: l10n.location,
       children: [
         TextFormField(
           controller: _locationController,
-          decoration: const InputDecoration(
-            labelText: 'Lieu d\'intervention *',
-            hintText: 'Ex: Paris, Lyon, France...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.interventionLocation,
+            hintText: l10n.locationHint,
+            border: const OutlineInputBorder(),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Le lieu est obligatoire';
+              return l10n.locationRequired;
             }
             return null;
           },
         ),
         const SizedBox(height: 16),
         CheckboxListTile(
-          title: const Text('Télétravail possible'),
-          subtitle: const Text('Le prestataire peut travailler à distance'),
+          title: Text(l10n.remoteWorkPossible),
+          subtitle: Text(l10n.remoteWorkDescription),
           value: _remotePossible,
           onChanged: (bool? value) {
             setState(() {
@@ -357,20 +369,22 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildTimingSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Délais et urgence',
+      title: l10n.timingUrgency,
       children: [
         DropdownButtonFormField<String>(
           value: _selectedUrgency,
-          decoration: const InputDecoration(
-            labelText: 'Urgence du projet *',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.projectUrgency,
+            border: const OutlineInputBorder(),
           ),
-          items: const [
-            DropdownMenuItem(value: 'low', child: Text('Pas urgent')),
-            DropdownMenuItem(value: 'medium', child: Text('Modérément urgent')),
-            DropdownMenuItem(value: 'high', child: Text('Urgent')),
-            DropdownMenuItem(value: 'very_high', child: Text('Très urgent')),
+          items: [
+            DropdownMenuItem(value: 'low', child: Text(l10n.notUrgent)),
+            DropdownMenuItem(value: 'medium', child: Text(l10n.moderatelyUrgent)),
+            DropdownMenuItem(value: 'high', child: Text(l10n.urgent)),
+            DropdownMenuItem(value: 'very_high', child: Text(l10n.veryUrgent)),
           ],
           onChanged: (String? value) {
             setState(() {
@@ -382,16 +396,16 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         InkWell(
           onTap: _selectDeadline,
           child: InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Date limite souhaitée (optionnel)',
-              border: OutlineInputBorder(),
-              suffixIcon: Icon(Icons.calendar_today),
+            decoration: InputDecoration(
+              labelText: l10n.desiredDeadline,
+              border: const OutlineInputBorder(),
+              suffixIcon: const Icon(Icons.calendar_today),
             ),
             child: Text(
               _selectedDeadline != null
                   // ? '${_selectedDeadline!.day}/${_selectedDeadline!.month}/${_selectedDeadline!.year}'
                   ? '${_selectedDeadline!.year}-${_selectedDeadline!.month}-${_selectedDeadline!.day}'
-                  : 'Choisir une date',
+                  : l10n.chooseDate,
               style: TextStyle(
                 color: _selectedDeadline != null
                     ? Colors.black87
@@ -405,18 +419,20 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildSkillsSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Compétences requises',
+      title: l10n.requiredSkills,
       children: [
         Row(
           children: [
             Expanded(
               child: TextFormField(
                 controller: _skillController,
-                decoration: const InputDecoration(
-                  labelText: 'Ajouter une compétence',
-                  hintText: 'Ex: PHP, Design graphique...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.addSkill,
+                  hintText: l10n.skillHint,
+                  border: const OutlineInputBorder(),
                 ),
                 onFieldSubmitted: _addSkill,
               ),
@@ -430,7 +446,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              child: const Text('Ajouter'),
+              child: Text(l10n.add),
             ),
           ],
         ),
@@ -457,9 +473,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.grey[300]!),
             ),
-            child: const Text(
-              'Aucune compétence ajoutée. Les compétences aident les prestataires à mieux comprendre vos besoins.',
-              style: TextStyle(color: Colors.grey),
+            child: Text(
+              l10n.noSkillsAdded,
+              style: const TextStyle(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
           ),
@@ -469,28 +485,32 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Widget _buildAttachmentsSection() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return _buildSection(
-      title: 'Fichiers joints (optionnel)',
+      title: l10n.attachments,
       children: [
-        const Text(
-          'Ajoutez des documents pour mieux expliquer votre projet (cahier des charges, maquettes, etc.)',
-          style: TextStyle(color: Colors.grey, fontSize: 14),
+        Text(
+          l10n.attachmentsDescription,
+          style: const TextStyle(color: Colors.grey, fontSize: 14),
         ),
         const SizedBox(height: 16),
         _buildAttachmentTile(
-            'Fichier 1', _attachment1, (file) => _attachment1 = file),
+            l10n.file1, _attachment1, (file) => _attachment1 = file),
         // const SizedBox(height: 8),
         // _buildAttachmentTile(
-        //     'Fichier 2', _attachment2, (file) => _attachment2 = file),
+        //     l10n.file2, _attachment2, (file) => _attachment2 = file),
         // const SizedBox(height: 8),
         // _buildAttachmentTile(
-        //     'Fichier 3', _attachment3, (file) => _attachment3 = file),
+        //     l10n.file3, _attachment3, (file) => _attachment3 = file),
       ],
     );
   }
 
   Widget _buildAttachmentTile(
       String label, File? file, Function(File?) onFileSelected) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -525,7 +545,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
           ],
           TextButton(
             onPressed: () => _pickFile(onFileSelected),
-            child: Text(file != null ? 'Changer' : 'Choisir'),
+            child: Text(file != null ? l10n.change : l10n.choose),
           ),
         ],
       ),
@@ -533,12 +553,14 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   // Widget _buildContactPreferencesSection() {
+  //   final l10n = AppLocalizations.of(context)!;
+  //   
   //   return _buildSection(
-  //     title: 'Préférences de contact',
+  //     title: l10n.contactPreferences,
   //     children: [
   //       CheckboxListTile(
-  //         title: const Text('Messagerie privée de la plateforme'),
-  //         subtitle: const Text('Recommandé pour la sécurité'),
+  //         title: Text(l10n.platformPrivateMessaging),
+  //         subtitle: Text(l10n.recommendedForSecurity),
   //         value: _contactViaPlatform,
   //         onChanged: (bool? value) {
   //           setState(() {
@@ -548,8 +570,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   //         controlAffinity: ListTileControlAffinity.leading,
   //       ),
   //       CheckboxListTile(
-  //         title: const Text('Afficher mon adresse email'),
-  //         subtitle: const Text('(sera affiché aux prestataires)'),
+  //         title: Text(l10n.showEmailAddress),
+  //         subtitle: Text(l10n.emailVisibleToProviders),
   //         value: _showEmail,
   //         onChanged: (bool? value) {
   //           setState(() {
@@ -559,8 +581,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   //         controlAffinity: ListTileControlAffinity.leading,
   //       ),
   //       CheckboxListTile(
-  //         title: const Text('Afficher mon numéro de téléphone'),
-  //         subtitle: const Text('(sera affiché aux prestataires)'),
+  //         title: Text(l10n.showPhoneNumber),
+  //         subtitle: Text(l10n.phoneVisibleToProviders),
   //         value: _showPhone,
   //         onChanged: (bool? value) {
   //           setState(() {
@@ -628,6 +650,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
   }
 
   Future<void> _pickFile(Function(File?) onFileSelected) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -642,12 +666,14 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la sélection du fichier: $e')),
+        SnackBar(content: Text(l10n.fileSelectionError(e.toString()))),
       );
     }
   }
 
   Future<void> _submitProject() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (!_formKey.currentState!.validate()) {
       // Défiler vers le premier champ avec erreur
       _scrollController.animateTo(
@@ -709,8 +735,8 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
       // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Projet publié avec succès !'),
+        SnackBar(
+          content: Text(l10n.projectPublishedSuccess),
           backgroundColor: Colors.green,
         ),
       );
@@ -720,7 +746,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors de la publication: $e'),
+          content: Text(l10n.publishingError(e.toString())),
           backgroundColor: Colors.red,
         ),
       );

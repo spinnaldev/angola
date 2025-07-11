@@ -1,0 +1,61 @@
+INFO 2025-07-08 20:05:14,769 autoreload 17324 24656 Watching for file changes with StatReloader
+INFO 2025-07-08 20:05:36,466 basehttp 17324 5272 "GET /api/users/me/ HTTP/1.1" 200 245
+INFO 2025-07-08 20:41:10,630 autoreload 17324 24656 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 20:41:13,579 autoreload 17188 28300 Watching for file changes with StatReloader
+INFO 2025-07-08 20:41:15,038 autoreload 17188 28300 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 20:41:16,130 autoreload 27412 31388 Watching for file changes with StatReloader
+INFO 2025-07-08 20:46:43,996 autoreload 27412 31388 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 20:46:45,052 autoreload 11056 26920 Watching for file changes with StatReloader
+INFO 2025-07-08 20:48:58,127 autoreload 11056 26920 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 20:49:01,242 autoreload 25912 31344 Watching for file changes with StatReloader
+INFO 2025-07-08 20:52:16,784 autoreload 25912 31344 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 20:52:18,459 autoreload 7096 4592 Watching for file changes with StatReloader
+INFO 2025-07-08 20:52:36,217 autoreload 7096 4592 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-08 20:52:37,256 autoreload 16464 31000 Watching for file changes with StatReloader
+INFO 2025-07-08 20:56:11,094 autoreload 16464 31000 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 20:56:12,603 autoreload 31644 31568 Watching for file changes with StatReloader
+INFO 2025-07-08 20:56:24,609 autoreload 31644 31568 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 20:56:25,676 autoreload 1400 34140 Watching for file changes with StatReloader
+INFO 2025-07-08 20:57:24,229 autoreload 1400 34140 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
+INFO 2025-07-08 20:57:25,195 autoreload 30208 34436 Watching for file changes with StatReloader
+INFO 2025-07-08 20:57:26,737 autoreload 30208 34436 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
+INFO 2025-07-08 20:57:27,661 autoreload 12864 28304 Watching for file changes with StatReloader
+INFO 2025-07-08 20:57:32,350 autoreload 12864 28304 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
+INFO 2025-07-08 20:57:33,322 autoreload 27528 4468 Watching for file changes with StatReloader
+INFO 2025-07-08 20:58:32,149 autoreload 27528 4468 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 20:58:33,102 autoreload 23700 1864 Watching for file changes with StatReloader
+INFO 2025-07-08 20:59:04,642 autoreload 23700 1864 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 20:59:05,639 autoreload 10236 30356 Watching for file changes with StatReloader
+INFO 2025-07-08 21:09:26,426 autoreload 10236 30356 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 21:09:28,812 autoreload 7344 18648 Watching for file changes with StatReloader
+INFO 2025-07-08 21:09:30,157 autoreload 7344 18648 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 21:09:31,139 autoreload 3724 33868 Watching for file changes with StatReloader
+INFO 2025-07-08 21:10:57,921 autoreload 3724 33868 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 21:10:58,843 autoreload 360 26248 Watching for file changes with StatReloader
+INFO 2025-07-08 21:11:09,635 autoreload 360 26248 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 21:11:10,626 autoreload 32132 22592 Watching for file changes with StatReloader
+INFO 2025-07-08 21:36:01,874 basehttp 32132 1900 "GET /api/current-user/ HTTP/1.1" 200 269
+INFO 2025-07-08 21:44:43,365 basehttp 32132 28508 "GET /api/current-user/ HTTP/1.1" 200 269
+INFO 2025-07-08 21:46:40,737 basehttp 32132 30944 "GET /api/current-user/ HTTP/1.1" 200 269
+INFO 2025-07-08 21:53:18,056 autoreload 32132 22592 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-07-08 21:53:20,897 autoreload 26856 27616 Watching for file changes with StatReloader
+INFO 2025-07-08 21:58:01,321 basehttp 26856 19652 "GET /api/current-user/ HTTP/1.1" 200 269
+INFO 2025-07-08 22:04:37,491 basehttp 26856 33304 "GET /api/current-user/ HTTP/1.1" 200 269
+INFO 2025-07-08 22:07:27,787 basehttp 26856 27080 "GET /api/current-user/ HTTP/1.1" 200 269
+WARNING 2025-07-08 22:08:12,050 log 26856 27080 Not Found: /api/users/me/
+WARNING 2025-07-08 22:08:12,051 basehttp 26856 27080 "GET /api/users/me/ HTTP/1.1" 404 23
+WARNING 2025-07-08 22:14:15,199 log 26856 6304 Not Found: /api/users/me/
+WARNING 2025-07-08 22:14:15,200 basehttp 26856 6304 "GET /api/users/me/ HTTP/1.1" 404 23
+WARNING 2025-07-08 22:21:17,926 log 26856 33224 Not Found: /api/users/me/
+WARNING 2025-07-08 22:21:17,926 basehttp 26856 33224 "GET /api/users/me/ HTTP/1.1" 404 23
+WARNING 2025-07-08 22:36:18,656 log 26856 29836 Not Found: /api/users/me/
+WARNING 2025-07-08 22:36:18,656 basehttp 26856 29836 "GET /api/users/me/ HTTP/1.1" 404 23
+INFO 2025-07-08 22:57:45,753 basehttp 26856 24672 "POST /api/auth/login/ HTTP/1.1" 200 736
+WARNING 2025-07-08 22:58:00,489 log 26856 24672 Not Found: /api/users/me/
+WARNING 2025-07-08 22:58:00,490 basehttp 26856 24672 "GET /api/users/me/ HTTP/1.1" 404 23
+INFO 2025-07-08 23:01:39,586 autoreload 26856 27616 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-08 23:01:43,849 autoreload 5292 25196 Watching for file changes with StatReloader
+INFO 2025-07-08 23:01:59,762 autoreload 5292 25196 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-08 23:02:01,190 autoreload 30356 29272 Watching for file changes with StatReloader
+INFO 2025-07-08 23:02:35,085 basehttp 30356 32696 "GET /api/user/2 HTTP/1.1" 301 0
+INFO 2025-07-08 23:02:36,736 basehttp 30356 13316 "GET /api/user/2/ HTTP/1.1" 200 323

@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=200, verbose_name='Titre du projet')),
                 ('description', models.TextField(verbose_name='Description détaillée')),
-                ('budget_range', models.CharField(choices=[('moins_500', 'Moins de 500 €'), ('500_1000', '500 à 1000 €'), ('1000_10000', '1000 à 10 000 €'), ('10000_plus', '10 000 € et plus'), ('sur_devis', 'Demande de devis')], max_length=20)),
+                ('budget_range', models.CharField(choices=[('moins_500', 'Moins de 500 AOA'), ('500_1000', '500 à 1000 AOA'), ('1000_10000', '1000 à 10 000 AOA'), ('10000_plus', '10 000 AOA et plus'), ('sur_devis', 'Demande de devis')], max_length=20)),
                 ('min_budget', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
                 ('max_budget', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
                 ('location', models.CharField(max_length=255, verbose_name="Lieu d'intervention")),

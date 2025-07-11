@@ -9,7 +9,7 @@ import '../providers/auth_provider.dart';
 class ProjectProvider with ChangeNotifier {
   final ApiService _apiService;
   final AuthProvider? _authProvider;
-  
+
   List<ClientProject> _userProjects = [];
   List<ClientProject> _allProjects = [];
   bool _isLoading = false;
@@ -42,9 +42,9 @@ class ProjectProvider with ChangeNotifier {
   //   } catch (error) {
   //     print('Error fetching user projects: $error');
   //     _errorMessage = error.toString();
-      
+
   //     // Si l'erreur est liée à l'authentification, essayer de rafraîchir le token
-  //     if (error.toString().contains('Unauthorized') || 
+  //     if (error.toString().contains('Unauthorized') ||
   //         error.toString().contains('401')) {
   //       try {
   //         // Tenter de rafraîchir le token
@@ -80,19 +80,18 @@ class ProjectProvider with ChangeNotifier {
   Future<bool> closeProject(int projectId) async {
     try {
       final success = await _apiService.closeProject(projectId);
-      
+
       if (success) {
         // Mettre à jour localement le projet dans la liste
         final projectIndex = _userProjects.indexWhere((p) => p.id == projectId);
         if (projectIndex != -1) {
-          final updatedProject = _userProjects[projectIndex].copyWith(
-            status: 'closed'
-          );
+          final updatedProject =
+              _userProjects[projectIndex].copyWith(status: 'closed');
           _userProjects[projectIndex] = updatedProject;
           notifyListeners();
         }
       }
-      
+
       return success;
     } catch (error) {
       print('Error closing project: $error');
@@ -105,15 +104,16 @@ class ProjectProvider with ChangeNotifier {
   /// Mettre à jour le statut d'un projet (version améliorée)
   Future<bool> updateProjectStatus(int projectId, String newStatus) async {
     try {
-      final updatedProject = await _apiService.updateProjectStatus(projectId, newStatus);
-      
+      final updatedProject =
+          await _apiService.updateProjectStatus(projectId, newStatus);
+
       // Mettre à jour localement
       final projectIndex = _userProjects.indexWhere((p) => p.id == projectId);
       if (projectIndex != -1) {
         _userProjects[projectIndex] = updatedProject;
         notifyListeners();
       }
-      
+
       return true;
     } catch (error) {
       print('Error updating project status: $error');
@@ -127,13 +127,13 @@ class ProjectProvider with ChangeNotifier {
   Future<bool> deleteProject(int projectId) async {
     try {
       final success = await _apiService.deleteProject(projectId);
-      
+
       if (success) {
         // Supprimer localement
         _userProjects.removeWhere((p) => p.id == projectId);
         notifyListeners();
       }
-      
+
       return success;
     } catch (error) {
       print('Error deleting project: $error');
@@ -147,7 +147,7 @@ class ProjectProvider with ChangeNotifier {
   Future<void> incrementProjectView(int projectId) async {
     try {
       final updatedProject = await _apiService.incrementProjectView(projectId);
-      
+
       // Mettre à jour le projet dans la liste des projets (si applicable)
       final projectIndex = _allProjects.indexWhere((p) => p.id == projectId);
       if (projectIndex != -1) {
@@ -185,13 +185,13 @@ class ProjectProvider with ChangeNotifier {
     } catch (error) {
       print('Error fetching user projects: $error');
       _errorMessage = error.toString();
-      
+
       // NOUVELLE GESTION : Vérifier si c'est une erreur 401
-      if (error.toString().contains('Unauthorized') || 
+      if (error.toString().contains('Unauthorized') ||
           error.toString().contains('401')) {
-        
-        print('🔄 Erreur 401 détectée, tentative de rafraîchissement du token...');
-        
+        print(
+            '🔄 Erreur 401 détectée, tentative de rafraîchissement du token...');
+
         // Tenter de rafraîchir le token si AuthProvider est disponible
         if (_authProvider != null) {
           try {
@@ -216,7 +216,8 @@ class ProjectProvider with ChangeNotifier {
           // Si pas d'AuthProvider, utiliser des données mock
           print('⚠️ AuthProvider non disponible, utilisation des données mock');
           _userProjects = _getMockUserProjects();
-          _errorMessage = 'Problème d\'authentification. Données de démonstration affichées.';
+          _errorMessage =
+              'Problème d\'authentification. Données de démonstration affichées.';
         }
       } else {
         // Pour les autres erreurs, utiliser des données mock
@@ -229,13 +230,15 @@ class ProjectProvider with ChangeNotifier {
   }
 
   // Méthode pour créer un nouveau projet
-  Future<bool> createProject(Map<String, dynamic> projectData, List<File?> attachments) async {
+  Future<bool> createProject(
+      Map<String, dynamic> projectData, List<File?> attachments) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final newProject = await _apiService.createProject(projectData, attachments);
+      final newProject =
+          await _apiService.createProject(projectData, attachments);
       _userProjects.insert(0, newProject);
       _isLoading = false;
       notifyListeners();
@@ -249,19 +252,17 @@ class ProjectProvider with ChangeNotifier {
     }
   }
 
-  
   // Méthode pour marquer un projet comme favori
   Future<void> toggleProjectFavorite(int projectId) async {
     try {
       await _apiService.toggleProjectFavorite(projectId);
-      
+
       // Mettre à jour localement dans allProjects
       final projectIndex = _allProjects.indexWhere((p) => p.id == projectId);
       if (projectIndex != -1) {
         final project = _allProjects[projectIndex];
-        final updatedProject = project.copyWith(
-          isFavorited: !(project.isFavorited ?? false)
-        );
+        final updatedProject =
+            project.copyWith(isFavorited: !(project.isFavorited ?? false));
         _allProjects[projectIndex] = updatedProject;
         notifyListeners();
       }
@@ -274,9 +275,12 @@ class ProjectProvider with ChangeNotifier {
   // Méthode pour obtenir les statistiques des projets utilisateur
   Map<String, int> getUserProjectStats() {
     final openProjects = _userProjects.where((p) => p.status == 'open').length;
-    final inProgressProjects = _userProjects.where((p) => p.status == 'in_progress').length;
-    final completedProjects = _userProjects.where((p) => p.status == 'completed').length;
-    final totalOffers = _userProjects.fold<int>(0, (sum, project) => sum + project.offersCount);
+    final inProgressProjects =
+        _userProjects.where((p) => p.status == 'in_progress').length;
+    final completedProjects =
+        _userProjects.where((p) => p.status == 'completed').length;
+    final totalOffers =
+        _userProjects.fold<int>(0, (sum, project) => sum + project.offersCount);
 
     return {
       'total_projects': _userProjects.length,
@@ -299,11 +303,12 @@ class ProjectProvider with ChangeNotifier {
       ClientProject(
         id: 1,
         title: 'Rénovation complète de ma maison',
-        description: 'Je souhaite rénover entièrement ma maison de 120m². Cela inclut la peinture, la plomberie, l\'électricité et la pose de nouveaux sols.',
+        description:
+            'Je souhaite rénover entièrement ma maison de 120m². Cela inclut la peinture, la plomberie, l\'électricité et la pose de nouveaux sols.',
         clientName: 'Vous',
         categoryName: 'Rénovation & Construction',
         budgetRange: '5000_15000',
-        budgetDisplay: '8000€ - 12000€',
+        budgetDisplay: '8000AOA - 12000AOA',
         location: 'Cotonou, Littoral',
         remotePossible: false,
         urgency: 'medium',
@@ -322,11 +327,12 @@ class ProjectProvider with ChangeNotifier {
       ClientProject(
         id: 2,
         title: 'Cours particuliers de guitare',
-        description: 'Recherche professeur de guitare pour ma fille de 12 ans. Débutante complète.',
+        description:
+            'Recherche professeur de guitare pour ma fille de 12 ans. Débutante complète.',
         clientName: 'Vous',
         categoryName: 'Éducation & Formation',
         budgetRange: '500_1000',
-        budgetDisplay: '30€/cours',
+        budgetDisplay: '30AOA/cours',
         location: 'Cotonou, Littoral',
         remotePossible: false,
         urgency: 'low',
@@ -351,11 +357,12 @@ class ProjectProvider with ChangeNotifier {
       ClientProject(
         id: 10,
         title: 'Application mobile de livraison',
-        description: 'Développement d\'une application mobile cross-platform pour service de livraison.',
+        description:
+            'Développement d\'une application mobile cross-platform pour service de livraison.',
         clientName: 'TechStart SARL',
         categoryName: 'Développement mobile',
         budgetRange: '10000_30000',
-        budgetDisplay: '15000€ - 25000€',
+        budgetDisplay: '15000AOA - 25000AOA',
         location: 'Remote',
         remotePossible: true,
         urgency: 'medium',

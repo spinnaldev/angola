@@ -61,11 +61,14 @@ urlpatterns = [
     path('api/auth/register/', views.RegisterView.as_view(), name='register'),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
+    path('api/current-user/', views.CurrentUserView.as_view(), name='current-user'),
+    path('api/user/<int:user_id>/', views.GetUserByIdView.as_view(), name='user-by-id'),
+    
     # Password reset endpoints
-    path('api/password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
-    path('api/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
-    path('api/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('api/auth/password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('api/auth/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
+    path('api/auth/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
     path('api/notifications/count/', views.get_notification_count, name='notification-count'),
     path('api/notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
 
