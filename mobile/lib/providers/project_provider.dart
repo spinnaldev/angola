@@ -237,15 +237,27 @@ class ProjectProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final newProject =
-          await _apiService.createProject(projectData, attachments);
+      final newProject = await _apiService.createProject(projectData, attachments);
       _userProjects.insert(0, newProject);
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (error) {
-      print('Error creating project: $error');
-      _errorMessage = error.toString();
+      print('❌ Erreur dans createProject: $error');
+      
+      // Gestion spéciale des erreurs d'authentification
+      if (error.toString().contains('Non autorisé') || 
+          error.toString().contains('401')) {
+        _errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+        
+        // Optionnel : déconnecter l'utilisateur automatiquement
+        if (_authProvider != null) {
+          await _authProvider!.logout();
+        }
+      } else {
+        _errorMessage = error.toString();
+      }
+      
       _isLoading = false;
       notifyListeners();
       return false;

@@ -713,6 +713,56 @@
         "type": "String"
       }
     }
-  }
+  },
+  "pleaseEnterPrice": "Por favor, insira um preço",
+  "pleaseEnterDeliveryTime": "Por favor, insira um prazo de entrega",
+  "pleaseEnterMessage": "Por favor, insira uma mensagem",
+  "messageMinLength50": "A mensagem deve conter pelo menos 50 caracteres",
+  "pleaseEnterValidPrice": "Por favor, insira um preço válido",
+  "pleaseEnterValidDeliveryTime": "Por favor, insira um prazo de entrega válido",
+  "errorTitle": "Erro",
+  "ok": "OK",
+  "offerSendingError": "Erro ao enviar oferta",
+  "alreadyMadeOfferProject": "Você já fez uma oferta para este projeto",
+  "projectNoLongerAcceptsOffers": "Este projeto não aceita mais ofertas",
+  "addedToFavorites": "Adicionado aos favoritos",
+  "removedFromFavorites": "Removido dos favoritos",
+  "discoverProject": "Descubra este projeto: {title} - {description}",
+  "@discoverProject": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotOpenFile": "Não é possível abrir o arquivo",
+  "makeOffer": "Fazer uma oferta",
+  "proposedPrice": "Preço proposto",
+  "messageForClient": "Mensagem para o cliente",
+  "sendingInProgress": "Enviando...",
+  "projectDescription": "Descrição do projeto",
+  "requiredSkills": "Habilidades necessárias",
+  "views": "visualizações",
+  "offers": "ofertas",
+  "attachments": "Anexos",
+  "offersTab": "Ofertas ({count})",
+  "@offersTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activity": "Atividade",
+  "noOffersReceived": "Nenhuma oferta recebida",
+  "providersCanSendOffers": "Os prestadores podem enviar ofertas para este projeto",
+  "projectActivityToImplement": "Atividade do projeto (a implementar)",
+  "sendOffer": "Enviar oferta",
+  "urgent": "Urgente",
+  "moderate": "Moderado",
+  "notRushed": "Sem pressa"
 
 }

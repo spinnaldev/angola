@@ -167,69 +167,69 @@ class SubcategoryProvider with ChangeNotifier {
     if (categoryId == 1) {
       // Maison & Construction
       return [
-        Subcategory(
-          id: 1,
-          name: 'Construction & rénovation',
-          categoryId: 1,
-          description: 'Services de construction et rénovation',
-        ),
-        Subcategory(
-          id: 2,
-          name: 'Plomberie',
-          categoryId: 1,
-          description: 'Services de plomberie',
-        ),
-        Subcategory(
-          id: 3,
-          name: 'Électricité',
-          categoryId: 1,
-          description: 'Services d\'électricité',
-        ),
-        Subcategory(
-          id: 4,
-          name: 'Menuiserie & Ébénisterie',
-          categoryId: 1,
-          description: 'Fabrication et réparation de meubles',
-        ),
-        Subcategory(
-          id: 5,
-          name: 'Peinture & Décoration',
-          categoryId: 1,
-          description: 'Peintres en bâtiment, décorateurs d\'intérieur',
-        ),
+        // Subcategory(
+        //   id: 1,
+        //   name: 'Construction & rénovation',
+        //   categoryId: 1,
+        //   description: 'Services de construction et rénovation',
+        // ),
+        // Subcategory(
+        //   id: 2,
+        //   name: 'Plomberie',
+        //   categoryId: 1,
+        //   description: 'Services de plomberie',
+        // ),
+        // Subcategory(
+        //   id: 3,
+        //   name: 'Électricité',
+        //   categoryId: 1,
+        //   description: 'Services d\'électricité',
+        // ),
+        // Subcategory(
+        //   id: 4,
+        //   name: 'Menuiserie & Ébénisterie',
+        //   categoryId: 1,
+        //   description: 'Fabrication et réparation de meubles',
+        // ),
+        // Subcategory(
+        //   id: 5,
+        //   name: 'Peinture & Décoration',
+        //   categoryId: 1,
+        //   description: 'Peintres en bâtiment, décorateurs d\'intérieur',
+        // ),
       ];
     } else if (categoryId == 2) {
       // Bien-être & Beauté
       return [
-        Subcategory(
-          id: 12,
-          name: 'Coiffure & Barbier',
-          categoryId: 2,
-          description: 'Coiffeurs à domicile, salons de beauté',
-        ),
-        Subcategory(
-          id: 13,
-          name: 'Esthétique & Maquillage',
-          categoryId: 2,
-          description: 'Manucure, soins du visage, maquilleurs professionnels',
-        ),
-        Subcategory(
-          id: 14,
-          name: 'Massages & Thérapies',
-          categoryId: 2,
-          description: 'Massothérapeutes, spa, réflexologie',
-        ),
+        // Subcategory(
+        //   id: 12,
+        //   name: 'Coiffure & Barbier',
+        //   categoryId: 2,
+        //   description: 'Coiffeurs à domicile, salons de beauté',
+        // ),
+        // Subcategory(
+        //   id: 13,
+        //   name: 'Esthétique & Maquillage',
+        //   categoryId: 2,
+        //   description: 'Manucure, soins du visage, maquilleurs professionnels',
+        // ),
+        // Subcategory(
+        //   id: 14,
+        //   name: 'Massages & Thérapies',
+        //   categoryId: 2,
+        //   description: 'Massothérapeutes, spa, réflexologie',
+        // ),
       ];
     }
     // Ajouter d'autres catégories au besoin
 
     return [
-      Subcategory(
-        id: 999,
-        name: 'Sous-catégorie générée',
-        categoryId: categoryId,
-        description: 'Description générée pour la catégorie $categoryId',
-      ),
+      // Subcategory(
+      //   id: 999,
+      //   name: 'Sous-catégorie générée',
+      //   categoryId: categoryId,
+      //   description: 'Description générée pour la catégorie $categoryId',
+      // ),
     ];
   }
 }

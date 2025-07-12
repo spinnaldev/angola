@@ -59,3 +59,4 @@ INFO 2025-07-08 23:01:59,762 autoreload 5292 25196 C:\Users\AGL\Documents\SPINAL
 INFO 2025-07-08 23:02:01,190 autoreload 30356 29272 Watching for file changes with StatReloader
 INFO 2025-07-08 23:02:35,085 basehttp 30356 32696 "GET /api/user/2 HTTP/1.1" 301 0
 INFO 2025-07-08 23:02:36,736 basehttp 30356 13316 "GET /api/user/2/ HTTP/1.1" 200 323
+INFO 2025-07-12 07:23:39,166 autoreload 29384 15252 Watching for file changes with StatReloader

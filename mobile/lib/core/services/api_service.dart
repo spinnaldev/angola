@@ -2339,22 +2339,37 @@ class ApiService {
 
       print('🔄 Rafraîchissement du token...');
 
-      // Utiliser ApiClient pour le refresh token
-      final data = await _apiClient.post('auth/token/refresh/',
-          data: {'refresh': refreshToken}, requireAuth: false);
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/token/refresh/'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'refresh': refreshToken}),
+      );
 
-      final newAccessToken = data['access'];
-      await _secureStorage.write(key: 'access_token', value: newAccessToken);
+      print('Réponse refresh token: ${response.statusCode}');
 
-      print('✅ Token rafraîchi et sauvegardé');
-      return true;
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final newAccessToken = data['access'];
+
+        // Sauvegarder le nouveau token d'accès
+        await _secureStorage.write(key: 'access_token', value: newAccessToken);
+
+        print('✅ Token rafraîchi et sauvegardé');
+        return true;
+      } else {
+        print('❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
+
+        // Supprimer les tokens invalides
+        await _secureStorage.delete(key: 'access_token');
+        await _secureStorage.delete(key: 'refresh_token');
+
+        return false;
+      }
     } catch (e) {
       print('❌ Erreur lors du rafraîchissement du token: $e');
-
-      // Supprimer les tokens invalides
-      await _secureStorage.delete(key: 'access_token');
-      await _secureStorage.delete(key: 'refresh_token');
-
       return false;
     }
   }
@@ -3624,24 +3639,108 @@ class ApiService {
   // ===============================
 
   Future<ClientProject> createProject(
-      Map<String, dynamic> projectData, List<File?> attachments) async {
-    try {
-      print('📝 Création d\'un nouveau projet...');
+    Map<String, dynamic> projectData, List<File?> attachments) async {
+    const int maxRetries = 3;
+    int retryCount = 0;
 
-      // Pour les projets avec fichiers, on doit utiliser MultipartRequest
-      // car ApiClient ne supporte que JSON
-      if (attachments.any((file) => file != null)) {
-        return _createProjectWithFiles(projectData, attachments);
-      } else {
-        // Projet sans fichiers - utiliser ApiClient
-        final data = await _apiClient.post('projects/',
-            data: projectData, requireAuth: true);
-        return ClientProject.fromJson(data);
+    while (retryCount < maxRetries) {
+      try {
+        print('📤 Tentative ${retryCount + 1} de création de projet...');
+
+        var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
+
+        // Ajouter les headers d'authentification
+        final headers = await _apiClient.getHeaders();
+        request.headers.addAll(headers);
+
+        // Ajouter les données du projet
+        for (final entry in projectData.entries) {
+          final key = entry.key;
+          final value = entry.value;
+
+          if (value != null) {
+            if (value is List) {
+              try {
+                request.fields[key] = json.encode(value);
+              } catch (e) {
+                print('Error encoding list for key $key: $e');
+                final stringList = value.map((item) => item.toString()).toList();
+                request.fields[key] = json.encode(stringList);
+              }
+            } else {
+              request.fields[key] = value.toString();
+            }
+          }
+        }
+
+        // Ajouter les fichiers
+        for (int i = 0; i < attachments.length; i++) {
+          final file = attachments[i];
+          if (file != null && await file.exists()) {
+            request.files.add(
+              await http.MultipartFile.fromPath(
+                'attachment_${i + 1}',
+                file.path,
+              ),
+            );
+          }
+        }
+
+        print('📤 Envoi de la requête de création...');
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+
+        print('📥 Réponse reçue: ${response.statusCode}');
+
+        if (response.statusCode == 201) {
+          // Succès - créer et retourner le projet
+          final data = json.decode(utf8.decode(response.bodyBytes));
+          print('✅ Projet créé avec succès');
+          return ClientProject.fromJson(data);
+          
+        } else if (response.statusCode == 401) {
+          print('❌ Erreur 401 - Token invalide ou expiré (tentative ${retryCount + 1})');
+          print('Corps de la réponse: ${response.body}');
+
+          if (retryCount < maxRetries - 1) {
+            print('🔄 Tentative de rafraîchissement du token...');
+
+            // Tenter de rafraîchir le token
+            final tokenRefreshed = await _attemptTokenRefresh();
+            if (tokenRefreshed) {
+              print('✅ Token rafraîchi, nouvelle tentative...');
+              retryCount++;
+              continue; // Réessayer avec le nouveau token
+            } else {
+              print('❌ Échec du rafraîchissement du token');
+              throw Exception('Non autorisé. Veuillez vous reconnecter.');
+            }
+          } else {
+            throw Exception('Non autorisé. Veuillez vous reconnecter.');
+          }
+        } else {
+          print('❌ Erreur HTTP ${response.statusCode}');
+          print('Corps de la réponse: ${response.body}');
+          throw Exception('Erreur lors de la création du projet: ${response.statusCode}');
+        }
+
+      } catch (e) {
+        print('❌ Erreur dans createProject: $e');
+        
+        if (retryCount == maxRetries - 1) {
+          // Dernière tentative échouée
+          rethrow;
+        } else if (e.toString().contains('Non autorisé') || e.toString().contains('401')) {
+          // Pour les erreurs 401, essayer de rafraîchir le token
+          retryCount++;
+        } else {
+          // Pour les autres erreurs, relancer immédiatement
+          rethrow;
+        }
       }
-    } catch (e) {
-      print('❌ Erreur dans createProject: $e');
-      throw e;
     }
+
+    throw Exception('Impossible de créer le projet après $maxRetries tentatives');
   }
 
   // Méthode privée pour créer un projet avec fichiers (utilise http directement)
@@ -3931,81 +4030,81 @@ class ApiService {
 
   List<Category> _getMockCategories() {
     return [
-      Category(
-        id: 1,
-        name: 'Maison & Construction',
-        imageUrl: 'https://picsum.photos/id/1018/300/200',
-        description: 'Services de construction et rénovation',
-      ),
-      Category(
-        id: 2,
-        name: 'Bien-être & Beauté',
-        imageUrl: 'https://picsum.photos/id/64/300/200',
-        description: 'Services de beauté et bien-être',
-      ),
-      Category(
-        id: 3,
-        name: 'Événements & Artistiques',
-        imageUrl: 'https://picsum.photos/id/1058/300/200',
-        description: 'Services liés aux événements et à l\'art',
-      ),
-      Category(
-        id: 4,
-        name: 'Transports & Logistiques',
-        imageUrl: 'https://picsum.photos/id/1072/300/200',
-        description: 'Services de transport et logistique',
-      ),
-      Category(
-        id: 5,
-        name: 'Services Professionnels',
-        imageUrl: 'https://picsum.photos/id/1066/300/200',
-        description: 'Services professionnels divers',
-      ),
-      Category(
-        id: 6,
-        name: 'Cours & Formation',
-        imageUrl: 'https://picsum.photos/id/20/300/200',
-        description: 'Services d\'éducation et formation',
-      ),
+      // Category(
+      //   id: 1,
+      //   name: 'Maison & Construction',
+      //   imageUrl: 'https://picsum.photos/id/1018/300/200',
+      //   description: 'Services de construction et rénovation',
+      // ),
+      // Category(
+      //   id: 2,
+      //   name: 'Bien-être & Beauté',
+      //   imageUrl: 'https://picsum.photos/id/64/300/200',
+      //   description: 'Services de beauté et bien-être',
+      // ),
+      // Category(
+      //   id: 3,
+      //   name: 'Événements & Artistiques',
+      //   imageUrl: 'https://picsum.photos/id/1058/300/200',
+      //   description: 'Services liés aux événements et à l\'art',
+      // ),
+      // Category(
+      //   id: 4,
+      //   name: 'Transports & Logistiques',
+      //   imageUrl: 'https://picsum.photos/id/1072/300/200',
+      //   description: 'Services de transport et logistique',
+      // ),
+      // Category(
+      //   id: 5,
+      //   name: 'Services Professionnels',
+      //   imageUrl: 'https://picsum.photos/id/1066/300/200',
+      //   description: 'Services professionnels divers',
+      // ),
+      // Category(
+      //   id: 6,
+      //   name: 'Cours & Formation',
+      //   imageUrl: 'https://picsum.photos/id/20/300/200',
+      //   description: 'Services d\'éducation et formation',
+      // ),
     ];
   }
 
   List<Subcategory> _getMockSubcategories(int categoryId) {
     if (categoryId == 1) {
       return [
-        Subcategory(
-          id: 1,
-          name: 'Construction & rénovation',
-          categoryId: 1,
-          description: 'Services de construction et rénovation',
-        ),
-        Subcategory(
-          id: 2,
-          name: 'Plomberie',
-          categoryId: 1,
-          description: 'Services de plomberie',
-        ),
-        Subcategory(
-          id: 3,
-          name: 'Électricité',
-          categoryId: 1,
-          description: 'Services d\'électricité',
-        ),
+        // Subcategory(
+        //   id: 1,
+        //   name: 'Construction & rénovation',
+        //   categoryId: 1,
+        //   description: 'Services de construction et rénovation',
+        // ),
+        // Subcategory(
+        //   id: 2,
+        //   name: 'Plomberie',
+        //   categoryId: 1,
+        //   description: 'Services de plomberie',
+        // ),
+        // Subcategory(
+        //   id: 3,
+        //   name: 'Électricité',
+        //   categoryId: 1,
+        //   description: 'Services d\'électricité',
+        // ),
       ];
     } else {
       return [
-        Subcategory(
-          id: 4,
-          name: 'Sous-catégorie 1',
-          categoryId: categoryId,
-          description: 'Description sous-catégorie 1',
-        ),
-        Subcategory(
-          id: 5,
-          name: 'Sous-catégorie 2',
-          categoryId: categoryId,
-          description: 'Description sous-catégorie 2',
-        ),
+        // Subcategory(
+        //   id: 4,
+        //   name: 'Sous-catégorie 1',
+        //   categoryId: categoryId,
+        //   description: 'Description sous-catégorie 1',
+        // ),
+        // Subcategory(
+        //   id: 5,
+        //   name: 'Sous-catégorie 2',
+        //   categoryId: categoryId,
+        //   description: 'Description sous-catégorie 2',
+        // ),
       ];
     }
   }

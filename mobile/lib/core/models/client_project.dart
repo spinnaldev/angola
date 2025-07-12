@@ -199,8 +199,12 @@ class ClientProject {
             categoryObject = Category(
               id: json['category'] is int ? json['category'] : int.tryParse(json['category'].toString()) ?? 0,
               name: json['category_name'] ?? 'Catégorie',
+              nameEn: json['category_name'] ?? 'Category',
+              nameFr: json['category_name'] ?? 'Catégorie',
               imageUrl: '',
               description: '',
+              descriptionEn: '',
+              descriptionFr: '',
               icon: '',
             );
           }
@@ -216,7 +220,11 @@ class ClientProject {
             subcategoryObject = Subcategory(
               id: json['subcategory'] is int ? json['subcategory'] : int.tryParse(json['subcategory'].toString()) ?? 0,
               name: json['subcategory_name'] ?? 'Sous-catégorie',
+              nameEn: json['subcategory_name'] ?? 'Subcategory',
+              nameFr: json['subcategory_name'] ?? 'Sous-catégorie',
               description: '',
+              descriptionEn: '',
+              descriptionFr: '',
               categoryId: categoryObject?.id ?? 0,
             );
           }
