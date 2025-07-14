@@ -23,7 +23,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
 
-class HomeScreen extends StatefulWidget  {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
@@ -74,12 +74,12 @@ class _HomeScreenState extends State<HomeScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_hasFetchedReviews) {
-      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+      final reviewProvider =
+          Provider.of<ReviewProvider>(context, listen: false);
       reviewProvider.fetchTopReviews();
       _hasFetchedReviews = true;
     }
   }
-
 
   @override
   void initState() {
@@ -940,7 +940,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: _buildStatCard(
                   'Revenus ce mois',
                   '${(_providerStats['total_earnings_this_month'] ?? 0.0).toStringAsFixed(0)}K',
-                  Icons.attach_money,
+                  Icons.account_balance_wallet,
                   Colors.green,
                 ),
               ),

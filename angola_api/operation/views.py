@@ -24,6 +24,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from django.db.models import Sum
 import logging
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language_from_request
+
 logger = logging.getLogger(__name__)
 
 # from django.contrib.gis.geos import Point
@@ -53,7 +56,7 @@ class LoginView(APIView):
         
         if not email or not password:
             return Response(
-                {"detail": "Email et mot de passe sont requis"}, 
+                {"detail": _("Email et mot de passe sont requis")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -62,21 +65,21 @@ class LoginView(APIView):
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response(
-                {"detail": "Aucun compte trouvé avec cet email"}, 
+                {"detail": _("Aucun compte trouvé avec cet email")}, 
                 status=status.HTTP_404_NOT_FOUND
             )
         
         # Vérifier le mot de passe
         if not user.check_password(password):
             return Response(
-                {"detail": "Mot de passe incorrect"}, 
+                {"detail": _("Mot de passe incorrect")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Si l'utilisateur n'est pas actif
         if not user.is_active:
             return Response(
-                {"detail": "Ce compte a été désactivé"}, 
+                {"detail": _("Ce compte a été désactivé")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -92,7 +95,7 @@ class LoginView(APIView):
             'access': str(refresh.access_token),
             'refresh': str(refresh)
         }
-        print(str(refresh.access_token))
+        
         return Response(response_data, status=status.HTTP_200_OK)
     
 class RegisterView(generics.CreateAPIView):
@@ -125,9 +128,8 @@ class PasswordResetRequestView(APIView):
             logger.debug(f"Email reçu: {email}")
             
             if not email:
-                logger.warning("Email manquant dans la requête")
                 return Response(
-                    {"detail": "Email est requis"}, 
+                    {"detail": _("Email requis")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -183,7 +185,7 @@ class PasswordResetRequestView(APIView):
                     logger.info(f"Email envoyé avec succès à {email} avec le code {code}")
                     
                     return Response(
-                        {"detail": "Code de réinitialisation envoyé", "success": True}, 
+                        {"detail": _("Code de réinitialisation envoyé")}, 
                         status=status.HTTP_200_OK
                     )
                     
@@ -191,7 +193,7 @@ class PasswordResetRequestView(APIView):
                     logger.error(f"Erreur envoi email: {str(e)}")
                     # Même en cas d'erreur d'email, on retourne une réponse positive pour la sécurité
                     return Response(
-                        {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
+                        {"detail": _("Si cet email existe, un code de réinitialisation a été envoyé")}, 
                         status=status.HTTP_200_OK
                     )
                 
@@ -199,7 +201,7 @@ class PasswordResetRequestView(APIView):
                 logger.warning(f"Tentative de reset pour email inexistant: {email}")
                 # Pour des raisons de sécurité, ne pas révéler que l'email n'existe pas
                 return Response(
-                    {"detail": "Si cet email existe, un code de réinitialisation a été envoyé"}, 
+                    {"detail": _("Si cet email existe, un code de réinitialisation a été envoyé")}, 
                     status=status.HTTP_200_OK
                 )
                 
@@ -226,7 +228,7 @@ class VerifyResetCodeView(APIView):
         
         if not email or not code:
             return Response(
-                {"detail": "Email et code sont requis"}, 
+                {"detail": _("Email et code sont requis")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -235,7 +237,7 @@ class VerifyResetCodeView(APIView):
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response(
-                {"detail": "Code invalide"}, 
+                {"detail": _("Code invalide")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -247,18 +249,18 @@ class VerifyResetCodeView(APIView):
             if reset_code.expires_at < timezone.now():
                 reset_code.delete()
                 return Response(
-                    {"detail": "Code expiré"}, 
+                    {"detail": _("Code expiré")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
         except ResetPasswordCode.DoesNotExist:
             return Response(
-                {"detail": "Code invalide"}, 
+                {"detail": _("Code invalide")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         return Response(
-            {"detail": "Code vérifié avec succès"}, 
+            {"detail": _("Code vérifié avec succès")}, 
             status=status.HTTP_200_OK
         )
 
@@ -275,7 +277,7 @@ class PasswordResetConfirmView(APIView):
         
         if not email or not code or not new_password:
             return Response(
-                {"detail": "Email, code et nouveau mot de passe sont requis"}, 
+                {"detail": _("Email, code et nouveau mot de passe sont requis")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -284,7 +286,7 @@ class PasswordResetConfirmView(APIView):
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response(
-                {"detail": "Code invalide"}, 
+                {"detail": _("Code invalide")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -296,13 +298,13 @@ class PasswordResetConfirmView(APIView):
             if reset_code.expires_at < timezone.now():
                 reset_code.delete()
                 return Response(
-                    {"detail": "Code expiré"}, 
+                    {"detail": _("Code expiré")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
         except ResetPasswordCode.DoesNotExist:
             return Response(
-                {"detail": "Code invalide"}, 
+                {"detail": _("Code invalide")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -314,7 +316,7 @@ class PasswordResetConfirmView(APIView):
         reset_code.delete()
         
         return Response(
-            {"detail": "Mot de passe réinitialisé avec succès"}, 
+            {"detail": _("Mot de passe réinitialisé avec succès")}, 
             status=status.HTTP_200_OK
         )
     

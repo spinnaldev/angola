@@ -13,8 +13,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import json
 import os
 from pathlib import Path
-
+from django.utils.translation import gettext_lazy as _
 from django.forms import ValidationError
+
+
+# Ensuite utiliser
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +60,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -112,27 +117,38 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
+    # 🧪 CONFIGURATION TEST - TOKENS TRÈS LONGS
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=365),     # 1 an au lieu de 1 jour
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=730),    # 2 ans au lieu de 7 jours
+    
+    # OU POUR VRAIMENT TESTER - TOKENS "INFINIS"
+    # 'ACCESS_TOKEN_LIFETIME': timedelta(days=36500),  # 100 ans = quasi infini
+    # 'REFRESH_TOKEN_LIFETIME': timedelta(days=36500), # 100 ans = quasi infini
+    
+    'ROTATE_REFRESH_TOKENS': False,                   # Désactiver rotation pour test
+    'BLACKLIST_AFTER_ROTATION': False,               # Pas de blacklist pour test
     'UPDATE_LAST_LOGIN': False,
-
+    
+    # Configuration standard
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
-
+    
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
-
     'JTI_CLAIM': 'jti',
+    
+    # 🧪 DÉSACTIVER VÉRIFICATIONS STRICTES POUR TEST
+    'VERIFY_SIGNATURE': True,     # Garder la vérification signature
+    'VERIFY_EXP': True,          # Mais avec expiration très lointaine
+    'REQUIRE_EXP': True,
+    'LEEWAY': timedelta(minutes=5),  # Tolérance de 5 minutes
 }
 
 # Configuration CORS
@@ -288,6 +304,19 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+
+# Langues supportées
+LANGUAGES = [
+    ('fr', _('Français')),
+    ('en', _('English')),
+    ('pt', _('Português')),
+]
+
+# Répertoires des fichiers de traduction
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
 
 
 # Static files (CSS, JavaScript, Images)

@@ -21,13 +21,13 @@ class MakeOfferScreen extends StatefulWidget {
 class _MakeOfferScreenState extends State<MakeOfferScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
-  
+
   // Contrôleurs de texte
   final _priceController = TextEditingController();
   final _deliveryTimeController = TextEditingController();
   final _messageController = TextEditingController();
   final _warrantyController = TextEditingController();
-  
+
   // Variables de state
   bool _includesMaterials = false;
   bool _travelCostsIncluded = true;
@@ -66,7 +66,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
           _priceController.text = '1000';
       }
     }
-    
+
     // Estimation du délai basée sur l'urgence
     switch (widget.project.urgency) {
       case 'high':
@@ -86,7 +86,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -119,12 +119,12 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildProjectSummary() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:const Color(0xFF142FE2).withOpacity(0.05),
+        color: const Color(0xFF142FE2).withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF142FE2).withOpacity(0.2)),
       ),
@@ -178,7 +178,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
               ),
               const SizedBox(width: 8),
               _buildInfoChip(
-                icon: Icons.euro,
+                icon: Icons.account_balance_wallet,
                 label: widget.project.budgetDisplay,
               ),
             ],
@@ -189,8 +189,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
               children: [
                 Icon(
                   Icons.priority_high,
-                  color: widget.project.urgency == 'high' 
-                      ? Colors.red 
+                  color: widget.project.urgency == 'high'
+                      ? Colors.red
                       : Colors.orange,
                   size: 16,
                 ),
@@ -198,8 +198,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                 Text(
                   widget.project.urgencyLabel,
                   style: TextStyle(
-                    color: widget.project.urgency == 'high' 
-                        ? Colors.red 
+                    color: widget.project.urgency == 'high'
+                        ? Colors.red
                         : Colors.orange,
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
@@ -262,10 +262,10 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildPricingSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return _buildSection(
       title: l10n.pricing,
-      icon: Icons.euro,
+      icon: Icons.account_balance_wallet,
       children: [
         TextFormField(
           controller: _priceController,
@@ -273,7 +273,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             labelText: l10n.proposedPrice,
             hintText: l10n.allInclusivePrice,
             border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.euro),
+            prefixIcon: const Icon(Icons.account_balance_wallet),
           ),
           keyboardType: TextInputType.number,
           validator: (value) {
@@ -301,7 +301,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildDeliverySection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return _buildSection(
       title: l10n.deliveryTime,
       icon: Icons.schedule,
@@ -333,7 +333,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildMessageSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return _buildSection(
       title: l10n.accompanimentMessage,
       icon: Icons.message,
@@ -364,7 +364,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildOptionsSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return _buildSection(
       title: l10n.optionsAndWarranties,
       icon: Icons.security,
@@ -411,7 +411,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildTipsSection() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -479,7 +479,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Widget _buildSubmitButton() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -531,7 +531,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
   Future<void> _submitOffer() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (!_formKey.currentState!.validate()) {
       _scrollController.animateTo(
         0,
@@ -547,15 +547,15 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      
+
       final offerData = {
         'project': widget.project.id,
         'proposed_price': double.parse(_priceController.text),
         'delivery_time': int.parse(_deliveryTimeController.text),
         'message': _messageController.text.trim(),
         'includes_materials': _includesMaterials,
-        'warranty_period': _warrantyController.text.isNotEmpty 
-            ? int.parse(_warrantyController.text) 
+        'warranty_period': _warrantyController.text.isNotEmpty
+            ? int.parse(_warrantyController.text)
             : null,
         'travel_costs_included': _travelCostsIncluded,
       };
@@ -572,7 +572,6 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
 
         Navigator.of(context).pop(true);
       }
-      
     } catch (e) {
       if (mounted) {
         String errorMessage = l10n.errorSendingOffer;
@@ -581,7 +580,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         } else if (e.toString().contains('plus d\'offres')) {
           errorMessage = l10n.projectNoLongerAcceptsOffers;
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

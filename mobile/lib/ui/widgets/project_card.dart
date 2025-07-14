@@ -236,7 +236,7 @@ class ProjectCard extends StatelessWidget {
           child: Row(
             children: [
               const Icon(
-                Icons.euro,
+                Icons.account_balance_wallet,
                 color: Colors.green,
                 size: 16,
               ),

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../providers/localization_provider.dart';
+import 'package:teyago/providers/language_provider.dart';
 
 class ApiClient {
   final String baseUrl;
@@ -33,13 +35,36 @@ class ApiClient {
       'Accept-Charset': 'utf-8',
     };
 
+    // // Ajouter la langue actuelle dans les headers
+    // if (navigatorKey.currentContext != null) {
+    //   try {
+    //     final languageProvider = Provider.of<LanguageProvider>(
+    //       navigatorKey.currentContext!, 
+    //       listen: false
+    //     );
+    //     headers['X-Language'] = languageProvider.currentLanguageCode;
+    //     headers['Accept-Language'] = languageProvider.currentLanguageCode;
+    //   } catch (e) {
+    //     print('Erreur récupération langue: $e');
+    //     // Fallback à la langue par défaut
+    //     headers['X-Language'] = 'fr';
+    //     headers['Accept-Language'] = 'fr';
+    //   }
+    // } else {
+    //   // Fallback si pas de context
+    //   headers['X-Language'] = 'fr';
+    //   headers['Accept-Language'] = 'fr';
+    // }
+
     if (requireAuth) {
       final token = await _secureStorage.read(key: 'access_token');
-      print('🔑 Token lu depuis storage: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}'); // Debug
-      
+      print(
+          '🔑 Token lu depuis storage: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}'); // Debug
+
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
-        print('✅ Header Authorization ajouté: Bearer ${token.substring(0, 20)}...'); // Debug
+        print(
+            '✅ Header Authorization ajouté: Bearer ${token.substring(0, 20)}...'); // Debug
       } else {
         print('❌ Aucun token trouvé dans le storage'); // Debug
       }
@@ -52,23 +77,26 @@ class ApiClient {
   Future<void> debugToken() async {
     final token = await _secureStorage.read(key: 'access_token');
     final refresh = await _secureStorage.read(key: 'refresh_token');
-    
+
     print('=== DEBUG TOKEN INFO ===');
-    print('Access Token: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}');
-    print('Refresh Token: ${refresh != null ? "EXISTS (${refresh.length} chars)" : "NULL"}');
-    
+    print(
+        'Access Token: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}');
+    print(
+        'Refresh Token: ${refresh != null ? "EXISTS (${refresh.length} chars)" : "NULL"}');
+
     if (token != null) {
-      print('Token preview: ${token.substring(0, math.min(50, token.length))}...');
+      print(
+          'Token preview: ${token.substring(0, math.min(50, token.length))}...');
     }
     print('========================');
   }
 
   Future<void> testTokenAndAPI() async {
     final apiClient = ApiClient(baseUrl: 'https://teyago.com/api');
-    
+
     // Debug du token
     await apiClient.debugToken();
-    
+
     // Test d'appel API avec logs détaillés
     try {
       print('🧪 Test appel API /users/me/...');
@@ -78,47 +106,50 @@ class ApiClient {
       print('❌ Erreur: $e');
     }
   }
+
   Future<dynamic> get(String endpoint, {bool requireAuth = true}) async {
     final headers = await getHeaders(requireAuth: requireAuth);
     final response = await http.get(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
     );
-    
+
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
     return _handleResponse(response.statusCode, encodedResponse);
   }
 
-  Future<dynamic> post(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
+  Future<dynamic> post(String endpoint,
+      {Map<String, dynamic>? data, bool requireAuth = true}) async {
     final headers = await getHeaders(requireAuth: requireAuth);
-    
+
     // Convertir les données en JSON avec encodage UTF-8
     final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
-    
+
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
       body: encodedData,
     );
-    
+
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
     return _handleResponse(response.statusCode, encodedResponse);
   }
 
-  Future<dynamic> put(String endpoint, {Map<String, dynamic>? data, bool requireAuth = true}) async {
+  Future<dynamic> put(String endpoint,
+      {Map<String, dynamic>? data, bool requireAuth = true}) async {
     final headers = await getHeaders(requireAuth: requireAuth);
-    
+
     // Convertir les données en JSON avec encodage UTF-8
     final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
-    
+
     final response = await http.put(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
       body: encodedData,
     );
-    
+
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
     return _handleResponse(response.statusCode, encodedResponse);
@@ -130,7 +161,7 @@ class ApiClient {
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
     );
-    
+
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
     return _handleResponse(response.statusCode, encodedResponse);
@@ -171,13 +202,13 @@ class ApiClient {
                 errorMessages += '$key: $value\n';
               }
             });
-            
+
             if (errorMessages.isNotEmpty) {
               throw Exception(errorMessages.trim());
             }
           }
         }
-        
+
         throw Exception('Erreur $statusCode');
       } catch (e) {
         if (e is Exception) {
@@ -215,19 +246,21 @@ class ApiClient {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await post(
-        'auth/login/',  // Nouvel endpoint
+        'auth/login/', // Nouvel endpoint
         data: {
           'email': email,
           'password': password,
         },
         requireAuth: false,
       );
-      
+
       if (response != null && response['access'] != null) {
         // Sauvegarder les tokens
-        await _secureStorage.write(key: 'access_token', value: response['access']);
-        await _secureStorage.write(key: 'refresh_token', value: response['refresh']);
-        
+        await _secureStorage.write(
+            key: 'access_token', value: response['access']);
+        await _secureStorage.write(
+            key: 'refresh_token', value: response['refresh']);
+
         // La réponse contient déjà les données utilisateur
         return response;
       }
@@ -241,15 +274,12 @@ class ApiClient {
   Future<bool> resetPasswordRequest(String email) async {
     try {
       print('Envoi de la demande de réinitialisation pour: $email'); // Debug
-      
-      final response = await post(
-        'auth/password-reset-request/',
-        data: {'email': email},
-        requireAuth: false
-      );
-      
+
+      final response = await post('auth/password-reset-request/',
+          data: {'email': email}, requireAuth: false);
+
       print('Réponse reçue: $response'); // Debug
-      
+
       // Si on arrive ici, c'est que la requête a réussi (pas d'exception)
       return true;
     } catch (e) {
@@ -261,18 +291,12 @@ class ApiClient {
   Future<bool> verifyResetCode(String email, String code) async {
     try {
       print('Vérification du code: $code pour: $email'); // Debug
-      
-      final response = await post(
-        'auth/verify-reset-code/',
-        data: {
-          'email': email,
-          'code': code
-        },
-        requireAuth: false
-      );
-      
+
+      final response = await post('auth/verify-reset-code/',
+          data: {'email': email, 'code': code}, requireAuth: false);
+
       print('Réponse vérification: $response'); // Debug
-      
+
       return true;
     } catch (e) {
       print('Erreur de vérification du code: $e');
@@ -280,22 +304,17 @@ class ApiClient {
     }
   }
 
-  Future<bool> resetPasswordConfirm(String email, String code, String newPassword) async {
+  Future<bool> resetPasswordConfirm(
+      String email, String code, String newPassword) async {
     try {
       print('Confirmation reset pour: $email'); // Debug
-      
-      final response = await post(
-        'auth/password-reset-confirm/',
-        data: {
-          'email': email,
-          'code': code,
-          'new_password': newPassword
-        },
-        requireAuth: false
-      );
-      
+
+      final response = await post('auth/password-reset-confirm/',
+          data: {'email': email, 'code': code, 'new_password': newPassword},
+          requireAuth: false);
+
       print('Réponse confirmation: $response'); // Debug
-      
+
       return true;
     } catch (e) {
       print('Erreur de réinitialisation du mot de passe: $e');

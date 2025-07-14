@@ -38,7 +38,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Future<void> _performSearch() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -46,7 +46,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
     try {
       print('🔍 Démarrage recherche: "${widget.query}" (type: ${widget.type})');
-      
+
       final apiService = Provider.of<ApiService>(context, listen: false);
       Map<String, dynamic> response;
 
@@ -71,7 +71,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       } else {
         print('✅ ${_results.length} résultat(s) trouvé(s)');
       }
-
     } catch (e) {
       print('❌ Erreur complète dans _performSearch: $e');
       setState(() {
@@ -96,18 +95,19 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       budgetDisplay: data['budget_display'] ?? '',
       location: data['location'] ?? '',
       remotePossible: data['remote_possible'] ?? false,
-      deadline: data['deadline'] != null ? DateTime.tryParse(data['deadline']) : null,
+      deadline:
+          data['deadline'] != null ? DateTime.tryParse(data['deadline']) : null,
       urgency: data['urgency'] ?? 'normal',
       status: data['status'] ?? 'open',
       contactViaPlatform: data['contact_via_platform'] ?? true,
       showEmail: data['show_email'] ?? false,
       showPhone: data['show_phone'] ?? false,
-      requiredSkills: data['required_skills'] != null 
-          ? List<String>.from(data['required_skills']) 
+      requiredSkills: data['required_skills'] != null
+          ? List<String>.from(data['required_skills'])
           : [],
       offersCount: data['offers_count'] ?? 0,
       viewsCount: data['views_count'] ?? 0,
-      createdAt: data['created_at'] != null 
+      createdAt: data['created_at'] != null
           ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
           : DateTime.now(),
       timeSincePosted: data['time_since_posted'],
@@ -119,17 +119,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return BaseScreen(
-      currentIndex: widget.type == 'services' ? 1 : 0, // Explorer pour services, Accueil pour projets
+      currentIndex: widget.type == 'services'
+          ? 1
+          : 0, // Explorer pour services, Accueil pour projets
       body: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: Text(
-            widget.type == 'services' 
-                ? l10n.servicesSearchTitle(widget.query)
-                : l10n.projectsSearchTitle(widget.query)
-          ),
+          title: Text(widget.type == 'services'
+              ? l10n.servicesSearchTitle(widget.query)
+              : l10n.projectsSearchTitle(widget.query)),
           backgroundColor: const Color(0xFF142FE2),
           foregroundColor: Colors.white,
           elevation: 0,
@@ -141,7 +141,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildSearchResults() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoading) {
       return Center(
         child: Column(
@@ -221,7 +221,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _results.length == 1 
+            _results.length == 1
                 ? l10n.resultFound(_results.length)
                 : l10n.resultsFound(_results.length),
             style: const TextStyle(
@@ -270,7 +270,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildServiceCard(Map<String, dynamic> serviceData) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -281,7 +281,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             MaterialPageRoute(
               builder: (context) => ServiceDetailScreen(
                 serviceId: serviceData['id'],
-                providerId: serviceData['provider_id'] ?? serviceData['provider']?['id'],
+                providerId: serviceData['provider_id'] ??
+                    serviceData['provider']?['id'],
               ),
             ),
           );
@@ -369,7 +370,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildProjectCard(Map<String, dynamic> projectData) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -402,7 +403,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: (projectData['status'] ?? 'open') == 'open'
                           ? Colors.green.withOpacity(0.1)
@@ -410,8 +412,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      (projectData['status'] ?? 'open') == 'open' 
-                          ? l10n.open 
+                      (projectData['status'] ?? 'open') == 'open'
+                          ? l10n.open
                           : l10n.closed,
                       style: TextStyle(
                         fontSize: 12,
@@ -437,14 +439,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                  const Icon(Icons.person_outline,
+                      size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     projectData['client_name'] ?? l10n.unknownClient,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const Spacer(),
-                  const Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                  const Icon(Icons.account_balance_wallet,
+                      size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     projectData['budget'] != null

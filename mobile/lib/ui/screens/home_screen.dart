@@ -24,7 +24,7 @@ import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
 import 'search_results_screen.dart';
 
-class HomeScreen extends StatefulWidget  {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
@@ -75,7 +75,8 @@ class _HomeScreenState extends State<HomeScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_hasFetchedReviews) {
-      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+      final reviewProvider =
+          Provider.of<ReviewProvider>(context, listen: false);
       reviewProvider.fetchTopReviews();
       _hasFetchedReviews = true;
     }
@@ -106,10 +107,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _performSearch() {
     final query = _searchController.text.trim();
-    
+
     if (query.isNotEmpty) {
       final searchType = _isProviderMode() ? 'projects' : 'services';
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -381,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return BaseScreen(
       currentIndex: 0, // Accueil est sélectionné
       body: Stack(
@@ -397,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildMainContent() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab d'accueil pour les clients
   Widget _buildClientHomeTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab d'accueil pour les prestataires
   Widget _buildProviderHomeTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,7 +782,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildRecentProjectsTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -806,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab des projets à proximité (mode prestataire)
   Widget _buildNearbyProjectsTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -854,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Statistiques du prestataire
   Widget _buildProviderStats() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
@@ -931,7 +932,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: _buildStatCard(
                   l10n.revenueThisMonth,
                   '${(_providerStats['total_earnings_this_month'] ?? 0.0).toStringAsFixed(0)}K',
-                  Icons.attach_money,
+                  Icons.account_balance_wallet,
                   Colors.green,
                 ),
               ),
@@ -1002,7 +1003,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab des meilleurs services (mode client uniquement)
   Widget _buildTopRatedTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -1017,10 +1018,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
           const SizedBox(height: 16),
-          _buildVerticalServicesList(
-              _topRatedServices,
-              _topRatedServices.length,
-              l10n.noWellRatedServicesMoment),
+          _buildVerticalServicesList(_topRatedServices,
+              _topRatedServices.length, l10n.noWellRatedServicesMoment),
         ],
       ),
     );
@@ -1029,7 +1028,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab des services récents (mode client uniquement)
   Widget _buildRecentTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -1054,7 +1053,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Tab des services à proximité (mode client uniquement)
   Widget _buildNearbyTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -1102,7 +1101,7 @@ class _HomeScreenState extends State<HomeScreen>
   // Widget pour afficher les catégories (mode client uniquement)
   Widget _buildCategories() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1236,7 +1235,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildHorizontalServicesList(
       List<Service> services, String emptyMessage) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoading) {
       return const SizedBox(
         height: 220,
@@ -1386,7 +1385,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildHorizontalProjectsList(
       List<ClientProject> projects, String emptyMessage) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoading) {
       return const SizedBox(
         height: 220,
@@ -1850,8 +1849,8 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                           child: Text(
-                            project.status == 'open' 
-                                ? AppLocalizations.of(context)!.open 
+                            project.status == 'open'
+                                ? AppLocalizations.of(context)!.open
                                 : AppLocalizations.of(context)!.closed,
                             style: TextStyle(
                               fontSize: 12,
@@ -2102,6 +2101,7 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+
   // Méthodes pour obtenir la couleur et l'icône de chaque catégorie
   Color _getCategoryColor(int categoryId) {
     switch (categoryId) {

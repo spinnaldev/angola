@@ -113,7 +113,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   // Fonction pour soumettre l'offre - Version corrigée
   Future<void> _submitOffer(StateSetter setBottomSheetState) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Validation des champs
     if (_offerPriceController.text.trim().isEmpty) {
       _showErrorInBottomSheet(l10n.pleaseEnterPrice, setBottomSheetState);
@@ -121,7 +121,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     }
 
     if (_offerDeliveryController.text.trim().isEmpty) {
-      _showErrorInBottomSheet(l10n.pleaseEnterDeliveryTime, setBottomSheetState);
+      _showErrorInBottomSheet(
+          l10n.pleaseEnterDeliveryTime, setBottomSheetState);
       return;
     }
 
@@ -144,7 +145,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     final int? deliveryTime =
         int.tryParse(_offerDeliveryController.text.trim());
     if (deliveryTime == null || deliveryTime <= 0) {
-      _showErrorInBottomSheet(l10n.pleaseEnterValidDeliveryTime, setBottomSheetState);
+      _showErrorInBottomSheet(
+          l10n.pleaseEnterValidDeliveryTime, setBottomSheetState);
       return;
     }
 
@@ -222,7 +224,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   void _showErrorInBottomSheet(
       String message, StateSetter setBottomSheetState) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Afficher une alerte simple dans la BottomSheet
     showDialog(
       context: context,
@@ -283,7 +285,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Future<void> _toggleFavorite() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (!mounted) return;
 
     try {
@@ -317,7 +319,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   void _shareProject() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     Share.share(
       l10n.discoverProject(widget.project.title, widget.project.description),
       subject: 'Projet sur Angola',
@@ -326,7 +328,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   void _openAttachment(String url) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -349,7 +351,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   void _showOfferBottomSheet() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Variables locales pour le bottom sheet
     bool localIncludesMaterials = _includesMaterials;
     bool localTravelCostsIncluded = _travelCostsIncluded;
@@ -423,7 +425,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 decoration: InputDecoration(
                   labelText: l10n.proposedPrice,
                   border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.euro),
+                  prefixIcon: const Icon(Icons.account_balance_wallet),
                 ),
               ),
               const SizedBox(height: 16),
@@ -789,7 +791,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
             child: Row(
               children: [
-                const Icon(Icons.euro, color: Colors.green, size: 20),
+                const Icon(Icons.account_balance_wallet,
+                    color: Colors.green, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Budget: ${widget.project.budgetDisplay}',
@@ -828,7 +831,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildProjectDetails() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -930,7 +933,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildAttachments() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -959,7 +962,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildAttachmentItem(String name, String url) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -999,7 +1002,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildTabBar() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       color: Colors.grey[50],
       child: TabBar(
@@ -1027,7 +1030,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildOffersTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoadingOffers) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1083,7 +1086,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildActivityTab() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Text(
@@ -1095,7 +1098,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   Widget _buildMakeOfferButton() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1149,7 +1152,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
   String _getUrgencyText() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     switch (widget.project.urgency) {
       case 'high':
         return l10n.urgent;

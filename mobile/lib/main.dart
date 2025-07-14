@@ -163,7 +163,7 @@ class MyApp extends StatelessWidget {
             debugShowMaterialGrid: false,
 
             title: 'Angola Services',
-
+  
             // NOUVEAU : Configuration de la localisation
             locale: languageProvider.currentLocale,
             localizationsDelegates: const [

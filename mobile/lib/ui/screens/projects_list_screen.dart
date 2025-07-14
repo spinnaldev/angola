@@ -444,7 +444,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                   l10n.monthlyEarnings,
                   '${_providerStats!['total_earnings_this_month']?.toStringAsFixed(0) ?? 0}AOA',
                   Colors.purple,
-                  Icons.euro,
+                  Icons.account_balance_wallet,
                 ),
               ),
               const SizedBox(width: 12),

@@ -344,7 +344,8 @@ class _UserProjectsScreenState extends State<UserProjectsScreen>
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.euro, size: 16, color: Colors.green[600]),
+                  Icon(Icons.account_balance_wallet,
+                      size: 16, color: Colors.green[600]),
                   const SizedBox(width: 4),
                   Text(
                     project.budgetDisplay,

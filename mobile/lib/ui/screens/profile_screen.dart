@@ -35,15 +35,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.currentUser;
-    
+
     if (user != null) {
       if (user.role == 'provider') {
         // Charger les services du prestataire
-        final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
+        final serviceProvider =
+            Provider.of<ServiceProvider>(context, listen: false);
         await serviceProvider.fetchMyServices();
       } else {
         // Charger les projets du client
-        final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+        final projectProvider =
+            Provider.of<ProjectProvider>(context, listen: false);
         await projectProvider.fetchUserProjects();
       }
     }
@@ -70,13 +72,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfilContent() {
     final l10n = AppLocalizations.of(context)!; // AJOUT
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           final user = authProvider.currentUser;
-          
+
           if (user == null) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -86,27 +88,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 // Header avec titre et crayon d'édition
                 _buildHeader(l10n),
-                
+
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        
+
                         // Section profil utilisateur
                         _buildUserProfileSection(user, l10n),
-                        
+
                         _buildDivider(),
-                        
+
                         // Section adresse et membre depuis
                         _buildLocationAndMemberSection(user, l10n),
-                        
+
                         _buildDivider(),
-                        
+
                         // Section Mes projets/services
                         _buildProjectsSection(user, l10n),
-                        
-                        const SizedBox(height: 100), // Espace pour la bottom nav
+
+                        const SizedBox(
+                            height: 100), // Espace pour la bottom nav
                       ],
                     ),
                   ),
@@ -193,17 +196,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: user.role == 'provider' 
+                    color: user.role == 'provider'
                         ? const Color(0xFF142FE2).withOpacity(0.1)
                         : Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    user.role == 'provider' ? l10n.provider : l10n.client, // TRADUIT
+                    user.role == 'provider'
+                        ? l10n.provider
+                        : l10n.client, // TRADUIT
                     style: TextStyle(
-                      color: user.role == 'provider' 
+                      color: user.role == 'provider'
                           ? const Color(0xFF142FE2)
                           : Colors.green,
                       fontSize: 12,
@@ -224,9 +230,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: CircleAvatar(
               radius: 35,
-              backgroundImage: user.profilePicture != null && user.profilePicture!.isNotEmpty
-                  ? NetworkImage(user.profilePicture!)
-                  : null,
+              backgroundImage:
+                  user.profilePicture != null && user.profilePicture!.isNotEmpty
+                      ? NetworkImage(user.profilePicture!)
+                      : null,
               child: user.profilePicture == null || user.profilePicture!.isEmpty
                   ? Text(
                       user.firstName.isNotEmpty ? user.firstName[0] : 'U',
@@ -291,9 +298,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Membre depuis
           Row(
             children: [
@@ -364,7 +371,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               Text(
-                user.role == 'provider' ? l10n.myServices : l10n.myProjects, // TRADUIT
+                user.role == 'provider'
+                    ? l10n.myServices
+                    : l10n.myProjects, // TRADUIT
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -398,7 +407,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
           if (user.role == 'provider')
             _buildProviderServicesCarousel(l10n)
           else
@@ -421,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final services = serviceProvider.myServices;
-        
+
         if (services.isEmpty) {
           return Container(
             height: 150,
@@ -490,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final projects = projectProvider.userProjects;
-        
+
         if (projects.isEmpty) {
           return Container(
             height: 150,
@@ -631,7 +639,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      service.priceType == 'quote' 
+                      service.priceType == 'quote'
                           ? l10n.onQuote // TRADUIT
                           : '${service.price.toInt()}AOA',
                       style: const TextStyle(
@@ -696,12 +704,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: project.isOpen 
+                      color: project.isOpen
                           ? Colors.green.withOpacity(0.1)
                           : project.isCompleted
-                              ? Colors.blue.withOpacity(0.1) 
+                              ? Colors.blue.withOpacity(0.1)
                               : Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -710,10 +719,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: project.isOpen 
+                        color: project.isOpen
                             ? Colors.green
                             : project.isCompleted
-                                ? Colors.blue 
+                                ? Colors.blue
                                 : Colors.orange,
                       ),
                     ),
@@ -731,12 +740,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               const Spacer(),
-              
+
               // Informations du projet
               Row(
                 children: [
                   Icon(
-                    Icons.euro,
+                    Icons.account_balance_wallet,
                     size: 14,
                     color: Colors.green[600],
                   ),
