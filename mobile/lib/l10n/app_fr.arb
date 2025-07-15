@@ -751,5 +751,57 @@
         "type": "int"
       }
     }
-  }
+  },
+  "myOffers": "Mes offres",
+  "allOffers": "Toutes",
+  "pendingOffers": "En attente",
+  "acceptedOffers": "Acceptées",
+  "rejectedOffers": "Rejetées",
+  "withdrawnOffers": "Retirées",
+  "noOffersFound": "Aucune offre trouvée",
+  "yourSubmittedOffers": "Vos offres soumises apparaîtront ici",
+  "browseProjects": "Parcourir les projets",
+  "backButton": "Retour",
+  "projectUntitled": "Projet sans titre",
+  "proposedPrice": "Prix proposé",
+  "deliveryTime": "Délai (en jours)",
+  "days": "jours",
+  "message": "Message",
+  "materialsIncluded": "Matériaux inclus",
+  "travelCostsIncluded": "Frais de déplacement inclus",
+  "warranty": "Garantie",
+  "months": "mois",
+  "viewProject": "Voir projet",
+  "withdrawOffer": "Retirer",
+  "withdrawOfferTitle": "Retirer l'offre",
+  "withdrawOfferConfirm": "Êtes-vous sûr de vouloir retirer cette offre ? Cette action est irréversible.",
+  "cancel": "Annuler",
+  "withdraw": "Retirer",
+  "offerWithdrawnSuccess": "Offre retirée avec succès",
+  "error": "Erreur",
+  "missingOfferId": "ID de l'offre manquant",
+  "pending": "En attente",
+  "accepted": "Acceptée",
+  "rejected": "Rejetée",
+  "withdrawn": "Retirée",
+  "unknown": "Inconnu",
+  "timeAgo": "Il y a",
+  "daysAgo": "Il y a {count} jour{count, plural, =1{} other{s}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "Il y a {count}h",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "À l'instant",
+  "project": "Projet"
 }

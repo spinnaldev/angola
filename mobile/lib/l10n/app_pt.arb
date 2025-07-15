@@ -400,7 +400,7 @@
   "priceRequired": "O preço é obrigatório",
   "enterValidPrice": "Por favor, insira um preço válido",
   "priceIncludesAllCosts": "Este preço deve incluir todos os seus custos. Você pode negociar com o cliente posteriormente.",
-  "deliveryTime": "Prazo de Entrega",
+  "deliveryTime": "Prazo de Entrega (em dias)",
   "deliveryTimeInDays": "Prazo em dias *",
   "daysToCompleteProject": "Número de dias para completar o projeto",
   "deliveryTimeRequired": "O prazo de entrega é obrigatório",
@@ -793,6 +793,58 @@
         "type": "int"
       }
     }
-  }
+  },
+  "myOffers": "Minhas ofertas",
+  "allOffers": "Todas",
+  "pendingOffers": "Pendentes",
+  "acceptedOffers": "Aceites",
+  "rejectedOffers": "Rejeitadas",
+  "withdrawnOffers": "Retiradas",
+  "noOffersFound": "Nenhuma oferta encontrada",
+  "yourSubmittedOffers": "Suas ofertas enviadas aparecerão aqui",
+  "browseProjects": "Navegar projetos",
+  "backButton": "Voltar",
+  "projectUntitled": "Projeto sem título",
+  "proposedPrice": "Preço proposto",
+  "deliveryTime": "Prazo",
+  "days": "dias",
+  "message": "Mensagem",
+  "materialsIncluded": "Materiais inclusos",
+  "travelCostsIncluded": "Custos de viagem inclusos",
+  "warranty": "Garantia",
+  "months": "meses",
+  "viewProject": "Ver projeto",
+  "withdrawOffer": "Retirar",
+  "withdrawOfferTitle": "Retirar oferta",
+  "withdrawOfferConfirm": "Tem certeza de que deseja retirar esta oferta? Esta ação é irreversível.",
+  "cancel": "Cancelar",
+  "withdraw": "Retirar",
+  "offerWithdrawnSuccess": "Oferta retirada com sucesso",
+  "error": "Erro",
+  "missingOfferId": "ID da oferta em falta",
+  "pending": "Pendente",
+  "accepted": "Aceite",
+  "rejected": "Rejeitada",
+  "withdrawn": "Retirada",
+  "unknown": "Desconhecido",
+  "timeAgo": "há",
+  "daysAgo": "{count} dia{count, plural, =1{} other{s}} atrás",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "há {count}h",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "Agora mesmo",
+  "project": "Projeto"
 
 }

@@ -2285,8 +2285,34 @@ class DisputeViewSet(viewsets.ModelViewSet):
             return Dispute.objects.filter(client=user)
     
     def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
-    
+        service_id = self.request.data.get('service_id') or self.request.data.get('service')
+        provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
+        
+        provider = None
+        
+        # 1. Si service_id fourni, récupérer le provider automatiquement
+        if service_id:
+            try:
+                from .models import ProviderService
+                service = ProviderService.objects.get(id=service_id)
+                provider = service.provider
+            except ProviderService.DoesNotExist:
+                raise ValidationError({"service": "Service not found"})
+        
+        # 2. Si pas de service mais provider_id fourni
+        elif provider_id:
+            try:
+                provider = Provider.objects.get(id=provider_id)
+            except Provider.DoesNotExist:
+                raise ValidationError({"provider": "Provider not found"})
+        
+        # 3. Si aucun des deux n'est fourni
+        else:
+            raise ValidationError({"error": "Either service_id or provider_id is required"})
+        
+        # Sauvegarder avec client et provider automatiquement définis
+        serializer.save(client=self.request.user, provider=provider)
+        
     @action(detail=True, methods=['post'])
     def add_evidence(self, request, pk=None):
         dispute = self.get_object()
@@ -2402,12 +2428,34 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
             return QuoteRequest.objects.filter(client=user)
     
     def perform_create(self, serializer):
-        provider_id = self.request.data.get('provider')
-        try:
-            provider = Provider.objects.get(id=provider_id)
-            serializer.save(client=self.request.user, provider=provider)
-        except Provider.DoesNotExist:
-            raise ValidationError("Provider not found")
+        service_id = self.request.data.get('service_id') or self.request.data.get('service')
+        provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
+        
+        provider = None
+        service = None
+        
+        # 1. Si service_id fourni, récupérer le provider automatiquement
+        if service_id:
+            try:
+                from .models import ProviderService
+                service = ProviderService.objects.get(id=service_id)
+                provider = service.provider
+            except ProviderService.DoesNotExist:
+                raise ValidationError({"service": "Service not found"})
+        
+        # 2. Si pas de service mais provider_id fourni
+        elif provider_id:
+            try:
+                provider = Provider.objects.get(id=provider_id)
+            except Provider.DoesNotExist:
+                raise ValidationError({"provider": "Provider not found"})
+        
+        # 3. Si aucun des deux n'est fourni
+        else:
+            raise ValidationError({"error": "Either service_id or provider_id is required"})
+        
+        # Sauvegarder avec client, provider et service automatiquement définis
+        serializer.save(client=self.request.user, provider=provider, service=service)
     
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):

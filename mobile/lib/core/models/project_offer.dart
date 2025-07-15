@@ -1,91 +1,67 @@
+// lib/core/models/project_offer.dart
 class ProjectOffer {
-  final int id;
-  final int projectId;
+  final int? id;
+  final int? projectId;
   final String? projectTitle;
-  final int providerId;
-  final String providerName;
-  final String? providerBusinessType;
-  final double providerRating;
-  final String? providerAvatar;
-  final String? providerLocation;
-  final bool providerVerified;
-  final double proposedPrice;
-  final int deliveryTime;
-  final String message;
-  final bool includesMaterials;
+  final String? projectDescription;
+  final int? providerId;
+  final String? providerName;
+  final double? proposedPrice;
+  final int? deliveryTime;
+  final String? message;
+  final bool? includesMaterials;
   final int? warrantyPeriod;
-  final bool travelCostsIncluded;
+  final bool? travelCostsIncluded;
   final String status;
-  final bool viewedByClient;
-  final DateTime createdAt;
+  final bool? viewedByClient;
+  final String? clientNotes;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   ProjectOffer({
-    required this.id,
-    required this.projectId,
+    this.id,
+    this.projectId,
     this.projectTitle,
-    required this.providerId,
-    required this.providerName,
-    this.providerBusinessType,
-    required this.providerRating,
-    this.providerAvatar,
-    this.providerLocation,
-    required this.providerVerified,
-    required this.proposedPrice,
-    required this.deliveryTime,
-    required this.message,
-    required this.includesMaterials,
+    this.projectDescription,
+    this.providerId,
+    this.providerName,
+    this.proposedPrice,
+    this.deliveryTime,
+    this.message,
+    this.includesMaterials,
     this.warrantyPeriod,
-    required this.travelCostsIncluded,
-    required this.status,
-    required this.viewedByClient,
-    required this.createdAt,
+    this.travelCostsIncluded,
+    this.status = 'pending',
+    this.viewedByClient,
+    this.clientNotes,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory ProjectOffer.fromJson(Map<String, dynamic> json) {
     return ProjectOffer(
       id: json['id'],
-      projectId: json['project'],
-      projectTitle: json['project_title'],
-      providerId: json['provider'],
+      projectId: json['project_id'] ?? json['project'],
+      projectTitle: json['project_title'] ?? json['project_name'],
+      projectDescription: json['project_description'],
+      providerId: json['provider_id'] ?? json['provider'],
       providerName: json['provider_name'],
-      providerBusinessType: json['provider_business_type'],
-      providerRating: _parseDoubleFromDynamic(json['provider_rating']) ?? 0.0,
-      // providerRating: (json['provider_rating'] ?? 0).toDouble(),
-      providerAvatar: json['provider_avatar'],
-      providerLocation: json['provider_location'],
-      providerVerified: json['provider_verified'] ?? false,
-      proposedPrice: _parseDoubleFromDynamic(json['proposed_price']) ?? 0.0,
-      // proposedPrice: double.parse(json['proposed_price'].toString()),
+      proposedPrice: _parseDouble(json['proposed_price']),
       deliveryTime: json['delivery_time'],
       message: json['message'],
-      includesMaterials: json['includes_materials'] ?? false,
+      includesMaterials: json['includes_materials'],
       warrantyPeriod: json['warranty_period'],
-      travelCostsIncluded: json['travel_costs_included'] ?? true,
-      status: json['status'],
-      viewedByClient: json['viewed_by_client'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
+      travelCostsIncluded: json['travel_costs_included'],
+      status: json['status'] ?? 'pending',
+      viewedByClient: json['viewed_by_client'],
+      clientNotes: json['client_notes'],
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : null,
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at']) 
+          : null,
     );
-  }
-
-  static double? _parseDoubleFromDynamic(dynamic value) {
-    if (value == null) return null;
-    
-    try {
-      if (value is double) {
-        return value;
-      } else if (value is int) {
-        return value.toDouble();
-      } else if (value is String) {
-        if (value.isEmpty) return null;
-        return double.parse(value);
-      } else {
-        print('⚠️ Type inattendu pour nombre: ${value.runtimeType} - $value');
-        return double.tryParse(value.toString());
-      }
-    } catch (e) {
-      print('❌ Erreur parsing nombre: $e pour valeur: $value');
-      return null;
-    }
   }
 
   Map<String, dynamic> toJson() {
@@ -93,13 +69,9 @@ class ProjectOffer {
       'id': id,
       'project': projectId,
       'project_title': projectTitle,
+      'project_description': projectDescription,
       'provider': providerId,
       'provider_name': providerName,
-      'provider_business_type': providerBusinessType,
-      'provider_rating': providerRating,
-      'provider_avatar': providerAvatar,
-      'provider_location': providerLocation,
-      'provider_verified': providerVerified,
       'proposed_price': proposedPrice,
       'delivery_time': deliveryTime,
       'message': message,
@@ -108,12 +80,59 @@ class ProjectOffer {
       'travel_costs_included': travelCostsIncluded,
       'status': status,
       'viewed_by_client': viewedByClient,
-      'created_at': createdAt.toIso8601String(),
+      'client_notes': clientNotes,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
-  // Getters utilitaires
-  String get statusLabel {
+  ProjectOffer copyWith({
+    int? id,
+    int? projectId,
+    String? projectTitle,
+    String? projectDescription,
+    int? providerId,
+    String? providerName,
+    double? proposedPrice,
+    int? deliveryTime,
+    String? message,
+    bool? includesMaterials,
+    int? warrantyPeriod,
+    bool? travelCostsIncluded,
+    String? status,
+    bool? viewedByClient,
+    String? clientNotes,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return ProjectOffer(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      projectTitle: projectTitle ?? this.projectTitle,
+      projectDescription: projectDescription ?? this.projectDescription,
+      providerId: providerId ?? this.providerId,
+      providerName: providerName ?? this.providerName,
+      proposedPrice: proposedPrice ?? this.proposedPrice,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      message: message ?? this.message,
+      includesMaterials: includesMaterials ?? this.includesMaterials,
+      warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
+      travelCostsIncluded: travelCostsIncluded ?? this.travelCostsIncluded,
+      status: status ?? this.status,
+      viewedByClient: viewedByClient ?? this.viewedByClient,
+      clientNotes: clientNotes ?? this.clientNotes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  // Méthodes utilitaires
+  bool get isPending => status == 'pending';
+  bool get isAccepted => status == 'accepted';
+  bool get isRejected => status == 'rejected';
+  bool get isWithdrawn => status == 'withdrawn';
+
+  String get statusDisplay {
     switch (status) {
       case 'pending':
         return 'En attente';
@@ -124,26 +143,43 @@ class ProjectOffer {
       case 'withdrawn':
         return 'Retirée';
       default:
-        return status;
+        return 'Inconnu';
     }
   }
 
-  String get deliveryTimeLabel {
-    if (deliveryTime == 1) {
-      return '1 jour';
-    } else if (deliveryTime < 7) {
-      return '$deliveryTime jours';
-    } else if (deliveryTime < 30) {
-      final weeks = (deliveryTime / 7).round();
-      return '$weeks semaine${weeks > 1 ? 's' : ''}';
-    } else {
-      final months = (deliveryTime / 30).round();
-      return '$months mois';
-    }
+  String get priceDisplay {
+    if (proposedPrice == null) return 'Prix non spécifié';
+    return '${proposedPrice!.toStringAsFixed(0)} AOA';
   }
 
-  bool get isPending => status == 'pending';
-  bool get isAccepted => status == 'accepted';
-  bool get isRejected => status == 'rejected';
-  bool get isWithdrawn => status == 'withdrawn';
+  String get deliveryTimeDisplay {
+    if (deliveryTime == null) return 'Délai non spécifié';
+    if (deliveryTime == 1) return '1 jour';
+    return '$deliveryTime jours';
+  }
+
+  // Fonction helper pour parser les doubles
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  @override
+  String toString() {
+    return 'ProjectOffer(id: $id, projectTitle: $projectTitle, status: $status, proposedPrice: $proposedPrice)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ProjectOffer && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

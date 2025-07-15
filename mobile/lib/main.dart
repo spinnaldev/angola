@@ -34,6 +34,7 @@ import 'ui/screens/home_screen.dart'; // Nouvelle page d'accueil
 import 'providers/dispute_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/location_provider.dart';
+import 'providers/offers_provider.dart';
 
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
@@ -149,6 +150,10 @@ class MyApp extends StatelessWidget {
           create: (_) => DisputeProvider(
             DisputeService(apiService),
           ),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, OffersProvider>(
+          create: (context) => OffersProvider(apiService),
+          update: (context, authProvider, previous) => previous ?? OffersProvider(apiService),
         ),
       ],
       child: Consumer<LanguageProvider>(

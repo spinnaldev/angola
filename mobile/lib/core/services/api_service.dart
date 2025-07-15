@@ -2298,6 +2298,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/category.dart';
 import '../models/conversation.dart';
@@ -3921,6 +3922,136 @@ class ApiService {
     } catch (e) {
       print('❌ Erreur démarrage conversation depuis projet: $e');
       throw Exception('Impossible de démarrer la conversation: $e');
+    }
+  }
+
+  /// Supprimer/retirer une offre
+  Future<void> deleteOffer(int offerId) async {
+    try {
+      print('🗑️ Suppression de l\'offre $offerId...');
+
+      // Option 1: Essayer DELETE d'abord
+      try {
+        await _apiClient.delete('project-offers/$offerId/', requireAuth: true);
+        print('✅ Offre supprimée via DELETE');
+        return;
+      } catch (e) {
+        print('⚠️ DELETE échoué, tentative PATCH...');
+      }
+
+      // Option 3: Dernière tentative avec PUT (certaines APIs l'utilisent)
+      try {
+        await _apiClient.put(
+          'project-offers/$offerId/',
+          data: {'status': 'withdrawn'},
+          requireAuth: true,
+        );
+        print('✅ Offre retirée via PUT');
+        return;
+      } catch (e) {
+        print('❌ Toutes les méthodes ont échoué');
+        throw Exception('Impossible de retirer l\'offre. Méthodes HTTP non supportées.');
+      }
+    } catch (e) {
+      print('❌ Erreur dans deleteOffer: $e');
+      throw e;
+    }
+  }
+
+  // ✅ MÉTHODE ALTERNATIVE si updateOfferStatus existe déjà mais ne marche pas bien
+  Future<void> withdrawOfferSafely(int offerId) async {
+    try {
+      print('🔄 Retrait sécurisé de l\'offre $offerId...');
+
+      // Méthode 1: Essayer l'endpoint spécifique de retrait s'il existe
+      try {
+        await _apiClient.post('project-offers/$offerId/withdraw/', requireAuth: true);
+        print('✅ Offre retirée via endpoint /withdraw/');
+        return;
+      } catch (e) {
+        print('⚠️ Endpoint /withdraw/ non disponible');
+      }
+
+      // Méthode 2: Utiliser PATCH avec status
+  
+      // Méthode 3: Utiliser POST sur un endpoint d'action
+      try {
+        await _apiClient.post(
+          'project-offers/$offerId/update-status/',
+          data: {'status': 'withdrawn'},
+          requireAuth: true,
+        );
+        print('✅ Offre retirée via POST /update-status/');
+        return;
+      } catch (e) {
+        print('❌ Toutes les méthodes ont échoué');
+        throw Exception('Service temporairement indisponible. Réessayez plus tard.');
+      }
+    } catch (e) {
+      print('❌ Erreur dans withdrawOfferSafely: $e');
+      
+      // Donner un message d'erreur plus user-friendly
+      if (e.toString().contains('405')) {
+        throw Exception('Action non autorisée par le serveur');
+      } else if (e.toString().contains('401')) {
+        throw Exception('Session expirée. Reconnectez-vous');
+      } else if (e.toString().contains('404')) {
+        throw Exception('Offre non trouvée');
+      } else {
+        throw Exception('Erreur de connexion. Vérifiez votre réseau');
+      }
+    }
+  }
+
+  /// Récupérer un projet spécifique par son ID
+  Future<Map<String, dynamic>?> getProjectById(int projectId) async {
+    try {
+      print('🔍 Récupération du projet ID: $projectId depuis l\'API...');
+
+      // Option 1: Essayer l'endpoint projects/{id}
+      try {
+        final data = await _apiClient.get('projects/$projectId/', requireAuth: true);
+        print('✅ Projet récupéré via /projects/$projectId/');
+        return data;
+      } catch (e) {
+        print('⚠️ Échec /projects/$projectId/, tentative endpoint alternatif...');
+      }
+
+      // Option 2: Essayer l'endpoint client-projects/{id}
+      try {
+        final data = await _apiClient.get('client-projects/$projectId/', requireAuth: true);
+        print('✅ Projet récupéré via /client-projects/$projectId/');
+        return data;
+      } catch (e) {
+        print('⚠️ Échec /client-projects/$projectId/, tentative recherche...');
+      }
+
+      // Option 3: Chercher dans la liste de tous les projets
+      try {
+        final allProjectsData = await _apiClient.get('projects/', requireAuth: true);
+        final projects = allProjectsData['results'] as List<dynamic>?;
+        
+        if (projects != null) {
+          final project = projects.firstWhere(
+            (p) => p['id'] == projectId,
+            orElse: () => null,
+          );
+          
+          if (project != null) {
+            print('✅ Projet trouvé dans la liste des projets');
+            return project as Map<String, dynamic>;
+          }
+        }
+      } catch (e) {
+        print('⚠️ Échec recherche dans liste des projets');
+      }
+
+      print('❌ Projet $projectId non trouvé dans tous les endpoints');
+      return null;
+
+    } catch (e) {
+      print('❌ Erreur dans getProjectById: $e');
+      throw Exception('Erreur lors de la récupération du projet: $e');
     }
   }
   // ===============================

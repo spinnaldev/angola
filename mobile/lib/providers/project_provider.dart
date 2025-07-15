@@ -264,6 +264,42 @@ class ProjectProvider with ChangeNotifier {
     }
   }
 
+  /// Récupérer un projet spécifique par son ID
+  Future<ClientProject?> getProjectById(int projectId) async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      
+      print('🔍 Récupération du projet ID: $projectId');
+      
+     
+      try {
+        final projectData = await _apiService.getProjectById(projectId);
+        
+        if (projectData != null) {
+          final project = ClientProject.fromJson(projectData);
+          print('✅ Projet récupéré depuis l\'API');
+          _isLoading =false;
+          return project;
+        }
+      } catch (apiError) {
+        print('⚠️ Erreur API pour getProjectById: $apiError');
+        
+       
+      }
+      
+       _isLoading =false;
+      return null;
+      
+    } catch (e) {
+      print('❌ Erreur dans getProjectById: $e');
+      _errorMessage = e.toString();
+       _isLoading =false;
+      return null;
+    }
+  }
+
+
   // Méthode pour marquer un projet comme favori
   Future<void> toggleProjectFavorite(int projectId) async {
     try {

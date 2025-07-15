@@ -356,7 +356,7 @@
   "priceRequired": "Price is required",
   "enterValidPrice": "Please enter a valid price",
   "priceIncludesAllCosts": "This price should include all your costs. You can negotiate with the client later.",
-  "deliveryTime": "Delivery Time",
+  "deliveryTime": "Delivery Time (in days)",
   "deliveryTimeInDays": "Delivery time in days *",
   "daysToCompleteProject": "Number of days to complete the project",
   "deliveryTimeRequired": "Delivery time is required",
@@ -749,6 +749,58 @@
         "type": "int"
       }
     }
-  }
+  },
+  "myOffers": "My offers",
+  "allOffers": "All",
+  "pendingOffers": "Pending",
+  "acceptedOffers": "Accepted",
+  "rejectedOffers": "Rejected",
+  "withdrawnOffers": "Withdrawn",
+  "noOffersFound": "No offers found",
+  "yourSubmittedOffers": "Your submitted offers will appear here",
+  "browseProjects": "Browse projects",
+  "backButton": "Back",
+  "projectUntitled": "Untitled project",
+  "proposedPrice": "Proposed price",
+  "deliveryTime": "Delivery time",
+  "days": "days",
+  "message": "Message",
+  "materialsIncluded": "Materials included",
+  "travelCostsIncluded": "Travel costs included",
+  "warranty": "Warranty",
+  "months": "months",
+  "viewProject": "View project",
+  "withdrawOffer": "Withdraw",
+  "withdrawOfferTitle": "Withdraw offer",
+  "withdrawOfferConfirm": "Are you sure you want to withdraw this offer? This action is irreversible.",
+  "cancel": "Cancel",
+  "withdraw": "Withdraw",
+  "offerWithdrawnSuccess": "Offer withdrawn successfully",
+  "error": "Error",
+  "missingOfferId": "Missing offer ID",
+  "pending": "Pending",
+  "accepted": "Accepted",
+  "rejected": "Rejected",
+  "withdrawn": "Withdrawn",
+  "unknown": "Unknown",
+  "timeAgo": "ago",
+  "daysAgo": "{count} day{count, plural, =1{} other{s}} ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "project": "Project"
 
 }

@@ -426,7 +426,7 @@ class QuoteRequestSerializer(serializers.ModelSerializer):
         fields = ('id', 'client', 'client_name', 'provider', 'provider_name', 
                  'service', 'service_name', 'subject', 'budget', 'description', 
                  'status', 'created_at')
-        read_only_fields = ('client', 'status')   
+        read_only_fields = ('client','provider', 'status')   
 
         
 class DisputeEvidenceSerializer(serializers.ModelSerializer):
@@ -448,7 +448,7 @@ class DisputeSerializer(serializers.ModelSerializer):
         fields = ('id', 'client', 'client_name', 'provider', 'provider_name', 
                  'service', 'service_title', 'title', 'description', 'status',
                  'resolution_note', 'created_at', 'evidence')
-        read_only_fields = ('client', 'status', 'resolution_note')
+        read_only_fields = ('client', 'status', 'resolution_note' , 'provider')
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
