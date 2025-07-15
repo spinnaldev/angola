@@ -210,10 +210,22 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       });
 
       // Convertir le budget en double s'il est présent
-      double? budget;
+      double budget = 0.0; 
+      // double? budget;
       if (_budgetController.text.isNotEmpty) {
-        budget = double.tryParse(_budgetController.text);
+        // Nettoyer le texte (supprimer espaces et caractères non numériques)
+        String cleanBudgetText = _budgetController.text
+            .replaceAll(RegExp(r'[^\d.]'), '') // Garder seulement chiffres et point
+            .trim();
+        
+        if (cleanBudgetText.isNotEmpty) {
+          final parsedBudget = double.tryParse(cleanBudgetText);
+          if (parsedBudget != null && parsedBudget >= 0) {
+            budget = parsedBudget;
+          }
+        }
       }
+      print('DEBUG - Budget envoyé: $budget');
 
       // Soumettre la demande de devis via le provider
       final quoteProvider = Provider.of<QuoteProvider>(context, listen: false);

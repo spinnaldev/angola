@@ -25,7 +25,7 @@ class QuoteRequest {
       clientId: json['client_id'],
       providerId: json['provider_id'],
       subject: json['subject'],
-      budget: json['budget'].toDouble(),
+      budget: _parseDoubleSafely(json['budget']), 
       description: json['description'],
       status: json['status'],
       createdAt: DateTime.parse(json['created_at']),
@@ -43,5 +43,38 @@ class QuoteRequest {
       'status': status,
       'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  // ✅ Méthodes utilitaires pour parsing sécurisé
+  static int _parseIntSafely(dynamic value) {
+    if (value == null) return 0;
+    
+    try {
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String && value.isNotEmpty) {
+        return int.parse(value);
+      }
+      return 0;
+    } catch (e) {
+      print('Erreur parsing int: $e pour valeur: $value');
+      return 0;
+    }
+  }
+
+  static double _parseDoubleSafely(dynamic value) {
+    if (value == null) return 0.0;
+    
+    try {
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String && value.isNotEmpty) {
+        return double.parse(value);
+      }
+      return 0.0;
+    } catch (e) {
+      print('Erreur parsing double: $e pour valeur: $value');
+      return 0.0;
+    }
   }
 }
