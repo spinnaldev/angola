@@ -55,6 +55,44 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
       _showLoginDialog();
     }
   }
+  void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (!authProvider.isAuthenticated) {
+      // Afficher un dialogue pour rediriger vers la connexion
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Connexion requise'),
+            content: const Text(
+              'Vous devez vous connecter pour accéder à cette fonctionnalité.'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Rediriger vers la page de connexion
+                  Navigator.pushNamed(context, '/login');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF142FE2),
+                ),
+                child: const Text('Se connecter'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // L'utilisateur est connecté, exécuter l'action
+      action();
+    }
+  }
   
   // Méthode pour afficher la boîte de dialogue de connexion
   void _showLoginDialog() {
@@ -106,6 +144,20 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
   void _closeReviewForm() {
     setState(() {
       _isReviewFormOpen = false;
+    });
+  }
+
+  void _onRequestQuotePressed() {
+    _checkAuthAndExecute(context, () {
+      _openQuoteRequestForm();
+    });
+  }
+
+  // Utilisation pour le bouton "Signaler un problème"
+  void _onReviewFormPressed() {
+    print("Non connecté");
+    _checkAuthAndExecute(context, () {
+      _openReviewForm(); // Cette méthode sera à implémenter
     });
   }
 
@@ -264,7 +316,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => _checkAuthAndProceed(_openQuoteRequestForm),
+                        onPressed: () => _onRequestQuotePressed,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF142FE2),
                           shape: RoundedRectangleBorder(
@@ -450,7 +502,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: OutlinedButton.icon(
-              onPressed: () => _checkAuthAndProceed(_openReviewForm),
+              onPressed: () => _checkAuthAndProceed(_onReviewFormPressed),
               icon: const Icon(Icons.rate_review),
               label: const Text('Écrire un avis'),
               style: OutlinedButton.styleFrom(
@@ -533,8 +585,9 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
                 
                 Align(
                   alignment: Alignment.centerRight,
+                  
                   child: TextButton(
-                    onPressed: () => _checkAuthAndProceed(_openReviewForm),
+                    onPressed: () => _onReviewFormPressed,
                     child: Text('Écrire un avis'),
                     style: TextButton.styleFrom(
                       backgroundColor: Color(0xFF142FE2),

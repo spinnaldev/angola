@@ -185,6 +185,8 @@ class Review(TimeStampMixin):
     comment = models.TextField()
     is_verified = models.BooleanField(default=False)
     
+    review_title = models.CharField(max_length=200, blank=True, null=True)
+    
     def save(self, *args, **kwargs):
         # Calculate overall rating
         self.overall_rating = (self.quality_rating + self.punctuality_rating + self.value_rating) / 3.0

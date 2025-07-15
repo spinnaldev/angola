@@ -274,16 +274,34 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
       return;
     }
 
-    // Vérification des options
-    if (_serviceOptions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Veuillez ajouter au moins une option de service'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+
+    // Validation des options seulement si elles existent
+    for (int i = 0; i < _serviceOptions.length; i++) {
+      final option = _serviceOptions[i];
+      
+      // Si une option a un nom, elle doit avoir au minimum une description
+      if (option.name.isNotEmpty && option.description.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('L\'option "${option.name}" doit avoir une description'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      // Si l'option n'est pas incluse et a un nom, elle doit avoir un prix
+      if (option.name.isNotEmpty && !option.isIncluded && (option.price == null || option.price! <= 0)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('L\'option "${option.name}" doit avoir un prix car elle n\'est pas incluse'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
+
     setState(() {
       _isLoading = true;
     });
@@ -297,6 +315,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
           ? 0.0
           : double.parse(_priceController.text);
 
+      // Filtrer les options valides (celles qui ont au moins un nom)
+      final validOptions = _serviceOptions
+        .where((option) => option.name.isNotEmpty)
+        .toList();
+
       if (widget.serviceToEdit == null) {
         // Ajouter un nouveau service
         await serviceProvider.addService(
@@ -308,7 +331,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
           _imageFile,
           _galleryImageFiles,
           _imageCaptions,
-          _serviceOptions,
+          validOptions, 
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -328,7 +351,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
           _imageFile,
           _galleryImageFiles,
           _imageCaptions,
-          _serviceOptions,
+          validOptions,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

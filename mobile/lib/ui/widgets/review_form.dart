@@ -25,13 +25,14 @@ class ReviewForm extends StatefulWidget {
 class _ReviewFormState extends State<ReviewForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _reviewController = TextEditingController();
-  
+  final _titleController = TextEditingController();     
   int _rating = 0;
   List<File> _selectedImages = [];
   bool _isSubmitting = false;
 
   @override
   void dispose() {
+    _titleController.dispose();
     _reviewController.dispose();
     super.dispose();
   }
@@ -77,7 +78,8 @@ class _ReviewFormState extends State<ReviewForm> {
       final success = await reviewProvider.createReview(
         widget.providerId,
         _rating,
-        _reviewController.text,
+        _reviewController.text.trim(),
+        _titleController.text.trim(),
         _selectedImages,
         null
       );
@@ -190,7 +192,37 @@ class _ReviewFormState extends State<ReviewForm> {
                                   );
                                 }),
                               ),
-                              
+                              // NOUVEAU: Champ titre de l'avis
+                              const Text(
+                                'Titre de votre avis',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _titleController,
+                                decoration: InputDecoration(
+                                  hintText: 'Ex: Excellent service, très professionnel',
+                                  filled: true,
+                                  fillColor: Colors.grey[200],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.all(16),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Veuillez entrer un titre pour votre avis';
+                                  }
+                                  if (value.trim().length < 5) {
+                                    return 'Le titre doit contenir au moins 5 caractères';
+                                  }
+                                  return null;
+                                },
+                              ),
                               SizedBox(height: 24),
                               
                               // Commentaire
@@ -206,18 +238,21 @@ class _ReviewFormState extends State<ReviewForm> {
                                 controller: _reviewController,
                                 maxLines: 5,
                                 decoration: InputDecoration(
-                                  hintText: 'Votre avis',
+                                  hintText: 'Décrivez votre expérience...',
                                   filled: true,
                                   fillColor: Colors.grey[200],
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide.none,
                                   ),
-                                  contentPadding: EdgeInsets.all(16),
+                                  contentPadding: const EdgeInsets.all(16),
                                 ),
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez saisir votre avis';
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Veuillez écrire un commentaire';
+                                  }
+                                  if (value.trim().length < 10) {
+                                    return 'Le commentaire doit contenir au moins 10 caractères';
                                   }
                                   return null;
                                 },

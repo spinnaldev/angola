@@ -435,6 +435,8 @@
   
 
   "whatIsYourRating": "What is your rating?",
+  "avisHintext" : "Ex: Excellent service, very professional",
+  "titleAvis" : "Opinion title",
   "shareYourOpinion": "Feel free to share your opinion\nabout the service",
   "yourReview": "Your review",
   "addPhotos": "Add photos",
@@ -719,6 +721,34 @@
   "sendOffer": "Send offer",
   "urgent": "Urgent",
   "moderate": "Moderate",
-  "notRushed": "Not rushed"
+  "notRushed": "Not rushed",
+  "genericClientType": "Private client",
+  "genericReviewTitle": "Customer review", 
+  "recently": "Recently",
+  "serviceNotAvailable": "Service not available",
+  "daysAgo": "{count} day{count, plural, =1{} other{s}} ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthsAgo": "{count} month{count, plural, =1{} other{s}} ago",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 
 }

@@ -130,6 +130,17 @@ class ProviderServiceSerializer(serializers.ModelSerializer):
                  'avg_rating', 'image', 'image_url', 'provider_id','gallery_images', 'options')
         # read_only_fields = ('provider',)
     
+    def get_rating(self, obj):
+        """Calculer la note moyenne de CE service spécifique"""
+        avg_rating = obj.reviews.aggregate(
+            avg_rating=Avg('overall_rating')
+        )['avg_rating']
+        return round(avg_rating, 1) if avg_rating else 0.0
+    
+    def get_review_count(self, obj):
+        """Compter le nombre d'avis de CE service spécifique"""
+        return obj.reviews.count()
+    
     def get_avg_rating(self, obj):
         return obj.reviews.aggregate(avg=Avg('overall_rating')).get('avg') or 0
 
@@ -211,6 +222,8 @@ class ReviewImageSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     client_name = serializers.StringRelatedField(source='client.username', read_only=True)
     client_picture = serializers.ImageField(source='client.profile_picture', read_only=True)
+    client_company_name = serializers.SerializerMethodField()
+
     images = ReviewImageSerializer(many=True, read_only=True)
     uploaded_images = serializers.ListField(
         child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),
@@ -221,8 +234,20 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'client', 'client_name', 'client_picture', 'provider', 'service',
                  'quality_rating', 'punctuality_rating', 'value_rating', 'overall_rating',
-                 'comment', 'is_verified', 'created_at', 'images', 'uploaded_images')
+                 'comment','review_title', 'is_verified', 'created_at', 'images', 'uploaded_images' , "client_company_name")
         read_only_fields = ('client', 'is_verified', 'overall_rating')
+    
+    def get_client_company_name(self, obj):
+        """Récupérer le nom de l'entreprise du client"""
+        client = obj.client
+        
+        # Si le client a un profil prestataire, prendre le nom de son entreprise
+        if hasattr(client, 'provider_profile'):
+            return client.provider_profile.company_name
+        
+        # Sinon, essayer de prendre depuis les informations utilisateur
+        # (vous pouvez ajouter un champ company_name au modèle User si nécessaire)
+        return getattr(client, 'company_name', None)
     
     def create(self, validated_data):
         uploaded_images = validated_data.pop('uploaded_images', [])

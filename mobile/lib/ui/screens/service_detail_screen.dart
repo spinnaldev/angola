@@ -11,6 +11,7 @@ import '../widgets/rating_stars.dart';
 import '../widgets/review_card.dart';
 import 'disputes/create_dispute_screen.dart';
 import '../../core/models/review.dart';
+import '../../../../providers/auth_provider.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
@@ -38,6 +39,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
   // Contrôleurs pour le formulaire d'avis
   final _reviewController = TextEditingController();
+  final _titleController = TextEditingController();  
   int _rating = 0;
   List<File> _selectedReviewImages = [];
   bool _isSubmittingReview = false;
@@ -50,6 +52,45 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
     // Charger les données
     _loadData();
+  }
+
+  void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (!authProvider.isAuthenticated) {
+      // Afficher un dialogue pour rediriger vers la connexion
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Connexion requise'),
+            content: const Text(
+              'Vous devez vous connecter pour accéder à cette fonctionnalité.'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Rediriger vers la page de connexion
+                  Navigator.pushNamed(context, '/login');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF142FE2),
+                ),
+                child: const Text('Se connecter'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // L'utilisateur est connecté, exécuter l'action
+      action();
+    }
   }
 
   Future<void> _loadData() async {
@@ -70,12 +111,14 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
       // Charger les avis
       await Provider.of<ReviewProvider>(context, listen: false)
-          .fetchProviderReviews(service.provider_id);
-      print("Le prestataire");
+        .fetchServiceReviews(widget.serviceId);
+      
+      print("Service et avis chargés pour le service ID: ${widget.serviceId}");
       print(service.provider_id);
     }
   }
 
+  
   @override
   void dispose() {
     _tabController.dispose();
@@ -104,12 +147,42 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     });
   }
 
+  void _openDisputeScreen(provider , service){
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateDisputeScreen(
+          providerId: provider.id,
+          serviceId: service.id,
+        ),
+      ),
+    );
+  }
   void _closeReviewForm() {
     setState(() {
       _isReviewFormOpen = false;
       _rating = 0;
       _reviewController.clear();
       _selectedReviewImages = [];
+    });
+  }
+
+  void _onRequestQuotePressed() {
+    _checkAuthAndExecute(context, () {
+      _openQuoteRequestForm();
+    });
+  }
+
+  void _openDisputePressed(provider , service){
+    _checkAuthAndExecute(context, (){
+      _openDisputeScreen(provider , service);
+    });
+  }
+  // Utilisation pour le bouton "Signaler un problème"
+  void _onReviewFormPressed() {
+    print("Non connecté");
+    _checkAuthAndExecute(context, () {
+      _openReviewForm(); // Cette méthode sera à implémenter
     });
   }
 
@@ -223,6 +296,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         providerId,
         _rating,
         _reviewController.text,
+        _titleController.text.trim(),
         _selectedReviewImages,
         serviceId,
       );
@@ -283,7 +357,42 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       );
     });
   }
-
+  Widget _buildServiceStats(service, AppLocalizations l10n) {
+    return Row(
+      children: [
+        // Note du SERVICE (pas du prestataire)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF142FE2),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.star, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                "${service.rating.toStringAsFixed(1)}", // Note du service
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          "(${service.reviewCount} ${l10n.reviews})", // Nombre d'avis du service
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -407,37 +516,35 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                         Row(
                           children: [
                             // Note et avis
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF142FE2),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.star,
-                                      color: Colors.white, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "${provider.rating}",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF142FE2),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.white, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "${service.rating.toStringAsFixed(1)}", // ✅ CORRECT - Note du service
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "(${provider.reviewCount} ${l10n.reviews})",
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 14,
+                              const SizedBox(width: 8),
+                              Text(
+                                "(${service.reviewCount} ${l10n.reviews})", // ✅ CORRECT - Avis du service
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
                           ],
                         ),
 
@@ -475,17 +582,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                             // Bouton signaler un problème
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CreateDisputeScreen(
-                                        providerId: provider.id,
-                                        serviceId: service.id,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onPressed: () => _openDisputePressed(provider ,service),
                                 icon:
                                     const Icon(Icons.report_problem, size: 16),
                                 label: Text(l10n.reportProblem),
@@ -501,7 +598,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                             // Bouton demander un devis
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: _openQuoteRequestForm,
+                                onPressed: _onRequestQuotePressed,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF142FE2),
                                   foregroundColor: Colors.white,
@@ -707,7 +804,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     ),
                   ),
                   TextButton(
-                    onPressed: _openReviewForm,
+                    onPressed: _onReviewFormPressed,
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF142FE2),
                     ),
@@ -1171,11 +1268,35 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                       }),
                     ),
 
+                    
+                    // NOUVEAU: Champ titre de l'avis
+                    Text(
+                      l10n.titleAvis,
+                      style: TextStyle(
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: l10n.avisHintext,
+                        filled: true,
+                        // fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+
                     const SizedBox(height: 16),
                     Text(
                       l10n.shareYourOpinion,
                       style: const TextStyle(fontSize: 14),
                     ),
+
                     const SizedBox(height: 8),
                     TextField(
                       controller: _reviewController,

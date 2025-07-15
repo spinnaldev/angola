@@ -13,6 +13,9 @@ class Review {
   final String? clientImageUrl;
   final bool isVerified;
   
+  final String? reviewTitle;           // Titre de l'avis
+  final String? clientCompanyName; 
+
   // Getters pour compatibilité avec l'interface existante
   String get userName => clientName;
   String get userImageUrl => clientImageUrl ?? '';
@@ -30,6 +33,8 @@ class Review {
     required this.clientName,
     this.clientImageUrl,
     this.isVerified = false,
+    this.reviewTitle,         
+    this.clientCompanyName,   
   }) : this.createdAt = createdAt ?? DateTime.now();
 
   factory Review.fromJson(Map<String, dynamic> json) {
@@ -77,6 +82,25 @@ class Review {
       return null;
     }
     
+    // NOUVEAU: Gérer le nom de l'entreprise du client
+    String? getClientCompanyName(Map<String, dynamic> json) {
+      // Directement depuis le JSON
+      if (json['client_company_name'] != null && 
+          json['client_company_name'].toString().trim().isNotEmpty) {
+        return json['client_company_name'].toString();
+      }
+      
+      // Depuis les données du client
+      if (json['client'] != null && json['client'] is Map) {
+        final clientData = json['client'] as Map<String, dynamic>;
+        if (clientData['company_name'] != null && 
+            clientData['company_name'].toString().trim().isNotEmpty) {
+          return clientData['company_name'].toString();
+        }
+      }
+      
+      return null; // Retourner null si pas d'entreprise
+    }
     return Review(
       id: json['id'],
       clientId: json['client_id'] ?? json['client'],
@@ -89,17 +113,37 @@ class Review {
       clientName: getClientName(json),
       clientImageUrl: getClientImage(json),
       isVerified: json['is_verified'] ?? false,
+      reviewTitle: json['review_title'],          // Nouveau champ
+      clientCompanyName: getClientCompanyName(json), // Nouveau champ
     );
   }
 
+  // Map<String, dynamic> toJson() {
+  //   return {
+  //     'provider': providerId,
+  //     'service': serviceId,
+  //     'quality_rating': rating,
+  //     'punctuality_rating': rating,
+  //     'value_rating': rating,
+  //     'comment': comment,
+  //   };
+  // }
+
   Map<String, dynamic> toJson() {
     return {
-      'provider': providerId,
-      'service': serviceId,
-      'quality_rating': rating,
-      'punctuality_rating': rating,
-      'value_rating': rating,
+      'id': id,
+      'client_id': clientId,
+      'provider_id': providerId,
+      'service_id': serviceId,
+      'rating': rating,
       'comment': comment,
+      'image_urls': imageUrls,
+      'created_at': createdAt.toIso8601String(),
+      'client_name': clientName,
+      'client_image_url': clientImageUrl,
+      'is_verified': isVerified,
+      'review_title': reviewTitle,              
+      'client_company_name': clientCompanyName,
     };
   }
 }

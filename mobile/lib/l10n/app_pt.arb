@@ -479,6 +479,8 @@
   
   
   "whatIsYourRating": "Qual é sua avaliação?",
+  "avisHintext" : "Ex: Excelente serviço, muito profissional",
+  "titleAvis" : "título do parecer",
   "shareYourOpinion": "Sinta-se à vontade para compartilhar sua opinião\nsobre o serviço",
   "yourReview": "Sua avaliação",
   "addPhotos": "Adicionar fotos",
@@ -763,6 +765,34 @@
   "sendOffer": "Enviar oferta",
   "urgent": "Urgente",
   "moderate": "Moderado",
-  "notRushed": "Sem pressa"
+  "notRushed": "Sem pressa",
+  "genericClientType": "Cliente particular",
+  "genericReviewTitle": "Avaliação do cliente",
+  "recently": "Recentemente",
+  "serviceNotAvailable": "Serviço não disponível",
+  "daysAgo": "há {count} dia{count, plural, =1{} other{s}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "há {count}h",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthsAgo": "há {count} mês{count, plural, =1{} other{es}}",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 
 }

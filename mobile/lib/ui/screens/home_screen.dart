@@ -1920,124 +1920,237 @@ class _HomeScreenState extends State<HomeScreen>
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
         final reviews = reviewProvider.topReviews;
-        print("Reviews loaded: ${reviews.length}");
 
-        // Show loading state
         if (reviewProvider.isLoading) {
           return const SizedBox(
-            height: 200,
+            height: 280,
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Show empty state if no reviews
         if (reviews.isEmpty) {
           return _buildEmptyState(
             icon: Icons.rate_review_outlined,
             message: AppLocalizations.of(context)!.noReviewsAvailableMoment,
-            height: 200,
+            height: 280,
           );
         }
 
         return SizedBox(
-          height: 200,
+          height: 280,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             scrollDirection: Axis.horizontal,
             itemCount: reviews.length,
             itemBuilder: (context, index) {
               final review = reviews[index];
-              return Container(
-                width: 300,
-                margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // Photo de profil
-                          CircleAvatar(
-                            radius: 20,
-                            child: Text(review.clientName.isNotEmpty
-                                ? review.clientName[0]
-                                : 'U'),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  review.clientName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  AppLocalizations.of(context)!.service,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Note
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.amber),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.star,
-                                    color: Colors.amber, size: 14),
-                                const SizedBox(width: 2),
-                                Text(
-                                  review.rating.toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: Text(
-                          review.comment,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
+              
+              return GestureDetector(
+                // REDIRECTION VERS LE SERVICE au clic sur toute la carte
+                onTap: () {
+                  if (review.serviceId != null && review.providerId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ServiceDetailScreen(
+                          serviceId: review.serviceId!,
+                          providerId: review.providerId,
                         ),
                       ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.serviceNotAvailable),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  width: 320,
+                  margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
                     ],
+                    // Effet visuel pour indiquer que c'est cliquable
+                    border: Border.all(
+                      color: Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            // Photo de profil
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+                              child: Text(
+                                review.clientName.isNotEmpty
+                                    ? review.clientName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF142FE2),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    review.clientName.isNotEmpty 
+                                        ? review.clientName 
+                                        : 'Utilisateur anonyme',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // ENTREPRISE - Simple texte maintenant
+                                  Text(
+                                    _getClientCompanyName(review),
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Note avec design
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.amber.shade300,
+                                    Colors.amber.shade500,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    review.rating.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // TITRE DE L'AVIS avec icône pour indiquer la navigation
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF142FE2).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _getReviewTitle(review),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF142FE2),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 10,
+                                color: Color(0xFF142FE2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Commentaire
+                        Expanded(
+                          child: Text(
+                            review.comment.isNotEmpty 
+                                ? review.comment
+                                : 'Excellent service, je recommande vivement !',
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        // Date et indicateur cliquable
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _getReviewDate(review),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                            // Petite icône pour indiquer que c'est cliquable
+                            Icon(
+                              Icons.touch_app,
+                              size: 16,
+                              color: Colors.grey[400],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -2047,7 +2160,6 @@ class _HomeScreenState extends State<HomeScreen>
       },
     );
   }
-
   // Widget générique pour afficher un état vide
   Widget _buildEmptyState({
     required IconData icon,
@@ -2150,6 +2262,49 @@ class _HomeScreenState extends State<HomeScreen>
         return Icons.miscellaneous_services;
       default:
         return Icons.category;
+    }
+  }
+
+  // Méthode pour obtenir le nom de l'entreprise du CLIENT (celui qui écrit l'avis)
+  String _getClientCompanyName(Review review) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Si on a une vraie entreprise, l'afficher
+    if (review.clientCompanyName != null && review.clientCompanyName!.isNotEmpty) {
+      return review.clientCompanyName!;
+    }
+    
+    // Sinon, message générique localisé
+    return l10n.genericClientType; // "Client particulier" ou équivalent selon la langue
+  }
+  // Méthode pour obtenir le titre de l'avis
+  String _getReviewTitle(Review review) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Si on a un vrai titre, l'afficher
+    if (review.reviewTitle != null && review.reviewTitle!.isNotEmpty) {
+      return review.reviewTitle!;
+    }
+    
+    // Sinon, message générique localisé
+    return l10n.genericReviewTitle; // "Avis client" ou équivalent selon la langue
+  }
+
+  // Méthode pour obtenir la date de l'avis
+  String _getReviewDate(Review review) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final difference = now.difference(review.createdAt);
+    
+    if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return l10n.monthsAgo(months); // "Il y a X mois"
+    } else if (difference.inDays > 0) {
+      return l10n.daysAgo(difference.inDays); // "Il y a X jours"
+    } else if (difference.inHours > 0) {
+      return l10n.hoursAgo(difference.inHours); // "Il y a X heures"
+    } else {
+      return l10n.recently; // "Récemment"
     }
   }
 }

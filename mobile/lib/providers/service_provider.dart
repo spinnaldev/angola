@@ -453,17 +453,21 @@ class ServiceProvider with ChangeNotifier {
       }
 
       // Ajouter les options
-      request.fields['options_count'] = options.length.toString();
-      for (int i = 0; i < options.length; i++) {
-        final option = options[i];
+      final validOptions = options.where((option) => 
+        option.name.isNotEmpty // Seulement les options avec un nom
+      ).toList();
+      
+      request.fields['options_count'] = validOptions.length.toString();
+      for (int i = 0; i < validOptions.length; i++) {
+        final option = validOptions[i];
         request.fields['option_${i}_name'] = option.name;
         request.fields['option_${i}_description'] = option.description;
-        if (option.price != null) {
+        if (option.price != null && option.price! > 0) {
           request.fields['option_${i}_price'] = option.price.toString();
         }
-        request.fields['option_${i}_is_included'] =
-            option.isIncluded.toString();
+        request.fields['option_${i}_is_included'] = option.isIncluded.toString();
       }
+
 
       // Envoyer la requête
       var streamedResponse = await request.send();

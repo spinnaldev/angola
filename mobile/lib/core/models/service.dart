@@ -100,9 +100,10 @@ class Service {
       title: json['title'],
       description: json['description'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      rating: parseRating(json['rating'] ?? json['average_rating']),
+      rating: parseRating(json['rating'] ?? json['average_rating'] ?? json['service_rating']),
       reviewCount: parseReviewCount(json['review_count'] ??
           json['reviews_count'] ??
+          json['service_reviews_count'] ??
           json['total_reviews']),
       provider_id: json['provider_id'] ?? 0,
       businessType: json['business_type'] ?? 'Entreprise',
