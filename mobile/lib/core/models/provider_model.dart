@@ -36,9 +36,50 @@ class ProviderModel {
     List<ServiceItem> servicesList = [];
     
     if (json['services'] != null) {
-      servicesList = List<ServiceItem>.from(
-        json['services'].map((service) => ServiceItem.fromJson(service))
-      );
+      try {
+        servicesList = List<ServiceItem>.from(
+          json['services'].map((service) => ServiceItem.fromJson(service))
+        );
+      } catch (e) {
+        print('⚠️ Erreur parsing services: $e');
+        servicesList = [];
+      }
+    }
+
+    String parseStringSafely(dynamic value, String defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is String) return value;
+      return value.toString();
+    }
+
+    int parseIntSafely(dynamic value, {int defaultValue = 0}) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is double) return value.round();
+      if (value is String && value.isNotEmpty) {
+        return int.tryParse(value) ?? defaultValue;
+      }
+      return defaultValue;
+    }
+
+    double parseDoubleSafely(dynamic value, {double defaultValue = 0.0}) {
+      if (value == null) return defaultValue;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String && value.isNotEmpty) {
+        return double.tryParse(value) ?? defaultValue;
+      }
+      return defaultValue;
+    }
+
+    bool parseBoolSafely(dynamic value, {bool defaultValue = false}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      if (value is String) {
+        return value.toLowerCase() == 'true' || value == '1';
+      }
+      return defaultValue;
     }
     // Parse rating avec validation
     double parseRating(dynamic ratingValue) {
@@ -65,22 +106,24 @@ class ProviderModel {
     }
     
     return ProviderModel(
-      id: json['id'],
-      name: json['name'],
-      businessType: json['business_type'] ?? 'Entreprise',
-      profileImageUrl: json['profile_image_url'] ?? '',
-      rating: parseRating(json['rating'] ?? json['average_rating']),
-      reviewCount: parseReviewCount(json['review_count'] ?? 
-                                  json['reviews_count'] ?? 
-                                  json['total_reviews']),
-      description: json['description'] ?? '',
+      id: parseIntSafely(json['id']),
+      // ✅ Parsing sécurisé pour tous les champs String requis
+      name: parseStringSafely(json['name'] ?? json['username'] ?? json['company_name'], 'Prestataire sans nom'),
+      businessType: parseStringSafely(json['business_type'], 'Entreprise'),
+      profileImageUrl: parseStringSafely(json['profile_image_url'] ?? json['avatar'] ?? json['profile_picture'], ''),
+      description: parseStringSafely(json['description'] ?? json['bio'], ''),
+      // ✅ Parsing sécurisé pour les numbers
+      rating: parseDoubleSafely(json['rating'] ?? json['average_rating'] ?? json['avg_rating']),
+      reviewCount: parseIntSafely(json['review_count'] ?? json['reviews_count'] ?? json['total_reviews']),
+      trustScore: parseDoubleSafely(json['trust_score']),
+      // ✅ Parsing sécurisé pour les booleans
+      isFeatured: parseBoolSafely(json['is_featured']),
+      isVerified: parseBoolSafely(json['is_verified']),
+      // ✅ Champs optionnels avec parsing sécurisé
+      address: json['address']?.toString(),
+      latitude: json['latitude'] != null ? parseDoubleSafely(json['latitude']) : null,
+      longitude: json['longitude'] != null ? parseDoubleSafely(json['longitude']) : null,
       services: servicesList,
-      address: json['address'],
-      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
-      isFeatured: json['is_featured'] ?? false,
-      isVerified: json['is_verified'] ?? false,
-      trustScore: json['trust_score'] != null ? (json['trust_score'] as num).toDouble() : 0.0,
     );
   }
 
@@ -101,6 +144,20 @@ class ProviderModel {
       'is_verified': isVerified,
       'trust_score': trustScore,
     };
+  }
+
+   @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ProviderModel && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'ProviderModel(id: $id, name: $name, businessType: $businessType)';
   }
 }
 

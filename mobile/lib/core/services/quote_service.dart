@@ -12,26 +12,38 @@ class QuoteService {
   Future<QuoteRequest> createQuoteRequest(QuoteRequest quoteRequest) async {
     try {
       final headers = await _apiService.getHeaders();
-      headers['Content-Type'] =
-          'application/json; charset=utf-8'; // Ensure proper encoding
+      headers['Content-Type'] = 'application/json; charset=utf-8';
+
+      // ✅ Debug: Log des données envoyées
+      final requestBody = json.encode(quoteRequest.toJson());
+      print('📤 Données envoyées au serveur: $requestBody');
 
       final response = await http.post(
         Uri.parse('${_apiService.baseUrl}/quote-requests/'),
         headers: headers,
-        body:
-            json.encode(quoteRequest.toJson()), // Use the model's toJson method
+        body: requestBody,
       );
+
+      print('📥 Status code: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
+        print('✅ Données reçues du serveur: $data'); // ✅ Debug crucial
+        
+        // ✅ Vérification avant parsing
+        if (data == null) {
+          throw Exception('Réponse vide du serveur');
+        }
+        
         return QuoteRequest.fromJson(data);
       } else {
-        print('Error response: ${response.body}'); // Log the actual error
+        print('❌ Error response: ${response.body}');
         throw Exception('Failed to create quote request: ${response.body}');
       }
     } catch (e) {
-      print("C'est ici l'erreur quote");
-      print('Error in createQuoteRequest: $e');
+      print("💥 Erreur dans createQuoteRequest: $e");
+      print("💥 Type d'erreur: ${e.runtimeType}");
       rethrow;
     }
   }

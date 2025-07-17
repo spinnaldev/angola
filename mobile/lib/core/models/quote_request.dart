@@ -22,8 +22,8 @@ class QuoteRequest {
   factory QuoteRequest.fromJson(Map<String, dynamic> json) {
     return QuoteRequest(
       id: json['id'],
-      clientId: json['client_id'],
-      providerId: json['provider_id'],
+      clientId: _parseIntSafely(json['client_id'] ?? json['client']), // ✅ Fallback client
+      providerId: _parseIntSafely(json['provider_id'] ?? json['provider']), // ✅ Fallback provider  
       subject: json['subject'],
       budget: _parseDoubleSafely(json['budget']), 
       description: json['description'],
@@ -47,7 +47,10 @@ class QuoteRequest {
 
   // ✅ Méthodes utilitaires pour parsing sécurisé
   static int _parseIntSafely(dynamic value) {
-    if (value == null) return 0;
+    if (value == null) {
+      print('⚠️ Valeur null pour int, retour 0');
+      return 0;
+    }
     
     try {
       if (value is int) return value;
@@ -55,9 +58,10 @@ class QuoteRequest {
       if (value is String && value.isNotEmpty) {
         return int.parse(value);
       }
+      print('⚠️ Impossible de parser en int: $value (${value.runtimeType})');
       return 0;
     } catch (e) {
-      print('Erreur parsing int: $e pour valeur: $value');
+      print('❌ Erreur parsing int: $e pour valeur: $value');
       return 0;
     }
   }

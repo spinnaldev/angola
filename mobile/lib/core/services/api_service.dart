@@ -2681,16 +2681,46 @@ class ApiService {
       print('👥 Récupération des prestataires...');
 
       final data = await _apiClient.get('providers/', requireAuth: false);
+      print('📥 Données brutes reçues: $data'); // Debug
 
       final List<dynamic> providersData = data['results'] ?? [];
-      final providers =
-          providersData.map((item) => ProviderModel.fromJson(item)).toList();
+      print('📋 Nombre de prestataires dans les données: ${providersData.length}');
 
-      print('✅ Prestataires récupérés: ${providers.length}');
+      final List<ProviderModel> providers = [];
+      final Set<int> seenIds = <int>{};
+
+      // ✅ Parser chaque provider individuellement avec gestion d'erreurs
+      for (int i = 0; i < providersData.length; i++) {
+        try {
+          final providerJson = providersData[i];
+          print('🔍 Parsing provider $i: ${providerJson['id']} - ${providerJson['name']}');
+          
+          final provider = ProviderModel.fromJson(providerJson);
+          
+          // ✅ Vérifier les doublons
+          if (seenIds.contains(provider.id)) {
+            print('⚠️ Provider ${provider.id} déjà vu, ignoré');
+            continue;
+          }
+          
+          seenIds.add(provider.id);
+          providers.add(provider);
+          
+        } catch (e, stackTrace) {
+          print('❌ Erreur parsing provider $i: $e');
+          print('📋 Données problématiques: ${providersData[i]}');
+          print('📍 Stack trace: $stackTrace');
+          // Continuer avec les autres providers
+        }
+      }
+
+      print('✅ Prestataires récupérés avec succès: ${providers.length}');
       return providers;
-    } catch (e) {
+      
+    } catch (e, stackTrace) {
       print('❌ Erreur dans getProviders: $e');
-      return _getMockProviders();
+      print('📍 Stack trace: $stackTrace');
+      return _getMockProviders(); // Fallback
     }
   }
 

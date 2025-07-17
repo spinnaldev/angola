@@ -1,7 +1,7 @@
-// lib/ui/screens/disputes/disputes_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT
 import '../../../providers/dispute_provider.dart';
 import '../../../core/services/profile_manager.dart';
 import '../../../core/models/dispute.dart';
@@ -37,20 +37,21 @@ class _DisputesScreenState extends State<DisputesScreen>
     await Provider.of<DisputeProvider>(context, listen: false).fetchUserDisputes();
   }
 
-  List<Tab> _getTabs() {
+  // ✅ Méthode pour obtenir les onglets traduits
+  List<Tab> _getTabs(AppLocalizations l10n) {
     if (ProfileManager.isProviderMode()) {
-      return const [
-        Tab(text: 'Résumé'),
-        Tab(text: 'Réclamations ouvertes'),
-        Tab(text: 'En traitement'),
-        Tab(text: 'Résolues'),
+      return [
+        Tab(text: l10n.summary),
+        Tab(text: l10n.openComplaints),
+        Tab(text: l10n.inProcessing),
+        Tab(text: l10n.resolvedComplaints),
       ];
     } else {
-      return const [
-        Tab(text: 'Résumé'),
-        Tab(text: 'Litiges ouverts'),
-        Tab(text: 'En examen'),
-        Tab(text: 'Résolus'),
+      return [
+        Tab(text: l10n.summary),
+        Tab(text: l10n.openDisputes),
+        Tab(text: l10n.underReview),
+        Tab(text: l10n.resolvedDisputes),
       ];
     }
   }
@@ -74,16 +75,18 @@ class _DisputesScreenState extends State<DisputesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(_getAppBarTitle()),
+        title: Text(_getAppBarTitle(l10n)), // ✅ PASSER l10n
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
-          tabs: _getTabs(),
+          tabs: _getTabs(l10n), // ✅ PASSER l10n
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
@@ -113,24 +116,27 @@ class _DisputesScreenState extends State<DisputesScreen>
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: Text(_getFabLabel()),
+        label: Text(_getFabLabel(l10n)), // ✅ PASSER l10n
       ),
     );
   }
 
-  String _getAppBarTitle() {
+  // ✅ Méthodes utilitaires avec traduction
+  String _getAppBarTitle(AppLocalizations l10n) {
     return ProfileManager.isProviderMode() 
-      ? 'Mes réclamations' 
-      : 'Mes litiges';
+      ? l10n.myComplaints
+      : l10n.myDisputes;
   }
 
-  String _getFabLabel() {
+  String _getFabLabel(AppLocalizations l10n) {
     return ProfileManager.isProviderMode() 
-      ? 'Nouvelle réclamation' 
-      : 'Nouveau litige';
+      ? l10n.newComplaint
+      : l10n.newDispute;
   }
 
   Widget _buildStatusSummary(DisputeProvider disputeProvider) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     final openCount = disputeProvider.getDisputesByStatus('open').length;
     final underReviewCount = disputeProvider.getDisputesByStatus('under_review').length;
     final resolvedCount = disputeProvider.getDisputesByStatus('resolved').length + 
@@ -146,13 +152,13 @@ class _DisputesScreenState extends State<DisputesScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Carte de bienvenue
-            _buildWelcomeCard(),
+            _buildWelcomeCard(l10n), // ✅ PASSER l10n
             
             const SizedBox(height: 16),
             
             // Statistiques
             Text(
-              'Statistiques',
+              l10n.statistics, // ✅ TRADUIT
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -166,7 +172,7 @@ class _DisputesScreenState extends State<DisputesScreen>
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Total',
+                    l10n.total, // ✅ TRADUIT
                     totalCount.toString(),
                     Colors.blue,
                     Icons.gavel,
@@ -175,7 +181,9 @@ class _DisputesScreenState extends State<DisputesScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    ProfileManager.isProviderMode() ? 'Ouvertes' : 'Ouverts',
+                    ProfileManager.isProviderMode() 
+                      ? l10n.openFeminine // ✅ "Ouvertes" (féminin pour réclamations)
+                      : l10n.openMasculine, // ✅ "Ouverts" (masculin pour litiges)
                     openCount.toString(),
                     Colors.orange,
                     Icons.hourglass_empty,
@@ -188,7 +196,7 @@ class _DisputesScreenState extends State<DisputesScreen>
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'En traitement',
+                    l10n.inProcessing, // ✅ TRADUIT
                     underReviewCount.toString(),
                     Colors.purple,
                     Icons.search,
@@ -197,7 +205,9 @@ class _DisputesScreenState extends State<DisputesScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    ProfileManager.isProviderMode() ? 'Résolues' : 'Résolus',
+                    ProfileManager.isProviderMode() 
+                      ? l10n.resolvedFeminine // ✅ "Résolues" (féminin)
+                      : l10n.resolvedMasculine, // ✅ "Résolus" (masculin)
                     resolvedCount.toString(),
                     Colors.green,
                     Icons.check_circle,
@@ -212,8 +222,8 @@ class _DisputesScreenState extends State<DisputesScreen>
             if (totalCount > 0) ...[
               Text(
                 ProfileManager.isProviderMode() 
-                  ? 'Réclamations récentes'
-                  : 'Litiges récents',
+                  ? l10n.recentComplaints // ✅ TRADUIT
+                  : l10n.recentDisputes, // ✅ TRADUIT
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -224,7 +234,7 @@ class _DisputesScreenState extends State<DisputesScreen>
               ...disputeProvider.disputes.take(3).map((dispute) => 
                 _buildDisputeCard(dispute, isCompact: true)),
             ] else ...[
-              _buildEmptyState(),
+              _buildEmptyState(l10n), // ✅ PASSER l10n
             ],
           ],
         ),
@@ -232,7 +242,7 @@ class _DisputesScreenState extends State<DisputesScreen>
     );
   }
 
-  Widget _buildWelcomeCard() {
+  Widget _buildWelcomeCard(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: ProfileManager.isProviderMode() ? Colors.blue[50] : Colors.green[50],
@@ -252,14 +262,16 @@ class _DisputesScreenState extends State<DisputesScreen>
                   size: 24,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  ProfileManager.isProviderMode() 
-                    ? 'Centre de réclamations'
-                    : 'Centre de litiges',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: ProfileManager.isProviderMode() ? Colors.blue[700] : Colors.green[700],
+                Expanded( // ✅ AJOUT pour éviter overflow
+                  child: Text(
+                    ProfileManager.isProviderMode() 
+                      ? l10n.complaintsCenter // ✅ TRADUIT
+                      : l10n.disputesCenter, // ✅ TRADUIT
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: ProfileManager.isProviderMode() ? Colors.blue[700] : Colors.green[700],
+                    ),
                   ),
                 ),
               ],
@@ -267,8 +279,8 @@ class _DisputesScreenState extends State<DisputesScreen>
             const SizedBox(height: 8),
             Text(
               ProfileManager.isProviderMode()
-                ? 'Gérez vos réclamations contre les clients et suivez leur traitement.'
-                : 'Signalez des problèmes avec les prestataires et suivez leur résolution.',
+                ? l10n.manageComplaintsDescription // ✅ TRADUIT
+                : l10n.reportProblemsDescription, // ✅ TRADUIT
               style: TextStyle(
                 color: ProfileManager.isProviderMode() ? Colors.blue[600] : Colors.green[600],
                 fontSize: 14,
@@ -313,6 +325,8 @@ class _DisputesScreenState extends State<DisputesScreen>
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
+              maxLines: 1, // ✅ AJOUT pour éviter overflow
+              overflow: TextOverflow.ellipsis, // ✅ AJOUT
             ),
           ],
         ),
@@ -321,8 +335,10 @@ class _DisputesScreenState extends State<DisputesScreen>
   }
 
   Widget _buildDisputesList(List<Dispute> disputes) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+
     if (disputes.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(l10n); // ✅ PASSER l10n
     }
 
     return RefreshIndicator(
@@ -339,6 +355,8 @@ class _DisputesScreenState extends State<DisputesScreen>
   }
 
   Widget _buildDisputeCard(Dispute dispute, {bool isCompact = false}) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+
     return Card(
       margin: EdgeInsets.only(bottom: isCompact ? 8 : 16),
       elevation: 2,
@@ -353,14 +371,14 @@ class _DisputesScreenState extends State<DisputesScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DisputeDetailScreen(disputeId: disputeId), // Maintenant disputeId est int
+                builder: (context) => DisputeDetailScreen(disputeId: disputeId),
               ),
             ).then((_) => _loadData());
           } else {
             // Gérer le cas où l'ID est null
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Impossible d\'ouvrir ce litige'),
+              SnackBar(
+                content: Text(l10n.cannotOpenDispute), // ✅ TRADUIT
                 backgroundColor: Colors.red,
               ),
             );
@@ -385,7 +403,7 @@ class _DisputesScreenState extends State<DisputesScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _buildStatusChip(dispute.status),
+                  _buildStatusChip(dispute.status, l10n), // ✅ PASSER l10n
                 ],
               ),
               const SizedBox(height: 8),
@@ -411,16 +429,19 @@ class _DisputesScreenState extends State<DisputesScreen>
                     color: Colors.grey[600],
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    ProfileManager.isProviderMode() 
-                      ? 'Client: ${dispute.clientName}'
-                      : 'Prestataire: ${dispute.providerName}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                  Expanded( // ✅ AJOUT pour éviter overflow
+                    child: Text(
+                      ProfileManager.isProviderMode() 
+                        ? '${l10n.client}: ${dispute.clientName}' // ✅ TRADUIT
+                        : '${l10n.provider}: ${dispute.providerName}', // ✅ TRADUIT
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis, // ✅ AJOUT
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8), // ✅ AJOUT d'espace
                   Text(
                     DateFormat('dd/MM/yyyy').format(dispute.createdAt),
                     style: TextStyle(
@@ -437,30 +458,36 @@ class _DisputesScreenState extends State<DisputesScreen>
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(String status, AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     Color color;
     String label;
     
     switch (status) {
       case 'open':
         color = Colors.orange;
-        label = ProfileManager.isProviderMode() ? 'Ouverte' : 'Ouvert';
+        label = ProfileManager.isProviderMode() 
+          ? l10n.openFeminine // ✅ "Ouverte" (féminin)
+          : l10n.openMasculine; // ✅ "Ouvert" (masculin)
         break;
       case 'under_review':
         color = Colors.blue;
-        label = 'En examen';
+        label = l10n.underReview; // ✅ TRADUIT
         break;
       case 'resolved':
         color = Colors.green;
-        label = ProfileManager.isProviderMode() ? 'Résolue' : 'Résolu';
+        label = ProfileManager.isProviderMode() 
+          ? l10n.resolvedFeminine // ✅ "Résolue" (féminin)
+          : l10n.resolvedMasculine; // ✅ "Résolu" (masculin)
         break;
       case 'closed':
         color = Colors.grey;
-        label = ProfileManager.isProviderMode() ? 'Fermée' : 'Fermé';
+        label = ProfileManager.isProviderMode() 
+          ? l10n.closedFeminine // ✅ "Fermée" (féminin)
+          : l10n.closedMasculine; // ✅ "Fermé" (masculin)
         break;
       default:
         color = Colors.grey;
-        label = 'Inconnu';
+        label = l10n.unknown; // ✅ TRADUIT
     }
     
     return Container(
@@ -481,38 +508,42 @@ class _DisputesScreenState extends State<DisputesScreen>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            ProfileManager.isProviderMode() ? Icons.report_outlined : Icons.gavel,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            ProfileManager.isProviderMode() 
-              ? 'Aucune réclamation'
-              : 'Aucun litige',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+      child: Padding( // ✅ AJOUT de padding pour éviter les problèmes d'espace
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              ProfileManager.isProviderMode() ? Icons.report_outlined : Icons.gavel,
+              size: 64,
+              color: Colors.grey[400],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            ProfileManager.isProviderMode()
-              ? 'Vous n\'avez créé aucune réclamation pour le moment.'
-              : 'Vous n\'avez signalé aucun problème pour le moment.',
-            style: TextStyle(
-              color: Colors.grey[600],
+            const SizedBox(height: 16),
+            Text(
+              ProfileManager.isProviderMode() 
+                ? l10n.noComplaints // ✅ TRADUIT
+                : l10n.noDisputes, // ✅ TRADUIT
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center, // ✅ AJOUT
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              ProfileManager.isProviderMode()
+                ? l10n.noComplaintsDescription // ✅ TRADUIT
+                : l10n.noDisputesDescription, // ✅ TRADUIT
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

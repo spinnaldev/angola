@@ -1,8 +1,7 @@
-// lib/ui/screens/provider/quote_requests_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT
 import 'package:teyago/ui/screens/base_screen.dart';
 import '../../../providers/quote_provider.dart';
 import '../../../core/models/quote_request.dart';
@@ -46,23 +45,25 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
   }
 
   Widget _buildQuoteContent() {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Demandes de devis'),
+        title: Text(l10n.quoteRequests), // ✅ TRADUIT
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: 'En attente'),
-            Tab(text: 'Acceptées'),
-            Tab(text: 'Terminées'),
+            Tab(text: l10n.pending), // ✅ TRADUIT
+            Tab(text: l10n.accepted), // ✅ TRADUIT
+            Tab(text: l10n.completed), // ✅ TRADUIT
           ],
         ),
       ),
       body: Consumer<QuoteProvider>(
         builder: (context, quoteProvider, _) {
           if (quoteProvider.isLoading) {
-            return Center(child: LoadingIndicator());
+            return const Center(child: LoadingIndicator());
           }
 
           // Filtrer les demandes par statut
@@ -83,13 +84,13 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
             controller: _tabController,
             children: [
               // Tab En attente
-              _buildRequestsList(pendingRequests, 'pending'),
+              _buildRequestsList(pendingRequests, 'pending', l10n), // ✅ PASSER l10n
 
               // Tab Acceptées
-              _buildRequestsList(acceptedRequests, 'accepted'),
+              _buildRequestsList(acceptedRequests, 'accepted', l10n), // ✅ PASSER l10n
 
               // Tab Terminées
-              _buildRequestsList(completedRequests, 'completed'),
+              _buildRequestsList(completedRequests, 'completed', l10n), // ✅ PASSER l10n
             ],
           );
         },
@@ -97,188 +98,221 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
     );
   }
 
-  Widget _buildRequestsList(List<QuoteRequest> requests, String type) {
+  Widget _buildRequestsList(List<QuoteRequest> requests, String type, AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     if (requests.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            SizedBox(height: 16),
-            Text(
-              type == 'pending'
-                  ? 'Aucune demande en attente'
-                  : type == 'accepted'
-                      ? 'Aucune demande acceptée'
-                      : 'Aucune demande terminée',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+        child: Padding( // ✅ AJOUT de padding pour éviter les problèmes d'espace
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.inbox,
+                size: 80,
+                color: Colors.grey[400],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                _getEmptyStateMessage(type, l10n), // ✅ MÉTHODE TRADUITE
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+                textAlign: TextAlign.center, // ✅ AJOUT
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: requests.length,
-      itemBuilder: (context, index) {
-        final request = requests[index];
-        return Card(
-          margin: EdgeInsets.only(bottom: 16),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: () => _showRequestDetails(request),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          request.subject,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      _buildStatusChip(request.status),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Client: John Doe', // À remplacer par le nom réel du client
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        request.budget > 0
-                            ? 'Budget: ${request.budget.toStringAsFixed(0)} AOA'
-                            : 'Budget: Non spécifié',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      Text(
-                        DateFormat('dd/MM/yyyy').format(request.createdAt),
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (type == 'pending') ...[
-                    SizedBox(height: 16),
+    return RefreshIndicator( // ✅ AJOUT pour pull-to-refresh
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: requests.length,
+        itemBuilder: (context, index) {
+          final request = requests[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              onTap: () => _showRequestDetails(request, l10n), // ✅ PASSER l10n
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton(
-                            onPressed: () =>
-                                _updateRequestStatus(request, 'rejected'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: BorderSide(color: Colors.red),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          child: Text(
+                            request.subject,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
-                            child: Text('Rejeter'),
+                            maxLines: 2, // ✅ AUGMENTÉ pour éviter la troncature
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () =>
-                                _updateRequestStatus(request, 'accepted'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                        const SizedBox(width: 8), // ✅ AJOUT d'espace
+                        _buildStatusChip(request.status, l10n), // ✅ PASSER l10n
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${l10n.client}: ${_getClientName(request)}', // ✅ TRADUIT + méthode helper
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded( // ✅ AJOUT pour éviter overflow
+                          child: Text(
+                            _getBudgetDisplay(request, l10n), // ✅ MÉTHODE TRADUITE
+                            style: TextStyle(
+                              color: Colors.grey[700],
                             ),
-                            child: Text('Accepter'),
+                          ),
+                        ),
+                        const SizedBox(width: 8), // ✅ AJOUT d'espace
+                        Text(
+                          DateFormat('dd/MM/yyyy').format(request.createdAt),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                  if (type == 'accepted') ...[
-                    SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            _updateRequestStatus(request, 'completed'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    // Boutons d'action
+                    if (type == 'pending') ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () =>
+                                  _updateRequestStatus(request, 'rejected', l10n), // ✅ PASSER l10n
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(l10n.reject), // ✅ TRADUIT
+                            ),
                           ),
-                        ),
-                        child: Text('Marquer comme terminé'),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _updateRequestStatus(request, 'accepted', l10n), // ✅ PASSER l10n
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white, // ✅ AJOUT
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(l10n.accept), // ✅ TRADUIT
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
+                    if (type == 'accepted') ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _updateRequestStatus(request, 'completed', l10n), // ✅ PASSER l10n
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white, // ✅ AJOUT
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(l10n.markAsCompleted), // ✅ TRADUIT
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  // ✅ Méthodes utilitaires pour traduction
+  String _getEmptyStateMessage(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'pending':
+        return l10n.noPendingRequests;
+      case 'accepted':
+        return l10n.noAcceptedRequests;
+      case 'completed':
+        return l10n.noCompletedRequests;
+      default:
+        return l10n.noRequests;
+    }
+  }
+
+  String _getClientName(QuoteRequest request) {
+    // TODO: Récupérer le vrai nom du client depuis l'API
+    return 'John Doe'; // Placeholder pour le moment
+  }
+
+  String _getBudgetDisplay(QuoteRequest request, AppLocalizations l10n) {
+    if (request.budget > 0) {
+      return '${l10n.budget}: ${request.budget.toStringAsFixed(0)} AOA';
+    } else {
+      return '${l10n.budget}: ${l10n.notSpecified}';
+    }
+  }
+
+  Widget _buildStatusChip(String status, AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     Color color;
     String label;
 
     switch (status) {
       case 'pending':
         color = Colors.orange;
-        label = 'En attente';
+        label = l10n.pending; // ✅ TRADUIT
         break;
       case 'accepted':
         color = Colors.blue;
-        label = 'Acceptée';
+        label = l10n.accepted; // ✅ TRADUIT
         break;
       case 'completed':
         color = Colors.green;
-        label = 'Terminée';
+        label = l10n.completed; // ✅ TRADUIT
         break;
       case 'rejected':
         color = Colors.red;
-        label = 'Rejetée';
+        label = l10n.rejected; // ✅ TRADUIT
         break;
       default:
         color = Colors.grey;
-        label = 'Inconnu';
+        label = l10n.unknown; // ✅ TRADUIT
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -295,164 +329,275 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
     );
   }
 
-  void _showRequestDetails(QuoteRequest request) {
+  void _showRequestDetails(QuoteRequest request, AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      isScrollControlled: true, // ✅ AJOUT pour contenu long
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Détails de la demande',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  _buildStatusChip(request.status),
-                ],
-              ),
-              SizedBox(height: 16),
-              Text(
-                request.subject,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Client: John Doe', // À remplacer par le nom réel du client
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Date: ${DateFormat('dd/MM/yyyy').format(request.createdAt)}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                request.budget > 0
-                    ? 'Budget: ${request.budget.toStringAsFixed(0)} AOA'
-                    : 'Budget: Non spécifié',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Description:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(request.description),
-              SizedBox(height: 24),
-              if (request.status == 'pending')
-                Row(
+        return DraggableScrollableSheet( // ✅ AJOUT pour meilleure UX
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView( // ✅ AJOUT pour scroll
+                controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _updateRequestStatus(request, 'rejected');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: BorderSide(color: Colors.red),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                    // En-tête avec handle de drag
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        child: Text('Rejeter'),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _updateRequestStatus(request, 'accepted');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.requestDetails, // ✅ TRADUIT
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        child: Text('Accepter'),
+                        _buildStatusChip(request.status, l10n),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Titre de la demande
+                    Text(
+                      l10n.requestSubject, // ✅ TRADUIT
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      request.subject,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Informations client et date
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.client, // ✅ TRADUIT
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _getClientName(request),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.date, // ✅ TRADUIT
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat('dd/MM/yyyy').format(request.createdAt),
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Budget
+                    Text(
+                      l10n.budget, // ✅ TRADUIT
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getBudgetDisplay(request, l10n),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Description
+                    Text(
+                      l10n.description, // ✅ TRADUIT
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Text(
+                        request.description,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Boutons d'action
+                    if (request.status == 'pending') ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _updateRequestStatus(request, 'rejected', l10n);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12), // ✅ AJOUT
+                              ),
+                              child: Text(l10n.reject), // ✅ TRADUIT
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _updateRequestStatus(request, 'accepted', l10n);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12), // ✅ AJOUT
+                              ),
+                              child: Text(l10n.accept), // ✅ TRADUIT
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (request.status == 'accepted') ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _updateRequestStatus(request, 'completed', l10n);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12), // ✅ AJOUT
+                          ),
+                          child: Text(l10n.markAsCompleted), // ✅ TRADUIT
+                        ),
+                      ),
+                    ],
+                    
+                    // Espace pour le handle de navigation
+                    SizedBox(height: MediaQuery.of(context).padding.bottom),
                   ],
                 ),
-              if (request.status == 'accepted')
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _updateRequestStatus(request, 'completed');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text('Marquer comme terminé'),
-                  ),
-                ),
-            ],
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
   Future<void> _updateRequestStatus(
-      QuoteRequest request, String newStatus) async {
+      QuoteRequest request, String newStatus, AppLocalizations l10n) async { // ✅ PARAMÈTRE l10n
     try {
       final quoteProvider = Provider.of<QuoteProvider>(context, listen: false);
       final success =
           await quoteProvider.updateQuoteRequestStatus(request.id!, newStatus);
 
-      if (success) {
+      if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Statut mis à jour avec succès'),
+            content: Text(l10n.statusUpdatedSuccessfully), // ✅ TRADUIT
             backgroundColor: Colors.green,
           ),
         );
-      } else {
+      } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(quoteProvider.errorMessage ??
-                'Erreur lors de la mise à jour du statut'),
+                l10n.errorUpdatingStatus), // ✅ TRADUIT
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error} ${e.toString()}'), // ✅ TRADUIT
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

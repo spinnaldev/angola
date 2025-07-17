@@ -1,6 +1,7 @@
 // lib/ui/screens/disputes/create_dispute_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT
 import '../../../providers/dispute_provider.dart';
 import '../../../providers/service_provider.dart';
 import '../../../providers/provider_list_provider.dart';
@@ -39,33 +40,33 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   bool _loadingServices = false;
   bool _loadingProviders = false;
 
-  // Liste des raisons courantes selon le profil
-  List<String> get _commonReasons {
+  String? _selectedReason;
+
+  // ✅ Liste des raisons courantes selon le profil avec traduction
+  List<String> _getCommonReasons(AppLocalizations l10n) {
     if (ProfileManager.isProviderMode()) {
       return [
-        'Client ne répond pas aux messages',
-        'Paiement en retard ou refusé',
-        'Demandes excessives hors contrat',
-        'Comportement irrespectueux',
-        'Annulation abusive du contrat',
-        'Fausses accusations',
-        'Autre problème avec le client',
+        l10n.clientNotResponding,
+        l10n.lateOrRefusedPayment,
+        l10n.excessiveDemands,
+        l10n.disrespectfulBehavior,
+        l10n.abusiveContractCancellation,
+        l10n.falseAccusations,
+        l10n.otherClientProblem,
       ];
     } else {
       return [
-        'Service non conforme à la description',
-        'Retard important dans l\'exécution',
-        'Travail de mauvaise qualité',
-        'Facturation incorrecte ou injustifiée',
-        'Comportement impoli ou non professionnel',
-        'Non-respect des conditions convenues',
-        'Prestataire injoignable',
-        'Autre problème',
+        l10n.serviceNotAsDescribed,
+        l10n.significantDelay,
+        l10n.poorQualityWork,
+        l10n.incorrectBilling,
+        l10n.unprofessionalBehavior,
+        l10n.conditionsNotRespected,
+        l10n.providerUnreachable,
+        l10n.otherProblem,
       ];
     }
   }
-
-  String? _selectedReason;
 
   @override
   void initState() {
@@ -90,20 +91,55 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   }
 
   Future<void> _loadProviders() async {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     setState(() {
       _loadingProviders = true;
     });
     
     try {
+      print('🔄 Chargement des prestataires...');
+      
       await Provider.of<ProviderListProvider>(context, listen: false).fetchProviders();
       final providerListProvider = Provider.of<ProviderListProvider>(context, listen: false);
+      
+      if (providerListProvider.hasError) {
+        throw Exception(providerListProvider.errorMessage);
+      }
+      
+      final loadedProviders = providerListProvider.providers;
+      print('📋 Providers chargés: ${loadedProviders.length}');
+      
+      // ✅ Filtrer les providers valides et supprimer les doublons
+      final validProviders = <ProviderModel>[];
+      final seenIds = <int>{};
+      
+      for (final provider in loadedProviders) {
+        if (provider.id > 0 && 
+            provider.name.isNotEmpty && 
+            !seenIds.contains(provider.id)) {
+          validProviders.add(provider);
+          seenIds.add(provider.id);
+        } else {
+          print('⚠️ Provider invalide ignoré: ID=${provider.id}, Name="${provider.name}"');
+        }
+      }
+      
       setState(() {
-        _providers = providerListProvider.providers;
+        _providers = validProviders;
       });
+      
+      print('✅ Providers valides: ${_providers.length}');
+      
     } catch (e) {
+      print('❌ Erreur lors du chargement des prestataires: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du chargement des prestataires: $e')),
+          SnackBar(
+            content: Text('${l10n.error} ${e.toString()}'), // ✅ TRADUIT
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
@@ -114,6 +150,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   }
 
   Future<void> _loadServicesForProvider(int providerId) async {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     setState(() {
       _loadingServices = true;
       _selectedServiceId = null;
@@ -123,13 +161,45 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     try {
       final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
       await serviceProvider.fetchProviderServices(providerId);
-      setState(() {
-        _services = serviceProvider.services; // Changé de providerServices vers services
-      });
+      
+      final loadedServices = serviceProvider.services;
+      
+      // ✅ DEBUG: Vérifier les doublons
+      print('🔍 Services chargés: ${loadedServices.length}');
+      final serviceIds = loadedServices.map((s) => s.id).toList();
+      final uniqueIds = serviceIds.toSet().toList();
+      
+      if (serviceIds.length != uniqueIds.length) {
+        print('⚠️ ATTENTION: Doublons détectés dans les services!');
+        print('IDs: $serviceIds');
+        print('IDs uniques: $uniqueIds');
+        
+        // Supprimer les doublons
+        final uniqueServices = <Service>[];
+        final seenIds = <int>{};
+        
+        for (final service in loadedServices) {
+          if (service.id != null && !seenIds.contains(service.id)) {
+            uniqueServices.add(service);
+            seenIds.add(service.id!);
+          }
+        }
+        
+        setState(() {
+          _services = uniqueServices;
+        });
+        print('✅ Services après suppression des doublons: ${_services.length}');
+      } else {
+        setState(() {
+          _services = loadedServices;
+        });
+      }
+      
     } catch (e) {
+      print('❌ Erreur lors du chargement des services: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du chargement des services: $e')),
+          SnackBar(content: Text('${l10n.errorLoadingServices} $e')), // ✅ TRADUIT
         );
       }
     } finally {
@@ -140,9 +210,13 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   }
 
   void _selectReason(String? reason) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     setState(() {
       _selectedReason = reason;
-      if (reason != null && reason != 'Autre problème' && reason != 'Autre problème avec le client') {
+      if (reason != null && 
+          reason != l10n.otherProblem && 
+          reason != l10n.otherClientProblem) { // ✅ TRADUIT
         _titleController.text = reason;
       } else {
         _titleController.clear();
@@ -151,19 +225,21 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
   }
 
   Future<void> _submitDispute() async {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     if (!_formKey.currentState!.validate()) return;
     
     // Validation supplémentaire selon le profil
     if (ProfileManager.isClientMode() && _selectedProviderId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner un prestataire')),
+        SnackBar(content: Text(l10n.pleaseSelectProvider)), // ✅ TRADUIT
       );
       return;
     }
     
     if (ProfileManager.isProviderMode() && _clientInfoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez renseigner les informations du client')),
+        SnackBar(content: Text(l10n.pleaseProvideClientInfo)), // ✅ TRADUIT
       );
       return;
     }
@@ -185,7 +261,6 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         );
       } else {
         // Pour les prestataires, utiliser la méthode createDispute avec des paramètres adaptés
-        // Comme createProviderComplaint n'existe pas, on utilise createDispute avec des valeurs spéciales
         success = await disputeProvider.createDispute(
           0, // ID spécial pour les réclamations de prestataires
           _titleController.text.trim(),
@@ -199,15 +274,15 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(ProfileManager.isProviderMode() 
-              ? 'Réclamation créée avec succès' 
-              : 'Litige créé avec succès'),
+              ? l10n.complaintCreatedSuccessfully // ✅ TRADUIT
+              : l10n.disputeCreatedSuccessfully), // ✅ TRADUIT
             backgroundColor: Colors.green,
           ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(disputeProvider.errorMessage ?? 'Erreur lors de la création'),
+            content: Text(disputeProvider.errorMessage ?? l10n.errorCreating), // ✅ TRADUIT
             backgroundColor: Colors.red,
           ),
         );
@@ -216,7 +291,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('${l10n.error} $e'), // ✅ TRADUIT
             backgroundColor: Colors.red,
           ),
         );
@@ -230,11 +305,13 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(ProfileManager.isProviderMode() 
-          ? 'Créer une réclamation' 
-          : 'Signaler un problème'),
+          ? l10n.createComplaint // ✅ TRADUIT
+          : l10n.reportProblem), // ✅ TRADUIT
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -245,35 +322,35 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // En-tête explicatif
-              _buildHeaderCard(),
+              _buildHeaderCard(l10n), // ✅ PASSER l10n
               
               const SizedBox(height: 16),
               
               // Sélection selon le profil
               if (ProfileManager.isClientMode()) ...[
-                _buildProviderSelection(),
+                _buildProviderSelection(l10n), // ✅ PASSER l10n
                 const SizedBox(height: 16),
                 if (_selectedProviderId != null) ...[
-                  _buildServiceSelection(),
+                  _buildServiceSelection(l10n), // ✅ PASSER l10n
                   const SizedBox(height: 16),
                 ],
               ] else ...[
-                _buildClientInfoSection(),
+                _buildClientInfoSection(l10n), // ✅ PASSER l10n
                 const SizedBox(height: 16),
               ],
               
               // Sélection de la raison
-              _buildReasonSelection(),
+              _buildReasonSelection(l10n), // ✅ PASSER l10n
               
               const SizedBox(height: 16),
               
               // Détails du litige/réclamation
-              _buildDisputeForm(),
+              _buildDisputeForm(l10n), // ✅ PASSER l10n
               
               const SizedBox(height: 24),
               
               // Bouton de soumission
-              _buildSubmitButton(),
+              _buildSubmitButton(l10n), // ✅ PASSER l10n
             ],
           ),
         ),
@@ -281,7 +358,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildHeaderCard() {
+  Widget _buildHeaderCard(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.blue[50],
@@ -301,14 +378,16 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
                   size: 24,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  ProfileManager.isProviderMode() 
-                    ? 'Réclamation contre un client'
-                    : 'Signalement d\'un problème',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.blue[700],
+                Expanded( // ✅ AJOUT pour éviter overflow
+                  child: Text(
+                    ProfileManager.isProviderMode() 
+                      ? l10n.complaintAgainstClient // ✅ TRADUIT
+                      : l10n.reportProblemTitle, // ✅ TRADUIT
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.blue[700],
+                    ),
                   ),
                 ),
               ],
@@ -316,8 +395,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             const SizedBox(height: 8),
             Text(
               ProfileManager.isProviderMode()
-                ? 'Utilisez ce formulaire pour signaler un problème avec un client. Notre équipe examinera votre réclamation.'
-                : 'Signalez un problème avec un prestataire. Notre équipe de modération examinera votre demande.',
+                ? l10n.complaintDescription // ✅ TRADUIT
+                : l10n.reportProblemDescription, // ✅ TRADUIT
               style: TextStyle(
                 color: Colors.blue[600],
                 fontSize: 14,
@@ -329,7 +408,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildProviderSelection() {
+  Widget _buildProviderSelection(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.white,
@@ -341,9 +420,9 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Étape 1: Sélectionner le prestataire concerné',
-              style: TextStyle(
+            Text(
+              l10n.step1SelectProvider, // ✅ TRADUIT
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -352,22 +431,38 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             
             if (_loadingProviders)
               const Center(child: CircularProgressIndicator())
+            else if (_providers.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.red[600]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.noProvidersAvailable, // ✅ TRADUIT
+                        style: TextStyle(color: Colors.red[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              )
             else
               DropdownButtonFormField<int>(
                 value: _selectedProviderId,
                 decoration: InputDecoration(
-                  labelText: 'Prestataire concerné',
+                  labelText: l10n.concernedProvider, // ✅ TRADUIT
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: const Icon(Icons.person_search),
                 ),
-                items: _providers.map((provider) {
-                  return DropdownMenuItem<int>(
-                    value: provider.id,
-                    child: Text(provider.name),
-                  );
-                }).toList(),
+                items: _buildProviderDropdownItems(),
                 onChanged: (value) {
                   setState(() {
                     _selectedProviderId = value;
@@ -377,7 +472,9 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
                     _loadServicesForProvider(value);
                   }
                 },
-                validator: (value) => value == null ? 'Veuillez sélectionner un prestataire' : null,
+                validator: (value) => value == null 
+                    ? l10n.pleaseSelectProvider // ✅ TRADUIT
+                    : null,
               ),
           ],
         ),
@@ -385,7 +482,31 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildServiceSelection() {
+  List<DropdownMenuItem<int>> _buildProviderDropdownItems() {
+    final items = <DropdownMenuItem<int>>[];
+    final seenIds = <int>{};
+    
+    for (final provider in _providers) {
+      // Vérifier que l'ID n'est pas déjà vu et n'est pas null
+      if (provider.id > 0 && !seenIds.contains(provider.id)) {
+        items.add(
+          DropdownMenuItem<int>(
+            value: provider.id,
+            child: Text(
+              provider.name.isNotEmpty ? provider.name : 'Prestataire #${provider.id}',
+              overflow: TextOverflow.ellipsis, // ✅ Évite le débordement
+            ),
+          ),
+        );
+        seenIds.add(provider.id);
+      }
+    }
+    
+    print('🔧 Items provider dropdown créés: ${items.length}');
+    return items;
+  }
+
+  Widget _buildServiceSelection(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.white,
@@ -397,9 +518,9 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Étape 2: Service concerné (optionnel)',
-              style: TextStyle(
+            Text(
+              l10n.step2SelectService, // ✅ TRADUIT
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -415,34 +536,37 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Aucun service trouvé pour ce prestataire',
-                  style: TextStyle(fontStyle: FontStyle.italic),
+                child: Text(
+                  l10n.noServicesFoundForProvider, // ✅ TRADUIT
+                  style: const TextStyle(fontStyle: FontStyle.italic),
                 ),
               )
             else
-              DropdownButtonFormField<int>(
+              DropdownButtonFormField<int?>(
                 value: _selectedServiceId,
                 decoration: InputDecoration(
-                  labelText: 'Service concerné (optionnel)',
+                  labelText: l10n.concernedServiceOptional, // ✅ TRADUIT
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: const Icon(Icons.work_outline),
                 ),
                 items: [
-                  const DropdownMenuItem<int>(
+                  DropdownMenuItem<int?>(
                     value: null,
-                    child: Text('Aucun service spécifique'),
+                    child: Text(l10n.noSpecificService), // ✅ TRADUIT
                   ),
-                  ..._services.map((service) {
-                    return DropdownMenuItem<int>(
+                  ..._services.where((service) => service.id != null).map((service) {
+                    return DropdownMenuItem<int?>(
                       value: service.id,
-                      child: Text(service.title),
+                      child: Text(
+                        service.title,
+                        overflow: TextOverflow.ellipsis, // ✅ Évite le débordement
+                      ),
                     );
-                  }),
+                  }).toSet().toList(),
                 ],
-                onChanged: (value) {
+                onChanged: (int? value) {
                   setState(() {
                     _selectedServiceId = value;
                   });
@@ -454,7 +578,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildClientInfoSection() {
+  Widget _buildClientInfoSection(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.white,
@@ -466,9 +590,9 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Étape 1: Informations sur le client',
-              style: TextStyle(
+            Text(
+              l10n.step1ClientInfo, // ✅ TRADUIT
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -477,8 +601,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             TextFormField(
               controller: _clientInfoController,
               decoration: InputDecoration(
-                labelText: 'Nom du client ou email',
-                hintText: 'Ex: Jean Dupont ou jean.dupont@email.com',
+                labelText: l10n.clientNameOrEmail, // ✅ TRADUIT
+                hintText: l10n.clientNameOrEmailHint, // ✅ TRADUIT
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -486,7 +610,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
               ),
               validator: (value) {
                 if (value?.trim().isEmpty ?? true) {
-                  return 'Veuillez renseigner les informations du client';
+                  return l10n.pleaseProvideClientInfo; // ✅ TRADUIT
                 }
                 return null;
               },
@@ -497,7 +621,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildReasonSelection() {
+  Widget _buildReasonSelection(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.white,
@@ -511,8 +635,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
           children: [
             Text(
               ProfileManager.isProviderMode() 
-                ? 'Étape 2: Nature de la réclamation'
-                : 'Étape 3: Nature du problème',
+                ? l10n.step2ComplaintNature // ✅ TRADUIT
+                : l10n.step3ProblemNature, // ✅ TRADUIT
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -522,22 +646,25 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             DropdownButtonFormField<String>(
               value: _selectedReason,
               decoration: InputDecoration(
-                labelText: 'Sélectionner la raison',
+                labelText: l10n.selectReason, // ✅ TRADUIT
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 prefixIcon: const Icon(Icons.list),
               ),
-              items: _commonReasons.map((reason) {
+              items: _getCommonReasons(l10n).map((reason) { // ✅ UTILISER MÉTHODE TRADUITE
                 return DropdownMenuItem<String>(
                   value: reason,
-                  child: Text(reason),
+                  child: Text(
+                    reason,
+                    overflow: TextOverflow.ellipsis, // ✅ Évite le débordement
+                  ),
                 );
               }).toList(),
               onChanged: _selectReason,
               validator: (value) {
                 if (value == null) {
-                  return 'Veuillez sélectionner une raison';
+                  return l10n.pleaseSelectReason; // ✅ TRADUIT
                 }
                 return null;
               },
@@ -548,7 +675,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildDisputeForm() {
+  Widget _buildDisputeForm(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return Card(
       elevation: 2,
       color: Colors.white,
@@ -562,8 +689,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
           children: [
             Text(
               ProfileManager.isProviderMode() 
-                ? 'Étape 3: Détails de la réclamation'
-                : 'Étape 4: Détails du litige',
+                ? l10n.step3ComplaintDetails // ✅ TRADUIT
+                : l10n.step4DisputeDetails, // ✅ TRADUIT
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -576,8 +703,8 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
               controller: _titleController,
               decoration: InputDecoration(
                 labelText: ProfileManager.isProviderMode() 
-                  ? 'Titre de la réclamation'
-                  : 'Titre du litige',
+                  ? l10n.complaintTitle // ✅ TRADUIT
+                  : l10n.disputeTitle, // ✅ TRADUIT
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -586,10 +713,10 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
               maxLength: 100,
               validator: (value) {
                 if (value?.trim().isEmpty ?? true) {
-                  return 'Veuillez saisir un titre';
+                  return l10n.pleaseEnterTitle; // ✅ TRADUIT
                 }
                 if (value!.length < 10) {
-                  return 'Le titre doit contenir au moins 10 caractères';
+                  return l10n.titleMinLength; // ✅ TRADUIT
                 }
                 return null;
               },
@@ -601,10 +728,10 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
             TextFormField(
               controller: _descriptionController,
               decoration: InputDecoration(
-                labelText: 'Description détaillée',
+                labelText: l10n.detailedDescription, // ✅ TRADUIT
                 hintText: ProfileManager.isProviderMode()
-                  ? 'Décrivez le comportement problématique du client...'
-                  : 'Décrivez le problème rencontré avec le prestataire...',
+                  ? l10n.describeClientProblem // ✅ TRADUIT
+                  : l10n.describeProviderProblem, // ✅ TRADUIT
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -615,10 +742,10 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
               maxLength: 1000,
               validator: (value) {
                 if (value?.trim().isEmpty ?? true) {
-                  return 'Veuillez décrire le problème';
+                  return l10n.pleaseDescribeProblem; // ✅ TRADUIT
                 }
                 if (value!.length < 20) {
-                  return 'La description doit contenir au moins 20 caractères';
+                  return l10n.descriptionMinLength; // ✅ TRADUIT
                 }
                 return null;
               },
@@ -629,7 +756,7 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitButton(AppLocalizations l10n) { // ✅ PARAMÈTRE l10n
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -643,10 +770,10 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
           ),
         ),
         child: _isSubmitting
-            ? const Row(
+            ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -654,14 +781,14 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Text('Création en cours...'),
+                  const SizedBox(width: 12),
+                  Text(l10n.creationInProgress), // ✅ TRADUIT
                 ],
               )
             : Text(
                 ProfileManager.isProviderMode() 
-                  ? 'Créer la réclamation'
-                  : 'Créer le litige',
+                  ? l10n.createComplaint // ✅ TRADUIT
+                  : l10n.createDispute, // ✅ TRADUIT
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

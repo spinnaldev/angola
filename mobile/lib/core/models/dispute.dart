@@ -35,9 +35,9 @@ class Dispute {
   factory Dispute.fromJson(Map<String, dynamic> json) {
     return Dispute(
       id: json['id'],
-      providerId: json['provider_id'],
+      providerId: _parseIntSafely(json['provider_id'] ?? json['provider']), 
       providerName: json['provider_name'] ?? 'Inconnu',
-      serviceId: json['service_id'],
+      serviceId: _parseIntSafely(json['service_id'] ?? json['service']),
       serviceName: json['service_name'],
       title: json['title'],
       description: json['description'],
@@ -62,6 +62,26 @@ class Dispute {
       'title': title,
       'description': description,
     };
+  }
+
+  static int _parseIntSafely(dynamic value) {
+    if (value == null) {
+      print('⚠️ Valeur null pour int, retour 0');
+      return 0;
+    }
+    
+    try {
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String && value.isNotEmpty) {
+        return int.parse(value);
+      }
+      print('⚠️ Impossible de parser en int: $value (${value.runtimeType})');
+      return 0;
+    } catch (e) {
+      print('❌ Erreur parsing int: $e pour valeur: $value');
+      return 0;
+    }
   }
 }
 
