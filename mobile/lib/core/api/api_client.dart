@@ -117,7 +117,7 @@ class ApiClient {
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
     return _handleResponse(response.statusCode, encodedResponse);
-  }
+  }   
 
   Future<dynamic> post(String endpoint,
       {Map<String, dynamic>? data, bool requireAuth = true}) async {
@@ -170,7 +170,15 @@ class ApiClient {
   dynamic _handleResponse(int statusCode, String responseBody) {
     if (statusCode >= 200 && statusCode < 300) {
       if (responseBody.isNotEmpty) {
-        return json.decode(responseBody);
+        try {
+          // Assurer l'encodage UTF-8 avant le parsing JSON
+          final cleanBody = responseBody.replaceAll('\uFEFF', ''); // Remove BOM
+          return json.decode(cleanBody);
+        } catch (e) {
+          print('Erreur parsing JSON: $e');
+          print('Response body: $responseBody');
+          return null;
+        }
       }
       return null;
     } else if (statusCode == 401) {
