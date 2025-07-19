@@ -9,11 +9,13 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
+    company_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 
-                 'bio', 'profile_picture', 'role', 'is_verified', 'location', 'date_joined')
+                 'bio', 'profile_picture', 'role', 'is_verified', 'location', 'date_joined',
+                 'company_name')
         read_only_fields = ('date_joined', 'is_verified')
         extra_kwargs = {'password': {'write_only': True}}
     
@@ -43,6 +45,21 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
         return user
 
+    def get_company_name(self, obj):
+        """
+        Récupérer le nom de l'entreprise pour les prestataires
+        """
+        if obj.role == 'provider' and hasattr(obj, 'provider_profile'):
+            return obj.provider_profile.company_name
+        return None
+    
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = User.objects.create(**validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
 # class UserUpdateSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = User
@@ -52,32 +69,46 @@ class UserSerializer(serializers.ModelSerializer):
     
 class UserUpdateSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False)
+    company_name = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'phone_number', 'bio', 'location', 'profile_picture')
+        fields = ('first_name', 'last_name', 'phone_number', 'bio', 'location', 'profile_picture', 'company_name')
         
     def update(self, instance, validated_data):
+        # ✅ GESTION DU COMPANY_NAME
+        company_name = validated_data.pop('company_name', None)
+        
         # Gérer l'upload de l'image de profil
         profile_picture = validated_data.pop('profile_picture', None)
         
-        # Mettre à jour les autres champs
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
+        # Mettre à jour les autres champs utilisateur
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         
-        # Traiter l'image de profil
+        # Gérer l'image de profil
         if profile_picture:
-            # Supprimer l'ancienne image
+            # Supprimer l'ancienne image si elle existe
             if instance.profile_picture:
                 try:
                     instance.profile_picture.delete(save=False)
-                except:
+                except Exception:
                     pass
             instance.profile_picture = profile_picture
         
         instance.save()
-        print("on enregistre")
-        print(instance)
+        
+        # ✅ GESTION SPÉCIALE POUR LE COMPANY_NAME DES PRESTATAIRES
+        if company_name is not None and instance.role == 'provider':
+            # Créer ou mettre à jour le profil prestataire
+            provider_profile, created = Provider.objects.get_or_create(
+                user=instance,
+                defaults={'company_name': company_name}
+            )
+            if not created:
+                provider_profile.company_name = company_name
+                provider_profile.save()
+        
         return instance
     # def validate_phone_number(self, value):
     #     if value and len(value) < 8:
@@ -93,7 +124,7 @@ class SubCategorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SubCategory
-        fields = ('id', 'name', 'description', 'icon', 'category', 'category_name')
+        fields = '__all__'
 
 class ServiceOptionSerializer(serializers.ModelSerializer):
     class Meta:

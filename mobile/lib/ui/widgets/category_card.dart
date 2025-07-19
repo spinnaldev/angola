@@ -1,6 +1,8 @@
 // lib/ui/widgets/category_card.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/category.dart';
+import '../../providers/language_provider.dart';
 
 class CategoryCard extends StatelessWidget {
   final Category category;
@@ -52,7 +54,9 @@ class CategoryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.name,
+                  category.getLocalizedName(
+                    Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,

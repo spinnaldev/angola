@@ -418,26 +418,47 @@ class UserViewSet(viewsets.ModelViewSet):
     def update_me(self, request):
         """Mettre à jour le profil de l'utilisateur connecté"""
         user = request.user
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+        
+        # ✅ AJOUT DE LOGS POUR DEBUG
+        logger.info(f"🔄 Mise à jour profil pour utilisateur: {user.id} ({user.email})")
+        logger.info(f"📋 Données reçues: {request.data}")
+        logger.info(f"📎 Fichiers reçus: {request.FILES}")
+        
+        # ✅ VALIDATION DE L'UTILISATEUR
+        if not user.is_authenticated:
+            logger.error("❌ Utilisateur non authentifié")
+            return Response(
+                {"detail": "Authentication required"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True, context={'request': request})
         
         if serializer.is_valid():
-            # Gérer l'upload de l'image de profil
-            if 'profile_picture' in request.FILES:
-                # Supprimer l'ancienne image si elle existe
-                if user.profile_picture:
-                    try:
-                        user.profile_picture.delete(save=False)
-                    except Exception:
-                        pass
-                user.profile_picture = request.FILES['profile_picture']
+            logger.info("✅ Données valides, mise à jour en cours...")
             
-            serializer.save()
-            
-            # Retourner les données complètes de l'utilisateur
-            response_serializer = UserSerializer(user)
-            return Response(response_serializer.data)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                # Sauvegarder les modifications
+                updated_user = serializer.save()
+                logger.info(f"✅ Utilisateur mis à jour: {updated_user.id}")
+                
+                # ✅ RETOURNER LES DONNÉES COMPLÈTES AVEC COMPANY_NAME
+                response_serializer = UserSerializer(updated_user, context={'request': request})
+                response_data = response_serializer.data
+                
+                logger.info(f"📤 Données de réponse: {response_data}")
+                
+                return Response(response_data, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                logger.error(f"❌ Erreur lors de la sauvegarde: {str(e)}")
+                return Response(
+                    {"detail": f"Erreur lors de la mise à jour: {str(e)}"}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            logger.error(f"❌ Erreurs de validation: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def update(self, request, *args, **kwargs):
         """Mise à jour complète d'un utilisateur (PUT)"""

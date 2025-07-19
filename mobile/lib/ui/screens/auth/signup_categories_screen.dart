@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../core/models/category.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/app_button.dart';
 
 class SignupCategoriesScreen extends StatefulWidget {
@@ -232,7 +233,9 @@ class _SignupCategoriesScreenState extends State<SignupCategoriesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      category.name,
+                                      category.getLocalizedName(
+                                        Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                                      ),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,

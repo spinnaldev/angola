@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/service.dart';
 import '../../core/models/subcategory.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/subcategory_provider.dart';
 import '../common/bottom_navigation.dart';
@@ -47,7 +48,20 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
       serviceProvider.fetchServicesByCategory(widget.categoryId);
     });
   }
-  
+  String _getLocalizedAllText() {
+    final languageCode = Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode;
+    
+    switch (languageCode) {
+      case 'en':
+        return 'All';
+      case 'fr':
+        return 'Tous';
+      case 'pt':
+      default:
+        return 'Todos';
+    }
+  }
+
   @override
   void dispose() {
     _tabScrollController.dispose();
@@ -163,7 +177,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                               ),
                             ),
                             child: Text(
-                              "Tous",
+                              _getLocalizedAllText(),
                               style: TextStyle(
                                 color: _selectedSubcategoryIndex == -1 ? const Color(0xFF142FE2) : Colors.black,
                                 fontWeight: _selectedSubcategoryIndex == -1 ? FontWeight.bold : FontWeight.normal,
@@ -322,7 +336,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
       
     );
   }
-  // Style exact des onglets de sous-catégories comme sur l'image 1
+  //
   Widget _buildSubcategoryTab(Subcategory subcategory, int index) {
     final bool isSelected = _selectedSubcategoryIndex == index;
     
@@ -348,7 +362,9 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           ),
         ),
         child: Text(
-          subcategory.name,
+          subcategory.getLocalizedName(
+            Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+          ),
           style: TextStyle(
             color: isSelected ? const Color(0xFF142FE2) : Colors.black,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

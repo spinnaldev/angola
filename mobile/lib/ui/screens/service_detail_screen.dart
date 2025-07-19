@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/quote_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
@@ -55,6 +55,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUTÉ
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     if (!authProvider.isAuthenticated) {
@@ -63,14 +64,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Connexion requise'),
-            content: const Text(
-              'Vous devez vous connecter pour accéder à cette fonctionnalité.'
-            ),
+            title: Text(l10n.authentication), // ✅ UTILISE une clé existante
+            content: Text(l10n.loginToAccessAllFeatures), // ✅ Cette clé existe
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Annuler'),
+                child: Text(l10n.cancel), // ✅ Cette clé existe
               ),
               ElevatedButton(
                 onPressed: () {
@@ -81,7 +80,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF142FE2),
                 ),
-                child: const Text('Se connecter'),
+                child: Text(l10n.loginButton), // ✅ CORRIGÉ - Utilise loginButton au lieu de login
               ),
             ],
           );
@@ -405,6 +404,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       ],
     );
   }
+
+  // ✅ NOUVELLE MÉTHODE : Localisation du prix "Sur devis"
+  String _getLocalizedQuoteText() {
+    final l10n = AppLocalizations.of(context)!;
+    return l10n.onQuotePrice; // Utilise la localisation
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -577,7 +583,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              "${l10n.price}: ${l10n.onQuotePrice}",
+                              "${l10n.price}: ${_getLocalizedQuoteText()}", // ✅ CORRIGÉ - Utilise la localisation
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1284,7 +1290,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     // NOUVEAU: Champ titre de l'avis
                     Text(
                       l10n.titleAvis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                       ),
                     ),

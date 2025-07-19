@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -1155,7 +1156,9 @@ class _HomeScreenState extends State<HomeScreen>
                         MaterialPageRoute(
                           builder: (context) => ServiceListScreen(
                             categoryId: category.id,
-                            categoryName: category.name,
+                            categoryName: category.getLocalizedName(
+                              Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                            ),
                           ),
                         ),
                       );
@@ -1179,7 +1182,9 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(
                           width: 80,
                           child: Text(
-                            category.name,
+                            category.getLocalizedName(
+                              Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                            ),
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

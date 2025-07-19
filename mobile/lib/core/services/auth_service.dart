@@ -254,7 +254,8 @@ class AuthService {
     try {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('${_apiClient.baseUrl}/users/$userId/update_profile/'),
+        // Uri.parse('${_apiClient.baseUrl}/users/$userId/update_profile/'),update_me
+        Uri.parse('${_apiClient.baseUrl}/users/update_me/')
       );
 
       // Ajouter les headers d'authentification

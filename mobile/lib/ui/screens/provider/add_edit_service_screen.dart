@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/models/service_option.dart';
+import '../../../providers/language_provider.dart';
 import '../../../providers/service_provider.dart';
 import '../../../providers/subcategory_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -507,7 +508,9 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                             return DropdownMenuItem<int>(
                               value: categoryId,
                               child: Text(
-                                  category?.name ?? 'Catégorie $categoryId'),
+                                  category?.getLocalizedName(
+                                    Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                                  )  ?? 'Catégorie $categoryId'),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -546,7 +549,9 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                             items: _availableSubcategories.map((subcategory) {
                               return DropdownMenuItem<int>(
                                 value: subcategory.id,
-                                child: Text(subcategory.name),
+                                child: Text(subcategory.getLocalizedName(
+                                  Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                                )),
                               );
                             }).toList(),
                             onChanged: (value) {

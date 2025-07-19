@@ -7,6 +7,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
 import '../../core/models/category.dart';
 import '../../core/models/subcategory.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/subcategory_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
@@ -232,7 +233,9 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               items: categoryProvider.categories.map((category) {
                 return DropdownMenuItem(
                   value: category,
-                  child: Text(category.name),
+                  child: Text(category.getLocalizedName(
+                    Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                  )),
                 );
               }).toList(),
               onChanged: (Category? value) {

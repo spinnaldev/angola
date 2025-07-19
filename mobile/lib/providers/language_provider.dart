@@ -11,10 +11,10 @@ class LanguageProvider with ChangeNotifier {
 
   String get currentLanguageName {
     switch (_currentLocale.languageCode) {
-      case 'fr':
-        return 'Français';
       case 'en':
         return 'English';
+      case 'fr':
+        return 'Français';
       case 'pt':
         return 'Português';
       default:

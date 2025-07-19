@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/category_provider.dart';
+import '../../../providers/language_provider.dart';
 import '../../../providers/provider_list_provider.dart';
 import '../base_screen.dart';
 
@@ -389,7 +390,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                category.name,
+                                category.getLocalizedName(
+                                  Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                                ),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 11,

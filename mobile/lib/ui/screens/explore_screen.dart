@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/language_provider.dart';
 import '../widgets/category_card.dart';
 import 'service_list_screen.dart';
 import 'base_screen.dart';
@@ -219,7 +220,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           MaterialPageRoute(
                             builder: (context) => ServiceListScreen(
                               categoryId: category.id,
-                              categoryName: category.name,
+                              categoryName: category.getLocalizedName(
+                                Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                              ),
                             ),
                           ),
                         );

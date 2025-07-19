@@ -1,6 +1,8 @@
 // lib/ui/widgets/category_grid_card.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/category.dart';
+import '../../providers/language_provider.dart';
 
 class CategoryGridCard extends StatelessWidget {
   final Category category;
@@ -67,7 +69,9 @@ class CategoryGridCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  category.name,
+                  category.getLocalizedName(
+                    Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,

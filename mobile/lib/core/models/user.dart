@@ -13,6 +13,7 @@ class User {
   final bool isVerified;
   final String? location;
   final DateTime dateJoined;
+  final String? companyName;
 
   User({
     required this.id,
@@ -27,6 +28,7 @@ class User {
     required this.isVerified,
     this.location,
     required this.dateJoined,
+    this.companyName,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class User {
       isVerified: json['is_verified'],
       location: json['location'],
       dateJoined: DateTime.parse(json['date_joined']),
+      companyName: json['company_name'], 
     );
   }
 
@@ -60,6 +63,7 @@ class User {
       'is_verified': isVerified,
       'location': location,
       'date_joined': dateJoined.toIso8601String(),
+      'company_name': companyName,
     };
   }
 
@@ -72,4 +76,66 @@ class User {
   }
 
   String get fullName => '$firstName $lastName';
+
+  String get displayName {
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+    return username.isNotEmpty ? username : email.split('@').first;
+  }
+
+  // ✅ AJOUT - Getter pour le nom d'affichage avec entreprise
+  String get displayNameWithCompany {
+    if (role == 'provider' && companyName != null && companyName!.isNotEmpty) {
+      return companyName!;
+    }
+    return displayName;
+  }
+
+  User copyWith({
+    int? id,
+    String? username,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? bio,
+    String? profilePicture,
+    String? role,
+    bool? isVerified,
+    String? location,
+    DateTime? dateJoined,
+    String? companyName, // ✅ AJOUT
+  }) {
+    return User(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      bio: bio ?? this.bio,
+      profilePicture: profilePicture ?? this.profilePicture,
+      role: role ?? this.role,
+      isVerified: isVerified ?? this.isVerified,
+      location: location ?? this.location,
+      dateJoined: dateJoined ?? this.dateJoined,
+      companyName: companyName ?? this.companyName, // ✅ AJOUT
+    );
+  }
+
+  @override
+  String toString() {
+    return 'User{id: $id, username: $username, email: $email, fullName: $fullName, role: $role, companyName: $companyName}';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

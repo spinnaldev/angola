@@ -1,6 +1,8 @@
 // lib/ui/widgets/subcategory_tab.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/subcategory.dart';
+import '../../providers/language_provider.dart';
 
 class SubcategoryTab extends StatelessWidget {
   final Subcategory subcategory;
@@ -32,7 +34,9 @@ class SubcategoryTab extends StatelessWidget {
           ),
         ),
         child: Text(
-          subcategory.name,
+          subcategory.getLocalizedName(
+            Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
+          ),
           style: TextStyle(
             color: isSelected ? const Color(0xFF142FE2) : Colors.black,
             fontSize: 14,
