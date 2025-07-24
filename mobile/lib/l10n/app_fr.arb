@@ -940,5 +940,6 @@
   "tryAnotherCategory": "Revenez plus tard ou essayez une autre catégorie",
   "filters": "Filtres",
   "allServices": "Tous",
-  "searchServices": "Rechercher des services"
+  "searchServices": "Rechercher des services",
+  "servicesInCategory": "Services - {categoryName}"
 }

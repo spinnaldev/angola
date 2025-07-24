@@ -939,6 +939,7 @@
   "filters": "Filters",
   "allServices": "All",
   "searchServices": "Search services",
-  "servicesInCategory": "Services - {categoryName}"
+  "servicesInCategory": "Services - {categoryName}",
+  
 
 }
