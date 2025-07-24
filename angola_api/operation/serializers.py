@@ -474,12 +474,24 @@ class DisputeSerializer(serializers.ModelSerializer):
     service_title = serializers.StringRelatedField(source='service.title', read_only=True)
     evidence = DisputeEvidenceSerializer(many=True, read_only=True)
     
+    days_since_created = serializers.SerializerMethodField()
+    is_urgent = serializers.SerializerMethodField()
+
     class Meta:
         model = Dispute
         fields = ('id', 'client', 'client_name', 'provider', 'provider_name', 
                  'service', 'service_title', 'title', 'description', 'status',
-                 'resolution_note', 'created_at', 'evidence')
+                 'resolution_note', 'created_at', 'evidence' , 'days_since_created', 'is_urgent')
         read_only_fields = ('client', 'status', 'resolution_note' , 'provider')
+
+    def get_days_since_created(self, obj):
+        delta = timezone.now() - obj.created_at
+        return delta.days
+    
+    def get_is_urgent(self, obj):
+        days_since = self.get_days_since_created(obj)
+        return (obj.priority in ['high', 'urgent'] or 
+                (obj.status == 'open' and days_since > 7))
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -592,6 +604,10 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
     has_user_offered = serializers.SerializerMethodField()
     budget_display = serializers.SerializerMethodField()
 
+    offers_count = serializers.IntegerField(read_only=True)
+    favorites_count = serializers.IntegerField(read_only=True)
+    views_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = ClientProject
         fields = [
@@ -599,7 +615,8 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
             'subcategory_name', 'budget_range', 'budget_display', 'location',
             'urgency', 'status', 'offers_count', 'views_count', 'created_at',
             'time_since_posted', 'deadline', 'remote_possible', 'is_favorited',
-            'has_user_offered','min_budget', 'max_budget'
+            'has_user_offered','min_budget', 'max_budget','offers_count', 'favorites_count', 'views_count',
+            'admin_notes'
         ]
     
     def get_client_name(self, obj):
@@ -907,3 +924,28 @@ class ProjectFilterSerializer(serializers.Serializer):
     posted_within_days = serializers.IntegerField(required=False, min_value=1, max_value=365)
     search = serializers.CharField(max_length=255, required=False)
     
+
+# Serializers spéciaux pour les statistiques admin
+class AdminStatsSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    total_providers = serializers.IntegerField()
+    total_projects = serializers.IntegerField()
+    total_disputes = serializers.IntegerField()
+    new_users_this_month = serializers.IntegerField()
+    active_projects = serializers.IntegerField()
+    open_disputes = serializers.IntegerField()
+    monthly_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class ProjectStatsSerializer(serializers.Serializer):
+    total_projects = serializers.IntegerField()
+    by_status = serializers.DictField()
+    monthly_stats = serializers.ListField()
+    top_categories = serializers.ListField()
+
+
+class DisputeStatsSerializer(serializers.Serializer):
+    total_disputes = serializers.IntegerField()
+    by_status = serializers.DictField()
+    by_priority = serializers.DictField()
+    avg_resolution_time_hours = serializers.FloatField(allow_null=True)

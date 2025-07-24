@@ -528,237 +528,240 @@ const Users = () => {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Messages d'erreur et de succès */}
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 border border-red-200">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Erreur</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="rounded-md bg-green-50 p-4 border border-green-200">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800">Succès</h3>
-              <div className="mt-2 text-sm text-green-700">{success}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Gestion des utilisateurs
-        </h1>
-        <div className="mt-4 flex items-center md:mt-0">
-          <div className="relative mr-4">
-            <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            onClick={() => {
-              setCurrentUser(null);
-              setEditModalOpen(true);
-            }}
-          >
-            Ajouter
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
-                  Utilisateur
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Email
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Téléphone
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Rôle
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Date d'inscription
-                </th>
-                <th className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
-                  Vérifié
-                </th>
-                <th className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
-                  Statut
-                </th>
-                <th className="relative py-3.5 pl-3 pr-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan="8" className="py-10 text-center text-gray-500">
-                    <div className="flex items-center justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-                      <span className="ml-2">Chargement...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="py-10 text-center text-gray-500">
-                    Aucun utilisateur trouvé
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <UserRow
-                    key={user.id}
-                    user={user}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onToggleStatus={handleToggleStatus}
-                    onToggleVerification={handleToggleVerification}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6">
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Affichage de{' '}
-                  <span className="font-medium">
-                    {(currentPage - 1) * pageSize + 1}
-                  </span>{' '}
-                  à{' '}
-                  <span className="font-medium">
-                    {Math.min(currentPage * pageSize, totalCount)}
-                  </span>{' '}
-                  sur <span className="font-medium">{totalCount}</span> résultats
-                </p>
-              </div>
-              <div>
-                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((old) => Math.max(old - 1, 1))}
-                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${
-                      currentPage === 1
-                        ? 'cursor-not-allowed'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <ChevronLeftIcon />
-                  </button>
-                  
-                  {/* Pages */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => 
-                      page === 1 || 
-                      page === totalPages || 
-                      Math.abs(page - currentPage) <= 2
-                    )
-                    .map((page, index, arr) => {
-                      if (index > 0 && arr[index - 1] !== page - 1) {
-                        return (
-                          <React.Fragment key={`ellipsis-${page}`}>
-                            <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
-                              ...
-                            </span>
-                            <button
-                              onClick={() => setCurrentPage(page)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                                currentPage === page
-                                  ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          </React.Fragment>
-                        );
-                      }
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                            currentPage === page
-                              ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() =>
-                      setCurrentPage((old) => Math.min(old + 1, totalPages))
-                    }
-                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${
-                      currentPage === totalPages
-                        ? 'cursor-not-allowed'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <ChevronRightIcon />
-                  </button>
-                </nav>
+    <DashboardLayout>
+      <div className="space-y-6 p-6">
+        {/* Messages d'erreur et de succès */}
+        {error && (
+          <div className="rounded-md bg-red-50 p-4 border border-red-200">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Erreur</h3>
+                <div className="mt-2 text-sm text-red-700">{error}</div>
               </div>
             </div>
           </div>
         )}
+
+        {success && (
+          <div className="rounded-md bg-green-50 p-4 border border-green-200">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">Succès</h3>
+                <div className="mt-2 text-sm text-green-700">{success}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Gestion des utilisateurs
+          </h1>
+          <div className="mt-4 flex items-center md:mt-0">
+            <div className="relative mr-4">
+              <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              onClick={() => {
+                setCurrentUser(null);
+                setEditModalOpen(true);
+              }}
+            >
+              Ajouter
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
+                    Utilisateur
+                  </th>
+                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Email
+                  </th>
+                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Téléphone
+                  </th>
+                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Rôle
+                  </th>
+                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Date d'inscription
+                  </th>
+                  <th className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
+                    Vérifié
+                  </th>
+                  <th className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
+                    Statut
+                  </th>
+                  <th className="relative py-3.5 pl-3 pr-4">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="py-10 text-center text-gray-500">
+                      <div className="flex items-center justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                        <span className="ml-2">Chargement...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-10 text-center text-gray-500">
+                      Aucun utilisateur trouvé
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onToggleStatus={handleToggleStatus}
+                      onToggleVerification={handleToggleVerification}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {!loading && totalPages > 1 && (
+            <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6">
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Affichage de{' '}
+                    <span className="font-medium">
+                      {(currentPage - 1) * pageSize + 1}
+                    </span>{' '}
+                    à{' '}
+                    <span className="font-medium">
+                      {Math.min(currentPage * pageSize, totalCount)}
+                    </span>{' '}
+                    sur <span className="font-medium">{totalCount}</span> résultats
+                  </p>
+                </div>
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((old) => Math.max(old - 1, 1))}
+                      className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${
+                        currentPage === 1
+                          ? 'cursor-not-allowed'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <ChevronLeftIcon />
+                    </button>
+                    
+                    {/* Pages */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => 
+                        page === 1 || 
+                        page === totalPages || 
+                        Math.abs(page - currentPage) <= 2
+                      )
+                      .map((page, index, arr) => {
+                        if (index > 0 && arr[index - 1] !== page - 1) {
+                          return (
+                            <React.Fragment key={`ellipsis-${page}`}>
+                              <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+                                ...
+                              </span>
+                              <button
+                                onClick={() => setCurrentPage(page)}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  currentPage === page
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        }
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                              currentPage === page
+                                ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((old) => Math.min(old + 1, totalPages))
+                      }
+                      className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${
+                        currentPage === totalPages
+                          ? 'cursor-not-allowed'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <ChevronRightIcon />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Edit Modal */}
+        {editModalOpen && (
+          <EditUserModal
+            user={currentUser}
+            onSave={handleSaveUser}
+            onCancel={() => {
+              setEditModalOpen(false);
+              setCurrentUser(null);
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && currentUser && (
+          <DeleteConfirmationModal
+            user={currentUser}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setDeleteModalOpen(false);
+              setCurrentUser(null);
+            }}
+          />
+        )}
       </div>
-
-      {/* Edit Modal */}
-      {editModalOpen && (
-        <EditUserModal
-          user={currentUser}
-          onSave={handleSaveUser}
-          onCancel={() => {
-            setEditModalOpen(false);
-            setCurrentUser(null);
-          }}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && currentUser && (
-        <DeleteConfirmationModal
-          user={currentUser}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => {
-            setDeleteModalOpen(false);
-            setCurrentUser(null);
-          }}
-        />
-      )}
-    </div>
+    </DashboardLayout>
+    
   );
 };
 

@@ -279,9 +279,33 @@ class Dispute(TimeStampMixin):
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     resolution_note = models.TextField(blank=True)
-    
+    priority = models.CharField(
+        max_length=20,
+        choices=(
+            ('low', 'Faible'),
+            ('medium', 'Moyenne'),
+            ('high', 'Élevée'),
+            ('urgent', 'Urgent'),
+        ),
+        default='medium',
+        verbose_name="Priorité"
+    )
+    resolved_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Date de résolution"
+    )
+    def save(self, *args, **kwargs):
+        # Marquer la date de résolution automatiquement
+        if self.status == 'resolved' and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != 'resolved':
+            self.resolved_at = None
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Dispute #{self.id}: {self.title}"
+
 
 class DisputeEvidence(TimeStampMixin):
     dispute = models.ForeignKey(Dispute, on_delete=models.CASCADE, related_name='evidence')
@@ -422,7 +446,11 @@ class ClientProject(TimeStampMixin):
     attachment1 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
     attachment2 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
     attachment3 = models.FileField(upload_to='project_attachments/', null=True, blank=True)
-    
+    admin_notes = models.TextField(
+        blank=True, 
+        verbose_name="Notes administratives",
+        help_text="Notes internes pour l'administration"
+    )
     class Meta:
         ordering = ['-created_at']
         verbose_name = "Projet Client"
@@ -606,3 +634,138 @@ class ProviderSkill(TimeStampMixin):
     
     def __str__(self):
         return f"{self.provider.user.username} - {self.name} ({self.level})"
+
+class AdminAction(models.Model):
+    """
+    Modèle pour tracer les actions administratives
+    """
+    ACTION_TYPES = (
+        ('project_status_change', 'Changement statut projet'),
+        ('project_close', 'Fermeture projet'),
+        ('project_reopen', 'Réouverture projet'),
+        ('dispute_status_change', 'Changement statut litige'),
+        ('dispute_resolve', 'Résolution litige'),
+        ('user_suspend', 'Suspension utilisateur'),
+        ('provider_verify', 'Vérification prestataire'),
+        ('bulk_action', 'Action groupée'),
+    )
+    
+    admin_user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='admin_actions',
+        verbose_name="Administrateur"
+    )
+    action_type = models.CharField(
+        max_length=50, 
+        choices=ACTION_TYPES,
+        verbose_name="Type d'action"
+    )
+    target_model = models.CharField(
+        max_length=50,
+        verbose_name="Modèle cible"
+    )
+    target_id = models.PositiveIntegerField(
+        verbose_name="ID de l'objet"
+    )
+    description = models.TextField(
+        verbose_name="Description de l'action"
+    )
+    old_value = models.JSONField(
+        null=True, 
+        blank=True,
+        verbose_name="Ancienne valeur"
+    )
+    new_value = models.JSONField(
+        null=True, 
+        blank=True,
+        verbose_name="Nouvelle valeur"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True, 
+        blank=True,
+        verbose_name="Adresse IP"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name="User Agent"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Date de création"
+    )
+    
+    class Meta:
+        verbose_name = "Action Administrateur"
+        verbose_name_plural = "Actions Administrateurs"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.admin_user.username} - {self.get_action_type_display()}"
+
+
+class SystemSettings(models.Model):
+    """
+    Paramètres système pour l'administration
+    """
+    SETTING_TYPES = (
+        ('string', 'Texte'),
+        ('integer', 'Nombre entier'),
+        ('float', 'Nombre décimal'),
+        ('boolean', 'Booléen'),
+        ('json', 'JSON'),
+    )
+    
+    key = models.CharField(
+        max_length=100, 
+        unique=True,
+        verbose_name="Clé"
+    )
+    value = models.TextField(
+        verbose_name="Valeur"
+    )
+    setting_type = models.CharField(
+        max_length=20, 
+        choices=SETTING_TYPES,
+        default='string',
+        verbose_name="Type de paramètre"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Description"
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name="Visible publiquement"
+    )
+    updated_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        verbose_name="Modifié par"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Dernière modification"
+    )
+    
+    class Meta:
+        verbose_name = "Paramètre Système"
+        verbose_name_plural = "Paramètres Système"
+    
+    def __str__(self):
+        return f"{self.key}: {self.value[:50]}"
+    
+    def get_typed_value(self):
+        """Retourne la valeur dans le bon type"""
+        if self.setting_type == 'integer':
+            return int(self.value)
+        elif self.setting_type == 'float':
+            return float(self.value)
+        elif self.setting_type == 'boolean':
+            return self.value.lower() in ['true', '1', 'yes', 'on']
+        elif self.setting_type == 'json':
+            import json
+            return json.loads(self.value)
+        else:
+            return self.value

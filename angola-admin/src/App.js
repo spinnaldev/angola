@@ -12,7 +12,8 @@ import Categories from './pages/Categories';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
-
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 // Route protégée avec vérification d'authentification
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -76,6 +77,24 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/projects/:id"
+            element={
+              <ProtectedRoute>
+                <ProjectDetail />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/disputes"
             element={
@@ -124,5 +143,6 @@ function App() {
     </AuthProvider>
   );
 }
+
 
 export default App;

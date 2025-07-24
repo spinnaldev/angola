@@ -25,6 +25,13 @@ from rest_framework_simplejwt.views import (
 from operation import views
 from django.conf import settings
 from django.conf.urls.static import static
+from operation.admin_views import (
+    AdminProjectViewSet, AdminDisputeViewSet,
+    admin_dashboard_stats, admin_recent_activity
+)
+from operation.admin_auth_views import (
+    admin_login, check_admin_status, admin_setup_status
+)
 
 router = DefaultRouter()
 router.register(r'api/users', views.UserViewSet)
@@ -53,10 +60,17 @@ router.register(r'api/project-offers', views.ProjectOfferViewSet, basename='proj
 # Favoris projets
 router.register(r'api/project-favorites', views.ProjectFavoriteViewSet, basename='projectfavorite')
 
+# NOUVEAUX ENDPOINTS ADMIN
+router.register(r'api/admin/projects', AdminProjectViewSet, basename='admin-projects')
+router.register(r'api/admin/disputes', AdminDisputeViewSet, basename='admin-disputes')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
     path('', include(router.urls)),
+    path('api/auth/admin-login/', admin_login, name='admin_login'),
+    path('api/auth/check-admin-status/', check_admin_status, name='check_admin_status'),
+    path('api/auth/admin-setup-status/', admin_setup_status, name='admin_setup_status'),
+    
     path('api/auth/login/', views.LoginView.as_view(), name='login'),  # Nouveau: endpoint de connexion
     path('api/auth/register/', views.RegisterView.as_view(), name='register'),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -81,6 +95,10 @@ urlpatterns = [
     # path('api/projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
     
     path('api/projects/categories/<int:category_id>/', views.ClientProjectViewSet.as_view({'get': 'list'}),name='projects-by-category'),
+
+    path('api/admin/dashboard/stats/', admin_dashboard_stats, name='admin-dashboard-stats'),
+    path('api/admin/dashboard/recent-activity/', admin_recent_activity, name='admin-recent-activity'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

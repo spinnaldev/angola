@@ -41,7 +41,7 @@ api.interceptors.response.use(
 // Services d'API
 const authService = {
   login: async (credentials) => {
-    const response = await api.post('/auth/login/', credentials);
+    const response = await api.post('/auth/admin-login/', credentials);
     if (response.data.access) {
       localStorage.setItem('token', response.data.access);
       localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -271,6 +271,55 @@ const disputeService = {
   }
 };
 
+const projectService = {
+  getAll: async (page = 1, limit = 10, filters = {}) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: limit.toString(),
+    });
+    
+    // Ajouter les filtres
+    if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.client) params.append('client', filters.client);
+    
+    return api.get(`/admin/projects/?${params.toString()}`);
+  },
+  
+  getById: async (id) => {
+    return api.get(`/admin/projects/${id}/`);
+  },
+  
+  getOffers: async (projectId) => {
+    return api.get(`/admin/projects/${projectId}/offers/`);
+  },
+  
+  updateStatus: async (id, status, adminNotes = '') => {
+    return api.patch(`/admin/projects/${id}/`, { 
+      status, 
+      admin_notes: adminNotes 
+    });
+  },
+  
+  getStats: async () => {
+    return api.get('/admin/projects/stats/');
+  },
+  
+  // Actions administratives
+  closeProject: async (id, reason = '') => {
+    return api.post(`/admin/projects/${id}/close/`, { reason });
+  },
+  
+  reopenProject: async (id, reason = '') => {
+    return api.post(`/admin/projects/${id}/reopen/`, { reason });
+  },
+  
+  deleteProject: async (id) => {
+    return api.delete(`/admin/projects/${id}/`);
+  }
+};
+
 const reportService = {
   getAll: async (page = 1, limit = 10) => {
     return api.get(`/reports/?page=${page}&page_size=${limit}`);
@@ -287,9 +336,21 @@ const reportService = {
 
 const dashboardService = {
   getStats: async () => {
-    return api.get('/dashboard/stats/');
+    return api.get('/admin/dashboard/stats/');
+  },
+  getProjectStats: async () => {
+    return api.get('/admin/projects/stats/');
+  },
+  // NOUVEAU : Statistiques détaillées
+  getDetailedStats: async (period = '30d') => {
+    return api.get(`/admin/dashboard/detailed-stats/?period=${period}`);
+  },
+  
+  getRecentActivity: async (limit = 10) => {
+    return api.get(`/admin/dashboard/recent-activity/?limit=${limit}`);
   }
 };
+
 
 export {
   api,
@@ -298,5 +359,6 @@ export {
   providerService,
   disputeService,
   reportService,
+  projectService, 
   dashboardService
 };

@@ -60,3 +60,218 @@ INFO 2025-07-08 23:02:01,190 autoreload 30356 29272 Watching for file changes wi
 INFO 2025-07-08 23:02:35,085 basehttp 30356 32696 "GET /api/user/2 HTTP/1.1" 301 0
 INFO 2025-07-08 23:02:36,736 basehttp 30356 13316 "GET /api/user/2/ HTTP/1.1" 200 323
 INFO 2025-07-12 07:23:39,166 autoreload 29384 15252 Watching for file changes with StatReloader
+INFO 2025-07-19 12:30:31,567 autoreload 5928 28844 Watching for file changes with StatReloader
+INFO 2025-07-19 12:33:07,957 autoreload 8200 23772 Watching for file changes with StatReloader
+INFO 2025-07-19 12:34:53,576 basehttp 8200 23608 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:34:57,035 admin_auth_views 8200 23608 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-19 12:34:57,335 basehttp 8200 23608 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
+INFO 2025-07-19 12:34:57,474 basehttp 8200 23608 "OPTIONS /api/api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:34:57,509 basehttp 8200 29300 "OPTIONS /api/api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:34:57,520 basehttp 8200 29300 "OPTIONS /api/api/admin/projects/stats/ HTTP/1.1" 200 0
+WARNING 2025-07-19 12:34:57,574 log 8200 23608 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:34:57,611 basehttp 8200 23608 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:34:57,614 log 8200 29300 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:34:57,615 basehttp 8200 29300 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:34:57,697 log 8200 29300 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:34:57,699 log 8200 23608 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:34:57,699 basehttp 8200 29300 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:34:57,700 basehttp 8200 23608 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+INFO 2025-07-19 12:36:34,616 admin_auth_views 8200 25604 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-19 12:36:34,925 basehttp 8200 25604 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
+WARNING 2025-07-19 12:36:35,135 log 8200 25604 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:36:35,136 basehttp 8200 25604 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:36:35,218 log 8200 25604 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:36:35,219 basehttp 8200 25604 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:36:35,262 log 8200 25604 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:36:35,264 basehttp 8200 25604 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:36:35,310 log 8200 25604 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:36:35,311 basehttp 8200 25604 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:38:53,459 log 8200 30216 Unauthorized: /api/admin/dashboard/stats/
+WARNING 2025-07-19 12:38:53,460 basehttp 8200 30216 "GET /api/admin/dashboard/stats/ HTTP/1.1" 401 5289
+INFO 2025-07-19 12:38:53,623 basehttp 8200 26448 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
+INFO 2025-07-19 12:38:53,626 basehttp 8200 30216 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
+INFO 2025-07-19 12:38:53,630 basehttp 8200 24072 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3426
+INFO 2025-07-19 12:38:53,643 basehttp 8200 26448 "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
+INFO 2025-07-19 12:38:53,662 basehttp 8200 24072 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3796
+INFO 2025-07-19 12:38:53,677 basehttp 8200 26448 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
+INFO 2025-07-19 12:38:53,732 basehttp 8200 24072 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
+INFO 2025-07-19 12:38:53,735 basehttp 8200 30216 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 200 87533
+INFO 2025-07-19 12:38:53,745 basehttp 8200 26448 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
+INFO 2025-07-19 12:38:53,757 basehttp 8200 30216 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 200 59
+INFO 2025-07-19 12:38:53,763 basehttp 8200 26448 "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458
+INFO 2025-07-19 12:38:53,767 basehttp 8200 24072 "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
+WARNING 2025-07-19 12:38:53,856 log 8200 24072 Not Found: /favicon.ico
+WARNING 2025-07-19 12:38:53,856 basehttp 8200 24072 "GET /favicon.ico HTTP/1.1" 404 67512
+INFO 2025-07-19 12:38:54,772 basehttp 8200 29144 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3796
+INFO 2025-07-19 12:38:54,772 basehttp 8200 19872 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
+INFO 2025-07-19 12:38:54,773 basehttp 8200 10152 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 200 59
+INFO 2025-07-19 12:38:54,773 basehttp 8200 27396 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
+INFO 2025-07-19 12:38:54,774 basehttp 8200 17232 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
+INFO 2025-07-19 12:38:54,775 basehttp 8200 19872 "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
+INFO 2025-07-19 12:38:54,775 basehttp 8200 580 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 200 87533
+WARNING 2025-07-19 12:39:47,593 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:47,594 log 8200 29548 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:39:47,595 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:39:47,595 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:39:47,628 log 8200 29548 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:39:47,629 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:47,630 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:39:47,630 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:39:48,239 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:48,240 log 8200 29548 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:39:48,240 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:39:48,240 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+WARNING 2025-07-19 12:39:48,266 log 8200 29156 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:48,268 log 8200 30564 Not Found: /api/api/admin/projects/stats/
+WARNING 2025-07-19 12:39:48,268 basehttp 8200 29156 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:39:48,269 basehttp 8200 30564 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
+INFO 2025-07-19 12:39:58,490 basehttp 8200 8148 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:39:58,491 basehttp 8200 29568 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+WARNING 2025-07-19 12:39:58,508 log 8200 26244 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:58,509 basehttp 8200 26244 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:39:58,531 log 8200 8148 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:39:58,532 basehttp 8200 8148 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+INFO 2025-07-19 12:40:03,122 basehttp 8200 29568 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+WARNING 2025-07-19 12:40:06,978 log 8200 26456 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:40:06,980 basehttp 8200 26456 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+WARNING 2025-07-19 12:40:07,057 log 8200 26456 Not Found: /api/api/admin/dashboard/stats/
+WARNING 2025-07-19 12:40:07,058 basehttp 8200 26456 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
+INFO 2025-07-19 12:40:07,465 basehttp 8200 29568 - Broken pipe from ('127.0.0.1', 55912)
+INFO 2025-07-19 12:40:11,405 basehttp 8200 25720 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:40:15,781 basehttp 8200 25720 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:41:28,515 basehttp 8200 23912 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:41:28,515 basehttp 8200 26832 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 12:41:33,062 basehttp 8200 24860 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:41:36,963 basehttp 8200 26832 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:41:37,853 basehttp 8200 24860 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:41:43,249 basehttp 8200 28844 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:41:43,333 basehttp 8200 26832 - Broken pipe from ('127.0.0.1', 56113)
+INFO 2025-07-19 12:41:45,330 basehttp 8200 24860 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:41:47,453 basehttp 8200 28844 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:41:51,269 basehttp 8200 24860 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:43:33,647 basehttp 8200 29448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:43:35,487 basehttp 8200 26572 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:43:37,991 basehttp 8200 29448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:43:42,174 basehttp 8200 26572 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:49:48,968 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:49:50,848 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:49:53,505 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:49:57,411 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:49:58,108 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:50:02,959 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:50:04,032 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:50:11,249 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:53:08,025 basehttp 8200 9284 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:53:10,228 basehttp 8200 1412 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:53:12,633 basehttp 8200 9284 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:53:16,958 basehttp 8200 1412 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:53:50,586 basehttp 8200 31540 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:53:52,828 basehttp 8200 24100 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:53:56,324 basehttp 8200 31540 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:53:59,150 basehttp 8200 24100 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:54:36,591 basehttp 8200 29632 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:54:38,908 basehttp 8200 29532 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 12:54:41,081 basehttp 8200 29632 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 12:54:45,720 basehttp 8200 29532 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+ERROR 2025-07-19 12:58:34,317 admin_auth_views 8200 32472 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
+
+ERROR 2025-07-19 12:58:34,320 log 8200 32472 Internal Server Error: /api/auth/admin-login/
+ERROR 2025-07-19 12:58:34,321 basehttp 8200 32472 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
+ERROR 2025-07-19 12:59:30,559 admin_auth_views 8200 30416 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
+
+ERROR 2025-07-19 12:59:30,561 log 8200 30416 Internal Server Error: /api/auth/admin-login/
+ERROR 2025-07-19 12:59:30,562 basehttp 8200 30416 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
+ERROR 2025-07-19 12:59:46,327 admin_auth_views 8200 30416 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
+
+ERROR 2025-07-19 12:59:46,329 log 8200 30416 Internal Server Error: /api/auth/admin-login/
+ERROR 2025-07-19 12:59:46,330 basehttp 8200 30416 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
+INFO 2025-07-19 13:01:46,313 admin_auth_views 8200 20612 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-19 13:01:46,568 basehttp 8200 20612 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
+INFO 2025-07-19 13:01:50,747 basehttp 8200 17088 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:01:52,612 basehttp 8200 20612 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:01:54,730 basehttp 8200 17088 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:01:58,823 basehttp 8200 20612 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:10:23,910 basehttp 8200 27024 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:10:26,165 basehttp 8200 18452 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:10:28,452 basehttp 8200 27024 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:10:32,304 basehttp 8200 18452 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:11:53,618 basehttp 8200 27164 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:11:56,751 admin_auth_views 8200 27164 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-19 13:11:57,020 basehttp 8200 27164 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
+INFO 2025-07-19 13:11:57,048 basehttp 8200 27164 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:11:57,048 basehttp 8200 24984 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:11:57,051 basehttp 8200 27164 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:11:57,051 basehttp 8200 24984 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:12:01,176 basehttp 8200 24984 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:12:03,112 basehttp 8200 27164 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:12:05,417 basehttp 8200 24984 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:12:09,198 basehttp 8200 27164 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:20:18,465 basehttp 8200 15240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:20:21,254 basehttp 8200 17448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:20:23,717 basehttp 8200 15240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:20:26,763 basehttp 8200 31948 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:20:28,325 basehttp 8200 16760 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:20:28,838 basehttp 8200 17448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:20:31,725 basehttp 8200 31948 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:20:35,193 basehttp 8200 16760 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:21:11,288 basehttp 8200 17448 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:21:14,822 admin_auth_views 8200 17448 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-19 13:21:15,088 basehttp 8200 17448 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
+INFO 2025-07-19 13:21:15,108 basehttp 8200 17448 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:21:15,108 basehttp 8200 15240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:21:15,111 basehttp 8200 15240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:21:15,111 basehttp 8200 17448 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:21:20,045 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:21:21,477 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:21:24,268 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:21:30,020 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:22:33,637 basehttp 8200 15240 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:33,637 basehttp 8200 17448 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:36,675 basehttp 8200 27324 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:36,675 basehttp 8200 31760 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:37,030 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:22:39,661 basehttp 8200 28576 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:22:40,468 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:22:41,501 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:22:43,573 basehttp 8200 27324 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:43,575 basehttp 8200 27324 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:22:43,921 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:22:44,028 basehttp 8200 28576 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
+INFO 2025-07-19 13:22:46,026 basehttp 8200 27324 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:22:47,872 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:22:48,180 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
+INFO 2025-07-19 13:22:48,204 basehttp 8200 27324 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:22:49,084 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:22:51,615 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:22:55,833 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
+INFO 2025-07-19 13:23:02,640 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:10,083 basehttp 8200 15240 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:23:12,871 basehttp 8200 15240 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:23:14,484 basehttp 8200 17448 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:14,540 basehttp 8200 27324 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:17,554 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:22,818 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:33,071 basehttp 8200 27324 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:23:33,072 basehttp 8200 31760 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-19 13:23:35,111 basehttp 8200 27324 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:23:37,121 basehttp 8200 27324 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-19 13:23:42,438 basehttp 8200 27324 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-19 13:23:42,591 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:23:44,923 basehttp 8200 17448 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-19 13:23:45,479 basehttp 8200 31760 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-19 13:23:50,751 basehttp 8200 17448 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-19 13:23:55,506 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
+INFO 2025-07-19 13:24:01,519 basehttp 8200 28576 "OPTIONS /api/categories/1/ HTTP/1.1" 200 0
+INFO 2025-07-19 13:24:09,860 basehttp 8200 28576 "DELETE /api/categories/1/ HTTP/1.1" 204 0
+INFO 2025-07-19 13:25:11,184 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 494
+INFO 2025-07-19 13:25:13,659 basehttp 8200 28576 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1012
+INFO 2025-07-19 13:25:15,402 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 494
+INFO 2025-07-19 13:25:20,950 basehttp 8200 28576 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1012
+WARNING 2025-07-19 19:16:10,643 log 8200 30256 Unauthorized: /api/admin/dashboard/stats/
+WARNING 2025-07-19 19:16:10,646 basehttp 8200 30256 "GET /api/admin/dashboard/stats/ HTTP/1.1" 401 5289
+INFO 2025-07-19 19:16:10,695 basehttp 8200 5876 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3426
+INFO 2025-07-19 19:16:10,699 basehttp 8200 30256 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
+INFO 2025-07-19 19:16:10,719 basehttp 8200 5876 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
+INFO 2025-07-19 19:16:10,720 basehttp 8200 30256 "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
+INFO 2025-07-19 19:16:10,790 basehttp 8200 30256 - Broken pipe from ('127.0.0.1', 57906)
+INFO 2025-07-19 19:16:10,914 basehttp 8200 5876 - Broken pipe from ('127.0.0.1', 57907)

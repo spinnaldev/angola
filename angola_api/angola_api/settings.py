@@ -33,6 +33,7 @@ with open(BASE_DIR.joinpath('angola_api/proprieties.json')) as f:
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = SECRETS['KEY']
 
+ADMIN_URL = 'django-admin/'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -196,7 +197,10 @@ CORS_ALLOW_METHODS = [
 
 
 CORS_PREFLIGHT_MAX_AGE = 86400  
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 # Configuration du modèle utilisateur personnalisé
 # AUTH_USER_MODEL = 'api.User'
 

@@ -44,7 +44,7 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="card shadow-xl bg-white rounded-xl p-8 border border-gray-200">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-primary mb-2">Angola Admin</h1>
+            <h1 className="text-3xl font-bold text-primary mb-2">Teyago Admin</h1>
             <h2 className="text-xl text-text-secondary mb-6">Connectez-vous à votre compte</h2>
           </div>
           
