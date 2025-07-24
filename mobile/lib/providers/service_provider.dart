@@ -205,6 +205,8 @@ class ServiceProvider with ChangeNotifier {
   Future<void> fetchServicesByCategory(int categoryId) async {
     _isLoading = true;
     _errorMessage = null;
+    // ✅ CORRECTION 6: Initialiser la liste pour éviter les null
+    _services = [];
     notifyListeners();
 
     try {
@@ -214,21 +216,43 @@ class ServiceProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final List<dynamic> data = responseData['results'] ?? [];
+        final jsonData = json.decode(response.body);
+        
+        // ✅ CORRECTION 7: Validation robuste des données de réponse
+        List<dynamic> data = [];
+        
+        if (jsonData is Map<String, dynamic>) {
+          // Réponse paginée
+          data = jsonData['results'] ?? [];
+        } else if (jsonData is List) {
+          // Réponse directe
+          data = jsonData;
+        }
 
-        // Assurez-vous de réinitialiser _services avant d'ajouter les nouveaux services
-        _services = [];
-        _services = data.map((item) => Service.fromJson(item)).toList();
+        // ✅ CORRECTION 8: Filtrage des éléments nulls et parsing sécurisé
+        _services = data
+            .where((item) => item != null)
+            .map((item) {
+              try {
+                return Service.fromJson(item);
+              } catch (e) {
+                print('Erreur parsing service: $e');
+                return null;
+              }
+            })
+            .where((service) => service != null)
+            .cast<Service>()
+            .toList();
 
-        print('Fetched ${_services.length} services for category $categoryId');
+        print('✅ Fetched ${_services.length} services for category $categoryId');
       } else {
-        _errorMessage =
-            'Erreur lors du chargement des services de la catégorie';
+        _errorMessage = 'Erreur lors du chargement des services de la catégorie';
+        _services = []; // ✅ CORRECTION 9: Toujours initialiser même en cas d'erreur
         print('Error status: ${response.statusCode}, body: ${response.body}');
       }
     } catch (e) {
       _errorMessage = e.toString();
+      _services = []; // ✅ CORRECTION 10: Initialiser en cas d'exception
       print('Exception in fetchServicesByCategory: $e');
     } finally {
       _isLoading = false;

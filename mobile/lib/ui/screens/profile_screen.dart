@@ -15,6 +15,7 @@ import 'user_projects_screen.dart'; // Ajouté pour la navigation
 import 'project_detail_screen.dart'; // Ajouté pour la navigation
 import 'package:intl/intl.dart';
 import './base_screen.dart';
+import '../screens/client/client_projects_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -388,10 +389,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.pushNamed(context, '/service-management');
                   } else {
                     // Navigation vers gestion des projets
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => const UserProjectsScreen(),
+                    //   ),
+                    // );
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const UserProjectsScreen(),
+                        builder: (context) => const ClientProjectsScreen(),
                       ),
                     );
                   }

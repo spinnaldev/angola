@@ -935,5 +935,10 @@
   
   "statusUpdatedSuccessfully": "Statut mis à jour avec succès",
   "errorUpdatingStatus": "Erreur lors de la mise à jour du statut",
-  "error": "Erreur:"
+  "error": "Erreur:",
+  "noServicesAvailable": "Aucun service disponible dans cette catégorie",
+  "tryAnotherCategory": "Revenez plus tard ou essayez une autre catégorie",
+  "filters": "Filtres",
+  "allServices": "Tous",
+  "searchServices": "Rechercher des services"
 }

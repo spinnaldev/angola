@@ -933,6 +933,12 @@
   
   "statusUpdatedSuccessfully": "Status updated successfully",
   "errorUpdatingStatus": "Error updating status",
-  "error": "Error:"
+  "error": "Error:",
+  "noServicesAvailable": "No services available in this category",
+  "tryAnotherCategory": "Come back later or try another category", 
+  "filters": "Filters",
+  "allServices": "All",
+  "searchServices": "Search services",
+  "servicesInCategory": "Services - {categoryName}"
 
 }

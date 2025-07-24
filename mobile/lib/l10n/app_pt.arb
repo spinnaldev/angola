@@ -977,6 +977,12 @@
   
   "statusUpdatedSuccessfully": "Status atualizado com sucesso",
   "errorUpdatingStatus": "Erro ao atualizar status",
-  "error": "Erro:"
+  "error": "Erro:",
+  "noServicesAvailable": "Nenhum serviço disponível nesta categoria",
+  "tryAnotherCategory": "Volte mais tarde ou tente outra categoria",
+  "filters": "Filtros", 
+  "allServices": "Todos",
+  "searchServices": "Pesquisar serviços",
+  "servicesInCategory": "Serviços - {categoryName}"
 
 }
