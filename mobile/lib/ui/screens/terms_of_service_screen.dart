@@ -25,7 +25,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               'Acceptation des conditions',
               [
-                'En utilisant Angola Services, vous acceptez d\'être lié par ces conditions d\'utilisation.',
+                'En utilisant Teyago Services, vous acceptez d\'être lié par ces conditions d\'utilisation.',
                 'Si vous n\'acceptez pas ces conditions, vous ne devez pas utiliser notre service.',
                 'Nous nous réservons le droit de modifier ces conditions à tout moment.',
               ],
@@ -33,7 +33,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               'Description du service',
               [
-                'Angola Services est une plateforme de mise en relation entre clients et prestataires de services.',
+                'Teyago Services est une plateforme de mise en relation entre clients et prestataires de services.',
                 'Nous facilitons les connexions mais ne sommes pas partie prenante dans les transactions entre utilisateurs.',
                 'La qualité des services fournis relève entièrement de la responsabilité des prestataires.',
               ],
@@ -85,7 +85,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               'Limitation de responsabilité',
               [
-                'Angola Services agit uniquement comme intermédiaire.',
+                'Teyago Services agit uniquement comme intermédiaire.',
                 'Nous ne sommes pas responsables de la qualité des services fournis.',
                 'Notre responsabilité est limitée au montant des frais de service perçus.',
                 'Nous ne garantissons pas la disponibilité continue du service.',
@@ -143,7 +143,7 @@ class TermsOfServiceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Ces conditions d\'utilisation régissent votre accès et utilisation de la plateforme Angola Services. Veuillez les lire attentivement.',
+            'Ces conditions d\'utilisation régissent votre accès et utilisation de la plateforme Teyago Services. Veuillez les lire attentivement.',
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
@@ -167,24 +167,28 @@ class TermsOfServiceScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...content.map((text) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('• ', style: TextStyle(fontSize: 16, color: Color(0xFF142FE2))),
-              Expanded(
-                child: Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
+        ...content
+            .map((text) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ',
+                          style: TextStyle(
+                              fontSize: 16, color: Color(0xFF142FE2))),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
+                ))
+            .toList(),
         const SizedBox(height: 24),
       ],
     );

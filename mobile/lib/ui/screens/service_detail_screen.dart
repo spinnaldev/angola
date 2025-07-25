@@ -51,8 +51,50 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     _tabController = TabController(length: 3, vsync: this);
 
     // Charger les données
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _clearPreviousData();
+      _loadData();
+    });
   }
+  void _clearPreviousData() {
+    // Effacer les données du service précédent
+    final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
+    serviceProvider.clearCurrentService(); // À ajouter dans ServiceProvider
+    
+    // Effacer les données du prestataire précédent
+    final providerDetailProvider = Provider.of<ProviderDetailProvider>(context, listen: false);
+    providerDetailProvider.clearCurrentProvider(); // À ajouter dans ProviderDetailProvider
+    
+    // Effacer les avis précédents
+    final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+    reviewProvider.clearReviews(); // À ajouter dans ReviewProvider
+    
+    print("🧹 Données précédentes effacées pour le service ${widget.serviceId}");
+  }
+
+  void _debugServiceData() {
+    final service = Provider.of<ServiceProvider>(context, listen: false).currentService;
+    
+    if (service != null) {
+      print('🔍 Debug données du service ${service.id}:');
+      print('   Titre: ${service.title}');
+      print('   Rating reçu du backend: ${service.rating}');
+      print('   Review count reçu du backend: ${service.reviewCount}');
+      print('   Provider ID: ${service.provider_id}');
+    } else {
+      print('❌ Aucun service chargé');
+    }
+    
+    // Debug des avis récupérés séparément
+    final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+    final reviews = reviewProvider.reviews;
+    print('🔍 Avis récupérés séparément: ${reviews.length}');
+    
+    for (var review in reviews) {
+      print('   Avis ${review.id}: ${review.rating}/5 pour service ${review.serviceId}');
+    }
+  }
+
 
   void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
     final l10n = AppLocalizations.of(context)!; // ✅ AJOUTÉ
@@ -108,6 +150,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       await Provider.of<ProviderDetailProvider>(context, listen: false)
           .fetchProviderDetails(service.provider_id);
 
+      // Debug des données du service reçues
+      _debugServiceData();
+
       // Charger les avis
       await Provider.of<ReviewProvider>(context, listen: false)
         .fetchServiceReviews(widget.serviceId);
@@ -117,7 +162,29 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     }
   }
 
-  
+  Map<String, dynamic> _calculateServiceStats(List<Review> reviews) {
+    if (reviews.isEmpty) {
+      return {
+        'average_rating': 0.0,
+        'review_count': 0,
+        'rating_display': '0.0',
+      };
+    }
+
+    // Calculer la note moyenne
+    double totalRating = 0.0;
+    for (var review in reviews) {
+      totalRating += review.rating;
+    }
+    double averageRating = totalRating / reviews.length;
+
+    return {
+      'average_rating': averageRating,
+      'review_count': reviews.length,
+      'rating_display': averageRating.toStringAsFixed(1),
+    };
+  }
+    
   @override
   void dispose() {
     _tabController.dispose();
@@ -380,7 +447,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           ),
           child: Row(
             children: [
-              const Icon(Icons.star, color: Colors.white, size: 16),
+              const Icon(Icons.star, color: Colors.amber, size: 16),
               const SizedBox(width: 4),
               Text(
                 "${service.rating.toStringAsFixed(1)}", // Note du service
@@ -413,6 +480,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
@@ -800,6 +868,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   Widget _buildEvaluationsTab(provider, AppLocalizations l10n) {
+    
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, _) {
         final reviews = reviewProvider.reviews;

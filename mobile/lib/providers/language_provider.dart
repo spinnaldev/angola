@@ -23,8 +23,8 @@ class LanguageProvider with ChangeNotifier {
   }
 
   List<Map<String, dynamic>> get supportedLanguages => [
-        {'code': 'fr', 'name': 'Français', 'flag': '🇫🇷'},
         {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+        {'code': 'fr', 'name': 'Français', 'flag': '🇫🇷'},
         {'code': 'pt', 'name': 'Português', 'flag': '🇵🇹'},
       ];
 

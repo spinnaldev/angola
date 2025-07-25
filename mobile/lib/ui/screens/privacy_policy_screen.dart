@@ -126,7 +126,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Chez Angola Services, nous nous engageons à protéger votre vie privée et vos données personnelles. Cette politique explique comment nous collectons, utilisons et protégeons vos informations.',
+            'Chez Teyago Services, nous nous engageons à protéger votre vie privée et vos données personnelles. Cette politique explique comment nous collectons, utilisons et protégeons vos informations.',
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
@@ -150,24 +150,28 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...content.map((text) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('• ', style: TextStyle(fontSize: 16, color: Color(0xFF142FE2))),
-              Expanded(
-                child: Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
+        ...content
+            .map((text) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ',
+                          style: TextStyle(
+                              fontSize: 16, color: Color(0xFF142FE2))),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
+                ))
+            .toList(),
         const SizedBox(height: 24),
       ],
     );

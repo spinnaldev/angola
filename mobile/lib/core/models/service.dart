@@ -152,9 +152,8 @@ class Service {
         
         // Rating avec multiples sources possibles
         rating: parseRating(
-          json['rating'] ?? 
-          json['average_rating'] ?? 
-          json['service_rating']
+          json['avg_rating'] ??
+          json['rating']
         ),
         
         // Review count avec multiples sources possibles

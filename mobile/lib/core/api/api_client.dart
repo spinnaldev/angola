@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../providers/localization_provider.dart';
 import 'package:teyago/providers/language_provider.dart';
-
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ApiClient {
   final String baseUrl;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -33,28 +33,8 @@ class ApiClient {
       'Content-Type': 'application/json; charset=utf-8',
       'Accept': 'application/json',
       'Accept-Charset': 'utf-8',
+      'Accept-Encoding': 'utf-8',
     };
-
-    // // Ajouter la langue actuelle dans les headers
-    // if (navigatorKey.currentContext != null) {
-    //   try {
-    //     final languageProvider = Provider.of<LanguageProvider>(
-    //       navigatorKey.currentContext!, 
-    //       listen: false
-    //     );
-    //     headers['X-Language'] = languageProvider.currentLanguageCode;
-    //     headers['Accept-Language'] = languageProvider.currentLanguageCode;
-    //   } catch (e) {
-    //     print('Erreur récupération langue: $e');
-    //     // Fallback à la langue par défaut
-    //     headers['X-Language'] = 'fr';
-    //     headers['Accept-Language'] = 'fr';
-    //   }
-    // } else {
-    //   // Fallback si pas de context
-    //   headers['X-Language'] = 'fr';
-    //   headers['Accept-Language'] = 'fr';
-    // }
 
     if (requireAuth) {
       final token = await _secureStorage.read(key: 'access_token');
@@ -116,7 +96,7 @@ class ApiClient {
 
     // Force l'encodage en UTF-8 pour la réponse
     final encodedResponse = utf8.decode(response.bodyBytes);
-    return _handleResponse(response.statusCode, encodedResponse);
+    return _handleResponse(response);
   }   
 
   Future<dynamic> post(String endpoint,
@@ -124,17 +104,17 @@ class ApiClient {
     final headers = await getHeaders(requireAuth: requireAuth);
 
     // Convertir les données en JSON avec encodage UTF-8
-    final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
-
+    // final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
+    final String body = data != null ? json.encode(data) : '';
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
-      body: encodedData,
+      body: utf8.encode(body),
     );
 
     // Force l'encodage en UTF-8 pour la réponse
-    final encodedResponse = utf8.decode(response.bodyBytes);
-    return _handleResponse(response.statusCode, encodedResponse);
+    // final encodedResponse = utf8.decode(response.bodyBytes);
+    return _handleResponse(response);
   }
 
   Future<dynamic> put(String endpoint,
@@ -142,17 +122,17 @@ class ApiClient {
     final headers = await getHeaders(requireAuth: requireAuth);
 
     // Convertir les données en JSON avec encodage UTF-8
-    final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
+    // final encodedData = data != null ? utf8.encode(json.encode(data)) : null;
+    final String body = data != null ? json.encode(data) : '';
 
     final response = await http.put(
       Uri.parse('$baseUrl/$endpoint'),
       headers: headers,
-      body: encodedData,
+      body: utf8.encode(body),
     );
 
     // Force l'encodage en UTF-8 pour la réponse
-    final encodedResponse = utf8.decode(response.bodyBytes);
-    return _handleResponse(response.statusCode, encodedResponse);
+    return _handleResponse(response);
   }
 
   Future<dynamic> delete(String endpoint, {bool requireAuth = true}) async {
@@ -163,68 +143,94 @@ class ApiClient {
     );
 
     // Force l'encodage en UTF-8 pour la réponse
-    final encodedResponse = utf8.decode(response.bodyBytes);
-    return _handleResponse(response.statusCode, encodedResponse);
+    return _handleResponse(response);
   }
 
-  dynamic _handleResponse(int statusCode, String responseBody) {
-    if (statusCode >= 200 && statusCode < 300) {
-      if (responseBody.isNotEmpty) {
+  dynamic _handleResponse(http.Response response) {
+    try {
+      // ✅ SOLUTION PRINCIPALE : Décoder correctement la réponse
+      String responseBody;
+      
+      // Vérifier l'encodage dans les headers de réponse
+      final contentType = response.headers['content-type'] ?? '';
+      
+      if (contentType.contains('charset=utf-8') || contentType.contains('application/json')) {
+        // Décoder en UTF-8
+        responseBody = utf8.decode(response.bodyBytes);
+      } else {
+        // Fallback : essayer UTF-8 par défaut
         try {
-          // Assurer l'encodage UTF-8 avant le parsing JSON
-          final cleanBody = responseBody.replaceAll('\uFEFF', ''); // Remove BOM
-          return json.decode(cleanBody);
+          responseBody = utf8.decode(response.bodyBytes);
         } catch (e) {
-          print('Erreur parsing JSON: $e');
-          print('Response body: $responseBody');
-          return null;
+          // Si échec UTF-8, utiliser la méthode normale
+          responseBody = response.body;
         }
       }
-      return null;
-    } else if (statusCode == 401) {
-      // Si token expiré ou invalide
-      _refreshToken();
-      throw Exception('Non autorisé. Veuillez vous reconnecter.');
-    } else {
-      try {
-        final errorData = json.decode(responseBody);
-        if (errorData is Map) {
-          // Rechercher les erreurs dans la réponse
-          if (errorData.containsKey('detail')) {
-            throw Exception(errorData['detail']);
-          } else if (errorData.containsKey('error')) {
-            throw Exception(errorData['error']);
-          } else if (errorData.containsKey('non_field_errors')) {
-            if (errorData['non_field_errors'] is List) {
-              throw Exception(errorData['non_field_errors'].join(', '));
-            } else {
-              throw Exception(errorData['non_field_errors'].toString());
-            }
-          } else {
-            // Parcourir les erreurs de champs
-            String errorMessages = '';
-            errorData.forEach((key, value) {
-              if (value is List) {
-                errorMessages += '$key: ${value.join(', ')}\n';
-              } else {
-                errorMessages += '$key: $value\n';
-              }
-            });
 
-            if (errorMessages.isNotEmpty) {
-              throw Exception(errorMessages.trim());
-            }
+      // ✅ NETTOYAGE SUPPLÉMENTAIRE
+      responseBody = _cleanEncodingIssues(responseBody);
+
+      print('📥 Status: ${response.statusCode}');
+      print('📥 Content-Type: $contentType');
+      print('📥 Response (nettoyé): ${responseBody.length > 200 ? responseBody.substring(0, 200) + '...' : responseBody}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (responseBody.isNotEmpty) {
+          try {
+            // Supprimer le BOM si présent
+            final cleanBody = responseBody.replaceAll('\uFEFF', '');
+            return json.decode(cleanBody);
+          } catch (e) {
+            print('❌ Erreur parsing JSON: $e');
+            print('📄 Body original: $responseBody');
+            return null;
           }
         }
-
-        throw Exception('Erreur $statusCode');
-      } catch (e) {
-        if (e is Exception) {
-          rethrow;
-        }
-        throw Exception('Erreur $statusCode');
+        return null;
+      } else if (response.statusCode == 401) {
+        _refreshToken();
+        throw Exception('Non autorisé. Veuillez vous reconnecter.');
+      } else {
+        print('❌ Erreur HTTP ${response.statusCode}: $responseBody');
+        throw Exception('Erreur serveur: ${response.statusCode}');
       }
+    } catch (e) {
+      print('❌ Erreur dans _handleResponse: $e');
+      rethrow;
     }
+  }
+
+  // ✅ MÉTHODE POUR CORRIGER LES PROBLÈMES D'ENCODAGE COURANTS
+  String _cleanEncodingIssues(String text) {
+    if (text.isEmpty) return text;
+
+    // ✅ Corrections spécifiques aux problèmes d'encodage UTF-8
+    Map<String, String> fixes = {
+      'Ã©': 'é',     // é mal encodé
+      'Ã¨': 'è',     // è mal encodé
+      'Ã¡': 'á',     // á mal encodé
+      'Ã ': 'à',     // à mal encodé
+      'Ã§': 'ç',     // ç mal encodé
+      'Ãª': 'ê',     // ê mal encodé
+      'Ã´': 'ô',     // ô mal encodé
+      'Ã¢': 'â',     // â mal encodé
+      'Ã¯': 'ï',     // ï mal encodé
+      'Ã¼': 'ü',     // ü mal encodé
+      'Ã±': 'ñ',     // ñ mal encodé
+      'â€™': '\'',    // apostrophe mal encodée
+      'â€œ': '"',    // guillemet mal encodé
+      'â€': '"',     // guillemet mal encodé
+      'â€¦': '...',  // ellipse mal encodée
+      'â€"': '–',    // tiret mal encodé
+      'â€"': '—',    // tiret long mal encodé
+    };
+
+    String cleaned = text;
+    fixes.forEach((wrong, correct) {
+      cleaned = cleaned.replaceAll(wrong, correct);
+    });
+
+    return cleaned;
   }
 
   Future<void> _refreshToken() async {

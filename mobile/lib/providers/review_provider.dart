@@ -98,6 +98,13 @@ class ReviewProvider with ChangeNotifier {
     }
   }
 
+  void clearReviews() {
+    _reviews = [];
+    _topReviews = [];
+    _errorMessage = null;
+    notifyListeners();
+    print("🧹 ReviewProvider: Avis effacés");
+  }
   // Récupérer les avis laissés par l'utilisateur
   Future<void> fetchUserReviews() async {
     _isLoading = true;

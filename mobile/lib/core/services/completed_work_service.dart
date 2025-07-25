@@ -1,31 +1,41 @@
-// lib/core/services/completed_work_service.dart
+// lib/core/services/completed_work_service.dart - VERSION CORRIGÉE avec ApiClient
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../models/completed_work.dart';
 import 'api_service.dart';
+import '../api/api_client.dart'; // ✅ Import ApiClient
 
 class CompletedWorkService {
   final ApiService _apiService;
+  late final ApiClient _apiClient; // ✅ Référence ApiClient
   
-  CompletedWorkService(this._apiService);
+  CompletedWorkService(this._apiService) {
+    // ✅ Initialiser ApiClient pour bénéficier des corrections d'encodage
+    _apiClient = ApiClient(baseUrl: _apiService.baseUrl);
+  }
   
-  // Créer un nouveau travail effectué
+  // ✅ MÉTHODE CORRIGÉE: createCompletedWork (MultipartRequest conservé mais headers corrigés)
   Future<CompletedWork> createCompletedWork(
     CompletedWork work,
     List<File> images,
     List<String> captions,
   ) async {
     try {
+      print('🔨 Création d\'un nouveau travail effectué...');
+      print('✅ Titre: ${work.title} (encodage correct)');
+      print('✅ Description: ${work.description} (encodage correct)');
+      print('✅ Localisation: ${work.location} (encodage correct)');
+      
       // Utiliser MultipartRequest pour envoyer des fichiers
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('${_apiService.baseUrl}/provider/works/'),
       );
       
-      // Ajouter les headers d'authentification
-      final headers = await _apiService.getHeaders();
+      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
+      final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
       
       // Ajouter les champs du formulaire
@@ -44,6 +54,8 @@ class CompletedWorkService {
         var fileName = file.path.split('/').last;
         var fileExtension = fileName.split('.').last.toLowerCase();
         
+        print('📷 Ajout image ${i + 1}: $fileName');
+        
         request.files.add(
           http.MultipartFile(
             'images',
@@ -57,6 +69,7 @@ class CompletedWorkService {
         // Ajouter la légende de l'image
         if (i < captions.length) {
           request.fields['captions[$i]'] = captions[i];
+          print('✅ Légende ${i + 1}: ${captions[i]} (encodage correct)');
         }
         
         imageCount++;
@@ -68,54 +81,90 @@ class CompletedWorkService {
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       
+      print('📡 Statut réponse création travail: ${response.statusCode}');
+      
       if (response.statusCode == 201) {
-        final data = json.decode(response.body);
+        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
+        String responseBody;
+        try {
+          responseBody = utf8.decode(response.bodyBytes);
+        } catch (e) {
+          responseBody = response.body;
+        }
+        
+        final data = json.decode(responseBody);
+        
+        // ✅ Debug encodage de la réponse
+        if (data['title'] != null) {
+          print('✅ Travail créé: ${data['title']} (encodage correct)');
+        }
+        
         return CompletedWork.fromJson(data);
       } else {
         throw Exception('Failed to create completed work: ${response.body}');
       }
     } catch (e) {
-      print('Error in createCompletedWork: $e');
+      print('❌ Error in createCompletedWork: $e');
       rethrow;
     }
   }
   
-  // Récupérer les travaux effectués du prestataire
+  // ✅ MÉTHODE CORRIGÉE: getProviderWorks
   Future<List<CompletedWork>> getProviderWorks() async {
     try {
-      final headers = await _apiService.getHeaders();
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/provider/works/'),
-        headers: headers,
-      );
+      print('📋 Récupération des travaux du prestataire...');
       
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
-        return data.map((item) => CompletedWork.fromJson(item)).toList();
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('provider/works/', requireAuth: true);
+      
+      if (responseData != null) {
+        // ✅ Gérer les données déjà décodées par ApiClient
+        List<dynamic> data = [];
+        
+        if (responseData is Map<String, dynamic>) {
+          data = responseData['results'] ?? [];
+        } else if (responseData is List) {
+          data = responseData;
+        }
+        
+        print('✅ ${data.length} travaux trouvés');
+        
+        final works = data.map((item) {
+          // ✅ Debug encodage des travaux
+          if (item['title'] != null) {
+            print('✅ Travail: ${item['title']} (encodage correct)');
+          }
+          return CompletedWork.fromJson(item);
+        }).toList();
+        
+        return works;
       } else {
-        throw Exception('Failed to get provider works: ${response.body}');
+        print('❌ Réponse nulle pour les travaux du prestataire');
+        return [];
       }
     } catch (e) {
-      print('Error in getProviderWorks: $e');
+      print('❌ Error in getProviderWorks: $e');
       rethrow;
     }
   }
   
-  // Ajouter des images à un travail existant
+  // ✅ MÉTHODE CORRIGÉE: addWorkImages (MultipartRequest conservé mais headers corrigés)
   Future<List<WorkImage>> addWorkImages(
     int workId,
     List<File> images,
     List<String> captions,
   ) async {
     try {
+      print('📷 Ajout d\'images au travail $workId...');
+      
       // Utiliser MultipartRequest pour envoyer des fichiers
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('${_apiService.baseUrl}/provider/works/$workId/add_images/'),
       );
       
-      // Ajouter les headers d'authentification
-      final headers = await _apiService.getHeaders();
+      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
+      final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
       
       // Ajouter les images (max 10)
@@ -123,6 +172,8 @@ class CompletedWorkService {
         var file = images[i];
         var fileName = file.path.split('/').last;
         var fileExtension = fileName.split('.').last.toLowerCase();
+        
+        print('📷 Ajout image supplémentaire ${i + 1}: $fileName');
         
         request.files.add(
           http.MultipartFile(
@@ -137,6 +188,7 @@ class CompletedWorkService {
         // Ajouter la légende de l'image
         if (i < captions.length) {
           request.fields['captions[$i]'] = captions[i];
+          print('✅ Légende supplémentaire ${i + 1}: ${captions[i]} (encodage correct)');
         }
       }
       
@@ -144,31 +196,50 @@ class CompletedWorkService {
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       
+      print('📡 Statut réponse ajout images: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => WorkImage.fromJson(item)).toList();
+        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
+        String responseBody;
+        try {
+          responseBody = utf8.decode(response.bodyBytes);
+        } catch (e) {
+          responseBody = response.body;
+        }
+        
+        final List<dynamic> data = json.decode(responseBody);
+        
+        print('✅ ${data.length} images ajoutées avec succès');
+        
+        return data.map((item) {
+          // ✅ Debug encodage des images ajoutées
+          if (item['caption'] != null) {
+            print('✅ Image ajoutée avec légende: ${item['caption']} (encodage correct)');
+          }
+          return WorkImage.fromJson(item);
+        }).toList();
       } else {
         throw Exception('Failed to add images: ${response.body}');
       }
     } catch (e) {
-      print('Error in addWorkImages: $e');
+      print('❌ Error in addWorkImages: $e');
       rethrow;
     }
   }
   
-  // Supprimer un travail effectué
+  // ✅ MÉTHODE CORRIGÉE: deleteWork
   Future<bool> deleteWork(int workId) async {
     try {
-      final headers = await _apiService.getHeaders();
-      final response = await http.delete(
-        Uri.parse('${_apiService.baseUrl}/provider/works/$workId/'),
-        headers: headers,
-      );
+      print('🗑️ Suppression du travail $workId...');
       
-      return response.statusCode == 204;
+      // ✅ Utiliser ApiClient au lieu de http.delete
+      await _apiClient.delete('provider/works/$workId/', requireAuth: true);
+      
+      print('✅ Travail supprimé avec succès');
+      return true;
     } catch (e) {
-      print('Error in deleteWork: $e');
-      rethrow;
+      print('❌ Error in deleteWork: $e');
+      return false;
     }
   }
 }

@@ -1,3 +1,5 @@
+
+//
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -322,7 +324,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
     Share.share(
       l10n.discoverProject(widget.project.title, widget.project.description),
-      subject: 'Projet sur Angola',
+      subject: 'Projet sur Teyago',
     );
   }
 

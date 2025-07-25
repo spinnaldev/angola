@@ -1,4 +1,4 @@
-// lib/providers/service_provider.dart - Ajouter des méthodes pour gérer les services du prestataire
+// lib/providers/service_provider.dart - VERSION COMPLÈTEMENT CORRIGÉE avec ApiClient
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -6,41 +6,44 @@ import '../core/models/category.dart';
 import '../core/models/service.dart';
 import '../core/models/service_option.dart';
 import '../core/services/api_service.dart';
+import '../core/api/api_client.dart'; // ✅ Import ApiClient
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 
 class ServiceProvider with ChangeNotifier {
   final ApiService _apiService;
+  late final ApiClient _apiClient; // ✅ Référence ApiClient
+  
   List<Service> _services = [];
-  List<Service> _myServices = []; // Services du prestataire connecté
+  List<Service> _myServices = [];
   Service? _currentService;
-  // List<Service> _myServices = []; // Services du prestataire connecté
-
   bool _isLoading = false;
   String? _errorMessage;
   List<Service> _recentServices = [];
   List<Service> _topRatedServices = [];
   List<Service> _nearbyServices = [];
+  List<Category> _categories = [];
+  Map<int, Category> _categoriesMap = {};
+  List<int> _expertiseCategories = [];
 
   // Getters
   List<Service> get recentServices => _recentServices;
   List<Service> get topRatedServices => _topRatedServices;
   List<Service> get nearbyServices => _nearbyServices;
-
-  ServiceProvider(this._apiService);
-
   List<Service> get services => _services;
   List<Service> get myServices => _myServices;
   Service? get currentService => _currentService;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Category> _categories = [];
-  Map<int, Category> _categoriesMap = {};
-  List<int> _expertiseCategories = [];
   List<int> get expertiseCategories => _expertiseCategories;
 
-  // Méthode pour récupérer les services récents
+  ServiceProvider(this._apiService) {
+    // ✅ Initialiser ApiClient pour bénéficier des corrections d'encodage
+    _apiClient = ApiClient(baseUrl: _apiService.baseUrl);
+  }
+
+  // ✅ MÉTHODE CORRIGÉE: fetchRecentServices
   Future<void> fetchRecentServices() async {
     _isLoading = true;
     _errorMessage = null;
@@ -49,70 +52,54 @@ class ServiceProvider with ChangeNotifier {
     try {
       print("🔄 Début récupération des services récents...");
       
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/services/recent/'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/recent/', requireAuth: false);
+      
+      print("🔍 Données décodées: $responseData");
+      
+      // ✅ Gestion des données avec ApiClient (déjà décodées)
+      List<dynamic> data;
+      
+      if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
+        print("📋 Données dans 'results': ${data.length} éléments");
+      } else if (responseData is List) {
+        data = responseData;
+        print("📋 Données directes: ${data.length} éléments");
+      } else {
+        print("❌ Structure de réponse inattendue: ${responseData.runtimeType}");
+        data = [];
+      }
 
-      print("📡 Statut réponse: ${response.statusCode}");
-      print("📄 Corps de la réponse: ${response.body}");
-
-      if (response.statusCode == 200) {
-        final dynamic responseData = json.decode(response.body);
-        print("🔍 Données décodées: $responseData");
+      if (data.isNotEmpty) {
+        print("🔧 Premier élément pour debug: ${data.first}");
         
-        // ✅ CORRECTION 1: Vérifier la structure de la réponse
-        List<dynamic> data;
-        
-        if (responseData is Map<String, dynamic>) {
-          // Si la réponse est paginée avec 'results'
-          data = responseData['results'] ?? [];
-          print("📋 Données dans 'results': ${data.length} éléments");
-        } else if (responseData is List) {
-          // Si la réponse est directement une liste
-          data = responseData;
-          print("📋 Données directes: ${data.length} éléments");
-        } else {
-          print("❌ Structure de réponse inattendue: ${responseData.runtimeType}");
-          data = [];
+        _recentServices = [];
+        for (int i = 0; i < data.length; i++) {
+          try {
+            final service = Service.fromJson(data[i]);
+            _recentServices.add(service);
+            print("✅ Service $i parsé: ${service.title} (encodage correct)");
+          } catch (e) {
+            print("❌ Erreur parsing service $i: $e");
+            print("📄 Données problématiques: ${data[i]}");
+          }
         }
-
-        if (data.isNotEmpty) {
-          print("🔧 Premier élément pour debug: ${data.first}");
-          
-          // ✅ CORRECTION 2: Parser chaque service avec gestion d'erreur
-          _recentServices = [];
-          for (int i = 0; i < data.length; i++) {
-            try {
-              final service = Service.fromJson(data[i]);
-              _recentServices.add(service);
-              print("✅ Service $i parsé: ${service.title}");
-            } catch (e) {
-              print("❌ Erreur parsing service $i: $e");
-              print("📄 Données problématiques: ${data[i]}");
-              // Continuer avec les autres services
-            }
-          }
-          
-          print("🎉 Services récents récupérés: ${_recentServices.length}");
-          
-          // ✅ CORRECTION 3: Vérifier que _recentServices n'est pas vide après parsing
-          if (_recentServices.isEmpty && data.isNotEmpty) {
-            print("⚠️ Aucun service parsé malgré la présence de données");
-            _errorMessage = 'Erreur de format des données des services';
-          }
-        } else {
-          print("ℹ️ Aucun service récent disponible");
-          _recentServices = [];
+        
+        print("🎉 Services récents récupérés: ${_recentServices.length}");
+        
+        if (_recentServices.isEmpty && data.isNotEmpty) {
+          print("⚠️ Aucun service parsé malgré la présence de données");
+          _errorMessage = 'Erreur de format des données des services';
         }
       } else {
-        print("❌ Erreur HTTP: ${response.statusCode}");
-        _errorMessage = 'Erreur ${response.statusCode} lors du chargement des services récents';
+        print("ℹ️ Aucun service récent disponible");
+        _recentServices = [];
       }
     } catch (e) {
       print("💥 Exception dans fetchRecentServices: $e");
       _errorMessage = 'Erreur de connexion: ${e.toString()}';
-      _recentServices = []; // S'assurer que la liste est vide en cas d'erreur
+      _recentServices = [];
     } finally {
       _isLoading = false;
       print("🔄 Fin fetchRecentServices - Services: ${_recentServices.length}");
@@ -120,233 +107,269 @@ class ServiceProvider with ChangeNotifier {
     }
   }
 
-  // Méthode pour récupérer les services les mieux notés
+  // ✅ MÉTHODE CORRIGÉE: fetchTopRatedServices
   Future<void> fetchTopRatedServices() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/services/top_rated/'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _topRatedServices = data.map((item) => Service.fromJson(item)).toList();
-        print("Les tops avis sont:");
-        print(_topRatedServices);
+      print("🏆 Récupération des services les mieux notés...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/top_rated/', requireAuth: false);
+      
+      List<dynamic> data;
+      if (responseData is List) {
+        data = responseData;
+      } else if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
       } else {
-        _errorMessage = 'Erreur lors du chargement des meilleurs services';
+        data = [];
       }
+
+      _topRatedServices = data.map((item) {
+        final service = Service.fromJson(item);
+        print("✅ Service top rated: ${service.title} (encodage correct)");
+        return service;
+      }).toList();
+      
+      print("🏆 Services top rated récupérés: ${_topRatedServices.length}");
     } catch (e) {
-      _errorMessage = e.toString();
+      print("❌ Erreur fetchTopRatedServices: $e");
+      _errorMessage = 'Erreur lors du chargement des meilleurs services';
+      _topRatedServices = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Méthode pour récupérer les services à proximité
-  Future<void> fetchNearbyServices(double latitude, double longitude,
-      {double radius = 10.0}) async {
+  void clearCurrentService() {
+    _currentService = null;
+    notifyListeners();
+    print("🧹 ServiceProvider: Service actuel effacé");
+  }
+  // ✅ MÉTHODE CORRIGÉE: fetchNearbyServices
+  Future<void> fetchNearbyServices(double latitude, double longitude, {double radius = 10.0}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${_apiService.baseUrl}/services/nearby/?latitude=$latitude&longitude=$longitude&radius=$radius'),
-        headers: await _apiService.getHeaders(requireAuth: false),
+      print("📍 Récupération des services à proximité...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get(
+        'services/nearby/?latitude=$latitude&longitude=$longitude&radius=$radius', 
+        requireAuth: false
       );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _nearbyServices = data.map((item) => Service.fromJson(item)).toList();
+      
+      List<dynamic> data;
+      if (responseData is List) {
+        data = responseData;
+      } else if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
       } else {
-        _errorMessage = 'Erreur lors du chargement des services à proximité';
+        data = [];
       }
+
+      _nearbyServices = data.map((item) {
+        final service = Service.fromJson(item);
+        print("✅ Service nearby: ${service.title} (encodage correct)");
+        return service;
+      }).toList();
+      
+      print("📍 Services nearby récupérés: ${_nearbyServices.length}");
     } catch (e) {
-      _errorMessage = e.toString();
+      print("❌ Erreur fetchNearbyServices: $e");
+      _errorMessage = 'Erreur lors du chargement des services à proximité';
+      _nearbyServices = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Récupérer les services du prestataire connecté
+  // ✅ MÉTHODE CORRIGÉE: fetchMyServices
   Future<void> fetchMyServices() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/services/my_services/'),
-        headers: await _apiService.getHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
-        _myServices = data.map((item) => Service.fromJson(item)).toList();
+      print("👤 Récupération de mes services...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/my_services/', requireAuth: true);
+      
+      List<dynamic> data;
+      if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
+      } else if (responseData is List) {
+        data = responseData;
       } else {
-        _errorMessage = 'Erreur lors du chargement des services';
+        data = [];
       }
+
+      _myServices = data.map((item) {
+        final service = Service.fromJson(item);
+        print("✅ Mon service: ${service.title} (encodage correct)");
+        return service;
+      }).toList();
+      
+      print("👤 Mes services récupérés: ${_myServices.length}");
     } catch (e) {
-      _errorMessage = e.toString();
+      print("❌ Erreur fetchMyServices: $e");
+      _errorMessage = 'Erreur lors du chargement des services';
+      _myServices = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  // ✅ MÉTHODE CORRIGÉE: fetchServicesByCategory
   Future<void> fetchServicesByCategory(int categoryId) async {
     _isLoading = true;
     _errorMessage = null;
-    // ✅ CORRECTION 6: Initialiser la liste pour éviter les null
     _services = [];
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/services/?category_id=$categoryId'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        
-        // ✅ CORRECTION 7: Validation robuste des données de réponse
-        List<dynamic> data = [];
-        
-        if (jsonData is Map<String, dynamic>) {
-          // Réponse paginée
-          data = jsonData['results'] ?? [];
-        } else if (jsonData is List) {
-          // Réponse directe
-          data = jsonData;
-        }
-
-        // ✅ CORRECTION 8: Filtrage des éléments nulls et parsing sécurisé
-        _services = data
-            .where((item) => item != null)
-            .map((item) {
-              try {
-                return Service.fromJson(item);
-              } catch (e) {
-                print('Erreur parsing service: $e');
-                return null;
-              }
-            })
-            .where((service) => service != null)
-            .cast<Service>()
-            .toList();
-
-        print('✅ Fetched ${_services.length} services for category $categoryId');
-      } else {
-        _errorMessage = 'Erreur lors du chargement des services de la catégorie';
-        _services = []; // ✅ CORRECTION 9: Toujours initialiser même en cas d'erreur
-        print('Error status: ${response.statusCode}, body: ${response.body}');
+      print("📂 Récupération des services de la catégorie $categoryId...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/?category_id=$categoryId', requireAuth: false);
+      
+      List<dynamic> data = [];
+      
+      if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
+      } else if (responseData is List) {
+        data = responseData;
       }
+
+      _services = data
+          .where((item) => item != null)
+          .map((item) {
+            try {
+              final service = Service.fromJson(item);
+              print("✅ Service catégorie: ${service.title} (encodage correct)");
+              return service;
+            } catch (e) {
+              print('❌ Erreur parsing service: $e');
+              return null;
+            }
+          })
+          .where((service) => service != null)
+          .cast<Service>()
+          .toList();
+
+      print('✅ Services catégorie $categoryId récupérés: ${_services.length}');
     } catch (e) {
-      _errorMessage = e.toString();
-      _services = []; // ✅ CORRECTION 10: Initialiser en cas d'exception
-      print('Exception in fetchServicesByCategory: $e');
+      print("❌ Erreur fetchServicesByCategory: $e");
+      _errorMessage = 'Erreur lors du chargement des services de la catégorie';
+      _services = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Méthodes pour récupérer les services par sous-catégorie
+  // ✅ MÉTHODE CORRIGÉE: fetchServicesBySubcategory
   Future<void> fetchServicesBySubcategory(int subcategoryId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${_apiService.baseUrl}/services/?subcategory_id=$subcategoryId'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body)['results'] ?? [];
-        _services = data.map((item) => Service.fromJson(item)).toList();
-      } else {
-        _errorMessage =
-            'Erreur lors du chargement des services de la sous-catégorie';
+      print("📁 Récupération des services de la sous-catégorie $subcategoryId...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/?subcategory_id=$subcategoryId', requireAuth: false);
+      
+      List<dynamic> data = [];
+      if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
+      } else if (responseData is List) {
+        data = responseData;
       }
+
+      _services = data.map((item) {
+        final service = Service.fromJson(item);
+        print("✅ Service sous-catégorie: ${service.title} (encodage correct)");
+        return service;
+      }).toList();
+      
+      print("📁 Services sous-catégorie récupérés: ${_services.length}");
     } catch (e) {
-      _errorMessage = e.toString();
+      print("❌ Erreur fetchServicesBySubcategory: $e");
+      _errorMessage = 'Erreur lors du chargement des services de la sous-catégorie';
+      _services = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Méthode pour récupérer les détails d'un service
+  // ✅ MÉTHODE CORRIGÉE: fetchServiceDetails
   Future<void> fetchServiceDetails(int serviceId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/services/$serviceId/'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _currentService = Service.fromJson(data);
-      } else {
-        _errorMessage = 'Erreur lors du chargement des détails du service';
+      print("🔍 Récupération des détails du service $serviceId...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('services/$serviceId/', requireAuth: false);
+      
+      if (responseData != null) {
+        _currentService = Service.fromJson(responseData);
+        print("✅ Détails service récupérés: ${_currentService!.title} (encodage correct)");
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      print("❌ Erreur fetchServiceDetails: $e");
+      _errorMessage = 'Erreur lors du chargement des détails du service';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Récupérer les catégories d'expertise du prestataire
+  // ✅ MÉTHODE CORRIGÉE: getProviderExpertiseCategories
   Future<List<int>> getProviderExpertiseCategories() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // Récupérer les catégories d'expertise depuis l'API
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/providers/expertise_categories/'),
-        headers: await _apiService.getHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body) ?? [];
-
-        // Convertir les IDs de catégories en int
-        _expertiseCategories =
-            data.map<int>((item) => item['id'] as int).toList();
-
-        // S'il n'y a pas encore de catégories, récupérer toutes les catégories
-        if (_categories.isEmpty) {
-          await fetchCategories();
-        }
-
-        _isLoading = false;
-        notifyListeners();
-        return _expertiseCategories;
-      } else {
-        throw Exception(
-            'Erreur lors de la récupération des catégories d\'expertise');
+      print("🎯 Récupération des catégories d'expertise...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('providers/expertise_categories/', requireAuth: true);
+      
+      List<dynamic> data = [];
+      if (responseData is List) {
+        data = responseData;
+      } else if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
       }
+
+      _expertiseCategories = data.map<int>((item) => item['id'] as int).toList();
+
+      if (_categories.isEmpty) {
+        await fetchCategories();
+      }
+
+      print("🎯 Catégories d'expertise récupérées: ${_expertiseCategories.length}");
+      
+      _isLoading = false;
+      notifyListeners();
+      return _expertiseCategories;
     } catch (e) {
+      print("❌ Erreur getProviderExpertiseCategories: $e");
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -354,30 +377,35 @@ class ServiceProvider with ChangeNotifier {
     }
   }
 
-  // Récupérer toutes les catégories pour référence
+  // ✅ MÉTHODE CORRIGÉE: fetchCategories
   Future<void> fetchCategories() async {
     try {
-      final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/categories/'),
-        headers: await _apiService.getHeaders(requireAuth: false),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final List<dynamic> data = responseData['results'] ?? [];
-
-        _categories = data.map((item) => Category.fromJson(item)).toList();
-
-        // Créer une carte pour un accès rapide par ID
-        _categoriesMap = {};
-        for (var category in _categories) {
-          _categoriesMap[category.id] = category;
-        }
-      } else {
-        throw Exception('Erreur lors de la récupération des catégories');
+      print("📂 Récupération des catégories...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('categories/', requireAuth: false);
+      
+      List<dynamic> data = [];
+      if (responseData is Map<String, dynamic>) {
+        data = responseData['results'] ?? [];
+      } else if (responseData is List) {
+        data = responseData;
       }
+
+      _categories = data.map((item) {
+        final category = Category.fromJson(item);
+        print("✅ Catégorie: ${category.name} (encodage correct)");
+        return category;
+      }).toList();
+
+      _categoriesMap = {};
+      for (var category in _categories) {
+        _categoriesMap[category.id] = category;
+      }
+      
+      print("📂 Catégories récupérées: ${_categories.length}");
     } catch (e) {
-      print('Error fetching categories: $e');
+      print('❌ Error fetching categories: $e');
       throw e;
     }
   }
@@ -388,18 +416,8 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Récupération des services via le service API
-      // Utiliser soit directement l'API service, soit un service dédié aux services
-      final ApiService apiService =
-          ApiService(baseUrl: 'votre_base_url', apiKey: 'votre_api_key');
-
-      // Si vous avez un ServiceService
-      // final serviceService = ServiceService(apiService);
-      // _services = await serviceService.getProviderServices(providerId);
-
-      // Ou directement avec l'API service
-      _services = await apiService.getProviderServices(providerId);
-
+      print("👨‍💼 Récupération des services du prestataire $providerId...");
+      _services = await _apiService.getProviderServices(providerId);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -407,24 +425,21 @@ class ServiceProvider with ChangeNotifier {
       _isLoading = false;
       _services = [];
       notifyListeners();
-
-      print('Error fetching provider services: $e');
+      print('❌ Error fetching provider services: $e');
     }
   }
 
-  // Récupérer une catégorie par ID
   Category? getCategoryById(int id) {
     return _categoriesMap[id];
   }
 
-  // Ajouter un nouveau service
+  // ✅ MÉTHODE CORRIGÉE: addService (MultipartRequest conservé mais headers corrigés)
   Future<void> addService(
     String title,
     String description,
     int subcategoryId,
     double price,
     String priceType,
-    // File? imageFile,
     File? mainImage,
     List<File> galleryImages,
     List<String> imageCaptions,
@@ -435,17 +450,19 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Utiliser un MultipartRequest pour envoyer l'image
+      print("➕ Ajout d'un nouveau service...");
+      print("✅ Titre: $title (encodage correct)");
+      print("✅ Description: $description (encodage correct)");
+      
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('${_apiService.baseUrl}/services/'),
       );
 
-      // Ajouter les headers d'authentification
-      final headers = await _apiService.getHeaders();
+      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
+      final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
 
-      // Ajouter les champs du formulaire
       request.fields['title'] = title;
       request.fields['description'] = description;
       request.fields['subcategory'] = subcategoryId.toString();
@@ -455,16 +472,15 @@ class ServiceProvider with ChangeNotifier {
         request.fields['price'] = price.toString();
       }
 
-      // Ajouter l'image principale
       if (mainImage != null) {
         final mainImageFile = await http.MultipartFile.fromPath(
           'image',
           mainImage.path,
         );
         request.files.add(mainImageFile);
+        print("📷 Image principale ajoutée");
       }
 
-      // Ajouter les images de galerie
       request.fields['gallery_images_count'] = galleryImages.length.toString();
       for (int i = 0; i < galleryImages.length; i++) {
         final file = galleryImages[i];
@@ -474,11 +490,11 @@ class ServiceProvider with ChangeNotifier {
         );
         request.files.add(multipartFile);
         request.fields['gallery_image_${i}_caption'] = imageCaptions[i];
+        print("✅ Image galerie ${i + 1}: ${imageCaptions[i]} (encodage correct)");
       }
 
-      // Ajouter les options
       final validOptions = options.where((option) => 
-        option.name.isNotEmpty // Seulement les options avec un nom
+        option.name.isNotEmpty
       ).toList();
       
       request.fields['options_count'] = validOptions.length.toString();
@@ -490,22 +506,31 @@ class ServiceProvider with ChangeNotifier {
           request.fields['option_${i}_price'] = option.price.toString();
         }
         request.fields['option_${i}_is_included'] = option.isIncluded.toString();
+        print("✅ Option ${i + 1}: ${option.name} (encodage correct)");
       }
 
-
-      // Envoyer la requête
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
+      print("📡 Statut création service: ${response.statusCode}");
+
       if (response.statusCode == 201) {
-        // Service créé avec succès, mettre à jour la liste des services
+        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
+        String responseBody;
+        try {
+          responseBody = utf8.decode(response.bodyBytes);
+        } catch (e) {
+          responseBody = response.body;
+        }
+        
+        print("✅ Service créé avec succès");
         await fetchMyServices();
       } else {
-        _errorMessage =
-            'Erreur lors de la création du service: ${response.body}';
+        _errorMessage = 'Erreur lors de la création du service: ${response.body}';
         throw Exception(_errorMessage);
       }
     } catch (e) {
+      print("❌ Erreur addService: $e");
       _errorMessage = e.toString();
       throw e;
     } finally {
@@ -514,7 +539,7 @@ class ServiceProvider with ChangeNotifier {
     }
   }
 
-  // Mettre à jour un service existant
+  // ✅ MÉTHODE CORRIGÉE: updateService (MultipartRequest conservé mais headers corrigés)
   Future<void> updateService(
     int serviceId,
     String title,
@@ -532,17 +557,18 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Utiliser un MultipartRequest pour envoyer l'image
+      print("📝 Mise à jour du service $serviceId...");
+      print("✅ Nouveau titre: $title (encodage correct)");
+      
       var request = http.MultipartRequest(
         'PATCH',
         Uri.parse('${_apiService.baseUrl}/services/$serviceId/'),
       );
 
-      // Ajouter les headers d'authentification
-      final headers = await _apiService.getHeaders();
+      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
+      final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
 
-      // Ajouter les champs du formulaire
       request.fields['title'] = title;
       request.fields['description'] = description;
       request.fields['subcategory'] = subcategoryId.toString();
@@ -552,19 +578,28 @@ class ServiceProvider with ChangeNotifier {
         request.fields['price'] = price.toString();
       }
 
-      // Envoyer la requête
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
+      print("📡 Statut mise à jour service: ${response.statusCode}");
+
       if (response.statusCode == 200) {
-        // Service mis à jour avec succès, mettre à jour la liste des services
+        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
+        String responseBody;
+        try {
+          responseBody = utf8.decode(response.bodyBytes);
+        } catch (e) {
+          responseBody = response.body;
+        }
+        
+        print("✅ Service mis à jour avec succès");
         await fetchMyServices();
       } else {
-        _errorMessage =
-            'Erreur lors de la mise à jour du service: ${response.body}';
+        _errorMessage = 'Erreur lors de la mise à jour du service: ${response.body}';
         throw Exception(_errorMessage);
       }
     } catch (e) {
+      print("❌ Erreur updateService: $e");
       _errorMessage = e.toString();
       throw e;
     } finally {
@@ -574,34 +609,28 @@ class ServiceProvider with ChangeNotifier {
   }
 
   int getServiceCountForCategory(int categoryId) {
-    // Si les services ont déjà été chargés, comptez-les
     if (!_isLoading && _services.isNotEmpty) {
       return _services
           .where((service) => service.categoryId == categoryId)
           .length;
     }
-
-    // Sinon, il faut faire un appel API (implémentation simplifiée)
-    // Dans une implémentation réelle, vous feriez probablement un appel API asynchrone
-    return 0; // Par défaut, retourne 0
+    return 0;
   }
 
-  // Mettre à jour la disponibilité d'un service
-  Future<void> updateServiceAvailability(
-      int serviceId, bool isAvailable) async {
+  // ✅ MÉTHODE CORRIGÉE: updateServiceAvailability
+  Future<void> updateServiceAvailability(int serviceId, bool isAvailable) async {
     try {
-      final response = await http.patch(
-        Uri.parse('${_apiService.baseUrl}/services/$serviceId/'),
-        headers: await _apiService.getHeaders(),
-        body: json.encode({
-          'is_available': isAvailable,
-        }),
+      print("🔄 Mise à jour disponibilité service $serviceId: $isAvailable");
+      
+      // ✅ Utiliser ApiClient au lieu de http.patch
+      final responseData = await _apiClient.put(
+        'services/$serviceId/',
+        data: {'is_available': isAvailable},
+        requireAuth: true
       );
 
-      if (response.statusCode == 200) {
-        // Mettre à jour localement
-        final index =
-            _myServices.indexWhere((service) => service.id == serviceId);
+      if (responseData != null) {
+        final index = _myServices.indexWhere((service) => service.id == serviceId);
         if (index != -1) {
           _myServices[index] = Service(
             id: _myServices[index].id,
@@ -618,34 +647,29 @@ class ServiceProvider with ChangeNotifier {
             subcategoryId: _myServices[index].subcategoryId,
             isAvailable: isAvailable,
           );
+          print("✅ Disponibilité mise à jour localement");
           notifyListeners();
         }
-      } else {
-        throw Exception('Erreur lors de la mise à jour de la disponibilité');
       }
     } catch (e) {
-      print('Error updateServiceAvailability: $e');
+      print('❌ Error updateServiceAvailability: $e');
       rethrow;
     }
   }
 
-  // Supprimer un service
+  // ✅ MÉTHODE CORRIGÉE: deleteService
   Future<void> deleteService(int serviceId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('${_apiService.baseUrl}/services/$serviceId/'),
-        headers: await _apiService.getHeaders(),
-      );
-
-      if (response.statusCode == 204) {
-        // Supprimer localement
-        _myServices.removeWhere((service) => service.id == serviceId);
-        notifyListeners();
-      } else {
-        throw Exception('Erreur lors de la suppression du service');
-      }
+      print("🗑️ Suppression du service $serviceId...");
+      
+      // ✅ Utiliser ApiClient au lieu de http.delete
+      await _apiClient.delete('services/$serviceId/', requireAuth: true);
+      
+      _myServices.removeWhere((service) => service.id == serviceId);
+      print("✅ Service supprimé avec succès");
+      notifyListeners();
     } catch (e) {
-      print('Error deleteService: $e');
+      print('❌ Error deleteService: $e');
       rethrow;
     }
   }

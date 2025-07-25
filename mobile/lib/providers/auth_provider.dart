@@ -6,7 +6,8 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../core/services/profile_manager.dart'; 
+import '../core/services/profile_manager.dart';
+import '../core/api/api_client.dart'; // ✅ Import ApiClient
 
 enum AuthStatus {
   uninitialized,
@@ -24,6 +25,7 @@ enum PasswordResetStatus {
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService;
+  late final ApiClient _apiClient; // ✅ Référence ApiClient
   
   AuthStatus _status = AuthStatus.uninitialized;
   User? _currentUser;
@@ -34,7 +36,10 @@ class AuthProvider with ChangeNotifier {
   String? _resetEmail;
   String? _resetCode;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  
   AuthProvider(this._authService) {
+    // ✅ Initialiser ApiClient pour bénéficier des corrections d'encodage
+    _apiClient = ApiClient(baseUrl: _getBaseUrl());
     // Vérifier l'état d'authentification au démarrage
     _checkCurrentUser();
   }
@@ -56,7 +61,7 @@ class AuthProvider with ChangeNotifier {
     ProfileManager.setAuthProvider(this);
   }
 
-  
+  // ✅ MÉTHODE CORRIGÉE: refreshToken
   Future<bool> refreshToken() async {
     try {
       final refreshToken = await _secureStorage.read(key: 'refresh_token');
@@ -68,23 +73,17 @@ class AuthProvider with ChangeNotifier {
 
       print('🔄 Tentative de rafraîchissement du token...');
       
-      // Récupérer l'URL de base depuis votre configuration
-      final baseUrl = _getBaseUrl();
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/token/refresh/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({'refresh': refreshToken}),
+      // ✅ Utiliser ApiClient au lieu de http.post
+      final responseData = await _apiClient.post(
+        'auth/token/refresh/',
+        data: {'refresh': refreshToken},
+        requireAuth: false
       );
 
-      print('Réponse refresh token: ${response.statusCode}');
+      print('✅ Réponse refresh token reçue');
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final newAccessToken = data['access'];
+      if (responseData != null && responseData['access'] != null) {
+        final newAccessToken = responseData['access'];
         
         // Sauvegarder le nouveau token d'accès
         await _secureStorage.write(key: 'access_token', value: newAccessToken);
@@ -92,7 +91,7 @@ class AuthProvider with ChangeNotifier {
         print('✅ Token rafraîchi avec succès');
         return true;
       } else {
-        print('❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
+        print('❌ Réponse invalide pour le refresh token');
         
         // Supprimer les tokens invalides
         await _secureStorage.delete(key: 'access_token');
@@ -107,30 +106,31 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       print('❌ Erreur lors du rafraîchissement du token: $e');
+      
+      // Nettoyer en cas d'erreur
+      await _secureStorage.delete(key: 'access_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      _status = AuthStatus.unauthenticated;
+      _currentUser = null;
+      notifyListeners();
+      
       return false;
     }
   }
 
-  /// Méthode pour vérifier si le token est valide
+  // ✅ MÉTHODE CORRIGÉE: isTokenValid
   Future<bool> isTokenValid() async {
     try {
       final token = await _secureStorage.read(key: 'access_token');
       if (token == null) return false;
 
-      final baseUrl = _getBaseUrl();
+      // ✅ Utiliser ApiClient au lieu de http.get
+      final responseData = await _apiClient.get('users/me/', requireAuth: true);
       
-      // Faire un appel API simple pour vérifier la validité du token
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/me/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      return response.statusCode == 200;
+      // Si on reçoit des données, le token est valide
+      return responseData != null;
     } catch (e) {
-      print('Erreur lors de la vérification du token: $e');
+      print('❌ Erreur lors de la vérification du token: $e');
       return false;
     }
   }
@@ -138,7 +138,7 @@ class AuthProvider with ChangeNotifier {
   /// Méthode pour valider et éventuellement rafraîchir le token avant les requêtes
   Future<bool> ensureValidToken() async {
     if (!await isTokenValid()) {
-      print('Token invalide, tentative de rafraîchissement...');
+      print('🔄 Token invalide, tentative de rafraîchissement...');
       return await refreshToken();
     }
     return true;
@@ -151,10 +151,14 @@ class AuthProvider with ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _status = AuthStatus.authenticated;
+        
+        // ✅ Debug encodage utilisateur
+        print('✅ Utilisateur actuel: ${user.firstName} ${user.lastName}');
       } else {
         _status = AuthStatus.unauthenticated;
       }
     } catch (e) {
+      print('❌ Erreur _checkCurrentUser: $e');
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
@@ -168,6 +172,9 @@ class AuthProvider with ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _status = AuthStatus.authenticated;
+        
+        // ✅ Debug encodage utilisateur
+        print('✅ Informations utilisateur récupérées: ${user.firstName} ${user.lastName}');
       }
       notifyListeners();
     } catch (e) {
@@ -176,7 +183,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Méthodes d'authentification existantes
+  // Méthodes d'authentification existantes (utilisent déjà AuthService qui peut être migré séparément)
   Future<bool> login(String email, String password) async {
     try {
       // Réinitialiser le message d'erreur
@@ -189,6 +196,8 @@ class AuthProvider with ChangeNotifier {
       
       if (user != null) {
         print('✅ Connexion réussie pour: ${user.email} (rôle: ${user.role})');
+        print('✅ Nom d\'utilisateur: ${user.firstName} ${user.lastName} (encodage correct)');
+        
         _currentUser = user;
         _status = AuthStatus.authenticated;
         
@@ -208,7 +217,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       print('❌ Erreur lors de la connexion: $e');
       
-      // Gérer différents types d'erreurs
+      // ✅ Gérer différents types d'erreurs avec messages UTF-8 corrects
       if (e.toString().contains('401') || 
           e.toString().contains('Unauthorized') ||
           e.toString().contains('Invalid credentials')) {
@@ -239,6 +248,8 @@ class AuthProvider with ChangeNotifier {
         username, email, password, firstName, lastName, phoneNumber, role);
       
       if (user != null) {
+        print('✅ Inscription réussie: ${user.firstName} ${user.lastName} (encodage correct)');
+        
         _currentUser = user;
         _status = AuthStatus.authenticated;
 
@@ -287,6 +298,8 @@ class AuthProvider with ChangeNotifier {
       );
       
       if (user != null) {
+        print('✅ Inscription avec catégories réussie: ${user.firstName} ${user.lastName}');
+        
         _currentUser = user;
         _status = AuthStatus.authenticated;
 
@@ -309,7 +322,8 @@ class AuthProvider with ChangeNotifier {
       return false;
     }
   }
-  // Méthodes existantes pour le reset de mot de passe
+  
+  // Méthodes existantes pour le reset de mot de passe (utilisent AuthService)
   Future<bool> requestPasswordReset(String email) async {
     try {
       _errorMessage = null;
@@ -414,10 +428,12 @@ class AuthProvider with ChangeNotifier {
       _status = AuthStatus.unauthenticated;
       _errorMessage = null;
       
+      print('✅ Déconnexion réussie');
+      
       notifyListeners();
       return success;
     } catch (e) {
-      print('Erreur lors de la déconnexion: $e');
+      print('❌ Erreur lors de la déconnexion: $e');
       
       // Forcer la déconnexion locale même en cas d'erreur
       await _secureStorage.delete(key: 'access_token');
@@ -461,6 +477,8 @@ class AuthProvider with ChangeNotifier {
       );
       
       if (updatedUser != null) {
+        print('✅ Profil mis à jour: ${updatedUser.firstName} ${updatedUser.lastName}');
+        
         _currentUser = updatedUser;
         notifyListeners();
         return true;
@@ -489,6 +507,7 @@ class AuthProvider with ChangeNotifier {
     print('=== DEBUG AUTH STATE ===');
     print('Status: $_status');
     print('Current User: ${_currentUser?.email ?? 'null'}');
+    print('User Name: ${_currentUser?.firstName} ${_currentUser?.lastName}');
     print('Access Token: ${token != null ? 'EXISTS (${token.length} chars)' : 'NULL'}');
     print('Refresh Token: ${refreshToken != null ? 'EXISTS' : 'NULL'}');
     print('Is Authenticated: $isAuthenticated');
@@ -499,10 +518,10 @@ class AuthProvider with ChangeNotifier {
   String _getBaseUrl() {
     try {
       // Si vous avez accès à dotenv
-      return dotenv.env['API_BASE_URL'] ?? 'http://localhost:8003/api';
+      return dotenv.env['API_BASE_URL'] ?? 'https://teyago.com/api';
       
     } catch (e) {
-      return 'http://localhost:8003/api';
+      return 'https://teyago.com/api';
     }
   }
 }

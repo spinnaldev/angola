@@ -16,88 +16,107 @@ class _HelpFAQScreenState extends State<HelpFAQScreen> {
   final Map<String, List<Map<String, String>>> _faqData = {
     'general': [
       {
-        'question': 'Comment fonctionne Angola Services ?',
-        'answer': 'Angola Services est une plateforme qui met en relation les clients avec des prestataires de services qualifiés. Les clients peuvent publier leurs projets et recevoir des devis, tandis que les prestataires peuvent proposer leurs services et répondre aux demandes.',
+        'question': 'Comment fonctionne Teyago Services ?',
+        'answer':
+            'Teyago Services est une plateforme qui met en relation les clients avec des prestataires de services qualifiés. Les clients peuvent publier leurs projets et recevoir des devis, tandis que les prestataires peuvent proposer leurs services et répondre aux demandes.',
       },
       {
         'question': 'Comment créer un compte ?',
-        'answer': 'Vous pouvez créer un compte en tant que client ou prestataire en cliquant sur "S\'inscrire" et en remplissant le formulaire d\'inscription avec vos informations personnelles.',
+        'answer':
+            'Vous pouvez créer un compte en tant que client ou prestataire en cliquant sur "S\'inscrire" et en remplissant le formulaire d\'inscription avec vos informations personnelles.',
       },
       {
         'question': 'L\'application est-elle gratuite ?',
-        'answer': 'L\'inscription et la navigation sur la plateforme sont gratuites. Des frais peuvent s\'appliquer lors de la finalisation de certains services ou transactions.',
+        'answer':
+            'L\'inscription et la navigation sur la plateforme sont gratuites. Des frais peuvent s\'appliquer lors de la finalisation de certains services ou transactions.',
       },
     ],
     'clients': [
       {
         'question': 'Comment publier un projet ?',
-        'answer': 'Connectez-vous à votre compte client, cliquez sur "Publier un projet", décrivez votre besoin, ajoutez votre budget et les compétences requises. Les prestataires pourront ensuite vous envoyer leurs propositions.',
+        'answer':
+            'Connectez-vous à votre compte client, cliquez sur "Publier un projet", décrivez votre besoin, ajoutez votre budget et les compétences requises. Les prestataires pourront ensuite vous envoyer leurs propositions.',
       },
       {
         'question': 'Comment choisir un prestataire ?',
-        'answer': 'Consultez les profils des prestataires, leurs avis, leurs réalisations précédentes et leurs tarifs. Vous pouvez également échanger avec eux via la messagerie intégrée avant de faire votre choix.',
+        'answer':
+            'Consultez les profils des prestataires, leurs avis, leurs réalisations précédentes et leurs tarifs. Vous pouvez également échanger avec eux via la messagerie intégrée avant de faire votre choix.',
       },
       {
         'question': 'Comment payer un prestataire ?',
-        'answer': 'Les paiements s\'effectuent de manière sécurisée via la plateforme. Vous pouvez payer par carte bancaire, virement ou mobile money selon les options disponibles.',
+        'answer':
+            'Les paiements s\'effectuent de manière sécurisée via la plateforme. Vous pouvez payer par carte bancaire, virement ou mobile money selon les options disponibles.',
       },
       {
         'question': 'Que faire si je ne suis pas satisfait du service ?',
-        'answer': 'Vous pouvez ouvrir un litige depuis votre espace client. Notre équipe de médiation interviendra pour résoudre le problème. Vous pouvez également laisser un avis pour informer les autres utilisateurs.',
+        'answer':
+            'Vous pouvez ouvrir un litige depuis votre espace client. Notre équipe de médiation interviendra pour résoudre le problème. Vous pouvez également laisser un avis pour informer les autres utilisateurs.',
       },
     ],
     'providers': [
       {
         'question': 'Comment créer mon profil prestataire ?',
-        'answer': 'Après inscription, complétez votre profil avec vos compétences, votre expérience, vos tarifs et ajoutez un portfolio de vos réalisations. Plus votre profil est détaillé, plus vous aurez de chances d\'être contacté.',
+        'answer':
+            'Après inscription, complétez votre profil avec vos compétences, votre expérience, vos tarifs et ajoutez un portfolio de vos réalisations. Plus votre profil est détaillé, plus vous aurez de chances d\'être contacté.',
       },
       {
         'question': 'Comment répondre à un projet ?',
-        'answer': 'Parcourez les projets dans votre domaine, cliquez sur ceux qui vous intéressent et envoyez votre proposition avec un devis détaillé et un délai de réalisation.',
+        'answer':
+            'Parcourez les projets dans votre domaine, cliquez sur ceux qui vous intéressent et envoyez votre proposition avec un devis détaillé et un délai de réalisation.',
       },
       {
         'question': 'Comment fixer mes tarifs ?',
-        'answer': 'Vous êtes libre de fixer vos tarifs. Consultez les prix pratiqués par d\'autres prestataires dans votre domaine pour rester compétitif tout en valorisant votre expertise.',
+        'answer':
+            'Vous êtes libre de fixer vos tarifs. Consultez les prix pratiqués par d\'autres prestataires dans votre domaine pour rester compétitif tout en valorisant votre expertise.',
       },
       {
         'question': 'Comment obtenir plus de clients ?',
-        'answer': 'Maintenez un profil à jour, répondez rapidement aux demandes, proposez des tarifs compétitifs, et accumulez des avis positifs en livrant un travail de qualité.',
+        'answer':
+            'Maintenez un profil à jour, répondez rapidement aux demandes, proposez des tarifs compétitifs, et accumulez des avis positifs en livrant un travail de qualité.',
       },
     ],
     'payments': [
       {
         'question': 'Quels sont les moyens de paiement acceptés ?',
-        'answer': 'Nous acceptons les cartes bancaires (Visa, MasterCard), les virements bancaires et le mobile money (selon votre région).',
+        'answer':
+            'Nous acceptons les cartes bancaires (Visa, MasterCard), les virements bancaires et le mobile money (selon votre région).',
       },
       {
         'question': 'Quand suis-je débité ?',
-        'answer': 'Le paiement est effectué lorsque vous confirmez l\'acceptation de la prestation et que le prestataire commence le travail. Pour certains services, un acompte peut être demandé.',
+        'answer':
+            'Le paiement est effectué lorsque vous confirmez l\'acceptation de la prestation et que le prestataire commence le travail. Pour certains services, un acompte peut être demandé.',
       },
       {
         'question': 'Comment obtenir une facture ?',
-        'answer': 'Une facture électronique est automatiquement générée et envoyée par email après chaque transaction. Vous pouvez également la télécharger depuis votre espace personnel.',
+        'answer':
+            'Une facture électronique est automatiquement générée et envoyée par email après chaque transaction. Vous pouvez également la télécharger depuis votre espace personnel.',
       },
       {
         'question': 'Comment obtenir un remboursement ?',
-        'answer': 'En cas de problème avéré, vous pouvez demander un remboursement via la procédure de litige. Chaque demande est étudiée au cas par cas par notre équipe.',
+        'answer':
+            'En cas de problème avéré, vous pouvez demander un remboursement via la procédure de litige. Chaque demande est étudiée au cas par cas par notre équipe.',
       },
     ],
     'technical': [
       {
         'question': 'L\'application ne fonctionne pas correctement',
-        'answer': 'Vérifiez votre connexion internet, fermez et relancez l\'application. Si le problème persiste, mettez à jour l\'application ou contactez notre support technique.',
+        'answer':
+            'Vérifiez votre connexion internet, fermez et relancez l\'application. Si le problème persiste, mettez à jour l\'application ou contactez notre support technique.',
       },
       {
         'question': 'Comment changer ma langue ?',
-        'answer': 'Allez dans Paramètres > Langue et sélectionnez votre langue préférée parmi français, anglais ou portugais.',
+        'answer':
+            'Allez dans Paramètres > Langue et sélectionnez votre langue préférée parmi français, anglais ou portugais.',
       },
       {
         'question': 'Mes notifications ne fonctionnent pas',
-        'answer': 'Vérifiez que les notifications sont activées dans les paramètres de l\'application et dans les paramètres de votre téléphone.',
+        'answer':
+            'Vérifiez que les notifications sont activées dans les paramètres de l\'application et dans les paramètres de votre téléphone.',
       },
       {
         'question': 'Comment sauvegarder mes données ?',
-        'answer': 'Vos données sont automatiquement sauvegardées sur nos serveurs sécurisés. Vous pouvez également exporter vos informations depuis votre profil.',
+        'answer':
+            'Vos données sont automatiquement sauvegardées sur nos serveurs sécurisés. Vous pouvez également exporter vos informations depuis votre profil.',
       },
     ],
   };
@@ -105,10 +124,12 @@ class _HelpFAQScreenState extends State<HelpFAQScreen> {
   List<Map<String, String>> get _filteredFAQs {
     final faqs = _faqData[_selectedCategory] ?? [];
     if (_searchQuery.isEmpty) return faqs;
-    
+
     return faqs.where((faq) {
-      return faq['question']!.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-             faq['answer']!.toLowerCase().contains(_searchQuery.toLowerCase());
+      return faq['question']!
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          faq['answer']!.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
   }
 
@@ -145,7 +166,8 @@ class _HelpFAQScreenState extends State<HelpFAQScreen> {
                 ),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),

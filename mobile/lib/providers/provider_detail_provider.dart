@@ -27,6 +27,12 @@ class ProviderDetailProvider with ChangeNotifier {
     }
   }
 
+
+  void clearCurrentProvider() {
+    _currentProvider = null;
+    notifyListeners();
+    print("🧹 ProviderDetailProvider: Prestataire actuel effacé");
+  }
   Future<void> fetchProviderByServiceId(int serviceId) async {
     _isLoading = true;
     notifyListeners();

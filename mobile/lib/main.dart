@@ -153,7 +153,8 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProxyProvider<AuthProvider, OffersProvider>(
           create: (context) => OffersProvider(apiService),
-          update: (context, authProvider, previous) => previous ?? OffersProvider(apiService),
+          update: (context, authProvider, previous) =>
+              previous ?? OffersProvider(apiService),
         ),
       ],
       child: Consumer<LanguageProvider>(
@@ -167,8 +168,8 @@ class MyApp extends StatelessWidget {
             showSemanticsDebugger: false, // Supprime le debugger sémantique
             debugShowMaterialGrid: false,
 
-            title: 'Angola Services',
-  
+            title: 'Teyago Services',
+
             // NOUVEAU : Configuration de la localisation
             locale: languageProvider.currentLocale,
             localizationsDelegates: const [
@@ -178,8 +179,8 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [
-              Locale('fr'), // Français
               Locale('en'), // Anglais
+              Locale('fr'), // Français
               Locale('pt'), // Portugais
             ],
 
