@@ -30,7 +30,7 @@ def create_test_data(apps, schema_editor):
             'role': 'client',
             'phone_number': '+244 923 456 789',
             'location': 'Luanda, Angola',
-            'bio': 'Cliente regular da plataforma Angola Services',
+            'bio': 'Cliente regular da plataforma Teyago Services',
             'is_verified': True,
             'is_active': True,
         }

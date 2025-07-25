@@ -149,6 +149,7 @@ class ProviderServiceSerializer(serializers.ModelSerializer):
     category_name = serializers.StringRelatedField(source='subcategory.category.name', read_only=True)
     category_id = serializers.SerializerMethodField()
     avg_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     gallery_images = ServiceGalleryImageSerializer(many=True, read_only=True)
     options = ServiceOptionSerializer(many=True, read_only=True)
@@ -158,22 +159,27 @@ class ProviderServiceSerializer(serializers.ModelSerializer):
         model = ProviderService
         fields = ('id', 'title', 'description', 'price', 'price_type', 'is_available',
                  'subcategory', 'subcategory_name', 'category_name', 'category_id',
-                 'avg_rating', 'image', 'image_url', 'provider_id','gallery_images', 'options')
+                 'avg_rating', 'review_count' ,'image', 'image_url', 'provider_id','gallery_images', 'options')
         # read_only_fields = ('provider',)
     
-    def get_rating(self, obj):
-        """Calculer la note moyenne de CE service spécifique"""
-        avg_rating = obj.reviews.aggregate(
-            avg_rating=Avg('overall_rating')
-        )['avg_rating']
-        return round(avg_rating, 1) if avg_rating else 0.0
+    # def get_rating(self, obj):
+    #     """Calculer la note moyenne de CE service spécifique"""
+    #     avg_rating = obj.reviews.aggregate(
+    #         avg_rating=Avg('overall_rating')
+    #     )['avg_rating']
+    #     return round(avg_rating, 1) if avg_rating else 0.0
     
     def get_review_count(self, obj):
         """Compter le nombre d'avis de CE service spécifique"""
         return obj.reviews.count()
     
     def get_avg_rating(self, obj):
-        return obj.reviews.aggregate(avg=Avg('overall_rating')).get('avg') or 0
+        """Calculer la note moyenne de CE service spécifique"""
+        from django.db.models import Avg
+        avg_rating = obj.reviews.aggregate(avg=Avg('overall_rating'))['avg']
+        result = round(avg_rating, 1) if avg_rating else 0.0
+        print(f"🔍 Service {obj.id} - Note calculée: {result} (basée sur {obj.reviews.count()} avis)")
+        return result
 
     def get_category_id(self, obj):
         if obj.subcategory and obj.subcategory.category:
@@ -530,39 +536,74 @@ class RegisterSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ('username', 'password',  'email', 'first_name', 'last_name', 
-                 'phone_number', 'role', 'location' ,'categories','access', 'refresh', 'user')
+        fields = ('username', 'password', 'email', 'first_name', 'last_name', 
+                 'phone_number', 'role', 'location', 'categories', 'access', 'refresh', 'user')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
             'email': {'required': True}
         }
+
+    def validate_email(self, value):
+        """
+        Validation personnalisée pour l'email
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "Un compte avec cette adresse email existe déjà."
+            )
+        return value
+    def validate_username(self, value):
+        """
+        Validation personnalisée pour le username
+        """
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                "Ce nom d'utilisateur est déjà pris."
+            )
+        return value
     def create(self, validated_data):
         # Extraire les catégories (si présentes)
         categories = validated_data.pop('categories', [])
-        print(categories)
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            phone_number=validated_data.get('phone_number', ''),
-            role=validated_data.get('role', 'client'),
-            location=validated_data.get('location', '')
-        )
-        user.set_password(validated_data['password'])
-        user.save()
         
-        # Créer un profil prestataire si le rôle est provider
-        if validated_data.get('role') == 'provider':
-            provider = Provider.objects.create(user=user)
+        try:
+            user = User.objects.create(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                phone_number=validated_data.get('phone_number', ''),
+                role=validated_data.get('role', 'client'),
+                location=validated_data.get('location', '')
+            )
+            user.set_password(validated_data['password'])
+            user.save()
             
-            # Ajouter les catégories d'expertise
-            if categories:
-                category_objects = Category.objects.filter(id__in=categories)
-                provider.expertise_categories.set(category_objects)
-        
-        return user
+            # Créer un profil prestataire si le rôle est provider
+            if validated_data.get('role') == 'provider':
+                provider = Provider.objects.create(user=user)
+                
+                # Ajouter les catégories d'expertise
+                if categories:
+                    category_objects = Category.objects.filter(id__in=categories)
+                    provider.expertise_categories.set(category_objects)
+            
+            return user
+            
+        except Exception as e:
+            # Gérer les erreurs de base de données
+            if 'email' in str(e).lower():
+                raise serializers.ValidationError({
+                    'email': 'Cette adresse email est déjà utilisée.'
+                })
+            elif 'username' in str(e).lower():
+                raise serializers.ValidationError({
+                    'username': 'Ce nom d\'utilisateur est déjà pris.'
+                })
+            else:
+                raise serializers.ValidationError({
+                    'non_field_errors': 'Erreur lors de la création du compte.'
+                })
     
     def get_user(self, obj):
         """Retourne les données utilisateur sérialisées"""

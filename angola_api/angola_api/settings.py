@@ -277,7 +277,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'spinnaldev@gmail.com'
 EMAIL_HOST_PASSWORD = 'zvzi foix bgnb juxn' 
-DEFAULT_FROM_EMAIL = 'Angola App <spinnaldev@gmail.com>'
+DEFAULT_FROM_EMAIL = 'TEYAGO APP <spinnaldev@gmail.com>'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

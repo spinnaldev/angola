@@ -103,16 +103,44 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        # Créer l'utilisateur
-        user = serializer.save()
-        
-        # Le serializer s'occupe déjà de retourner le bon format
-        response_data = serializer.to_representation(user)
-        
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Créer l'utilisateur
+            user = serializer.save()
+            
+            # Le serializer s'occupe déjà de retourner le bon format
+            response_data = serializer.to_representation(user)
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
+            
+        except serializers.ValidationError as e:
+            # Personnaliser les messages d'erreur
+            errors = e.detail
+            
+            # Transformer les erreurs pour les rendre plus conviviales
+            friendly_errors = {}
+            
+            if 'email' in errors:
+                friendly_errors['email'] = "Cette adresse email est déjà utilisée par un autre compte."
+                
+            if 'username' in errors:
+                friendly_errors['username'] = "Ce nom d'utilisateur est déjà pris."
+                
+            # Garder les autres erreurs telles quelles
+            for field, message in errors.items():
+                if field not in friendly_errors:
+                    friendly_errors[field] = message
+            
+            return Response(friendly_errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            logger.error(f"Erreur inattendue lors de l'inscription: {str(e)}")
+            return Response(
+                {"detail": "Une erreur inattendue s'est produite. Veuillez réessayer."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
 class PasswordResetRequestView(APIView):
     """
@@ -156,11 +184,11 @@ class PasswordResetRequestView(APIView):
                 logger.debug(f"Nouveau code créé avec expiration: {expiration}")
                 
                 # Envoyer l'email
-                subject = 'Code de réinitialisation - Angola Services'
+                subject = 'Code de réinitialisation - Teyago Services'
                 message = f"""
                 Bonjour {user.first_name or user.username},
 
-                Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Angola Services.
+                Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Teyago Services.
 
                 Votre code de réinitialisation est : {code}
 
@@ -170,7 +198,7 @@ class PasswordResetRequestView(APIView):
                 • Ne partagez jamais ce code avec personne
 
                 Cordialement,
-                L'équipe Angola Services
+                L'équipe Teyago Services
                                 """
                 
                 try:

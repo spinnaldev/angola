@@ -22,6 +22,7 @@ class User(AbstractUser, TimeStampMixin):
         ('admin', 'Administrateur'),
     )
     
+    email = models.EmailField(unique=True, blank=False, null=False)
     phone_number = models.CharField(max_length=20, blank=True)
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
@@ -30,8 +31,11 @@ class User(AbstractUser, TimeStampMixin):
     location = models.CharField(max_length=255, blank=True)
     company_name = models.CharField(max_length=100, blank=True, null=True)
     
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
     def __str__(self):
-        return self.username
+        return self.email
 
 class ResetPasswordCode(models.Model):
     """
