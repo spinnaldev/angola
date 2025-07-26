@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/core/services/notification_service.dart';
 import 'package:teyago/ui/screens/app_entry_screen.dart';
 import 'package:teyago/ui/screens/home/home_screen.dart';
 import 'core/api/api_client.dart';
@@ -136,9 +137,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProjectProvider(apiService),
         ),
-        ChangeNotifierProvider(
-          create: (_) => NotificationProvider(apiService),
-        ),
+        ChangeNotifierProvider(create: (_) => NotificationProvider(NotificationService(apiService))),
         ChangeNotifierProvider(
           create: (_) => MessagingProvider(apiService),
         ),

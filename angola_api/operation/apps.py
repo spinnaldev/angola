@@ -4,3 +4,7 @@ from django.apps import AppConfig
 class OperationConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'operation'
+
+    def ready(self):
+        # Importer les signaux pour qu'ils soient enregistrés
+        import operation.signals

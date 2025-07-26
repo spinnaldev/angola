@@ -155,6 +155,7 @@
 // }
 
 // mobile/lib/ui/widgets/service_card.dart - VERSION CORRIGÉE COMPLÈTE
+// mobile/lib/ui/widgets/service_card.dart
 import 'package:flutter/material.dart';
 import '../../core/models/service.dart';
 
@@ -206,8 +207,8 @@ class ServiceCard extends StatelessWidget {
   // ✅ MÉTHODE PROTÉGÉE pour l'image du service
   Widget _buildServiceImage() {
     // Récupérer l'URL de l'image de manière sécurisée
-    final imageUrl = service.imageUrl ?? '';
-    final hasValidImage = imageUrl.isNotEmpty;
+    final imageUrl = _getSafeString(service.imageUrl, '');
+    final hasValidImage = imageUrl.isNotEmpty && _isValidUrl(imageUrl);
 
     return Container(
       height: 120,
@@ -215,38 +216,90 @@ class ServiceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        image: hasValidImage
-            ? DecorationImage(
-                image: NetworkImage(imageUrl),
-                fit: BoxFit.cover,
-                onError: (exception, stackTrace) {
-                  print('Erreur chargement image: $exception');
-                },
-              )
-            : null,
       ),
-      child: !hasValidImage
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.image_outlined,
-                    size: 40,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Pas d\'image',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : null,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        child: hasValidImage
+            ? _buildNetworkImage(imageUrl)
+            : _buildDefaultImage(),
+      ),
+    );
+  }
+
+  // ✅ MÉTHODE pour construire l'image réseau avec gestion d'erreur
+  Widget _buildNetworkImage(String imageUrl) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: 120,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        
+        return Container(
+          height: 120,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        print('❌ Erreur chargement image: $error');
+        return _buildDefaultImage();
+      },
+    );
+  }
+
+  // ✅ MÉTHODE pour construire l'image par défaut
+  Widget _buildDefaultImage() {
+    return Container(
+      height: 120,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue[50]!,
+            Colors.blue[100]!,
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[200]!.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.business_center,
+              size: 32,
+              color: Colors.blue[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Service',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.blue[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -319,7 +372,7 @@ class ServiceCard extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          '($reviewCount avis)',
+          '($reviewCount)',
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[500],
@@ -331,51 +384,54 @@ class ServiceCard extends StatelessWidget {
 
   // ✅ MÉTHODE PROTÉGÉE pour la section prix et business
   Widget _buildPriceAndBusinessSection() {
-    final priceType = _getSafeString(service.priceType, 'quote');
     final price = _getSafeDouble(service.price, 0.0);
-    final businessType = _getSafeString(service.businessType, 'Entreprise');
+    final businessType = _getSafeString(service.businessType, 'Non spécifié');
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Prix
         Expanded(
-          child: Text(
-            _formatPrice(priceType, price),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF142FE2),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                businessType,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (price > 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${price.toStringAsFixed(0)} AOA',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        
-        // Type de business
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            businessType,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+        Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Colors.grey[400],
         ),
       ],
     );
   }
 
-  // ✅ WIDGET D'ERREUR standardisé
+  // ✅ MÉTHODE PROTÉGÉE pour construire une card d'erreur
   Widget _buildErrorCard(String message) {
     return Card(
       elevation: 2,
+      color: Colors.red[50],
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.red[200]!, width: 1),
       ),
       child: Container(
         height: 200,
@@ -386,15 +442,16 @@ class ServiceCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.error_outline,
-                size: 40,
-                color: Colors.grey[400],
+                color: Colors.red[400],
+                size: 32,
               ),
               const SizedBox(height: 8),
               Text(
                 message,
                 style: TextStyle(
+                  color: Colors.red[600],
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -405,56 +462,45 @@ class ServiceCard extends StatelessWidget {
     );
   }
 
-  // ✅ MÉTHODES UTILITAIRES pour la sécurité des données
-  String _getSafeString(String? value, String defaultValue) {
-    if (value == null || value.isEmpty) {
-      return defaultValue;
-    }
-    return value;
+  // ✅ MÉTHODES UTILITAIRES pour la protection des données
+  String _getSafeString(dynamic value, String defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is String) return value.isEmpty ? defaultValue : value;
+    return value.toString().isEmpty ? defaultValue : value.toString();
   }
 
-  double _getSafeDouble(double? value, double defaultValue) {
-    if (value == null || value.isNaN || value.isInfinite) {
-      return defaultValue;
-    }
-    return value;
-  }
-
-  int _getSafeInt(int? value, int defaultValue) {
-    if (value == null) {
-      return defaultValue;
-    }
-    return value;
-  }
-
-  String _formatPrice(String priceType, double price) {
-    try {
-      switch (priceType.toLowerCase()) {
-        case 'fixed':
-          return price > 0 ? '${price.toInt()} FCFA' : 'Prix à définir';
-        case 'hourly':
-          return price > 0 ? '${price.toInt()} FCFA/h' : 'Tarif horaire à définir';
-        case 'daily':
-          return price > 0 ? '${price.toInt()} FCFA/jour' : 'Tarif journalier à définir';
-        case 'negotiable':
-          return 'Prix négociable';
-        case 'quote':
-        default:
-          return 'Sur devis';
+  double _getSafeDouble(dynamic value, double defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return defaultValue;
       }
-    } catch (e) {
-      print('Erreur formatage prix: $e');
-      return 'Prix à définir';
     }
+    return defaultValue;
   }
-}
 
-// ✅ EXTENSION pour une utilisation encore plus sécurisée (optionnel)
-extension SafeServiceCard on Service {
-  bool get isValid {
+  int _getSafeInt(dynamic value, int defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        return defaultValue;
+      }
+    }
+    return defaultValue;
+  }
+
+  bool _isValidUrl(String url) {
     try {
-      return id != null && id > 0 && 
-             title != null && title.isNotEmpty;
+      Uri.parse(url);
+      return url.startsWith('http://') || url.startsWith('https://');
     } catch (e) {
       return false;
     }

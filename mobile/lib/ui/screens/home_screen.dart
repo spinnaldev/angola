@@ -24,6 +24,8 @@ import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
 import 'search_results_screen.dart';
+import '../widgets/service_image.dart'; 
+import '../../providers/notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -92,6 +94,13 @@ class _HomeScreenState extends State<HomeScreen>
         : 4; // Prestataires: 3 onglets, Clients: 4 onglets
     _tabController = TabController(length: tabLength, vsync: this);
     _loadData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        notificationProvider.loadUnreadCount();
+      }
+    });
   }
 
   @override
@@ -433,12 +442,14 @@ class _HomeScreenState extends State<HomeScreen>
                         });
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none),
-                      onPressed: () {
-                        // Notifications
-                      },
-                    ),
+
+                    _buildNotificationIcon(context),
+                    // IconButton(
+                    //   icon: const Icon(Icons.notifications_none),
+                    //   onPressed: () {
+                    //     // Notifications
+                    //   },
+                    // ),
                   ],
                 ),
               ],
@@ -512,6 +523,50 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildNotificationIcon(BuildContext context) {
+    return Consumer<NotificationProvider>(
+      builder: (context, notificationProvider, child) {
+        final unreadCount = notificationProvider.unreadCount;
+        
+        return Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none),
+              onPressed: () {
+                // Naviguer vers l'écran des notifications
+                Navigator.pushNamed(context, '/notifications');
+              },
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
   // ================== MODE CLIENT ==================
 
   // Tab d'accueil pour les clients
@@ -1296,24 +1351,13 @@ class _HomeScreenState extends State<HomeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Image
-                    ClipRRect(
+                    ServiceImage(
+                      imageUrl: service.imageUrl,
+                      width: 160,
+                      height: 100,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        service.imageUrl,
-                        width: 160,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 160,
-                            height: 100,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, color: Colors.grey),
-                          );
-                        },
                       ),
                     ),
                     // Contenu
@@ -1607,24 +1651,13 @@ class _HomeScreenState extends State<HomeScreen>
               child: Row(
                 children: [
                   // Image
-                  ClipRRect(
+                  ServiceImage(
+                    imageUrl: service.imageUrl,
+                    width: 80,
+                    height: 80,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
                       bottomLeft: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      service.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        );
-                      },
                     ),
                   ),
 

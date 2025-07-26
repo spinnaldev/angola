@@ -18,6 +18,8 @@ import '../screens/disputes/disputes_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
 import 'package:teyago/ui/screens/auth/profile_selector_screen.dart';
+import '../../providers/notification_provider.dart';
+
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -362,21 +364,103 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
-        _buildMenuItem(
-          context,
-          icon: Icons.notifications_none,
-          text: l10n.notifications,
-          onTap: () {
-            onClose();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.notificationsComingSoon)),
-            );
-          },
-        ),
+        _buildNotificationMenuItem(context, l10n),
+        // _buildMenuItem(
+        //   context,
+        //   icon: Icons.notifications_none,
+        //   text: l10n.notifications,
+        //   onTap: () {
+        //     onClose();
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       SnackBar(content: Text(l10n.notificationsComingSoon)),
+        //     );
+        //   },
+        // ),
       ],
     );
   }
 
+  // 🔔 NOUVEAU : Widget spécial pour l'entrée notifications avec badge
+  Widget _buildNotificationMenuItem(BuildContext context, AppLocalizations l10n) {
+    return Consumer<NotificationProvider>(
+      builder: (context, notificationProvider, child) {
+        final unreadCount = notificationProvider.unreadCount;
+        
+        return ListTile(
+          leading: Stack(
+            children: [
+              Icon(
+                Icons.notifications_none,
+                color: Colors.grey[700],
+                size: 24,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                    child: Text(
+                      unreadCount > 99 ? '99' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          title: Row(
+            children: [
+              Text(
+                l10n.notifications,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[800],
+                  fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          onTap: () {
+            onClose();
+            // Naviguer vers l'écran des notifications
+            Navigator.pushNamed(context, '/notifications');
+          },
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        );
+      },
+    );
+  }
   /// Section Profil et Compte (VOTRE CODE ORIGINAL)
   Widget _buildProfileSection(BuildContext context, AppLocalizations l10n) {
     return Column(

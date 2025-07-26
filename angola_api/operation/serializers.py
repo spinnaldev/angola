@@ -500,11 +500,20 @@ class DisputeSerializer(serializers.ModelSerializer):
                 (obj.status == 'open' and days_since > 7))
 
 class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer pour les notifications"""
+    
     class Meta:
         model = Notification
-        fields = ('id', 'title', 'content', 'type', 'related_object_id', 
-                 'is_read', 'created_at')
-        read_only_fields = ('user',)
+        fields = [
+            'id', 
+            'title', 
+            'message', 
+            'notification_type', 
+            'related_object_id', 
+            'is_read', 
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 class ReportSerializer(serializers.ModelSerializer):
     reporter_name = serializers.StringRelatedField(source='reporter.username', read_only=True)

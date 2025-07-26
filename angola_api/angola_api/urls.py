@@ -83,6 +83,7 @@ urlpatterns = [
     path('api/auth/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
     path('api/auth/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
+    # Notifications endpoints
     path('api/notifications/count/', views.get_notification_count, name='notification-count'),
     path('api/notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
 

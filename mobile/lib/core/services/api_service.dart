@@ -2818,6 +2818,25 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>?> getProjectDetails(int projectId) async {
+    try {
+      print('📋 Récupération des détails du projet $projectId...');
+
+      // Charger les détails complets du projet
+      final data = await _apiClient.get('projects/$projectId/', requireAuth: true);
+
+      if (data != null) {
+        print('✅ Détails du projet récupérés avec succès');
+        return data;
+      } else {
+        print('⚠️ Aucune donnée reçue pour le projet $projectId');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Erreur dans getProjectDetails: $e');
+      return null;
+    }
+  }
   Future<ProviderModel> getProviderByServiceId(int serviceId) async {
     try {
       print('👥 Récupération du prestataire pour le service $serviceId...');
@@ -3208,12 +3227,27 @@ class ApiService {
     try {
       print('📋 Récupération des offres pour le projet $projectId...');
 
-      // CORRIGER : Utiliser l'endpoint project-offers avec un filtre
+      // Utiliser l'endpoint project-offers avec un filtre
       final data = await _apiClient.get('project-offers/?project=$projectId',
           requireAuth: true);
 
-      print('✅ Offres récupérées: ${data['results']?.length ?? 0}');
-      return data['results'] ?? [];
+      final List<dynamic> offers = data['results'] ?? [];
+      
+      // Enrichir les données d'offres avec l'ID du provider si manquant
+      for (var offer in offers) {
+        if (offer['provider'] != null) {
+          // Si provider est un objet, extraire l'ID
+          if (offer['provider'] is Map<String, dynamic>) {
+            offer['provider_id'] = offer['provider']['id'];
+          } else if (offer['provider'] is int) {
+            // Si provider est déjà un ID
+            offer['provider_id'] = offer['provider'];
+          }
+        }
+      }
+
+      print('✅ Offres récupérées: ${offers.length}');
+      return offers;
     } catch (e) {
       print('❌ Erreur dans getProjectOffers: $e');
       return [];

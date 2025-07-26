@@ -983,6 +983,94 @@
   "filters": "Filtros", 
   "allServices": "Todos",
   "searchServices": "Pesquisar serviços",
-  "servicesInCategory": "Serviços - {categoryName}"
+  "servicesInCategory": "Serviços - {categoryName}",
+  "projectInformation": "Informações do projeto",
+  "remoteWork": "Trabalho remoto",
+  "possible": "Possível",
+  "urgency": "Urgência",
+  "normal": "Normal",
+  "location": "Localização",
+  "views": "Visualizações",
+  "offers": "Ofertas",
+  "budget": "Orçamento",
+  "description": "Descrição",
+  "requiredSkills": "Competências necessárias",
+  "attachments": "Anexos",
+  "open": "Abrir",
+  "deliveryTime": "Prazo de entrega",
+  "messageForClient": "Mensagem para o cliente",
+  "materialsIncluded": "Materiais incluídos",
+  "travelCostsIncluded": "Custos de viagem incluídos",
+  "sendMyOffer": "Enviar minha oferta",
+  "sendingInProgress": "Enviando...",
+  "pleaseEnterPrice": "Por favor, insira um preço",
+  "pleaseEnterDeliveryTime": "Por favor, insira um prazo de entrega",
+  "pleaseEnterMessage": "Por favor, insira uma mensagem",
+  "messageMinLength50": "A mensagem deve ter pelo menos 50 caracteres",
+  "pleaseEnterValidPrice": "Por favor, insira um preço válido",
+  "pleaseEnterValidDeliveryTime": "Por favor, insira um prazo de entrega válido",
+  "offerSentSuccessfully": "Oferta enviada com sucesso",
+  "offerSendingError": "Erro ao enviar oferta",
+  "alreadyMadeOfferProject": "Você já fez uma oferta para este projeto",
+  "projectNoLongerAcceptsOffers": "Este projeto não aceita mais ofertas",
+  "errorTitle": "Erro",
+  "ok": "OK",
+  "addedToFavorites": "Adicionado aos favoritos",
+  "removedFromFavorites": "Removido dos favoritos",
+  "cannotOpenFile": "Não é possível abrir o arquivo",
+  "makeOffer": "Fazer uma oferta",
+  "proposedPrice": "Preço proposto (AOA)",
+  "noOffersReceived": "Nenhuma oferta recebida ainda",
+  "providersCanSendOffers": "Prestadores de serviços podem enviar ofertas para este projeto",
+  "projectActivityToImplement": "Atividade do projeto a ser implementada",
+  "sendOffer": "Enviar oferta",
+  "urgent": "Urgente",
+  "moderate": "Moderado",
+  "notRushed": "Sem pressa",
+  "offersTab": "Ofertas ({count})",
+  "@offersTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activity": "Atividade",
+  "discoverProject": "Descubra este projeto no Teyago: {title} - {description}",
+  "@discoverProject": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "monthsAgo": "há {count} meses",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "há {count} dias",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "há {count} horas",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recently": "Recentemente"
 
 }

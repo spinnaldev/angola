@@ -939,7 +939,74 @@
   "filters": "Filters",
   "allServices": "All",
   "searchServices": "Search services",
-  "servicesInCategory": "Services - {categoryName}"
+  "servicesInCategory": "Services - {categoryName}",
+  "projectInformation": "Project Information",
+  "remoteWork": "Remote Work",
+  "possible": "Possible",
+  "urgency": "Urgency", 
+  "normal": "Normal",
+  "location": "Location",
+  "views": "Views",
+  "offers": "Offers",
+  "budget": "Budget",
+  "description": "Description",
+  "requiredSkills": "Required Skills",
+  "attachments": "Attachments",
+  "open": "Open",
+  "deliveryTime": "Delivery Time",
+  "messageForClient": "Message for Client",
+  "materialsIncluded": "Materials Included",
+  "travelCostsIncluded": "Travel Costs Included",
+  "sendMyOffer": "Send My Offer",
+  "sendingInProgress": "Sending...",
+  "pleaseEnterPrice": "Please enter a price",
+  "pleaseEnterDeliveryTime": "Please enter delivery time",
+  "pleaseEnterMessage": "Please enter a message",
+  "messageMinLength50": "Message must be at least 50 characters",
+  "pleaseEnterValidPrice": "Please enter a valid price",
+  "pleaseEnterValidDeliveryTime": "Please enter a valid delivery time",
+  "offerSentSuccessfully": "Offer sent successfully",
+  "offerSendingError": "Error sending offer",
+  "alreadyMadeOfferProject": "You have already made an offer for this project",
+  "projectNoLongerAcceptsOffers": "This project no longer accepts offers",
+  "errorTitle": "Error",
+  "ok": "OK",
+  "addedToFavorites": "Added to favorites",
+  "removedFromFavorites": "Removed from favorites",
+  "cannotOpenFile": "Cannot open file",
+  "makeOffer": "Make an Offer",
+  "proposedPrice": "Proposed Price (AOA)",
+  "noOffersReceived": "No offers received yet",
+  "providersCanSendOffers": "Service providers can send offers for this project",
+  "projectActivityToImplement": "Project activity to be implemented",
+  "sendOffer": "Send Offer",
+  "urgent": "Urgent",
+  "moderate": "Moderate", 
+  "notRushed": "Not Rushed",
+  "offersTab": "Offers ({count})",
+  "@offersTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activity": "Activity",
+  "discoverProject": "Discover this project on Teyago: {title} - {description}",
+  "@discoverProject": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "monthsAgo": "months ago",
+  "daysAgo": "days ago", 
+  "hoursAgo": "hours ago",
+  "recently": "Recently"
   
 
 }

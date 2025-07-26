@@ -2400,7 +2400,9 @@ class DisputeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(dispute)
         return Response(serializer.data)
 
+
 class NotificationViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les notifications"""
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
@@ -2410,6 +2412,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def mark_as_read(self, request, pk=None):
+        """Marquer une notification comme lue"""
         notification = self.get_object()
         notification.is_read = True
         notification.save()
@@ -2417,14 +2420,150 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
+        """Marquer toutes les notifications comme lues"""
         notifications = self.get_queryset().filter(is_read=False)
         notifications.update(is_read=True)
         return Response({"status": "all notifications marked as read"})
     
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
+        """Obtenir le nombre de notifications non lues"""
         count = self.get_queryset().filter(is_read=False).count()
         return Response({"count": count})
+
+class QuoteRequestViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les demandes de devis avec notifications automatiques"""
+    queryset = QuoteRequest.objects.all()
+    serializer_class = QuoteRequestSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return QuoteRequest.objects.all()
+        elif hasattr(user, 'provider_profile'):
+            return QuoteRequest.objects.filter(provider=user.provider_profile)
+        else:
+            return QuoteRequest.objects.filter(client=user)
+    
+    def perform_create(self, serializer):
+        """Créer une demande de devis"""
+        service_id = self.request.data.get('service_id') or self.request.data.get('service')
+        provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
+        
+        provider = None
+        service = None
+        
+        # Logique pour déterminer le provider et service
+        if service_id:
+            try:
+                from .models import ProviderService
+                service = ProviderService.objects.get(id=service_id)
+                provider = service.provider
+            except ProviderService.DoesNotExist:
+                raise ValidationError({"service": "Service not found"})
+        elif provider_id:
+            try:
+                provider = Provider.objects.get(id=provider_id)
+            except Provider.DoesNotExist:
+                raise ValidationError({"provider": "Provider not found"})
+        else:
+            raise ValidationError({"error": "Either service_id or provider_id is required"})
+        
+        # Sauvegarder - le signal se chargera de créer la notification
+        serializer.save(client=self.request.user, provider=provider, service=service)
+    
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        """Mettre à jour le statut d'une demande de devis"""
+        quote_request = self.get_object()
+        status_value = request.data.get('status')
+        
+        # Validation du statut
+        if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
+            return Response(
+                {"detail": "Valid status is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier les permissions
+        user = request.user
+        if not (hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile):
+            return Response(
+                {"detail": "You are not authorized to update this quote request"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Mettre à jour le statut - le signal se chargera de créer la notification
+        quote_request.status = status_value
+        quote_request.save()
+        
+        serializer = self.get_serializer(quote_request)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def available_actions(self, request, pk=None):
+        """Obtenir les actions disponibles pour une demande de devis"""
+        quote_request = self.get_object()
+        user = request.user
+        
+        actions = []
+        
+        # Actions pour le prestataire
+        if hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile:
+            if quote_request.status == 'pending':
+                actions.extend(['accept', 'reject'])
+            elif quote_request.status == 'accepted':
+                actions.extend(['mark_completed', 'contact_client'])
+                
+        # Actions pour le client
+        elif quote_request.client == user:
+            if quote_request.status == 'accepted':
+                actions.extend(['contact_provider', 'rate_provider'])
+            elif quote_request.status == 'completed':
+                actions.extend(['rate_provider', 'request_review'])
+        
+        return Response({"available_actions": actions})
+    
+    @action(detail=True, methods=['post'])
+    def contact_provider(self, request, pk=None):
+        """Créer une conversation avec le prestataire"""
+        quote_request = self.get_object()
+        
+        # Vérifier que l'utilisateur est le client
+        if quote_request.client != request.user:
+            return Response(
+                {"detail": "Only the client can contact the provider"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Créer ou récupérer la conversation
+        from .models import Conversation
+        conversation, created = Conversation.objects.get_or_create(
+            client=quote_request.client,
+            provider=quote_request.provider,
+            defaults={'project': getattr(quote_request, 'project', None)}
+        )
+        
+        return Response({
+            "conversation_id": conversation.id,
+            "message": "Conversation créée avec succès" if created else "Conversation existante récupérée"
+        })
+
+# Endpoints pour les notifications (si pas déjà dans urls.py)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_notification_count(request):
+    """Obtenir le nombre de notifications non lues"""
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return Response({"count": count})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    """Marquer toutes les notifications comme lues"""
+    count = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return Response({"count": count, "status": "success"})
 
 class ReportViewSet(viewsets.ModelViewSet):
     queryset = Report.objects.all()
@@ -2458,103 +2597,103 @@ class ReportViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(report)
         return Response(serializer.data)
     
-class QuoteRequestViewSet(viewsets.ModelViewSet):
-    queryset = QuoteRequest.objects.all()
-    serializer_class = QuoteRequestSerializer
-    # permission_classes = [IsAuthenticated]
+# class QuoteRequestViewSet(viewsets.ModelViewSet):
+#     queryset = QuoteRequest.objects.all()
+#     serializer_class = QuoteRequestSerializer
+#     # permission_classes = [IsAuthenticated]
     
-    def get_queryset(self):
-        user = self.request.user
-        print("Le user est:" + str(user))
-        if user.is_staff:
-            return QuoteRequest.objects.all()
-        elif hasattr(user, 'provider_profile'):
-            print('oui')
-            print(user.id)
-            print(user.provider_profile)
-            return QuoteRequest.objects.filter(provider=user.provider_profile)
-        else:
-            return QuoteRequest.objects.filter(client=user)
+#     def get_queryset(self):
+#         user = self.request.user
+#         print("Le user est:" + str(user))
+#         if user.is_staff:
+#             return QuoteRequest.objects.all()
+#         elif hasattr(user, 'provider_profile'):
+#             print('oui')
+#             print(user.id)
+#             print(user.provider_profile)
+#             return QuoteRequest.objects.filter(provider=user.provider_profile)
+#         else:
+#             return QuoteRequest.objects.filter(client=user)
     
-    def perform_create(self, serializer):
-        service_id = self.request.data.get('service_id') or self.request.data.get('service')
-        provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
+#     def perform_create(self, serializer):
+#         service_id = self.request.data.get('service_id') or self.request.data.get('service')
+#         provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
         
-        provider = None
-        service = None
+#         provider = None
+#         service = None
         
-        # 1. Si service_id fourni, récupérer le provider automatiquement
-        if service_id:
-            try:
-                from .models import ProviderService
-                service = ProviderService.objects.get(id=service_id)
-                provider = service.provider
-            except ProviderService.DoesNotExist:
-                raise ValidationError({"service": "Service not found"})
+#         # 1. Si service_id fourni, récupérer le provider automatiquement
+#         if service_id:
+#             try:
+#                 from .models import ProviderService
+#                 service = ProviderService.objects.get(id=service_id)
+#                 provider = service.provider
+#             except ProviderService.DoesNotExist:
+#                 raise ValidationError({"service": "Service not found"})
         
-        # 2. Si pas de service mais provider_id fourni
-        elif provider_id:
-            try:
-                provider = Provider.objects.get(id=provider_id)
-            except Provider.DoesNotExist:
-                raise ValidationError({"provider": "Provider not found"})
+#         # 2. Si pas de service mais provider_id fourni
+#         elif provider_id:
+#             try:
+#                 provider = Provider.objects.get(id=provider_id)
+#             except Provider.DoesNotExist:
+#                 raise ValidationError({"provider": "Provider not found"})
         
-        # 3. Si aucun des deux n'est fourni
-        else:
-            raise ValidationError({"error": "Either service_id or provider_id is required"})
+#         # 3. Si aucun des deux n'est fourni
+#         else:
+#             raise ValidationError({"error": "Either service_id or provider_id is required"})
         
-        # Sauvegarder avec client, provider et service automatiquement définis
-        serializer.save(client=self.request.user, provider=provider, service=service)
+#         # Sauvegarder avec client, provider et service automatiquement définis
+#         serializer.save(client=self.request.user, provider=provider, service=service)
     
-    @action(detail=True, methods=['post'])
-    def update_status(self, request, pk=None):
-        quote_request = self.get_object()
-        status_value = request.data.get('status')
+#     @action(detail=True, methods=['post'])
+#     def update_status(self, request, pk=None):
+#         quote_request = self.get_object()
+#         status_value = request.data.get('status')
         
-        if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
-            return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+#         if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
+#             return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Vérifier que l'utilisateur est autorisé à modifier le statut
-        user = request.user
-        if hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile:
-            quote_request.status = status_value
-            quote_request.save()
-            serializer = self.get_serializer(quote_request)
-            return Response(serializer.data)
-        else:
-            return Response({"detail": "You are not authorized to update this quote request"}, 
-                           status=status.HTTP_403_FORBIDDEN)
+#         # Vérifier que l'utilisateur est autorisé à modifier le statut
+#         user = request.user
+#         if hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile:
+#             quote_request.status = status_value
+#             quote_request.save()
+#             serializer = self.get_serializer(quote_request)
+#             return Response(serializer.data)
+#         else:
+#             return Response({"detail": "You are not authorized to update this quote request"}, 
+#                            status=status.HTTP_403_FORBIDDEN)
     
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def recent_quote_requests(self, request):
-        """Récupérer les demandes de devis récentes pour le prestataire"""
-        if not hasattr(request.user, 'provider_profile'):
-            return Response({'error': 'User is not a provider'}, status=400)
+#     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+#     def recent_quote_requests(self, request):
+#         """Récupérer les demandes de devis récentes pour le prestataire"""
+#         if not hasattr(request.user, 'provider_profile'):
+#             return Response({'error': 'User is not a provider'}, status=400)
         
-        provider = request.user.provider_profile
+#         provider = request.user.provider_profile
         
-        # Récupérer les demandes de devis récentes
-        recent_quotes = QuoteRequest.objects.filter(
-            # Filtrer selon tes critères (par exemple, par catégorie de service)
-            status='pending',
-            created_at__gte=timezone.now() - timedelta(days=7)
-        ).order_by('-created_at')[:5]
+#         # Récupérer les demandes de devis récentes
+#         recent_quotes = QuoteRequest.objects.filter(
+#             # Filtrer selon tes critères (par exemple, par catégorie de service)
+#             status='pending',
+#             created_at__gte=timezone.now() - timedelta(days=7)
+#         ).order_by('-created_at')[:5]
         
-        results = []
-        for quote in recent_quotes:
-            results.append({
-                'id': quote.id,
-                'title': quote.title,
-                'service_title': quote.service_title,
-                'client_name': quote.client.get_full_name(),
-                'client_id': quote.client.id,
-                'budget': float(quote.budget) if quote.budget else None,
-                'created_at': quote.created_at.isoformat(),
-                'description': quote.description,
-            })
+#         results = []
+#         for quote in recent_quotes:
+#             results.append({
+#                 'id': quote.id,
+#                 'title': quote.title,
+#                 'service_title': quote.service_title,
+#                 'client_name': quote.client.get_full_name(),
+#                 'client_id': quote.client.id,
+#                 'budget': float(quote.budget) if quote.budget else None,
+#                 'created_at': quote.created_at.isoformat(),
+#                 'description': quote.description,
+#             })
         
-        return Response({'results': results})
+#         return Response({'results': results})
     
 class ProviderByCategoryView(generics.ListAPIView):
     serializer_class = ProviderListSerializer
