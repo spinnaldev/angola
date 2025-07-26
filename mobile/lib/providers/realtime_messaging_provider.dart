@@ -160,7 +160,10 @@ class RealtimeMessagingProvider with ChangeNotifier {
       final newMessage = Message.fromJson(messageData, _messagingProvider.currentUserId ?? 0);
       
       // Ajouter le message au provider
-      _messagingProvider.addMessageLocally(newMessage.conversationId, newMessage);
+      final conversationId = newMessage.conversationId;
+      if (conversationId != null) {
+        _messagingProvider.addMessageLocally(conversationId, newMessage);
+      }
       
       // Mettre à jour la conversation dans la liste
       _updateConversationWithNewMessage(newMessage);
@@ -184,7 +187,10 @@ class RealtimeMessagingProvider with ChangeNotifier {
       final newMessage = Message.fromJson(messageData, _messagingProvider.currentUserId ?? 0);
       
       // Ajouter le message au provider
-      _messagingProvider.addMessageLocally(newMessage.conversationId, newMessage);
+      final conversationId = newMessage.conversationId;
+      if (conversationId != null) {
+        _messagingProvider.addMessageLocally(conversationId, newMessage);
+      }
       
       // Mettre à jour la conversation dans la liste
       _updateConversationWithNewMessage(newMessage);

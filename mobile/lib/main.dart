@@ -97,7 +97,8 @@ class MyApp extends StatelessWidget {
     final authService = AuthService(apiClient);
     final quoteService = QuoteService(apiService);
     final reviewService = ReviewService(apiService);
-
+    final webSocketService = WebSocketService.instance;
+    final notificationService = NotificationService(apiService);
     return MultiProvider(
       providers: [
         // Fournisseurs de données

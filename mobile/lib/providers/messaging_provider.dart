@@ -96,6 +96,9 @@ class MessagingProvider with ChangeNotifier {
   Future<Conversation?> startConversationWithClient(int clientId, {String? initialMessage}) async {
     return startConversation(null, initialMessage, clientId: clientId);
   }
+  // Future<Conversation?> startConversationWithClient(int clientId, {String? initialMessage}) async {
+  //   return startConversation(null, initialMessage, clientId: clientId);
+  // }
 
   Future<Conversation?> startConversationFromProject(int projectId, {String? initialMessage}) async {
     _isLoading = true;

@@ -61,12 +61,14 @@ INSTALLED_APPS = [
 # Configuration Channels
 ASGI_APPLICATION = 'angola_api.asgi.application'
 
-# Configuration Redis pour les WebSockets
+# Channel Layers - PRODUCTION avec Redis
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             "hosts": [('127.0.0.1', 6379)],
+            "capacity": 1500,
+            "expiry": 10,
         },
     },
 }

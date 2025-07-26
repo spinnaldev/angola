@@ -48,7 +48,7 @@ class AuthProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
-  
+  bool get isLoading => _status == AuthStatus.uninitialized;
   // Getters pour le reset de mot de passe
   PasswordResetStatus get resetStatus => _resetStatus;
   String? get resetEmail => _resetEmail;
@@ -145,24 +145,24 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Méthodes pour l'authentification et la vérification du statut
-  Future<void> _checkCurrentUser() async {
-    try {
-      final user = await _authService.getCurrentUser();
-      if (user != null) {
-        _currentUser = user;
-        _status = AuthStatus.authenticated;
+  // Future<void> _checkCurrentUser() async {
+  //   try {
+  //     final user = await _authService.getCurrentUser();
+  //     if (user != null) {
+  //       _currentUser = user;
+  //       _status = AuthStatus.authenticated;
         
-        // ✅ Debug encodage utilisateur
-        print('✅ Utilisateur actuel: ${user.firstName} ${user.lastName}');
-      } else {
-        _status = AuthStatus.unauthenticated;
-      }
-    } catch (e) {
-      print('❌ Erreur _checkCurrentUser: $e');
-      _status = AuthStatus.unauthenticated;
-    }
-    notifyListeners();
-  }
+  //       // ✅ Debug encodage utilisateur
+  //       print('✅ Utilisateur actuel: ${user.firstName} ${user.lastName}');
+  //     } else {
+  //       _status = AuthStatus.unauthenticated;
+  //     }
+  //   } catch (e) {
+  //     print('❌ Erreur _checkCurrentUser: $e');
+  //     _status = AuthStatus.unauthenticated;
+  //   }
+  //   notifyListeners();
+  // }
 
   
   // Nouvelle méthode: Récupérer explicitement les informations utilisateur
@@ -522,6 +522,121 @@ class AuthProvider with ChangeNotifier {
       
     } catch (e) {
       return 'https://teyago.com/api';
+    }
+  }
+
+
+  Future<void> checkAuthenticationStatus() async {
+    try {
+      print('🔍 Vérification du statut d\'authentification...');
+      _status = AuthStatus.uninitialized;
+      notifyListeners();
+
+      // Vérifier si un token est stocké
+      final token = await _secureStorage.read(key: 'auth_token');
+      
+      if (token == null || token.isEmpty) {
+        print('❌ Aucun token trouvé');
+        _status = AuthStatus.unauthenticated;
+        _currentUser = null;
+        notifyListeners();
+        return;
+      }
+
+      print('✅ Token trouvé, vérification de la validité...');
+      
+      // Vérifier si le token est encore valide
+      try {
+        final user = await _authService.getCurrentUser();
+        
+        if (user != null) {
+          print('✅ Utilisateur authentifié: ${user.firstName} ${user.lastName}');
+          _currentUser = user;
+          _status = AuthStatus.authenticated;
+          
+          // Synchroniser avec le ProfileManager
+          ProfileManager.setAuthProvider(this);
+          await ProfileManager.forceSync();
+          
+          notifyListeners();
+        } else {
+          print('❌ Token invalide, déconnexion');
+          await _clearStoredCredentials();
+          _status = AuthStatus.unauthenticated;
+          _currentUser = null;
+          notifyListeners();
+        }
+      } catch (e) {
+        print('❌ Erreur lors de la vérification du token: $e');
+        
+        if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+          print('🔄 Token expiré, déconnexion automatique');
+          await _clearStoredCredentials();
+        }
+        
+        _status = AuthStatus.unauthenticated;
+        _currentUser = null;
+        notifyListeners();
+      }
+      
+    } catch (e) {
+      print('❌ Erreur lors de la vérification du statut d\'authentification: $e');
+      _status = AuthStatus.unauthenticated;
+      _currentUser = null;
+      notifyListeners();
+    }
+  }
+
+  /// Vérifier l'utilisateur actuel (méthode privée utilisée au démarrage)
+  Future<void> _checkCurrentUser() async {
+    try {
+      final token = await _secureStorage.read(key: 'auth_token');
+      
+      if (token != null && token.isNotEmpty) {
+        print('✅ Token trouvé au démarrage, vérification...');
+        
+        try {
+          final user = await _authService.getCurrentUser();
+          
+          if (user != null) {
+            _currentUser = user;
+            _status = AuthStatus.authenticated;
+            
+            // Synchroniser avec le ProfileManager
+            ProfileManager.setAuthProvider(this);
+            await ProfileManager.forceSync();
+            
+            print('✅ Utilisateur restauré: ${user.firstName} ${user.lastName}');
+          } else {
+            await _clearStoredCredentials();
+            _status = AuthStatus.unauthenticated;
+          }
+        } catch (e) {
+          print('❌ Token invalide, nettoyage...');
+          await _clearStoredCredentials();
+          _status = AuthStatus.unauthenticated;
+        }
+      } else {
+        _status = AuthStatus.unauthenticated;
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      print('❌ Erreur lors de la vérification de l\'utilisateur: $e');
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    }
+  }
+
+  /// Nettoyer les identifiants stockés
+  Future<void> _clearStoredCredentials() async {
+    try {
+      await _secureStorage.delete(key: 'auth_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      await _secureStorage.delete(key: 'user_data');
+      print('🧹 Identifiants supprimés du stockage sécurisé');
+    } catch (e) {
+      print('❌ Erreur lors du nettoyage des identifiants: $e');
     }
   }
 }

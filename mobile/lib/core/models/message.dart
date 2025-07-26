@@ -6,8 +6,8 @@ class Message {
   final String content;
   final bool isRead;
   final DateTime createdAt;
-  final bool isMine;  // Pour faciliter l'UI
-  String? conversationId;
+  // final bool isMine;  // Pour faciliter l'UI
+  final int ?conversationId;
 
   Message({
     required this.id,
@@ -17,8 +17,8 @@ class Message {
     required this.content,
     required this.isRead,
     required this.createdAt,
-    required this.isMine,
-    this.conversationId,  
+    // required this.isMine,
+    this.conversationId,
   });
 
   factory Message.fromJson(Map<String, dynamic> json, int currentUserId) {
@@ -31,7 +31,7 @@ class Message {
       content: json['content'] ?? '',
       isRead: json['is_read'] ?? false,
       createdAt: DateTime.parse(json['created_at']),
-      isMine: senderId == currentUserId,
+      // isMine: senderId == currentUserId,
     );
   }
 }

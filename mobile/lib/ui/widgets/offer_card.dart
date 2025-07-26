@@ -476,7 +476,8 @@ class OfferCard extends StatelessWidget {
       // Démarrer ou récupérer la conversation
       final conversation = await messagingProvider.startConversation(
         providerId,
-        initialMessage: null,
+        null
+        // initialMessage
       );
 
       Navigator.pop(context); // Fermer le loading

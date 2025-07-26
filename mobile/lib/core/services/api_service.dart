@@ -3605,6 +3605,26 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> startConversationWithClient(int clientId, String? initialMessage) async {
+    try {
+      final userId = await getCurrentUserId();
+      final Map<String, dynamic> requestData = {
+        'user_id': userId,
+        'client_id': clientId,
+      };
+
+      if (initialMessage != null && initialMessage.isNotEmpty) {
+        requestData['message'] = initialMessage;
+      }
+
+      final data = await _apiClient.post('conversations/start/',
+          data: requestData, requireAuth: true);
+
+      return data;
+    } catch (e) {
+      rethrow;
+    }
+  }
   // Future<Conversation> startConversation(
   //     int providerId, String? initialMessage) async {
   //   try {

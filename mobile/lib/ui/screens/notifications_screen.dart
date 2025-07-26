@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../../core/models/notification.dart';
+import '../../core/models/notification_model.dart'; // ✅ Correct import
 import '../screens/base_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -124,8 +123,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             controller: _tabController,
             children: [
               _buildNotificationList(provider.notifications),
-              _buildNotificationList(provider.unreadNotifications),
-              _buildNotificationList(provider.readNotifications),
+              _buildNotificationList(provider.unreadNotifications), // ✅ Fixed
+              _buildNotificationList(provider.readNotifications), // ✅ Fixed
             ],
           );
         },
@@ -197,7 +196,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               : Theme.of(context).primaryColor,
           radius: 24,
           child: Icon(
-            _getIconData(notification.getIcon()),
+            _getIconData(notification.iconName), // ✅ Fixed
             color: notification.isRead ? Colors.grey[600] : Colors.white,
             size: 20,
           ),
@@ -258,13 +257,40 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   IconData _getIconData(String iconName) {
     switch (iconName) {
-      case 'message': return Icons.message;
-      case 'receipt': return Icons.receipt;
-      case 'work': return Icons.work;
-      case 'warning': return Icons.warning;
-      case 'star': return Icons.star;
-      case 'favorite': return Icons.favorite;
-      default: return Icons.notifications;
+      case 'chat_bubble':
+        return Icons.chat_bubble;
+      case 'work':
+        return Icons.work;
+      case 'check_circle':
+        return Icons.check_circle;
+      case 'cancel':
+        return Icons.cancel;
+      case 'request_quote':
+        return Icons.request_quote;
+      case 'thumb_up':
+        return Icons.thumb_up;
+      case 'thumb_down':
+        return Icons.thumb_down;
+      case 'payment':
+        return Icons.payment;
+      case 'warning':
+        return Icons.warning;
+      case 'check':
+        return Icons.check;
+      case 'star':
+        return Icons.star;
+      case 'assignment':
+        return Icons.assignment;
+      case 'assignment_turned_in':
+        return Icons.assignment_turned_in;
+      case 'message': 
+        return Icons.message;
+      case 'receipt': 
+        return Icons.receipt;
+      case 'favorite': 
+        return Icons.favorite;
+      default: 
+        return Icons.notifications;
     }
   }
 

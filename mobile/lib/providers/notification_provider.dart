@@ -24,7 +24,14 @@ class NotificationProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   int get unreadCount => _unreadCount;
   bool get hasError => _errorMessage != null;
+  List<NotificationModel> get unreadNotifications {
+    return _notifications.where((n) => !n.isRead).toList();
+  }
 
+  /// Obtenir les notifications lues
+  List<NotificationModel> get readNotifications {
+    return _notifications.where((n) => n.isRead).toList();
+  }
   /// Charger les notifications
   Future<void> loadNotifications({bool forceRefresh = false}) async {
     if (_disposed) return;
