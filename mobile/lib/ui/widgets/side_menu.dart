@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/language_provider.dart';
+import 'package:teyago/providers/realtime_notification_provider.dart';
 import 'package:teyago/ui/screens/help_faq_screen.dart';
 import 'package:teyago/ui/widgets/language_selector.dart';
 import '../../providers/auth_provider.dart';

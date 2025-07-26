@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/providers/realtime_notification_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../core/models/notification.dart';
 import '../screens/base_screen.dart';

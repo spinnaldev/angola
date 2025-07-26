@@ -2315,6 +2315,7 @@ import '../models/project_offer.dart';
 import '../models/project_skill.dart';
 import '../models/project_stats.dart';
 import '../api/api_client.dart';
+import '../models/notification_model.dart';
 
 class ApiService {
   final String baseUrl;
@@ -3662,8 +3663,26 @@ class ApiService {
   }
 
   // ===============================
-  // MÉTHODES POUR LES NOTIFICATIONS
+  // NOTIFICATIONS
   // ===============================
+
+  Future<List<NotificationModel>> getNotifications() async {
+    try {
+      print('🔔 Récupération des notifications...');
+
+      final userId = await getCurrentUserId();
+      final data = await _apiClient.get('notifications/?user_id=$userId', requireAuth: true);
+
+      final List<dynamic> results = data['results'] ?? data;
+      final notifications = results.map((item) => NotificationModel.fromJson(item)).toList();
+
+      print('✅ ${notifications.length} notifications récupérées');
+      return notifications;
+    } catch (e) {
+      print('❌ Erreur récupération notifications: $e');
+      rethrow;
+    }
+  }
 
   Future<int> getUnreadNotificationCount() async {
     try {
@@ -3674,12 +3693,26 @@ class ApiService {
           requireAuth: true);
 
       final count = data['count'] ?? 0;
-      print('✅ Notifications non lues: $count');
-
+      print('✅ $count notifications non lues');
       return count;
     } catch (e) {
-      print('❌ Erreur dans getUnreadNotificationCount: $e');
+      print('❌ Erreur récupération compteur notifications: $e');
       return 0;
+    }
+  }
+
+  Future<bool> markNotificationAsRead(int notificationId) async {
+    try {
+      print('✅ Marquage notification $notificationId comme lue...');
+
+      await _apiClient.post('notifications/$notificationId/mark_read/',
+          requireAuth: true);
+
+      print('✅ Notification marquée comme lue');
+      return true;
+    } catch (e) {
+      print('❌ Erreur marquage notification: $e');
+      return false;
     }
   }
 
@@ -3694,7 +3727,21 @@ class ApiService {
       print('✅ Toutes les notifications marquées comme lues');
       return true;
     } catch (e) {
-      print('❌ Erreur dans markAllNotificationsAsRead: $e');
+      print('❌ Erreur marquage toutes notifications: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteNotification(int notificationId) async {
+    try {
+      print('🗑️ Suppression notification $notificationId...');
+
+      await _apiClient.delete('notifications/$notificationId/', requireAuth: true);
+
+      print('✅ Notification supprimée');
+      return true;
+    } catch (e) {
+      print('❌ Erreur suppression notification: $e');
       return false;
     }
   }
@@ -3808,6 +3855,7 @@ class ApiService {
     throw Exception('Impossible de créer le projet après $maxRetries tentatives');
   }
 
+  
   // Méthode privée pour créer un projet avec fichiers (utilise http directement)
   Future<ClientProject> _createProjectWithFiles(
       Map<String, dynamic> projectData, List<File?> attachments) async {

@@ -1029,6 +1029,208 @@
       }
     }
   },
-  "recently": "Récemment"
+  "recently": "Récemment",
+  "viewServices": "Voir les services",
+  "viewOnMap": "Voir sur la carte",
+  "providersFound": "prestataires trouvés",
+  "applyFilters": "Appliquer les filtres",
+  "businessType": "Type d'entreprise",
+  "minimumRating": "Note minimum",
+  "searchRadius": "Rayon de recherche",
+  "reset": "Réinitialiser",
+  "yourPosition": "Votre position",
+  "locationPermissionDenied": "Permission de localisation refusée",
+  "@locationPermissionDenied": {
+    "description": "Message affiché quand la permission de localisation est refusée"
+  },
+  
+  "locationEnabled": "Localisation activée",
+  "@locationEnabled": {
+    "description": "Message affiché quand la localisation est activée"
+  },
+  
+  "searchingYourPosition": "Recherche de votre position...",
+  "@searchingYourPosition": {
+    "description": "Message affiché pendant la recherche de position"
+  },
+  
+  "locationPermission": "Permission de localisation",
+  "@locationPermission": {
+    "description": "Titre de la boîte de dialogue de permission"
+  },
+  
+  "locationPermissionDialogContent": "L'accès à votre localisation est nécessaire pour afficher les prestataires à proximité. Vous pouvez activer cette permission dans les paramètres de l'application.",
+  "@locationPermissionDialogContent": {
+    "description": "Contenu de la boîte de dialogue de permission de localisation"
+  },
+  
+  "cancel": "Annuler",
+  "@cancel": {
+    "description": "Bouton d'annulation"
+  },
+  
+  "settings": "Paramètres",
+  "@settings": {
+    "description": "Bouton pour aller aux paramètres"
+  },
+  
+  "locationNotAvailable": "Localisation non disponible",
+  "@locationNotAvailable": {
+    "description": "Message quand la localisation n'est pas disponible"
+  },
+  
+  "enableLocationServices": "Activer les services de localisation",
+  "@enableLocationServices": {
+    "description": "Message pour activer la localisation"
+  },
+  
+  "locationRequired": "Localisation requise",
+  "@locationRequired": {
+    "description": "Titre indiquant que la localisation est requise"
+  },
+  
+  "locationRequiredMessage": "Cette fonctionnalité nécessite l'accès à votre localisation pour fonctionner correctement.",
+  "@locationRequiredMessage": {
+    "description": "Message expliquant pourquoi la localisation est requise"
+  },
+  
+  "retryLocation": "Réessayer",
+  "@retryLocation": {
+    "description": "Bouton pour réessayer d'obtenir la localisation"
+  },
+  
+  "currentLocation": "Position actuelle",
+  "@currentLocation": {
+    "description": "Libellé pour la position actuelle"
+  },
+  
+  "nearbyProviders": "Prestataires à proximité",
+  "@nearbyProviders": {
+    "description": "Titre pour les prestataires à proximité"
+  },
+  "deleteConversation": "Supprimer la conversation",
+  "@deleteConversation": {
+    "description": "Option pour supprimer une conversation"
+  },
+  
+  "muteConversation": "Mettre en sourdine",
+  "@muteConversation": {
+    "description": "Option pour mettre une conversation en sourdine"
+  },
+  
+  "conversationInfo": "Informations de la conversation",
+  "@conversationInfo": {
+    "description": "Option pour voir les informations d'une conversation"
+  },
+  
+  "typeMessage": "Tapez votre message...",
+  "@typeMessage": {
+    "description": "Texte d'aide dans le champ de saisie de message"
+  },
+  
+  "noMessagesYet": "Aucun message pour le moment",
+  "@noMessagesYet": {
+    "description": "Message affiché quand il n'y a pas encore de messages"
+  },
+  
+  "messageSendError": "Erreur lors de l'envoi du message",
+  "@messageSendError": {
+    "description": "Message d'erreur quand l'envoi d'un message échoue"
+  },
+  
+  "sendMessage": "Envoyer le message",
+  "@sendMessage": {
+    "description": "Bouton pour envoyer un message"
+  },
+  
+  "messageDelivered": "Message livré",
+  "@messageDelivered": {
+    "description": "Statut de message livré"
+  },
+  
+  "messageRead": "Message lu",
+  "@messageRead": {
+    "description": "Statut de message lu"
+  },
+  
+  "today": "Aujourd'hui",
+  "@today": {
+    "description": "Libellé pour aujourd'hui"
+  },
+  
+  "yesterday": "Hier",
+  "@yesterday": {
+    "description": "Libellé pour hier"
+  },
+  
+  "online": "En ligne",
+  "@online": {
+    "description": "Statut en ligne"
+  },
+  
+  "offline": "Hors ligne",
+  "@offline": {
+    "description": "Statut hors ligne"
+  },
+  
+  "typing": "Tape...",
+  "@typing": {
+    "description": "Indicateur de frappe"
+  },
+  
+  "lastSeen": "Vu pour la dernière fois",
+  "@lastSeen": {
+    "description": "Dernière connexion"
+  },
+  
+  "deleteMessage": "Supprimer le message",
+  "@deleteMessage": {
+    "description": "Option pour supprimer un message"
+  },
+  
+  "copyMessage": "Copier le message",
+  "@copyMessage": {
+    "description": "Option pour copier un message"
+  },
+  
+  "replyToMessage": "Répondre au message",
+  "@replyToMessage": {
+    "description": "Option pour répondre à un message"
+  },
+  
+  "messageOptions": "Options du message",
+  "@messageOptions": {
+    "description": "Titre du menu d'options de message"
+  },
+  
+  "conversationOptions": "Options de conversation",
+  "@conversationOptions": {
+    "description": "Titre du menu d'options de conversation"
+  },
+  
+  "startConversation": "Commencer une conversation",
+  "@startConversation": {
+    "description": "Bouton pour démarrer une conversation"
+  },
+  
+  "newMessage": "Nouveau message",
+  "@newMessage": {
+    "description": "Titre pour un nouveau message"
+  },
+  
+  "searchConversations": "Rechercher des conversations",
+  "@searchConversations": {
+    "description": "Recherche dans les conversations"
+  },
+  
+  "noConversations": "Aucune conversation",
+  "@noConversations": {
+    "description": "Message quand il n'y a pas de conversations"
+  },
+  
+  "startFirstConversation": "Commencez votre première conversation en contactant un prestataire",
+  "@startFirstConversation": {
+    "description": "Message d'encouragement pour la première conversation"
+  }
   
 }

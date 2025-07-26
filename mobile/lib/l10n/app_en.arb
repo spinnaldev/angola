@@ -1006,7 +1006,209 @@
   "monthsAgo": "months ago",
   "daysAgo": "days ago", 
   "hoursAgo": "hours ago",
-  "recently": "Recently"
+  "recently": "Recently",
+  "viewServices": "View services",
+  "viewOnMap": "View on map", 
+  "providersFound": "providers found",
+  "applyFilters": "Apply filters",
+  "businessType": "Business type",
+  "minimumRating": "Minimum rating",
+  "searchRadius": "Search radius",
+  "reset": "Reset",
+  "yourPosition": "Your position",
+  "locationPermissionDenied": "Location permission denied",
+  "@locationPermissionDenied": {
+    "description": "Message displayed when location permission is denied"
+  },
   
-
+  "locationEnabled": "Location enabled",
+  "@locationEnabled": {
+    "description": "Message displayed when location is enabled"
+  },
+  
+  "searchingYourPosition": "Searching for your position...",
+  "@searchingYourPosition": {
+    "description": "Message displayed while searching for position"
+  },
+  
+  "locationPermission": "Location Permission",
+  "@locationPermission": {
+    "description": "Title of the permission dialog"
+  },
+  
+  "locationPermissionDialogContent": "Access to your location is required to display nearby service providers. You can enable this permission in the app settings.",
+  "@locationPermissionDialogContent": {
+    "description": "Content of the location permission dialog"
+  },
+  
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  
+  "settings": "Settings",
+  "@settings": {
+    "description": "Button to go to settings"
+  },
+  
+  "locationNotAvailable": "Location not available",
+  "@locationNotAvailable": {
+    "description": "Message when location is not available"
+  },
+  
+  "enableLocationServices": "Enable location services",
+  "@enableLocationServices": {
+    "description": "Message to enable location"
+  },
+  
+  "locationRequired": "Location Required",
+  "@locationRequired": {
+    "description": "Title indicating location is required"
+  },
+  
+  "locationRequiredMessage": "This feature requires access to your location to work properly.",
+  "@locationRequiredMessage": {
+    "description": "Message explaining why location is required"
+  },
+  
+  "retryLocation": "Retry",
+  "@retryLocation": {
+    "description": "Button to retry getting location"
+  },
+  
+  "currentLocation": "Current location",
+  "@currentLocation": {
+    "description": "Label for current location"
+  },
+  
+  "nearbyProviders": "Nearby providers",
+  "@nearbyProviders": {
+    "description": "Title for nearby providers"
+  },
+  "deleteConversation": "Delete conversation",
+  "@deleteConversation": {
+    "description": "Option to delete a conversation"
+  },
+  
+  "muteConversation": "Mute conversation",
+  "@muteConversation": {
+    "description": "Option to mute a conversation"
+  },
+  
+  "conversationInfo": "Conversation info",
+  "@conversationInfo": {
+    "description": "Option to view conversation information"
+  },
+  
+  "typeMessage": "Type a message...",
+  "@typeMessage": {
+    "description": "Placeholder text in message input field"
+  },
+  
+  "noMessagesYet": "No messages yet",
+  "@noMessagesYet": {
+    "description": "Message displayed when there are no messages yet"
+  },
+  
+  "messageSendError": "Failed to send message",
+  "@messageSendError": {
+    "description": "Error message when sending a message fails"
+  },
+  
+  "sendMessage": "Send message",
+  "@sendMessage": {
+    "description": "Button to send a message"
+  },
+  
+  "messageDelivered": "Message delivered",
+  "@messageDelivered": {
+    "description": "Message delivered status"
+  },
+  
+  "messageRead": "Message read",
+  "@messageRead": {
+    "description": "Message read status"
+  },
+  
+  "today": "Today",
+  "@today": {
+    "description": "Label for today"
+  },
+  
+  "yesterday": "Yesterday",
+  "@yesterday": {
+    "description": "Label for yesterday"
+  },
+  
+  "online": "Online",
+  "@online": {
+    "description": "Online status"
+  },
+  
+  "offline": "Offline",
+  "@offline": {
+    "description": "Offline status"
+  },
+  
+  "typing": "Typing...",
+  "@typing": {
+    "description": "Typing indicator"
+  },
+  
+  "lastSeen": "Last seen",
+  "@lastSeen": {
+    "description": "Last seen status"
+  },
+  
+  "deleteMessage": "Delete message",
+  "@deleteMessage": {
+    "description": "Option to delete a message"
+  },
+  
+  "copyMessage": "Copy message",
+  "@copyMessage": {
+    "description": "Option to copy a message"
+  },
+  
+  "replyToMessage": "Reply to message",
+  "@replyToMessage": {
+    "description": "Option to reply to a message"
+  },
+  
+  "messageOptions": "Message options",
+  "@messageOptions": {
+    "description": "Title for message options menu"
+  },
+  
+  "conversationOptions": "Conversation options",
+  "@conversationOptions": {
+    "description": "Title for conversation options menu"
+  },
+  
+  "startConversation": "Start conversation",
+  "@startConversation": {
+    "description": "Button to start a conversation"
+  },
+  
+  "newMessage": "New message",
+  "@newMessage": {
+    "description": "Title for a new message"
+  },
+  
+  "searchConversations": "Search conversations",
+  "@searchConversations": {
+    "description": "Search in conversations"
+  },
+  
+  "noConversations": "No conversations",
+  "@noConversations": {
+    "description": "Message when there are no conversations"
+  },
+  
+  "startFirstConversation": "Start your first conversation by contacting a service provider",
+  "@startFirstConversation": {
+    "description": "Encouragement message for first conversation"
+  }
+  
+  
 }

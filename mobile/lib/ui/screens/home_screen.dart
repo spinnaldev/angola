@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:geolocator/geolocator.dart'; // AJOUT pour la localisation
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
@@ -26,6 +27,7 @@ import '../../providers/review_provider.dart';
 import 'search_results_screen.dart';
 import '../widgets/service_image.dart'; 
 import '../../providers/notification_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -54,6 +56,11 @@ class _HomeScreenState extends State<HomeScreen>
   bool _showMapView = false;
   late TabController _tabController;
   bool _isLoading = true;
+
+  // NOUVELLES VARIABLES POUR LA LOCALISATION
+  bool _isLocationLoading = false;
+  String? _currentLocationName;
+  bool _locationPermissionDenied = false;
 
   // Add the missing random instance
   final math.Random random = math.Random();
@@ -164,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // MÉTHODE AMÉLIORÉE _loadServicesData avec gestion de la localisation
   Future<void> _loadServicesData() async {
     final categoryProvider =
         Provider.of<CategoryProvider>(context, listen: false);
@@ -171,67 +179,208 @@ class _HomeScreenState extends State<HomeScreen>
       await categoryProvider.fetchCategories();
     }
 
-    // Récupérer la position de l'utilisateur
+    // GESTION AMÉLIORÉE DE LA LOCALISATION
+    setState(() {
+      _isLocationLoading = true;
+    });
+
     final locationProvider =
         Provider.of<LocationProvider>(context, listen: false);
-    await locationProvider.getCurrentLocation();
 
-    final providerListProvider =
-        Provider.of<ProviderListProvider>(context, listen: false);
-    if (locationProvider.currentPosition != null) {
-      await providerListProvider.fetchNearbyProviders(
-        locationProvider.currentPosition!.latitude,
-        locationProvider.currentPosition!.longitude,
-        radius: 10.0,
-      );
-    } else {
-      await providerListProvider.fetchProviders();
+    try {
+      // Vérifier les services de localisation
+      bool servicesEnabled = await locationProvider.checkLocationServices();
+      if (!servicesEnabled) {
+        setState(() {
+          _locationPermissionDenied = true;
+          _isLocationLoading = false;
+        });
+        // Continuer sans localisation
+        await _loadServicesWithoutLocation();
+        return;
+      }
+
+      // Demander la permission et récupérer la position
+      bool permissionGranted = await locationProvider.requestLocationPermission();
+      if (!permissionGranted) {
+        setState(() {
+          _locationPermissionDenied = true;
+          _isLocationLoading = false;
+        });
+        // Continuer sans localisation
+        await _loadServicesWithoutLocation();
+        return;
+      }
+
+      // Récupérer la position actuelle
+      bool locationSuccess = await locationProvider.getCurrentLocation();
+      if (locationSuccess && locationProvider.currentPosition != null) {
+        setState(() {
+          _locationPermissionDenied = false;
+          _isLocationLoading = false;
+        });
+        
+        // Récupérer le nom de la ville (optionnel)
+        await _getCurrentLocationName(locationProvider.currentPosition!);
+
+        // Charger les prestataires à proximité
+        await _loadNearbyProviders(locationProvider.currentPosition!);
+      } else {
+        setState(() {
+          _isLocationLoading = false;
+        });
+        // Continuer sans localisation
+        await _loadServicesWithoutLocation();
+      }
+    } catch (e) {
+      print('Erreur lors de la récupération de la localisation: $e');
+      setState(() {
+        _isLocationLoading = false;
+      });
+      await _loadServicesWithoutLocation();
     }
 
-    // Charger les vrais services depuis l'API
+    // Charger les autres services (récents, mieux notés)
     final serviceProvider =
         Provider.of<ServiceProvider>(context, listen: false);
 
-    // Charger les services récents
-    await serviceProvider.fetchRecentServices();
-    _recentServices = serviceProvider.recentServices;
+    try {
+      await serviceProvider.fetchRecentServices();
+      _recentServices = serviceProvider.recentServices;
 
-    // Charger les services les mieux notés
-    await serviceProvider.fetchTopRatedServices();
-    _topRatedServices = serviceProvider.topRatedServices;
+      await serviceProvider.fetchTopRatedServices();
+      _topRatedServices = serviceProvider.topRatedServices;
+    } catch (e) {
+      print('Erreur lors du chargement des services: $e');
+    }
+  }
 
-    // Générer les services à proximité
-    if (providerListProvider.providers.isNotEmpty) {
-      _nearbyServices = providerListProvider.providers.take(6).map((provider) {
-        return Service(
-          id: 200 + provider.id,
-          title: provider.services.isNotEmpty
-              ? provider.services.first.title
-              : provider.name,
-          description: provider.description,
-          imageUrl: provider.profileImageUrl.isNotEmpty
-              ? provider.profileImageUrl
-              : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-          rating: provider.rating,
-          reviewCount: provider.reviewCount,
-          provider_id: provider.id,
-          businessType: provider.businessType,
-          price: 50.0 + random.nextInt(150) * 1.0,
-          categoryId: 1 + random.nextInt(5),
-          priceType: random.nextBool() ? 'quote' : 'fixed',
-        );
-      }).toList();
-    } else {
+  // NOUVELLES MÉTHODES POUR LA GESTION DE LA LOCALISATION
+  Future<void> _getCurrentLocationName(Position position) async {
+    try {
+      // Vous pouvez utiliser geocoding pour récupérer le nom de la ville
+      // Pour l'instant, on définit un nom générique
+      setState(() {
+        _currentLocationName = 'Votre position';
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération du nom de la localisation: $e');
+    }
+  }
+
+  Future<void> _loadNearbyProviders(Position position) async {
+    final providerListProvider =
+        Provider.of<ProviderListProvider>(context, listen: false);
+
+    try {
+      await providerListProvider.fetchNearbyProviders(
+        position.latitude,
+        position.longitude,
+        radius: 10.0, // 10 km de rayon
+      );
+
+      // Générer les services à proximité
+      if (providerListProvider.providers.isNotEmpty) {
+        _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+          return Service(
+            id: 200 + provider.id,
+            title: provider.services.isNotEmpty
+                ? provider.services.first.title
+                : provider.name,
+            description: provider.description,
+            imageUrl: provider.profileImageUrl.isNotEmpty
+                ? provider.profileImageUrl
+                : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+            rating: provider.rating,
+            reviewCount: provider.reviewCount,
+            provider_id: provider.id,
+            businessType: provider.businessType,
+            price: 50.0 + random.nextInt(150) * 1.0,
+            categoryId: 1 + random.nextInt(5),
+            priceType: random.nextBool() ? 'quote' : 'fixed',
+          );
+        }).toList();
+      } else {
+        _nearbyServices = [];
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des prestataires à proximité: $e');
       _nearbyServices = [];
     }
   }
 
+  Future<void> _loadServicesWithoutLocation() async {
+    final providerListProvider =
+        Provider.of<ProviderListProvider>(context, listen: false);
+
+    try {
+      // Charger tous les prestataires sans filtre de proximité
+      await providerListProvider.fetchProviders();
+
+      // Générer quelques services par défaut
+      if (providerListProvider.providers.isNotEmpty) {
+        _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+          return Service(
+            id: 200 + provider.id,
+            title: provider.services.isNotEmpty
+                ? provider.services.first.title
+                : provider.name,
+            description: provider.description,
+            imageUrl: provider.profileImageUrl.isNotEmpty
+                ? provider.profileImageUrl
+                : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+            rating: provider.rating,
+            reviewCount: provider.reviewCount,
+            provider_id: provider.id,
+            businessType: provider.businessType,
+            price: 50.0 + random.nextInt(150) * 1.0,
+            categoryId: 1 + random.nextInt(5),
+            priceType: random.nextBool() ? 'quote' : 'fixed',
+          );
+        }).toList();
+      } else {
+        _nearbyServices = [];
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des prestataires: $e');
+      _nearbyServices = [];
+    }
+  }
+
+  // MÉTHODE AMÉLIORÉE _loadProjectsData avec gestion de la localisation
   Future<void> _loadProjectsData() async {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
 
       // Charger les statistiques du prestataire
       await _loadProviderStats();
+
+      // === NOUVELLE GESTION DE LA LOCALISATION POUR LES PROJETS ===
+      setState(() {
+        _isLocationLoading = true;
+      });
+
+      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+      
+      try {
+        // Récupérer la position pour les projets à proximité
+        bool servicesEnabled = await locationProvider.checkLocationServices();
+        if (servicesEnabled) {
+          bool permissionGranted = await locationProvider.requestLocationPermission();
+          if (permissionGranted) {
+            bool locationSuccess = await locationProvider.getCurrentLocation();
+            if (locationSuccess && locationProvider.currentPosition != null) {
+              await _loadNearbyProjects(locationProvider.currentPosition!);
+            }
+          }
+        }
+      } catch (e) {
+        print('Erreur localisation projets: $e');
+      } finally {
+        setState(() {
+          _isLocationLoading = false;
+        });
+      }
 
       // Charger les projets récents directement depuis l'API
       final recentProjectsResponse =
@@ -270,6 +419,69 @@ class _HomeScreenState extends State<HomeScreen>
       _recentProjects = _generateMockProjects(8);
       _nearbyProjects = _generateMockProjects(6);
     }
+  }
+
+  // NOUVELLE MÉTHODE pour charger les projets à proximité
+  Future<void> _loadNearbyProjects(Position position) async {
+    try {
+      // Pour l'instant, générer des projets mockés basés sur la localisation
+      // Vous pouvez adapter selon votre API
+      _nearbyProjects = _generateNearbyProjectsMock(position);
+    } catch (e) {
+      print('Erreur lors du chargement des projets à proximité: $e');
+      _nearbyProjects = _generateNearbyProjectsMock(position);
+    }
+  }
+
+  // NOUVELLE MÉTHODE pour générer des projets mockés à proximité
+  List<ClientProject> _generateNearbyProjectsMock(Position position) {
+    final List<String> nearbyAreas = [
+      'Cotonou Centre',
+      'Calavi', 
+      'Akpakpa',
+      'Godomey',
+      'Fidjrossè',
+      'Dantokpa',
+    ];
+
+    return List.generate(
+      6,
+      (index) {
+        return ClientProject(
+          id: 300 + index,
+          title: 'Projet ${_getLocalProjectType(index)} à proximité',
+          description: 'Projet local nécessitant une intervention rapide dans votre zone.',
+          clientName: 'Client ${nearbyAreas[index % nearbyAreas.length]}',
+          categoryName: _getProjectCategory(index),
+          budgetRange: _getBudgetRange(index),
+          budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} AOA',
+          location: nearbyAreas[index % nearbyAreas.length],
+          remotePossible: random.nextBool(),
+          urgency: ['high', 'very_high'][random.nextInt(2)], // Projets urgents à proximité
+          status: 'open',
+          contactViaPlatform: true,
+          showEmail: false,
+          showPhone: true, // Plus de contact direct pour les projets locaux
+          requiredSkills: _getRequiredSkills(index),
+          offersCount: random.nextInt(5), // Moins d'offres car nouveau
+          viewsCount: 10 + random.nextInt(50),
+          createdAt: DateTime.now().subtract(Duration(hours: random.nextInt(24))),
+        );
+      },
+    );
+  }
+
+  // NOUVELLE MÉTHODE Types de projets locaux spécifiques
+  String _getLocalProjectType(int index) {
+    final types = [
+      'réparation urgente',
+      'dépannage électrique', 
+      'plomberie d\'urgence',
+      'livraison express',
+      'nettoyage après sinistre',
+      'sécurité événement',
+    ];
+    return types[index % types.length];
   }
 
   Future<void> _loadProviderStats() async {
@@ -389,6 +601,183 @@ class _HomeScreenState extends State<HomeScreen>
     return skillSets[index % skillSets.length];
   }
 
+  // NOUVEAU WIDGET pour l'icône de localisation intelligente
+  Widget _buildLocationIcon(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, locationProvider, child) {
+        return Stack(
+          children: [
+            IconButton(
+              icon: Icon(
+                _locationPermissionDenied 
+                    ? Icons.location_disabled
+                    : locationProvider.currentPosition != null
+                        ? Icons.location_on
+                        : Icons.location_searching,
+                color: _locationPermissionDenied 
+                    ? Colors.red 
+                    : locationProvider.currentPosition != null
+                        ? Colors.green
+                        : Colors.grey,
+              ),
+              onPressed: () {
+                if (_locationPermissionDenied) {
+                  _showLocationPermissionDialog();
+                } else {
+                  setState(() {
+                    _showMapView = true;
+                  });
+                }
+              },
+              tooltip: _getLocationTooltip(locationProvider),
+            ),
+            if (_isLocationLoading)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // NOUVELLES MÉTHODES HELPER pour la localisation
+  String _getLocationTooltip(LocationProvider locationProvider) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    if (_locationPermissionDenied) {
+      return l10n.locationPermissionDenied;
+    } else if (locationProvider.currentPosition != null) {
+      return _currentLocationName ?? l10n.locationEnabled;
+    } else {
+      return l10n.searchingYourPosition;
+    }
+  }
+
+  void _showLocationPermissionDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.locationPermission),
+          content: Text(l10n.locationPermissionDialogContent),
+          actions: [
+            TextButton(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text(l10n.settings),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.openAppSettings();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // NOUVEAU WIDGET pour afficher le statut de localisation
+  Widget _buildLocationStatus() {
+    return Consumer<LocationProvider>(
+      builder: (context, locationProvider, child) {
+        if (_locationPermissionDenied) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_disabled, color: Colors.orange),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Localisation désactivée',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[800],
+                        ),
+                      ),
+                      Text(
+                        'Activez la localisation pour voir les prestataires à proximité',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Réessayer d'obtenir la localisation
+                    await _loadData();
+                  },
+                  child: Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        } else if (locationProvider.currentPosition != null) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.green),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _currentLocationName ?? 'Localisation activée',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.green[800],
+                    ),
+                  ),
+                ),
+                Text(
+                  '${_nearbyServices.length} prestataires à proximité',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.green[700],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -413,7 +802,7 @@ class _HomeScreenState extends State<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En-tête avec logo et icônes
+          // En-tête avec logo et icônes - MODIFIÉ
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Row(
@@ -434,27 +823,16 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.location_on),
-                      onPressed: () {
-                        setState(() {
-                          _showMapView = true;
-                        });
-                      },
-                    ),
-
+                    _buildLocationIcon(context), // NOUVELLE ICÔNE INTELLIGENTE
                     _buildNotificationIcon(context),
-                    // IconButton(
-                    //   icon: const Icon(Icons.notifications_none),
-                    //   onPressed: () {
-                    //     // Notifications
-                    //   },
-                    // ),
                   ],
                 ),
               ],
             ),
           ),
+
+          // NOUVEAU WIDGET - Statut de localisation
+          _buildLocationStatus(),
 
           // Barre de recherche
           Padding(
@@ -508,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ? [
                       _buildProviderHomeTab(),
                       _buildRecentProjectsTab(),
-                      _buildNearbyProjectsTab(),
+                      _buildNearbyProjectsTab(), // AMÉLIORÉ
                     ]
                   : [
                       _buildClientHomeTab(),
@@ -517,6 +895,117 @@ class _HomeScreenState extends State<HomeScreen>
                       _buildNearbyTab(),
                     ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // WIDGET AMÉLIORÉ pour les projets à proximité (mode prestataire)
+  Widget _buildNearbyProjectsTab() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          
+          // Header avec statut de localisation - AMÉLIORÉ
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.nearbyProjectsTab,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Consumer<LocationProvider>(
+                      builder: (context, locationProvider, child) {
+                        if (locationProvider.currentPosition != null) {
+                          return Text(
+                            'Dans un rayon de 15 km • ${_nearbyProjects.length} projets',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          );
+                        } else {
+                          return Text(
+                            'Localisation non disponible',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[600],
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  // Bouton actualiser - NOUVEAU
+                  IconButton(
+                    onPressed: () async {
+                      setState(() {
+                        _isLocationLoading = true;
+                      });
+                      await _loadProjectsData();
+                      setState(() {
+                        _isLocationLoading = false;
+                      });
+                    },
+                    icon: _isLocationLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(Icons.refresh, color: Colors.grey[600]),
+                    tooltip: 'Actualiser',
+                  ),
+                  
+                  // Bouton carte
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showMapView = true;
+                      });
+                    },
+                    icon: const Icon(Icons.map, size: 16),
+                    label: Text(l10n.map),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF142FE2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Projets à proximité avec badges - AMÉLIORÉ
+          _buildVerticalProjectsList(
+            _nearbyProjects,
+            _nearbyProjects.length,
+            l10n.noProjectsAvailableRegion,
+            showUrgencyBadge: true, // NOUVEAU
+            showDistanceBadge: true, // NOUVEAU
           ),
         ],
       ),
@@ -567,6 +1056,7 @@ class _HomeScreenState extends State<HomeScreen>
       },
     );
   }
+
   // ================== MODE CLIENT ==================
 
   // Tab d'accueil pour les clients
@@ -860,54 +1350,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Tab des projets à proximité (mode prestataire)
-  Widget _buildNearbyProjectsTab() {
-    final l10n = AppLocalizations.of(context)!;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                l10n.nearbyProjectsTab,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showMapView = true;
-                  });
-                },
-                icon: const Icon(Icons.map, size: 16),
-                label: Text(l10n.map),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF142FE2),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildVerticalProjectsList(_nearbyProjects, _nearbyProjects.length,
-              l10n.noProjectsAvailableRegion),
-        ],
-      ),
-    );
-  }
-
   // Statistiques du prestataire
   Widget _buildProviderStats() {
     final l10n = AppLocalizations.of(context)!;
@@ -1154,7 +1596,35 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Widget pour afficher les catégories (mode client uniquement)
+  // NOUVELLE MÉTHODE pour calculer la distance approximative
+  String? _calculateDistance(ClientProject project) {
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    
+    if (locationProvider.currentPosition == null || 
+        project.latitude == null || 
+        project.longitude == null) {
+      return null;
+    }
+
+    try {
+      final distance = Geolocator.distanceBetween(
+        locationProvider.currentPosition!.latitude,
+        locationProvider.currentPosition!.longitude,
+        project.latitude!,
+        project.longitude!,
+      );
+      
+      if (distance < 1000) {
+        return '${distance.round()}m';
+      } else {
+        return '${(distance / 1000).toStringAsFixed(1)}km';
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Widget pour afficher les catégories (mode client uniquement)
   Widget _buildCategories() {
     final l10n = AppLocalizations.of(context)!;
 
@@ -1592,7 +2062,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // Widget pour afficher une liste verticale de services
-  // Widget pour afficher une liste verticale de services
   Widget _buildVerticalServicesList(
       List<Service> services, int limit, String emptyMessage) {
     if (_isLoading) {
@@ -1772,9 +2241,14 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Widget pour afficher une liste verticale de projets
+  // WIDGET AMÉLIORÉ pour afficher une liste verticale de projets avec badges
   Widget _buildVerticalProjectsList(
-      List<ClientProject> projects, int limit, String emptyMessage) {
+    List<ClientProject> projects,
+    int limit,
+    String emptyMessage, {
+    bool showUrgencyBadge = false,
+    bool showDistanceBadge = false,
+  }) {
     if (_isLoading) {
       return const Center(
         child: Padding(
@@ -1792,8 +2266,7 @@ class _HomeScreenState extends State<HomeScreen>
       );
     }
 
-    final displayProjects =
-        projects.length > limit ? projects.sublist(0, limit) : projects;
+    final displayProjects = projects.length > limit ? projects.sublist(0, limit) : projects;
 
     return ListView.builder(
       shrinkWrap: true,
@@ -1808,9 +2281,7 @@ class _HomeScreenState extends State<HomeScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProjectDetailScreen(
-                    project: project,
-                  ),
+                  builder: (context) => ProjectDetailScreen(project: project),
                 ),
               );
             },
@@ -1826,6 +2297,10 @@ class _HomeScreenState extends State<HomeScreen>
                     offset: const Offset(0, 1),
                   ),
                 ],
+                // Bordure spéciale pour les projets urgents
+                border: showUrgencyBadge && project.urgency == 'very_high'
+                    ? Border.all(color: Colors.red, width: 2)
+                    : null,
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -1852,14 +2327,37 @@ class _HomeScreenState extends State<HomeScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                project.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      project.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  // Badge d'urgence - NOUVEAU
+                                  if (showUrgencyBadge && project.urgency == 'very_high')
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        'URGENT',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -1873,17 +2371,14 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: project.status == 'open'
                                 ? Colors.green.withOpacity(0.1)
                                 : Colors.grey.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: project.status == 'open'
-                                  ? Colors.green
-                                  : Colors.grey,
+                              color: project.status == 'open' ? Colors.green : Colors.grey,
                             ),
                           ),
                           child: Text(
@@ -1893,9 +2388,7 @@ class _HomeScreenState extends State<HomeScreen>
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: project.status == 'open'
-                                  ? Colors.green
-                                  : Colors.grey,
+                              color: project.status == 'open' ? Colors.green : Colors.grey,
                             ),
                           ),
                         ),
@@ -1914,20 +2407,45 @@ class _HomeScreenState extends State<HomeScreen>
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Icon(Icons.location_on,
-                            size: 16, color: Colors.grey[600]),
+                        Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
-                        Text(
-                          project.location,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                        Expanded(
+                          child: Text(
+                            project.location,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ),
+                        // Badge de distance (si disponible) - NOUVEAU
+                        if (showDistanceBadge)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.near_me, size: 12, color: Colors.blue),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _calculateDistance(project) ?? 'Proche',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF142FE2).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -1984,7 +2502,6 @@ class _HomeScreenState extends State<HomeScreen>
               final review = reviews[index];
               
               return GestureDetector(
-                // REDIRECTION VERS LE SERVICE au clic sur toute la carte
                 onTap: () {
                   if (review.serviceId != null && review.providerId != null) {
                     Navigator.push(
@@ -2019,11 +2536,6 @@ class _HomeScreenState extends State<HomeScreen>
                         offset: const Offset(0, 1),
                       ),
                     ],
-                    // Effet visuel pour indiquer que c'est cliquable
-                    border: Border.all(
-                      color: Colors.transparent,
-                      width: 1,
-                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -2032,7 +2544,6 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Row(
                           children: [
-                            // Photo de profil
                             CircleAvatar(
                               radius: 22,
                               backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
@@ -2064,7 +2575,6 @@ class _HomeScreenState extends State<HomeScreen>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
-                                  // ENTREPRISE - Simple texte maintenant
                                   Text(
                                     _getClientCompanyName(review),
                                     style: TextStyle(
@@ -2078,10 +2588,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 ],
                               ),
                             ),
-                            // Note avec design
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -2115,10 +2623,8 @@ class _HomeScreenState extends State<HomeScreen>
                         
                         const SizedBox(height: 12),
                         
-                        // TITRE DE L'AVIS avec icône pour indiquer la navigation
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFF142FE2).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -2150,7 +2656,6 @@ class _HomeScreenState extends State<HomeScreen>
                         
                         const SizedBox(height: 12),
                         
-                        // Commentaire
                         Expanded(
                           child: Text(
                             review.comment.isNotEmpty 
@@ -2168,7 +2673,6 @@ class _HomeScreenState extends State<HomeScreen>
                         
                         const SizedBox(height: 8),
                         
-                        // Date et indicateur cliquable
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -2179,7 +2683,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 color: Colors.grey[500],
                               ),
                             ),
-                            // Petite icône pour indiquer que c'est cliquable
                             Icon(
                               Icons.touch_app,
                               size: 16,
@@ -2198,6 +2701,7 @@ class _HomeScreenState extends State<HomeScreen>
       },
     );
   }
+
   // Widget générique pour afficher un état vide
   Widget _buildEmptyState({
     required IconData icon,
@@ -2307,28 +2811,23 @@ class _HomeScreenState extends State<HomeScreen>
   String _getClientCompanyName(Review review) {
     final l10n = AppLocalizations.of(context)!;
     
-    // Si on a une vraie entreprise, l'afficher
     if (review.clientCompanyName != null && review.clientCompanyName!.isNotEmpty) {
       return review.clientCompanyName!;
     }
     
-    // Sinon, message générique localisé
-    return l10n.genericClientType; // "Client particulier" ou équivalent selon la langue
+    return l10n.genericClientType;
   }
-  // Méthode pour obtenir le titre de l'avis
+  
   String _getReviewTitle(Review review) {
     final l10n = AppLocalizations.of(context)!;
     
-    // Si on a un vrai titre, l'afficher
     if (review.reviewTitle != null && review.reviewTitle!.isNotEmpty) {
       return review.reviewTitle!;
     }
     
-    // Sinon, message générique localisé
-    return l10n.genericReviewTitle; // "Avis client" ou équivalent selon la langue
+    return l10n.genericReviewTitle;
   }
 
-  // Méthode pour obtenir la date de l'avis
   String _getReviewDate(Review review) {
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
@@ -2336,13 +2835,14 @@ class _HomeScreenState extends State<HomeScreen>
     
     if (difference.inDays > 30) {
       final months = (difference.inDays / 30).floor();
-      return l10n.monthsAgo(months); // "Il y a X mois"
+      return l10n.monthsAgo(months);
     } else if (difference.inDays > 0) {
-      return l10n.daysAgo(difference.inDays); // "Il y a X jours"
+      return l10n.daysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return l10n.hoursAgo(difference.inHours); // "Il y a X heures"
+      return l10n.hoursAgo(difference.inHours);
     } else {
-      return l10n.recently; // "Récemment"
+      return l10n.recently;
     }
   }
+
 }

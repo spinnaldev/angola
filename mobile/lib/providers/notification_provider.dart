@@ -1,61 +1,31 @@
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import '../core/models/notification_model.dart';
 import '../core/services/notification_service.dart';
-import '../core/models/notification.dart';
 
 class NotificationProvider with ChangeNotifier {
   final NotificationService _notificationService;
   
   List<NotificationModel> _notifications = [];
-  int _unreadCount = 0;
   bool _isLoading = false;
   String? _errorMessage;
+  int _unreadCount = 0;
   Timer? _refreshTimer;
   bool _disposed = false;
-  
+
   NotificationProvider(this._notificationService) {
-    print('🔔 NotificationProvider initialized');
-    
-    // Charger les notifications au démarrage
-    _initializeNotifications();
-    
-    // Démarrer le rafraîchissement périodique
     _startPeriodicRefresh();
   }
-  
+
   // Getters
   List<NotificationModel> get notifications => _notifications;
-  int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  
-  // Notifications non lues
-  List<NotificationModel> get unreadNotifications => 
-    _notifications.where((n) => !n.isRead).toList();
-  
-  // Notifications lues
-  List<NotificationModel> get readNotifications => 
-    _notifications.where((n) => n.isRead).toList();
-  
-  // Notifications récentes (24h)
-  List<NotificationModel> get recentNotifications {
-    final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
-    
-    return _notifications.where((n) => n.createdAt.isAfter(yesterday)).toList();
-  }
-  
-  // Initialiser les notifications
-  Future<void> _initializeNotifications() async {
-    try {
-      await loadUnreadCount();
-    } catch (e) {
-      print('❌ Error initializing notifications: $e');
-    }
-  }
-  
-  // Charger toutes les notifications
+  int get unreadCount => _unreadCount;
+  bool get hasError => _errorMessage != null;
+
+  /// Charger les notifications
   Future<void> loadNotifications({bool forceRefresh = false}) async {
     if (_disposed) return;
     
@@ -63,138 +33,139 @@ class NotificationProvider with ChangeNotifier {
     
     _setLoading(true);
     _clearError();
-    
+
     try {
-      print('🔔 Loading notifications...');
-      final notifications = await _notificationService.getNotifications();
+      print('🔔 Chargement des notifications...');
       
-      if (_disposed) return;
+      final fetchedNotifications = await _notificationService.getNotifications();
       
-      _notifications = notifications;
+      if (!_disposed) {
+        _notifications = fetchedNotifications;
+        _updateUnreadCount();
+        print('✅ ${_notifications.length} notifications chargées');
+      }
       
-      // Mettre à jour le compteur non lu
-      _updateUnreadCount();
-      
-      print('✅ Loaded ${notifications.length} notifications');
-      _setLoading(false);
     } catch (e) {
-      print('❌ Error loading notifications: $e');
-      if (_disposed) return;
-      
-      _setLoading(false);
-      _setError('Erreur lors du chargement des notifications: $e');
+      if (!_disposed) {
+        print('❌ Erreur lors du chargement des notifications: $e');
+        _setError('Erreur lors du chargement des notifications: $e');
+      }
+    } finally {
+      if (!_disposed) {
+        _setLoading(false);
+      }
     }
   }
-  
-  // Charger uniquement le compteur de notifications non lues
+
+  /// Charger le nombre de notifications non lues
   Future<void> loadUnreadCount() async {
     if (_disposed) return;
     
     try {
-      print('🔔 Loading unread count...');
       final count = await _notificationService.getUnreadCount();
-      
-      if (_disposed) return;
-      
-      _unreadCount = count;
-      print('✅ Unread count: $count');
-      notifyListeners();
+      if (!_disposed) {
+        _unreadCount = count;
+        notifyListeners();
+      }
     } catch (e) {
-      print('❌ Error loading notification count: $e');
+      print('❌ Erreur lors du chargement du compteur: $e');
     }
   }
-  
-  // Marquer une notification comme lue
+
+  /// Marquer une notification comme lue
   Future<bool> markAsRead(int notificationId) async {
     if (_disposed) return false;
     
     try {
-      print('🔔 Marking notification $notificationId as read...');
+      print('✅ Marquage de la notification $notificationId comme lue...');
+      
       final success = await _notificationService.markAsRead(notificationId);
       
-      if (_disposed) return success;
-      
-      if (success) {
-        // Mettre à jour localement
+      if (success && !_disposed) {
         _updateNotificationReadStatus(notificationId, true);
-        print('✅ Notification $notificationId marked as read');
+        print('✅ Notification marquée comme lue');
       }
       
       return success;
+      
     } catch (e) {
-      print('❌ Error marking notification as read: $e');
+      print('❌ Erreur lors du marquage comme lu: $e');
+      if (!_disposed) {
+        _setError('Erreur lors du marquage comme lu: $e');
+      }
       return false;
     }
   }
-  
-  // Marquer toutes les notifications comme lues
+
+  /// Marquer toutes les notifications comme lues
   Future<bool> markAllAsRead() async {
     if (_disposed) return false;
     
     try {
-      print('🔔 Marking all notifications as read...');
+      print('✅ Marquage de toutes les notifications comme lues...');
+      
       final success = await _notificationService.markAllAsRead();
       
-      if (_disposed) return success;
-      
-      if (success) {
-        // Mettre à jour toutes les notifications localement
-        _notifications = _notifications.map((notification) => 
-          notification.copyWith(isRead: true)
-        ).toList();
-        
+      if (success && !_disposed) {
+        // Marquer toutes les notifications comme lues localement
+        for (int i = 0; i < _notifications.length; i++) {
+          if (!_notifications[i].isRead) {
+            _notifications[i] = _notifications[i].copyWith(isRead: true);
+          }
+        }
         _unreadCount = 0;
-        print('✅ All notifications marked as read');
         notifyListeners();
+        print('✅ Toutes les notifications marquées comme lues');
       }
       
       return success;
+      
     } catch (e) {
-      print('❌ Error marking all notifications as read: $e');
+      print('❌ Erreur lors du marquage global comme lu: $e');
+      if (!_disposed) {
+        _setError('Erreur lors du marquage global comme lu: $e');
+      }
       return false;
     }
   }
-  
-  // Supprimer une notification
+
+  /// Supprimer une notification
   Future<bool> deleteNotification(int notificationId) async {
     if (_disposed) return false;
     
     try {
-      print('🔔 Deleting notification $notificationId...');
+      print('🗑️ Suppression de la notification $notificationId...');
+      
       final success = await _notificationService.deleteNotification(notificationId);
       
-      if (_disposed) return success;
-      
-      if (success) {
-        // Supprimer localement
-        final notification = _notifications.firstWhere(
+      if (success && !_disposed) {
+        final removedNotification = _notifications.firstWhere(
           (n) => n.id == notificationId,
-          orElse: () => throw StateError('Notification not found'),
+          orElse: () => throw Exception('Notification not found'),
         );
         
         _notifications.removeWhere((n) => n.id == notificationId);
         
-        if (!notification.isRead) {
+        if (!removedNotification.isRead) {
           _unreadCount = math.max(0, _unreadCount - 1);
         }
         
-        print('✅ Notification $notificationId deleted');
         notifyListeners();
+        print('✅ Notification supprimée');
       }
       
       return success;
+      
     } catch (e) {
-      print('❌ Error deleting notification: $e');
+      print('❌ Erreur lors de la suppression: $e');
+      if (!_disposed) {
+        _setError('Erreur lors de la suppression: $e');
+      }
       return false;
     }
   }
-  
-  // Filtrer les notifications par type
-  List<NotificationModel> getNotificationsByType(String type) {
-    return _notifications.where((n) => n.notificationType == type).toList();
-  }
-  
-  // Obtenir une notification par ID
+
+  /// Obtenir une notification par ID
   NotificationModel? getNotificationById(int id) {
     try {
       return _notifications.firstWhere((n) => n.id == id);
@@ -203,7 +174,7 @@ class NotificationProvider with ChangeNotifier {
     }
   }
   
-  // Ajouter une nouvelle notification (pour les websockets par exemple)
+  /// Ajouter une nouvelle notification (pour les websockets par exemple)
   void addNotification(NotificationModel notification) {
     if (_disposed) return;
     
@@ -222,7 +193,7 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  // Mettre à jour le statut de lecture d'une notification
+  /// Mettre à jour le statut de lecture d'une notification
   void _updateNotificationReadStatus(int notificationId, bool isRead) {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index != -1) {
@@ -241,34 +212,34 @@ class NotificationProvider with ChangeNotifier {
       }
     }
   }
-  
-  // Mettre à jour le compteur de notifications non lues
+
+  /// Mettre à jour le compteur de notifications non lues
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => !n.isRead).length;
   }
-  
-  // Effacer les erreurs
+
+  /// Effacer les erreurs
   void clearError() {
     if (_disposed) return;
     _clearError();
   }
-  
+
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
   }
-  
+
   void _setError(String error) {
     _errorMessage = error;
     notifyListeners();
   }
-  
+
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
-  
-  // Démarrer le rafraîchissement périodique
+
+  /// Démarrer le rafraîchissement périodique
   void _startPeriodicRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (!_disposed) {
@@ -277,20 +248,20 @@ class NotificationProvider with ChangeNotifier {
     });
     print('🔔 Started periodic refresh');
   }
-  
-  // Arrêter le rafraîchissement périodique
+
+  /// Arrêter le rafraîchissement périodique
   void stopPeriodicRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
     print('🔔 Stopped periodic refresh');
   }
-  
-  // Rafraîchir manuellement
+
+  /// Rafraîchir manuellement
   Future<void> refresh() async {
     await loadNotifications(forceRefresh: true);
   }
-  
-  // Vérifier s'il y a de nouvelles notifications
+
+  /// Vérifier s'il y a de nouvelles notifications
   Future<bool> hasNewNotifications() async {
     try {
       final currentCount = await _notificationService.getUnreadCount();
@@ -300,7 +271,75 @@ class NotificationProvider with ChangeNotifier {
       return false;
     }
   }
-  
+
+  // ========================================
+  // MÉTHODES POUR LES TEMPS RÉEL
+  // ========================================
+
+  /// Marquer comme lu localement (pour WebSocket)
+  void markAsReadLocally(int notificationId) {
+    _updateNotificationReadStatus(notificationId, true);
+  }
+
+  /// Supprimer localement (pour WebSocket)
+  void removeNotificationLocally(int notificationId) {
+    if (_disposed) return;
+    
+    final index = _notifications.indexWhere((n) => n.id == notificationId);
+    if (index != -1) {
+      final notification = _notifications[index];
+      _notifications.removeAt(index);
+      
+      if (!notification.isRead) {
+        _unreadCount = math.max(0, _unreadCount - 1);
+      }
+      
+      notifyListeners();
+    }
+  }
+
+  /// Mettre à jour le compteur localement (pour WebSocket)
+  void updateUnreadCountLocally(int count) {
+    if (_disposed) return;
+    
+    if (_unreadCount != count) {
+      _unreadCount = count;
+      notifyListeners();
+    }
+  }
+
+  /// Mettre à jour une notification localement
+  void updateNotificationLocally(NotificationModel updatedNotification) {
+    if (_disposed) return;
+    
+    final index = _notifications.indexWhere((n) => n.id == updatedNotification.id);
+    if (index != -1) {
+      final oldNotification = _notifications[index];
+      _notifications[index] = updatedNotification;
+      
+      // Mettre à jour le compteur si le statut de lecture a changé
+      if (oldNotification.isRead != updatedNotification.isRead) {
+        if (updatedNotification.isRead && !oldNotification.isRead) {
+          _unreadCount = math.max(0, _unreadCount - 1);
+        } else if (!updatedNotification.isRead && oldNotification.isRead) {
+          _unreadCount++;
+        }
+      }
+      
+      notifyListeners();
+    }
+  }
+
+  /// Nettoyer les données
+  void clearNotifications() {
+    if (_disposed) return;
+    
+    _notifications.clear();
+    _unreadCount = 0;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     print('🔔 NotificationProvider disposing...');
@@ -309,5 +348,4 @@ class NotificationProvider with ChangeNotifier {
     super.dispose();
   }
 }
-
 // mobile/lib/ui/screens/notifications_screen.dart - Écran des notifications

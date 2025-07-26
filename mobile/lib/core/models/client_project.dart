@@ -37,6 +37,8 @@ class ClientProject {
   final String? attachment2;
   final String? attachment3;
   final List<Map<String, String>>? attachments; // Liste des attachments
+  final double? latitude;    // AJOUT
+  final double? longitude;
 
   ClientProject({
     required this.id,
@@ -71,6 +73,8 @@ class ClientProject {
     this.attachment2,
     this.attachment3,
     this.attachments,
+    this.latitude,   
+    this.longitude,
   });
 
   // Méthode copyWith pour créer une copie modifiée
@@ -267,6 +271,10 @@ class ClientProject {
           attachment2: json['attachment2'],
           attachment3: json['attachment3'],
           attachments: attachmentsList,
+          latitude : _parseDoubleFromDynamic(json['latitude']),
+          longitude : _parseDoubleFromDynamic(json['longitude']),
+          // latitude: json['latitude']?.toDouble(),    // AJOUT
+          // longitude: json['longitude']?.toDouble(),
         );
       } catch (e) {
         print('❌ Erreur critique dans ClientProject.fromJson: $e');

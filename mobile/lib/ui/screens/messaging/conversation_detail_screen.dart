@@ -2,10 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 import '../../../providers/messaging_provider.dart';
+import '../../../providers/realtime_messaging_provider.dart';
 import '../../../core/models/conversation.dart';
 import '../../../core/models/message.dart';
-import 'package:intl/intl.dart';
 
 class ConversationDetailScreen extends StatefulWidget {
   final int conversationId;
@@ -21,34 +22,91 @@ class ConversationDetailScreen extends StatefulWidget {
   _ConversationDetailScreenState createState() => _ConversationDetailScreenState();
 }
 
-class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
+class _ConversationDetailScreenState extends State<ConversationDetailScreen> 
+    with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
+  
   bool _isComposing = false;
+  bool _isFirstLoad = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    
     // Charger les messages de la conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<MessagingProvider>(context, listen: false)
-          .fetchMessages(widget.conversationId);
+      _initializeConversation();
     });
     
+    // Écouter les changements du champ de texte
     _messageController.addListener(() {
-      setState(() {
-        _isComposing = _messageController.text.isNotEmpty;
-      });
+      final isComposing = _messageController.text.isNotEmpty;
+      if (_isComposing != isComposing) {
+        setState(() {
+          _isComposing = isComposing;
+        });
+        
+        // Envoyer l'indicateur de frappe
+        context.read<RealtimeMessagingProvider>()
+            .sendTypingIndicator(widget.conversationId, isComposing);
+      }
+    });
+
+    // Écouter les changements de focus
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _isComposing) {
+        // Arrêter l'indicateur de frappe quand on perd le focus
+        context.read<RealtimeMessagingProvider>()
+            .sendTypingIndicator(widget.conversationId, false);
+      }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageController.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
+    
+    // Quitter la conversation et arrêter l'indicateur de frappe
+    context.read<RealtimeMessagingProvider>()
+      ..sendTypingIndicator(widget.conversationId, false)
+      ..leaveCurrentConversation();
+    
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      // Arrêter l'indicateur de frappe quand l'app passe en arrière-plan
+      context.read<RealtimeMessagingProvider>()
+          .sendTypingIndicator(widget.conversationId, false);
+    }
+  }
+
+  /// Initialiser la conversation
+  void _initializeConversation() {
+    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+    final realtimeProvider = Provider.of<RealtimeMessagingProvider>(context, listen: false);
+    
+    // Charger les messages
+    messagingProvider.fetchMessages(widget.conversationId);
+    
+    // Rejoindre la conversation pour les messages en temps réel
+    realtimeProvider.joinConversation(widget.conversationId);
+    
+    // Marquer les messages comme lus
+    messagingProvider.markMessagesAsRead(widget.conversationId);
+  }
+
+  /// Faire défiler vers le bas
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -59,19 +117,37 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     }
   }
 
+  /// Gérer l'envoi d'un message
   Future<void> _handleSubmitted(String text) async {
-    if (text.isEmpty) return;
+    if (text.trim().isEmpty) return;
     
+    final trimmedText = text.trim();
     _messageController.clear();
     setState(() {
       _isComposing = false;
     });
     
-    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
-    await messagingProvider.sendMessage(widget.conversationId, text);
+    // Arrêter l'indicateur de frappe
+    context.read<RealtimeMessagingProvider>()
+        .sendTypingIndicator(widget.conversationId, false);
     
-    // Scroller en bas après l'envoi
-    Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+    final success = await messagingProvider.sendMessage(widget.conversationId, trimmedText);
+    
+    if (success) {
+      // Faire défiler vers le bas après l'envoi
+      Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+    } else {
+      // Afficher un message d'erreur si l'envoi a échoué
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.messageSendError),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -79,278 +155,261 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leadingWidth: 30,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey[300],
-              child: Text(
-                widget.otherPerson.initials,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.otherPerson.fullName,
+      appBar: _buildAppBar(l10n),
+      body: Column(
+        children: [
+          Expanded(
+            child: _buildMessagesList(),
+          ),
+          _buildMessageInput(l10n),
+        ],
+      ),
+    );
+  }
+
+  /// Construire l'app bar
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    return AppBar(
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+            backgroundImage: widget.otherPerson.profilePicture != null
+                ? NetworkImage(widget.otherPerson.profilePicture!)
+                : null,
+            child: widget.otherPerson.profilePicture == null
+                ? Text(
+                    _getInitials(widget.otherPerson.firstName),
                     style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF6366F1),
+                      fontWeight: FontWeight.bold,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.otherPerson.firstName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        l10n.online,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                // if (widget.otherPerson.isOnline == true)
+                //   Text(
+                //     l10n.online,
+                //     style: TextStyle(
+                //       fontSize: 12,
+                //       color: Colors.green[600],
+                //     ),
+                //   ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {
-              // Options de conversation
-            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Liste des messages
-          Expanded(
-            child: Consumer<MessagingProvider>(
-              builder: (context, messagingProvider, child) {
-                final messages = messagingProvider.getMessagesForConversation(widget.conversationId);
-                
-                if (messagingProvider.isLoading && messages.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                
-                // S'assurer de scroller au bas de la liste
-                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-                
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      l10n.noMessagesStartConversation,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                  );
-                }
-                
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    
-                    // Regrouper par date
-                    bool showDateHeader = false;
-                    if (index == 0) {
-                      showDateHeader = true;
-                    } else {
-                      final prevDate = DateTime(
-                        messages[index - 1].createdAt.year,
-                        messages[index - 1].createdAt.month,
-                        messages[index - 1].createdAt.day,
-                      );
-                      final currentDate = DateTime(
-                        message.createdAt.year,
-                        message.createdAt.month,
-                        message.createdAt.day,
-                      );
-                      showDateHeader = prevDate != currentDate;
-                    }
-                    
-                    return Column(
-                      children: [
-                        if (showDateHeader) ...[
-                          _buildDateHeader(message.createdAt),
-                          const SizedBox(height: 8),
-                        ],
-                        MessageBubble(message: message),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          
-          // Séparateur
-          const Divider(height: 1),
-          
-          // Champ de saisie de message
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.phone),
+          onPressed: () {
+            // Implémenter l'appel téléphonique
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.more_vert),
+          onPressed: () {
+            // Afficher les options de conversation
+            _showConversationOptions(l10n);
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Construire la liste des messages
+  Widget _buildMessagesList() {
+    return Consumer<MessagingProvider>(
+      builder: (context, messagingProvider, child) {
+        final messages = messagingProvider.getMessagesForConversation(widget.conversationId);
+        
+        if (messagingProvider.isLoading && _isFirstLoad) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        
+        if (messages.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context)!.noMessagesYet,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () {
-                      // Fonctionnalité d'ajout (images, etc.)
-                    },
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      textCapitalization: TextCapitalization.sentences,
-                      maxLines: null, // Permet d'agrandir automatiquement
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      decoration: InputDecoration(
-                        hintText: l10n.yourMessage,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      ),
-                      onSubmitted: (text) => _handleSubmitted(text),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.send,
-                      color: _isComposing ? Theme.of(context).primaryColor : Colors.grey,
-                    ),
-                    onPressed: _isComposing
-                        ? () => _handleSubmitted(_messageController.text)
-                        : null,
-                  ),
-                ],
-              ),
-            ),
+          );
+        }
+
+        // Marquer les messages comme lus quand ils sont affichés
+        if (_isFirstLoad) {
+          _isFirstLoad = false;
+          Future.delayed(const Duration(milliseconds: 500), () {
+            messagingProvider.markMessagesAsRead(widget.conversationId);
+            _scrollToBottom();
+          });
+        }
+
+        return ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            final message = messages[index];
+            final isMe = message.senderId == messagingProvider.currentUserId;
+            final showDate = _shouldShowDate(messages, index);
+            
+            return Column(
+              children: [
+                if (showDate) _buildDateSeparator(message.createdAt),
+                _buildMessageBubble(message, isMe),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Construire le champ de saisie de message
+  Widget _buildMessageInput(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            offset: const Offset(0, -1),
+            blurRadius: 4,
+            color: Colors.black.withOpacity(0.1),
           ),
         ],
       ),
-    );
-  }
-  
-  Widget _buildDateHeader(DateTime date) {
-    final l10n = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = DateTime(now.year, now.month, now.day - 1);
-    final messageDate = DateTime(date.year, date.month, date.day);
-    
-    String text;
-    if (messageDate == today) {
-      text = l10n.today;
-    } else if (messageDate == yesterday) {
-      text = l10n.yesterday;
-    } else {
-      text = DateFormat('dd/MM/yyyy').format(date);
-    }
-    
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
-          ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: TextField(
+                  controller: _messageController,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration(
+                    hintText: l10n.typeMessage,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: _handleSubmitted,
+                  maxLines: null,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Consumer<MessagingProvider>(
+              builder: (context, messagingProvider, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: _isComposing
+                        ? const Color(0xFF6366F1)
+                        : Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: messagingProvider.isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.send),
+                    color: _isComposing ? Colors.white : Colors.grey[600],
+                    onPressed: _isComposing && !messagingProvider.isSending
+                        ? () => _handleSubmitted(_messageController.text)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class MessageBubble extends StatelessWidget {
-  final Message message;
-  
-  const MessageBubble({
-    Key? key,
-    required this.message,
-  }) : super(key: key);
-  
-  @override
-  Widget build(BuildContext context) {
-    final isMine = message.isMine;
-    
+  /// Construire une bulle de message
+  Widget _buildMessageBubble(Message message, bool isMe) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMine)
+          if (!isMe) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey[300],
-              child: Text(
-                message.senderName.isNotEmpty ? message.senderName[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+              backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+              backgroundImage: widget.otherPerson.profilePicture != null
+                  ? NetworkImage(widget.otherPerson.profilePicture!)
+                  : null,
+              child: widget.otherPerson.profilePicture == null
+                  ? Text(
+                      _getInitials(widget.otherPerson.firstName),
+                      style: const TextStyle(
+                        color: Color(0xFF6366F1),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
             ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
+          ],
           Flexible(
             child: Container(
+              margin: EdgeInsets.only(
+                left: isMe ? 50 : 0,
+                right: isMe ? 0 : 50,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isMine ? Theme.of(context).primaryColor : Colors.grey[200],
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: isMine ? const Radius.circular(16) : const Radius.circular(0),
-                  bottomRight: isMine ? const Radius.circular(0) : const Radius.circular(16),
-                ),
+                color: isMe ? const Color(0xFF6366F1) : Colors.grey[200],
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,42 +417,132 @@ class MessageBubble extends StatelessWidget {
                   Text(
                     message.content,
                     style: TextStyle(
-                      color: isMine ? Colors.white : Colors.black,
+                      color: isMe ? Colors.white : Colors.black87,
                       fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatMessageTime(message.createdAt),
-                        style: TextStyle(
-                          color: isMine ? Colors.white.withOpacity(0.7) : Colors.grey[600],
-                          fontSize: 10,
-                        ),
-                      ),
-                      if (isMine) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          message.isRead ? Icons.done_all : Icons.done,
-                          size: 12,
-                          color: message.isRead ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.7),
-                        ),
-                      ],
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('HH:mm').format(message.createdAt),
+                    style: TextStyle(
+                      color: isMe ? Colors.white70 : Colors.grey[600],
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            Icon(
+              message.isRead ? Icons.done_all : Icons.done,
+              color: message.isRead ? Colors.blue : Colors.grey,
+              size: 16,
+            ),
+          ],
         ],
       ),
     );
   }
-  
-  String _formatMessageTime(DateTime dateTime) {
-    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+  /// Construire un séparateur de date
+  Widget _buildDateSeparator(DateTime date) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey[300])),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _formatDate(date),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: Colors.grey[300])),
+        ],
+      ),
+    );
+  }
+
+  /// Afficher les options de conversation
+  void _showConversationOptions(AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(l10n.conversationInfo),
+            onTap: () {
+              Navigator.pop(context);
+              // Afficher les informations de la conversation
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications_off),
+            title: Text(l10n.muteConversation),
+            onTap: () {
+              Navigator.pop(context);
+              // Mettre en sourdine la conversation
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: Text(l10n.deleteConversation),
+            onTap: () {
+              Navigator.pop(context);
+              // Supprimer la conversation
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Vérifier si on doit afficher la date
+  bool _shouldShowDate(List<Message> messages, int index) {
+    if (index == 0) return true;
+    
+    final currentMessage = messages[index];
+    final previousMessage = messages[index - 1];
+    
+    return !_isSameDay(currentMessage.createdAt, previousMessage.createdAt);
+  }
+
+  /// Vérifier si deux dates sont le même jour
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
+  }
+
+  /// Formater une date
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final messageDate = DateTime(date.year, date.month, date.day);
+    
+    if (messageDate == today) {
+      return AppLocalizations.of(context)!.today;
+    } else if (messageDate == yesterday) {
+      return AppLocalizations.of(context)!.yesterday;
+    } else {
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
+  }
+
+  /// Obtenir les initiales d'un nom
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 }

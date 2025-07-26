@@ -8,6 +8,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/core/services/notification_service.dart';
+import 'package:teyago/core/services/websocket_service.dart';
+import 'package:teyago/providers/realtime_messaging_provider.dart';
+import 'package:teyago/providers/realtime_notification_provider.dart';
 import 'package:teyago/ui/screens/app_entry_screen.dart';
 import 'package:teyago/ui/screens/home/home_screen.dart';
 import 'core/api/api_client.dart';
@@ -36,7 +39,7 @@ import 'providers/dispute_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/location_provider.dart';
 import 'providers/offers_provider.dart';
-
+import 'core/services/websocket_service.dart';
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,6 +103,8 @@ class MyApp extends StatelessWidget {
         // Fournisseurs de données
         Provider<ApiService>.value(value: apiService),
 
+        //  Provider<WebSocketService>(create: (_) => WebSocketService()),
+
         // NOUVEAU : Provider de langue
         ChangeNotifierProvider.value(value: languageProvider),
 
@@ -137,9 +142,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProjectProvider(apiService),
         ),
-        ChangeNotifierProvider(create: (_) => NotificationProvider(NotificationService(apiService))),
+        ChangeNotifierProvider<NotificationProvider>(
+          create: (context) => NotificationProvider(notificationService),
+        ),
         ChangeNotifierProvider(
           create: (_) => MessagingProvider(apiService),
+        ),
+        // Providers temps réel (dépendent des providers de base)
+        ChangeNotifierProvider<RealtimeNotificationProvider>(
+          create: (context) => RealtimeNotificationProvider(
+            context.read<NotificationProvider>(),
+            webSocketService,
+          ),
+        ),
+        ChangeNotifierProvider<RealtimeMessagingProvider>(
+          create: (context) => RealtimeMessagingProvider(
+            context.read<MessagingProvider>(),
+            webSocketService,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) =>
@@ -155,6 +175,15 @@ class MyApp extends StatelessWidget {
           update: (context, authProvider, previous) =>
               previous ?? OffersProvider(apiService),
         ),
+        // ChangeNotifierProxyProvider3<NotificationService, WebSocketService, AuthService, RealtimeNotificationProvider>(
+        //   create: (context) => RealtimeNotificationProvider(
+        //     Provider.of<NotificationService>(context, listen: false),
+        //     Provider.of<WebSocketService>(context, listen: false),
+        //     Provider.of<AuthService>(context, listen: false),
+        //   ),
+        //   update: (_, notificationService, webSocketService, authService, provider) =>
+        //       provider ?? RealtimeNotificationProvider(notificationService, webSocketService, authService),
+        // ),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
@@ -224,6 +253,151 @@ class MyApp extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Widget pour initialiser l'application et gérer les WebSockets
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({Key? key}) : super(key: key);
+
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> with WidgetsBindingObserver {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    final authProvider = context.read<AuthProvider>();
+    final webSocketService = context.read<WebSocketService>();
+    
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // Reconnexion quand l'app revient au premier plan
+        if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+          _connectWebSocket();
+        }
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        // Déconnecter les WebSockets quand l'app passe en arrière-plan
+        webSocketService.disconnect();
+        break;
+      default:
+        break;
+    }
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      print('🚀 Initialisation de l\'application...');
+      
+      // Vérifier l'authentification
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.checkAuthenticationStatus();
+      
+      // Si l'utilisateur est connecté, initialiser les WebSockets
+      if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+        await _connectWebSocket();
+        _startRealtimeListeners();
+      }
+      
+      setState(() {
+        _isInitialized = true;
+      });
+      
+      print('✅ Application initialisée avec succès');
+      
+    } catch (e) {
+      print('❌ Erreur lors de l\'initialisation: $e');
+      setState(() {
+        _isInitialized = true;
+      });
+    }
+  }
+
+  Future<void> _connectWebSocket() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final webSocketService = context.read<WebSocketService>();
+      
+      if (authProvider.currentUser?.id != null) {
+        // Obtenir l'URL de base depuis l'API client
+        final apiClient = context.read<ApiClient>();
+        final baseUrl = apiClient.baseUrl;
+        
+        await webSocketService.connect(baseUrl, authProvider.currentUser!.id);
+        print('✅ WebSocket connecté pour utilisateur ${authProvider.currentUser!.id}');
+      }
+    } catch (e) {
+      print('❌ Erreur de connexion WebSocket: $e');
+    }
+  }
+
+  void _startRealtimeListeners() {
+    try {
+      final realtimeNotificationProvider = context.read<RealtimeNotificationProvider>();
+      final realtimeMessagingProvider = context.read<RealtimeMessagingProvider>();
+      
+      realtimeNotificationProvider.startListening();
+      realtimeMessagingProvider.startListening();
+      
+      print('✅ Listeners temps réel démarrés');
+    } catch (e) {
+      print('❌ Erreur lors du démarrage des listeners: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Initialisation...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        if (authProvider.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (authProvider.isAuthenticated) {
+          return const HomeScreen();
+        } else {
+          return const AppEntryScreen();
+        }
+      },
     );
   }
 }

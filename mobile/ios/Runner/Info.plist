@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Cette application utilise votre localisation pour trouver les prestataires à proximité.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Cette application utilise votre localisation pour trouver les prestataires à proximité.</string>
 	</dict>
 </plist>

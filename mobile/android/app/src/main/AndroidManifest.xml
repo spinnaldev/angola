@@ -1,8 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="mobile"
+        android:label="Teyago"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        
+
+        <!-- AJOUT - Clé API Google Maps -->
+        <meta-data 
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBbWG2TknngAvTkzGksyubwmdr6gT3dndw"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

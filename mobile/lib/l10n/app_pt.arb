@@ -1071,6 +1071,209 @@
       }
     }
   },
-  "recently": "Recentemente"
+  "recently": "Recentemente",
+  "viewServices": "Ver serviços",
+  "viewOnMap": "Ver no mapa", 
+  "providersFound": "prestadores encontrados",
+  "applyFilters": "Aplicar filtros",
+  "businessType": "Tipo de negócio",
+  "minimumRating": "Avaliação mínima",
+  "searchRadius": "Raio de pesquisa",
+  "reset": "Redefinir",
+  "yourPosition": "Sua posição",
+  
+  "locationPermissionDenied": "Permissão de localização negada",
+  "@locationPermissionDenied": {
+    "description": "Mensagem exibida quando a permissão de localização é negada"
+  },
+  
+  "locationEnabled": "Localização ativada",
+  "@locationEnabled": {
+    "description": "Mensagem exibida quando a localização está ativada"
+  },
+  
+  "searchingYourPosition": "Procurando sua posição...",
+  "@searchingYourPosition": {
+    "description": "Mensagem exibida durante a busca da posição"
+  },
+  
+  "locationPermission": "Permissão de Localização",
+  "@locationPermission": {
+    "description": "Título da caixa de diálogo de permissão"
+  },
+  
+  "locationPermissionDialogContent": "O acesso à sua localização é necessário para exibir prestadores de serviços próximos. Você pode ativar essa permissão nas configurações do aplicativo.",
+  "@locationPermissionDialogContent": {
+    "description": "Conteúdo da caixa de diálogo de permissão de localização"
+  },
+  
+  "cancel": "Cancelar",
+  "@cancel": {
+    "description": "Botão de cancelamento"
+  },
+  
+  "settings": "Configurações",
+  "@settings": {
+    "description": "Botão para ir às configurações"
+  },
+  
+  "locationNotAvailable": "Localização não disponível",
+  "@locationNotAvailable": {
+    "description": "Mensagem quando a localização não está disponível"
+  },
+  
+  "enableLocationServices": "Ativar serviços de localização",
+  "@enableLocationServices": {
+    "description": "Mensagem para ativar a localização"
+  },
+  
+  "locationRequired": "Localização Necessária",
+  "@locationRequired": {
+    "description": "Título indicando que a localização é necessária"
+  },
+  
+  "locationRequiredMessage": "Este recurso requer acesso à sua localização para funcionar corretamente.",
+  "@locationRequiredMessage": {
+    "description": "Mensagem explicando por que a localização é necessária"
+  },
+  
+  "retryLocation": "Tentar novamente",
+  "@retryLocation": {
+    "description": "Botão para tentar obter a localização novamente"
+  },
+  
+  "currentLocation": "Localização atual",
+  "@currentLocation": {
+    "description": "Rótulo para a localização atual"
+  },
+  
+  "nearbyProviders": "Prestadores próximos",
+  "@nearbyProviders": {
+    "description": "Título para prestadores próximos"
+  },
+  "deleteConversation": "Excluir conversa",
+  "@deleteConversation": {
+    "description": "Opção para excluir uma conversa"
+  },
+  
+  "muteConversation": "Silenciar conversa",
+  "@muteConversation": {
+    "description": "Opção para silenciar uma conversa"
+  },
+  
+  "conversationInfo": "Informações da conversa",
+  "@conversationInfo": {
+    "description": "Opção para ver informações da conversa"
+  },
+  
+  "typeMessage": "Digite uma mensagem...",
+  "@typeMessage": {
+    "description": "Texto de dica no campo de entrada de mensagem"
+  },
+  
+  "noMessagesYet": "Ainda não há mensagens",
+  "@noMessagesYet": {
+    "description": "Mensagem exibida quando ainda não há mensagens"
+  },
+  
+  "messageSendError": "Falha ao enviar mensagem",
+  "@messageSendError": {
+    "description": "Mensagem de erro quando o envio de uma mensagem falha"
+  },
+  
+  "sendMessage": "Enviar mensagem",
+  "@sendMessage": {
+    "description": "Botão para enviar uma mensagem"
+  },
+  
+  "messageDelivered": "Mensagem entregue",
+  "@messageDelivered": {
+    "description": "Status de mensagem entregue"
+  },
+  
+  "messageRead": "Mensagem lida",
+  "@messageRead": {
+    "description": "Status de mensagem lida"
+  },
+  
+  "today": "Hoje",
+  "@today": {
+    "description": "Rótulo para hoje"
+  },
+  
+  "yesterday": "Ontem",
+  "@yesterday": {
+    "description": "Rótulo para ontem"
+  },
+  
+  "online": "Online",
+  "@online": {
+    "description": "Status online"
+  },
+  
+  "offline": "Offline",
+  "@offline": {
+    "description": "Status offline"
+  },
+  
+  "typing": "Digitando...",
+  "@typing": {
+    "description": "Indicador de digitação"
+  },
+  
+  "lastSeen": "Visto por último",
+  "@lastSeen": {
+    "description": "Status de última visualização"
+  },
+  
+  "deleteMessage": "Excluir mensagem",
+  "@deleteMessage": {
+    "description": "Opção para excluir uma mensagem"
+  },
+  
+  "copyMessage": "Copiar mensagem",
+  "@copyMessage": {
+    "description": "Opção para copiar uma mensagem"
+  },
+  
+  "replyToMessage": "Responder à mensagem",
+  "@replyToMessage": {
+    "description": "Opção para responder a uma mensagem"
+  },
+  
+  "messageOptions": "Opções da mensagem",
+  "@messageOptions": {
+    "description": "Título para o menu de opções de mensagem"
+  },
+  
+  "conversationOptions": "Opções da conversa",
+  "@conversationOptions": {
+    "description": "Título para o menu de opções de conversa"
+  },
+  
+  "startConversation": "Iniciar conversa",
+  "@startConversation": {
+    "description": "Botão para iniciar uma conversa"
+  },
+  
+  "newMessage": "Nova mensagem",
+  "@newMessage": {
+    "description": "Título para uma nova mensagem"
+  },
+  
+  "searchConversations": "Pesquisar conversas",
+  "@searchConversations": {
+    "description": "Pesquisar nas conversas"
+  },
+  
+  "noConversations": "Nenhuma conversa",
+  "@noConversations": {
+    "description": "Mensagem quando não há conversas"
+  },
+  
+  "startFirstConversation": "Inicie sua primeira conversa entrando em contato com um prestador de serviços",
+  "@startFirstConversation": {
+    "description": "Mensagem de incentivo para a primeira conversa"
+  }
 
 }
