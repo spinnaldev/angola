@@ -2279,24 +2279,24 @@ class MessageViewSet(viewsets.ModelViewSet):
             )
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_notification_count(request):
-    user_id = request.query_params.get('user_id')
+# @api_view(['GET'])
+# @permission_classes([AllowAny])
+# def get_notification_count(request):
+#     user_id = request.query_params.get('user_id')
     
-    if not user_id:
-        return Response({"count": 0}, status=status.HTTP_200_OK)
+#     if not user_id:
+#         return Response({"count": 0}, status=status.HTTP_200_OK)
     
-    try:
-        user_id = int(user_id)
-        user = User.objects.get(id=user_id)
+#     try:
+#         user_id = int(user_id)
+#         user = User.objects.get(id=user_id)
         
-        # Compte les notifications non lues pour cet utilisateur
-        count = Notification.objects.filter(user=user, is_read=False).count()
+#         # Compte les notifications non lues pour cet utilisateur
+#         count = Notification.objects.filter(user=user, is_read=False).count()
         
-        return Response({"count": count}, status=status.HTTP_200_OK)
-    except (ValueError, User.DoesNotExist):
-        return Response({"count": 0}, status=status.HTTP_200_OK)
+#         return Response({"count": count}, status=status.HTTP_200_OK)
+#     except (ValueError, User.DoesNotExist):
+#         return Response({"count": 0}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -2400,17 +2400,32 @@ class DisputeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(dispute)
         return Response(serializer.data)
 
-
 class NotificationViewSet(viewsets.ModelViewSet):
-    """ViewSet pour les notifications"""
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_read', 'user']
+    search_fields = ['title', 'message', 'user__username', 'user__first_name', 'user__last_name']
+    ordering_fields = ['created_at', 'is_read']
+    ordering = ['-created_at']
     
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        """
+        Les admins voient toutes les notifications
+        Les utilisateurs normaux voient seulement leurs notifications
+        """
+        user = self.request.user
+        
+        # Si c'est un admin, retourner toutes les notifications
+        if user.is_staff or user.is_superuser:
+            return Notification.objects.all().select_related('user').order_by('-created_at')
+        
+        # Sinon, retourner seulement les notifications de l'utilisateur
+        return Notification.objects.filter(user=user).order_by('-created_at')
     
-    @action(detail=True, methods=['post'])
+    @action(detail=False, methods=['post'])
     def mark_as_read(self, request, pk=None):
         """Marquer une notification comme lue"""
         notification = self.get_object()
@@ -2422,14 +2437,107 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def mark_all_as_read(self, request):
         """Marquer toutes les notifications comme lues"""
         notifications = self.get_queryset().filter(is_read=False)
-        notifications.update(is_read=True)
-        return Response({"status": "all notifications marked as read"})
+        count = notifications.update(is_read=True)
+        return Response({"status": "all notifications marked as read", "count": count})
     
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
         """Obtenir le nombre de notifications non lues"""
         count = self.get_queryset().filter(is_read=False).count()
         return Response({"count": count})
+    
+    @action(detail=False, methods=['get'], url_path='count')
+    def count(self, request):
+        """Obtenir le nombre de notifications non lues (alias pour unread_count)"""
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({"count": count})
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Statistiques des notifications (pour admins)"""
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {"detail": "Permission denied"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        total_notifications = Notification.objects.count()
+        unread_notifications = Notification.objects.filter(is_read=False).count()
+        read_notifications = Notification.objects.filter(is_read=True).count()
+        
+        # Notifications par utilisateur (top 10)
+        top_users = Notification.objects.values(
+            'user__username', 'user__first_name', 'user__last_name'
+        ).annotate(
+            total=Count('id'),
+            unread=Count('id', filter=Q(is_read=False))
+        ).order_by('-total')[:10]
+        
+        # Notifications récentes (24h)
+        from datetime import timedelta
+        recent_notifications = Notification.objects.filter(
+            created_at__gte=timezone.now() - timedelta(hours=24)
+        ).count()
+        
+        return Response({
+            "total_notifications": total_notifications,
+            "unread_notifications": unread_notifications,
+            "read_notifications": read_notifications,
+            "recent_24h": recent_notifications,
+            "top_users": list(top_users)
+        })
+    
+    @action(detail=False, methods=['post'])
+    def bulk_mark_read(self, request):
+        """Marquer plusieurs notifications comme lues (pour admins)"""
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {"detail": "Permission denied"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        notification_ids = request.data.get('notification_ids', [])
+        if not notification_ids:
+            return Response(
+                {"detail": "notification_ids required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        count = Notification.objects.filter(
+            id__in=notification_ids
+        ).update(is_read=True)
+        
+        return Response({
+            "status": "success",
+            "count": count,
+            "message": f"{count} notifications marquées comme lues"
+        })
+    
+    @action(detail=False, methods=['delete'])
+    def bulk_delete(self, request):
+        """Supprimer plusieurs notifications (pour admins seulement)"""
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {"detail": "Permission denied"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        notification_ids = request.data.get('notification_ids', [])
+        if not notification_ids:
+            return Response(
+                {"detail": "notification_ids required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        count, _ = Notification.objects.filter(
+            id__in=notification_ids
+        ).delete()
+        
+        return Response({
+            "status": "success",
+            "count": count,
+            "message": f"{count} notifications supprimées"
+        })
 
 class QuoteRequestViewSet(viewsets.ModelViewSet):
     """ViewSet pour les demandes de devis avec notifications automatiques"""
@@ -2551,12 +2659,12 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         })
 
 # Endpoints pour les notifications (si pas déjà dans urls.py)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_notification_count(request):
-    """Obtenir le nombre de notifications non lues"""
-    count = Notification.objects.filter(user=request.user, is_read=False).count()
-    return Response({"count": count})
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_notification_count(request):
+#     """Obtenir le nombre de notifications non lues"""
+#     count = Notification.objects.filter(user=request.user, is_read=False).count()
+#     return Response({"count": count})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
