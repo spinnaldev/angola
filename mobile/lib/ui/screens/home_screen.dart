@@ -1936,7 +1936,7 @@ class _HomeScreenState extends State<HomeScreen>
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProjectDetailScreen(
-                      project: project,
+                      projectId: project.id,
                     ),
                   ),
                 );
@@ -2281,7 +2281,7 @@ class _HomeScreenState extends State<HomeScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProjectDetailScreen(project: project),
+                  builder: (context) => ProjectDetailScreen(projectId: project.id),
                 ),
               );
             },

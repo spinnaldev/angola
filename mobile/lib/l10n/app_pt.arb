@@ -1274,6 +1274,9 @@
   "startFirstConversation": "Inicie sua primeira conversa entrando em contato com um prestador de serviços",
   "@startFirstConversation": {
     "description": "Mensagem de incentivo para a primeira conversa"
-  }
-
+  },
+  "projectDetails": "Detalhes do projeto",
+  "remoteOk": "Remoto OK", 
+  "loggedOutSuccessfully": "Você foi desconectado com sucesso",
+  "sessionExpired": "Sua sessão expirou. Faça login novamente."
 }

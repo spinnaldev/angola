@@ -479,7 +479,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProjectDetailScreen(project: project),
+            builder: (context) => ProjectDetailScreen(projectId: project.id),
           ),
         );
       } else {

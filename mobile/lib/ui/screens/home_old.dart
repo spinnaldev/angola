@@ -1467,7 +1467,7 @@ class _HomeScreenState extends State<HomeScreen>
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProjectDetailScreen(
-                      project: project,
+                      projectId: project.id,
                     ),
                   ),
                 );
@@ -1810,7 +1810,7 @@ class _HomeScreenState extends State<HomeScreen>
                 context,
                 MaterialPageRoute(
                   builder: (context) => ProjectDetailScreen(
-                    project: project,
+                    projectId: project.id,
                   ),
                 ),
               );

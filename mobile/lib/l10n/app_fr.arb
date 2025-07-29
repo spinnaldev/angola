@@ -356,7 +356,7 @@
   "priceRequired": "Le prix est obligatoire",
   "enterValidPrice": "Veuillez entrer un prix valide",
   "priceIncludesAllCosts": "Ce prix doit inclure tous vos frais. Vous pourrez négocier avec le client par la suite.",
-  "deliveryTime": "Délai de livraison",
+  "deliveryTime": "Délai de livraison (en jours)",
   "deliveryTimeInDays": "Délai en jours *",
   "daysToCompleteProject": "Nombre de jours pour réaliser le projet",
   "deliveryTimeRequired": "Le délai est obligatoire",
@@ -1231,6 +1231,10 @@
   "startFirstConversation": "Commencez votre première conversation en contactant un prestataire",
   "@startFirstConversation": {
     "description": "Message d'encouragement pour la première conversation"
-  }
+  },
+  "projectDetails": "Détails du projet",
+  "remoteOk": "Télétravail OK",
+  "loggedOutSuccessfully": "Vous avez été déconnecté avec succès",
+  "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
   
 }

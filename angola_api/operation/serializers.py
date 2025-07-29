@@ -646,6 +646,7 @@ class ProjectSkillSerializer(serializers.ModelSerializer):
 class ClientProjectListSerializer(serializers.ModelSerializer):
     """Serializer pour la liste des projets (vue d'ensemble)"""
     client_name = serializers.SerializerMethodField()
+    client_picture = serializers.SerializerMethodField() 
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     offers_count = serializers.IntegerField(read_only=True)
@@ -675,6 +676,13 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.client.first_name or obj.client.username
         return "Client anonyme"
+    
+    def get_client_picture(self, obj):  # NOUVELLE MÉTHODE
+        """Retourner la photo du client ou None"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and obj.client.profile_picture:
+            return request.build_absolute_uri(obj.client.profile_picture.url)
+        return None
     
     def get_budget_display(self, obj):
         """Génère l'affichage formaté du budget"""

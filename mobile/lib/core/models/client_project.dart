@@ -10,6 +10,7 @@ class ClientProject {
   final String description;
   final User? client;
   final String clientName;
+  final String? clientPicture;
   final Category? category;
   final String categoryName;
   final Subcategory? subcategory;
@@ -46,6 +47,7 @@ class ClientProject {
     required this.description,
     this.client,
     required this.clientName,
+    this.clientPicture,
     this.category,
     required this.categoryName,
     this.subcategory,
@@ -84,6 +86,7 @@ class ClientProject {
     String? description,
     User? client,
     String? clientName,
+    String? clientPicture,
     Category? category,
     String? categoryName,
     Subcategory? subcategory,
@@ -118,6 +121,7 @@ class ClientProject {
       description: description ?? this.description,
       client: client ?? this.client,
       clientName: clientName ?? this.clientName,
+      clientPicture: clientPicture ?? this.clientPicture,
       category: category ?? this.category,
       categoryName: categoryName ?? this.categoryName,
       subcategory: subcategory ?? this.subcategory,
@@ -239,7 +243,8 @@ class ClientProject {
           title: json['title'] ?? '',
           description: json['description'] ?? '',
           client: json['client'] != null ? User.fromJson(json['client']) : null,
-          clientName: json['client_name'] ?? 'Client anonyme',
+          clientName: json['client_name'] ?? 'Client anonymee',
+          clientPicture: json['client_picture'],
           category: categoryObject,
           // category: json['category'] != null ? Category.fromJson(json['category']) : null,
           categoryName: json['category_name'] ?? '',

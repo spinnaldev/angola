@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/services/auth_service.dart';
 import '../core/models/user.dart';
@@ -8,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../core/services/profile_manager.dart';
 import '../core/api/api_client.dart'; // ✅ Import ApiClient
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum AuthStatus {
   uninitialized,
@@ -414,7 +416,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Méthode de déconnexion améliorée
-  Future<bool> logout() async {
+  Future<bool> logout({BuildContext? context}) async {
     try {
       // Appel à votre AuthService existant
       final success = await _authService.logout();
@@ -431,6 +433,24 @@ class AuthProvider with ChangeNotifier {
       print('✅ Déconnexion réussie');
       
       notifyListeners();
+
+      // AJOUT : Redirection automatique si contexte fourni
+      if (context != null && context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home', 
+          (route) => false,
+        );
+        
+        // Optionnel : Afficher un message de confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.loggedOutSuccessfully),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      
       return success;
     } catch (e) {
       print('❌ Erreur lors de la déconnexion: $e');
@@ -443,6 +463,15 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = null;
       
       notifyListeners();
+
+      // Redirection même en cas d'erreur
+      if (context != null && context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home', 
+          (route) => false,
+        );
+      }
+      
       return false;
     }
   }

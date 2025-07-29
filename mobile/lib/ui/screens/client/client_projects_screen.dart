@@ -565,7 +565,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProjectDetailScreen(project: project),
+        builder: (context) => ProjectDetailScreen(projectId: project.id),
       ),
     );
   }

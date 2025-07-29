@@ -240,7 +240,8 @@ class MyApp extends StatelessWidget {
                 ),
               ),
             ),
-            home: const AppEntryScreen(),
+            // home: const AppEntryScreen(),
+            home: const AppInitializer(),
             // home: HomeScreen(),
             routes: AppRoutes.routes,
             onGenerateRoute: AppRoutes.generateRoute,
@@ -376,29 +377,14 @@ class _AppInitializerState extends State<AppInitializer> with WidgetsBindingObse
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Initialisation...'),
+              Text('Initialisation WebSocket...'),
             ],
           ),
         ),
       );
     }
 
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        if (authProvider.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        if (authProvider.isAuthenticated) {
-          return const HomeScreen();
-        } else {
-          return const AppEntryScreen();
-        }
-      },
-    );
+    // Une fois l'initialisation terminée, passer la main à AppEntryScreen
+    return const AppEntryScreen();
   }
 }

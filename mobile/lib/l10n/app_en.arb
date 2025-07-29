@@ -1208,7 +1208,11 @@
   "startFirstConversation": "Start your first conversation by contacting a service provider",
   "@startFirstConversation": {
     "description": "Encouragement message for first conversation"
-  }
+  },
+  "projectDetails": "Project details",
+  "remoteOk": "Remote OK", 
+  "loggedOutSuccessfully": "You have been logged out successfully",
+  "sessionExpired": "Your session has expired. Please log in again."
   
   
 }

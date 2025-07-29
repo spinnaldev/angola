@@ -11,11 +11,11 @@ import '../../core/services/api_service.dart';
 import '../widgets/offer_card.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
-  final ClientProject project;
+  final int projectId; // SEUL CHANGEMENT ICI : int au lieu de ClientProject
 
   const ProjectDetailScreen({
     Key? key,
-    required this.project,
+    required this.projectId, // SEUL CHANGEMENT ICI
   }) : super(key: key);
 
   @override
@@ -31,6 +31,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   bool _viewCounted = false;
   bool _isSubmittingOffer = false; // Contrôle l'état de soumission
   bool _showOfferForm = false;
+  
+  // AJOUT : Variables pour le chargement du projet
+  bool _isLoadingProject = false;
+  ClientProject? _project; // Le projet sera stocké ici
 
   // VARIABLES MANQUANTES AJOUTÉES
   bool _includesMaterials = false;
@@ -46,26 +50,66 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    print("hohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohoho");
+    
 
-    // Initialiser l'état favori de manière sécurisée
-    _isFavorited = widget.project.isFavorited ?? false;
-
-    // Charger les données après le premier build
+    // MODIFICATION : Charger le projet d'abord
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadOffers();
-    });
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _incrementView();
+      _loadProject();
     });
   }
 
+  // AJOUT : Méthode pour charger le projet
+  Future<void> _loadProject() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingProject = true;
+    });
+
+    try {
+      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      final project = await projectProvider.getProjectById(widget.projectId);
+      
+      if (mounted && project != null) {
+        setState(() {
+          _project = project;
+          _isFavorited = project.isFavorited ?? false;
+          _isLoadingProject = false;
+        });
+        
+        // Charger les offres après avoir chargé le projet
+        _loadOffers();
+        
+        // Incrémenter les vues
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _incrementView();
+        });
+      } else if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+        });
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('Erreur lors du chargement du projet: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+        });
+        Navigator.pop(context);
+      }
+    }
+  }
+
   Future<void> _incrementView() async {
-    if (_viewCounted) return;
+    if (_viewCounted || _project == null) return;
 
     try {
       final projectProvider =
           Provider.of<ProjectProvider>(context, listen: false);
-      await projectProvider.incrementProjectView(widget.project.id);
+      await projectProvider.incrementProjectView(_project!.id);
       _viewCounted = true;
     } catch (e) {
       print('Erreur lors de l\'incrémentation des vues: $e');
@@ -83,7 +127,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   Future<void> _loadOffers() async {
-    if (!mounted) return;
+    if (!mounted || _project == null) return;
 
     setState(() {
       _isLoadingOffers = true;
@@ -91,7 +135,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final offers = await apiService.getProjectOffers(widget.project.id);
+      final offers = await apiService.getProjectOffers(_project!.id);
 
       if (mounted) {
         setState(() {
@@ -172,7 +216,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       };
 
       // Envoyer l'offre
-      await apiService.submitOffer(widget.project.id, offerData);
+      await apiService.submitOffer(_project!.id, offerData);
 
       if (mounted) {
         // FERMER D'ABORD la BottomSheet
@@ -286,11 +330,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   Future<void> _toggleFavorite() async {
     final l10n = AppLocalizations.of(context)!;
 
-    if (!mounted) return;
+    if (!mounted || _project == null) return;
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      await apiService.toggleProjectFavorite(widget.project.id);
+      await apiService.toggleProjectFavorite(_project!.id);
 
       if (mounted) {
         setState(() {
@@ -320,8 +364,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   void _shareProject() {
     final l10n = AppLocalizations.of(context)!;
 
+    if (_project == null) return;
+
     Share.share(
-      l10n.discoverProject(widget.project.title, widget.project.description),
+      l10n.discoverProject(_project!.title, _project!.description),
       subject: 'Projet sur Teyago',
     );
   }
@@ -579,6 +625,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     final isProvider = user?.role == 'provider';
     final isClient = user?.role == 'client';
 
+    // AJOUT : Afficher le loading si le projet n'est pas encore chargé
+    if (_isLoadingProject || _project == null) {
+      return Scaffold(
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
@@ -594,7 +649,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   children: [
                     _buildProjectHeader(),
                     _buildProjectDetails(),
-                    if (widget.project.attachments?.isNotEmpty == true)
+                    if (_project!.attachments?.isNotEmpty == true)
                       _buildAttachments(),
                     if (isClient) ...[
                       _buildTabBar(),
@@ -693,6 +748,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   Widget _buildProjectHeader() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -701,14 +758,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF142FE2).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  widget.project.categoryName,
+                  _project!.categoryName,
                   style: const TextStyle(
                     color: Color(0xFF6366F1),
                     fontSize: 14,
@@ -717,10 +773,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 ),
               ),
               const Spacer(),
-              if (widget.project.urgency != 'low') ...[
+              if (_project!.urgency != 'low') ...[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getUrgencyColor().withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -728,11 +783,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 12,
-                        color: _getUrgencyColor(),
-                      ),
+                      Icon(Icons.access_time, size: 12, color: _getUrgencyColor()),
                       const SizedBox(width: 4),
                       Text(
                         _getUrgencyText(),
@@ -749,85 +800,146 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ],
           ),
           const SizedBox(height: 16),
+          
           Text(
-            widget.project.title,
+            _project!.title,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.person, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                widget.project.clientName,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+          const SizedBox(height: 16),
+          
+          // Card client avec photo et infos
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Row(
+              children: [
+                // Photo de profil du client
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: _project!.clientPicture != null && _project!.clientPicture!.isNotEmpty
+                      ? NetworkImage(_project!.clientPicture!)
+                      : null,
+                  backgroundColor: const Color(0xFF142FE2),
+                  child: _project!.clientPicture == null || _project!.clientPicture!.isEmpty
+                      ? Text(
+                          _project!.clientName.isNotEmpty 
+                              ? _project!.clientName[0].toUpperCase() 
+                              : 'C',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _project!.clientName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          _project!.timeSincePosted ?? l10n.recently,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 16),
-              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                widget.project.timeSincePosted ?? 'Récemment',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+              
+              // Badge client vérifié (optionnel)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l10n.client,
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.account_balance_wallet,
-                    color: Colors.green, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Budget: ${widget.project.budgetDisplay}',
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Budget container
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.account_balance_wallet, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '${l10n.budget}: ${_project!.budgetDisplay}',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (_project!.remotePossible) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    l10n.remoteOk,
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                if (widget.project.remotePossible) ...[
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Remote OK',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildProjectDetails() {
     final l10n = AppLocalizations.of(context)!;
@@ -847,7 +959,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            widget.project.description,
+            _project!.description,
             style: const TextStyle(
               fontSize: 16,
               height: 1.5,
@@ -855,7 +967,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
           ),
           const SizedBox(height: 20),
-          if (widget.project.requiredSkills.isNotEmpty) ...[
+          if (_project!.requiredSkills.isNotEmpty) ...[
             Text(
               l10n.requiredSkills,
               style: const TextStyle(
@@ -868,7 +980,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: widget.project.requiredSkills.map((skill) {
+              children: _project!.requiredSkills.map((skill) {
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -897,7 +1009,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                widget.project.location,
+                _project!.location,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -907,7 +1019,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Icon(Icons.visibility, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                '${widget.project.viewsCount} ${l10n.views}',
+                '${_project!.viewsCount} ${l10n.views}',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -917,7 +1029,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Icon(Icons.mail, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                '${widget.project.offersCount} ${l10n.offers}',
+                '${_project!.offersCount} ${l10n.offers}',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -948,7 +1060,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
           ),
           const SizedBox(height: 12),
-          ...widget.project.attachments!.map((attachment) {
+          ..._project!.attachments!.map((attachment) {
             return _buildAttachmentItem(
               attachment['name'] ?? 'Fichier joint',
               attachment['url'] ?? '',
@@ -1138,7 +1250,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   Color _getUrgencyColor() {
-    switch (widget.project.urgency) {
+    switch (_project!.urgency) {
       case 'high':
         return Colors.red;
       case 'medium':
@@ -1153,7 +1265,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   String _getUrgencyText() {
     final l10n = AppLocalizations.of(context)!;
 
-    switch (widget.project.urgency) {
+    switch (_project!.urgency) {
       case 'high':
         return l10n.urgent;
       case 'medium':
@@ -1166,7 +1278,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   bool _hasUserOffered() {
-    return widget.project.hasUserOffered ?? false;
+    return _project!.hasUserOffered ?? false;
   }
 }
 
