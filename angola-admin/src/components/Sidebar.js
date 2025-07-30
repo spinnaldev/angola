@@ -8,6 +8,7 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  FiMessageCircle,  
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -33,6 +34,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       name: 'Projets', // NOUVEAU
       path: '/projects',
       icon: DocumentTextIcon,
+    },
+    {
+      name: 'Conversations',  // Nouveau menu
+      href: '/conversations',
+      icon: FiMessageCircle,
+      badge: 'new'  // Badge pour indiquer la nouveauté
     },
     {
       name: 'Litiges',

@@ -2,6 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+// Layout
+import DashboardLayout from './layouts/DashboardLayout';
+
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -14,7 +17,12 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
-// Route protégée avec vérification d'authentification
+
+// Pages Conversations
+import ConversationsList from './pages/ConversationsList';
+import ConversationDetail from './pages/ConversationDetail';
+
+// Route protégée avec DashboardLayout
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -22,8 +30,8 @@ const ProtectedRoute = ({ children }) => {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="mt-2 text-text-secondary">Chargement...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Chargement...</p>
         </div>
       </div>
     );
@@ -33,7 +41,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  // Toutes les pages protégées utilisent le DashboardLayout
+  return (
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
+  );
 };
 
 function App() {
@@ -41,10 +54,10 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Route publique */}
+          {/* Route publique (sans DashboardLayout) */}
           <Route path="/login" element={<Login />} />
 
-          {/* Routes protégées */}
+          {/* Routes protégées (toutes avec DashboardLayout) */}
           <Route
             path="/"
             element={
@@ -53,6 +66,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/dashboard"
             element={
@@ -61,6 +75,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/users"
             element={
@@ -69,6 +84,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/providers"
             element={
@@ -95,6 +111,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Routes Conversations - NOUVELLES */}
+          <Route
+            path="/conversations"
+            element={
+              <ProtectedRoute>
+                <ConversationsList />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/conversations/:conversationId"
+            element={
+              <ProtectedRoute>
+                <ConversationDetail />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/disputes"
             element={
@@ -103,6 +139,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/disputes/:id"
             element={
@@ -111,6 +148,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/reports"
             element={
@@ -119,6 +157,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/categories"
             element={
@@ -127,6 +166,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/settings"
             element={
@@ -143,6 +183,5 @@ function App() {
     </AuthProvider>
   );
 }
-
 
 export default App;

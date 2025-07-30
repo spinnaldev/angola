@@ -13,10 +13,19 @@ const api = axios.create({
 // Intercepteur pour ajouter le token d'autorisation à chaque requête
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    // Ne pas ajouter le token pour les endpoints de login
+    const noAuthEndpoints = ['/auth/admin-login/', '/auth/login/', '/auth/register/'];
+    const isNoAuthEndpoint = noAuthEndpoints.some(endpoint => 
+      config.url?.includes(endpoint)
+    );
+    
+    if (!isNoAuthEndpoint) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
+    
     return config;
   },
   (error) => {
@@ -25,14 +34,19 @@ api.interceptors.request.use(
 );
 
 // Intercepteur pour gérer les erreurs d'authentification
+// Intercepteur pour gérer les erreurs d'authentification
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       // Si le token est expiré ou invalide, déconnectez l'utilisateur
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Mais seulement si ce n'est pas une requête de login
+      const isLoginRequest = error.config?.url?.includes('/auth/admin-login/');
+      if (!isLoginRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

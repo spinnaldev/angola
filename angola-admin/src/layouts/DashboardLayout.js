@@ -55,6 +55,20 @@ const DashboardLayout = ({ children }) => {
       activeColor: 'bg-purple-100 text-purple-700 border-r-3 border-purple-600'
     },
     { 
+      path: '/conversations', 
+      label: 'Conversations', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      ),
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
+      hoverColor: 'hover:bg-cyan-100',
+      activeColor: 'bg-cyan-100 text-cyan-700 border-r-3 border-cyan-600',
+      badge: 'new' // Badge pour indiquer la nouveauté
+    },
+    { 
       path: '/disputes', 
       label: 'Litiges', 
       icon: (
@@ -144,7 +158,9 @@ const DashboardLayout = ({ children }) => {
         {/* Navigation - Plus compact */}
         <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || 
+              (item.path === '/conversations' && location.pathname.startsWith('/conversations'));
+            
             return (
               <Link
                 key={item.path}
@@ -169,6 +185,12 @@ const DashboardLayout = ({ children }) => {
                 {!isSidebarCollapsed && (
                   <>
                     <span className="ml-2 truncate text-sm">{item.label}</span>
+                    {/* Badge pour nouveauté */}
+                    {item.badge && (
+                      <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {item.badge}
+                      </span>
+                    )}
                     {isActive && (
                       <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-current"></div>
                     )}
@@ -176,8 +198,13 @@ const DashboardLayout = ({ children }) => {
                 )}
                 {isSidebarCollapsed && (
                   <div className="absolute left-12 z-50 ml-2 hidden group-hover:block">
-                    <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                    <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg flex items-center">
                       {item.label}
+                      {item.badge && (
+                        <span className="ml-1 inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {item.badge}
+                        </span>
+                      )}
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1">
                         <div className="w-1.5 h-1.5 bg-gray-900 rotate-45"></div>
                       </div>
@@ -242,7 +269,10 @@ const DashboardLayout = ({ children }) => {
         <header className="flex h-16 items-center justify-between bg-white px-6 shadow-sm border-b border-gray-200">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              {menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
+              {menuItems.find(item => 
+                item.path === location.pathname || 
+                (item.path === '/conversations' && location.pathname.startsWith('/conversations'))
+              )?.label || 'Dashboard'}
             </h2>
           </div>
           <div className="flex items-center space-x-4">
