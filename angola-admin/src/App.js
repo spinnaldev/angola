@@ -18,11 +18,11 @@ import NotFound from './pages/NotFound';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 
-// Pages Conversations
+// Pages Conversations (nouvelles)
 import ConversationsList from './pages/ConversationsList';
 import ConversationDetail from './pages/ConversationDetail';
 
-// Route protégée avec DashboardLayout
+// Route protégée SANS layout automatique
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -41,11 +41,18 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Toutes les pages protégées utilisent le DashboardLayout
+  // Retourne seulement les enfants sans layout automatique
+  return children;
+};
+
+// Wrapper pour les pages qui ONT BESOIN du DashboardLayout
+const ProtectedPageWithLayout = ({ children }) => {
   return (
-    <DashboardLayout>
-      {children}
-    </DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 };
 
@@ -54,10 +61,10 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Route publique (sans DashboardLayout) */}
+          {/* Route publique (sans layout) */}
           <Route path="/login" element={<Login />} />
 
-          {/* Routes protégées (toutes avec DashboardLayout) */}
+          {/* Routes protégées - Pages qui ont DÉJÀ leur propre layout */}
           <Route
             path="/"
             element={
@@ -112,25 +119,6 @@ function App() {
             }
           />
 
-          {/* Routes Conversations - NOUVELLES */}
-          <Route
-            path="/conversations"
-            element={
-              <ProtectedRoute>
-                <ConversationsList />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/conversations/:conversationId"
-            element={
-              <ProtectedRoute>
-                <ConversationDetail />
-              </ProtectedRoute>
-            }
-          />
-
           <Route
             path="/disputes"
             element={
@@ -173,6 +161,25 @@ function App() {
               <ProtectedRoute>
                 <Settings />
               </ProtectedRoute>
+            }
+          />
+
+          {/* Routes Conversations - AVEC layout explicite car elles n'en ont pas */}
+          <Route
+            path="/conversations"
+            element={
+              <ProtectedPageWithLayout>
+                <ConversationsList />
+              </ProtectedPageWithLayout>
+            }
+          />
+          
+          <Route
+            path="/conversations/:conversationId"
+            element={
+              <ProtectedPageWithLayout>
+                <ConversationDetail />
+              </ProtectedPageWithLayout>
             }
           />
 

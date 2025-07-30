@@ -1,277 +1,193 @@
-INFO 2025-07-08 20:05:14,769 autoreload 17324 24656 Watching for file changes with StatReloader
-INFO 2025-07-08 20:05:36,466 basehttp 17324 5272 "GET /api/users/me/ HTTP/1.1" 200 245
-INFO 2025-07-08 20:41:10,630 autoreload 17324 24656 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 20:41:13,579 autoreload 17188 28300 Watching for file changes with StatReloader
-INFO 2025-07-08 20:41:15,038 autoreload 17188 28300 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 20:41:16,130 autoreload 27412 31388 Watching for file changes with StatReloader
-INFO 2025-07-08 20:46:43,996 autoreload 27412 31388 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 20:46:45,052 autoreload 11056 26920 Watching for file changes with StatReloader
-INFO 2025-07-08 20:48:58,127 autoreload 11056 26920 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 20:49:01,242 autoreload 25912 31344 Watching for file changes with StatReloader
-INFO 2025-07-08 20:52:16,784 autoreload 25912 31344 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 20:52:18,459 autoreload 7096 4592 Watching for file changes with StatReloader
-INFO 2025-07-08 20:52:36,217 autoreload 7096 4592 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
-INFO 2025-07-08 20:52:37,256 autoreload 16464 31000 Watching for file changes with StatReloader
-INFO 2025-07-08 20:56:11,094 autoreload 16464 31000 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 20:56:12,603 autoreload 31644 31568 Watching for file changes with StatReloader
-INFO 2025-07-08 20:56:24,609 autoreload 31644 31568 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 20:56:25,676 autoreload 1400 34140 Watching for file changes with StatReloader
-INFO 2025-07-08 20:57:24,229 autoreload 1400 34140 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
-INFO 2025-07-08 20:57:25,195 autoreload 30208 34436 Watching for file changes with StatReloader
-INFO 2025-07-08 20:57:26,737 autoreload 30208 34436 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
-INFO 2025-07-08 20:57:27,661 autoreload 12864 28304 Watching for file changes with StatReloader
-INFO 2025-07-08 20:57:32,350 autoreload 12864 28304 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
-INFO 2025-07-08 20:57:33,322 autoreload 27528 4468 Watching for file changes with StatReloader
-INFO 2025-07-08 20:58:32,149 autoreload 27528 4468 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 20:58:33,102 autoreload 23700 1864 Watching for file changes with StatReloader
-INFO 2025-07-08 20:59:04,642 autoreload 23700 1864 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 20:59:05,639 autoreload 10236 30356 Watching for file changes with StatReloader
-INFO 2025-07-08 21:09:26,426 autoreload 10236 30356 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 21:09:28,812 autoreload 7344 18648 Watching for file changes with StatReloader
-INFO 2025-07-08 21:09:30,157 autoreload 7344 18648 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 21:09:31,139 autoreload 3724 33868 Watching for file changes with StatReloader
-INFO 2025-07-08 21:10:57,921 autoreload 3724 33868 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 21:10:58,843 autoreload 360 26248 Watching for file changes with StatReloader
-INFO 2025-07-08 21:11:09,635 autoreload 360 26248 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 21:11:10,626 autoreload 32132 22592 Watching for file changes with StatReloader
-INFO 2025-07-08 21:36:01,874 basehttp 32132 1900 "GET /api/current-user/ HTTP/1.1" 200 269
-INFO 2025-07-08 21:44:43,365 basehttp 32132 28508 "GET /api/current-user/ HTTP/1.1" 200 269
-INFO 2025-07-08 21:46:40,737 basehttp 32132 30944 "GET /api/current-user/ HTTP/1.1" 200 269
-INFO 2025-07-08 21:53:18,056 autoreload 32132 22592 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
-INFO 2025-07-08 21:53:20,897 autoreload 26856 27616 Watching for file changes with StatReloader
-INFO 2025-07-08 21:58:01,321 basehttp 26856 19652 "GET /api/current-user/ HTTP/1.1" 200 269
-INFO 2025-07-08 22:04:37,491 basehttp 26856 33304 "GET /api/current-user/ HTTP/1.1" 200 269
-INFO 2025-07-08 22:07:27,787 basehttp 26856 27080 "GET /api/current-user/ HTTP/1.1" 200 269
-WARNING 2025-07-08 22:08:12,050 log 26856 27080 Not Found: /api/users/me/
-WARNING 2025-07-08 22:08:12,051 basehttp 26856 27080 "GET /api/users/me/ HTTP/1.1" 404 23
-WARNING 2025-07-08 22:14:15,199 log 26856 6304 Not Found: /api/users/me/
-WARNING 2025-07-08 22:14:15,200 basehttp 26856 6304 "GET /api/users/me/ HTTP/1.1" 404 23
-WARNING 2025-07-08 22:21:17,926 log 26856 33224 Not Found: /api/users/me/
-WARNING 2025-07-08 22:21:17,926 basehttp 26856 33224 "GET /api/users/me/ HTTP/1.1" 404 23
-WARNING 2025-07-08 22:36:18,656 log 26856 29836 Not Found: /api/users/me/
-WARNING 2025-07-08 22:36:18,656 basehttp 26856 29836 "GET /api/users/me/ HTTP/1.1" 404 23
-INFO 2025-07-08 22:57:45,753 basehttp 26856 24672 "POST /api/auth/login/ HTTP/1.1" 200 736
-WARNING 2025-07-08 22:58:00,489 log 26856 24672 Not Found: /api/users/me/
-WARNING 2025-07-08 22:58:00,490 basehttp 26856 24672 "GET /api/users/me/ HTTP/1.1" 404 23
-INFO 2025-07-08 23:01:39,586 autoreload 26856 27616 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
-INFO 2025-07-08 23:01:43,849 autoreload 5292 25196 Watching for file changes with StatReloader
-INFO 2025-07-08 23:01:59,762 autoreload 5292 25196 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
-INFO 2025-07-08 23:02:01,190 autoreload 30356 29272 Watching for file changes with StatReloader
-INFO 2025-07-08 23:02:35,085 basehttp 30356 32696 "GET /api/user/2 HTTP/1.1" 301 0
-INFO 2025-07-08 23:02:36,736 basehttp 30356 13316 "GET /api/user/2/ HTTP/1.1" 200 323
-INFO 2025-07-12 07:23:39,166 autoreload 29384 15252 Watching for file changes with StatReloader
-INFO 2025-07-19 12:30:31,567 autoreload 5928 28844 Watching for file changes with StatReloader
-INFO 2025-07-19 12:33:07,957 autoreload 8200 23772 Watching for file changes with StatReloader
-INFO 2025-07-19 12:34:53,576 basehttp 8200 23608 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:34:57,035 admin_auth_views 8200 23608 Connexion admin réussie pour: admin@gmail.com
-INFO 2025-07-19 12:34:57,335 basehttp 8200 23608 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
-INFO 2025-07-19 12:34:57,474 basehttp 8200 23608 "OPTIONS /api/api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:34:57,509 basehttp 8200 29300 "OPTIONS /api/api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:34:57,520 basehttp 8200 29300 "OPTIONS /api/api/admin/projects/stats/ HTTP/1.1" 200 0
-WARNING 2025-07-19 12:34:57,574 log 8200 23608 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:34:57,611 basehttp 8200 23608 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:34:57,614 log 8200 29300 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:34:57,615 basehttp 8200 29300 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:34:57,697 log 8200 29300 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:34:57,699 log 8200 23608 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:34:57,699 basehttp 8200 29300 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:34:57,700 basehttp 8200 23608 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-INFO 2025-07-19 12:36:34,616 admin_auth_views 8200 25604 Connexion admin réussie pour: admin@gmail.com
-INFO 2025-07-19 12:36:34,925 basehttp 8200 25604 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
-WARNING 2025-07-19 12:36:35,135 log 8200 25604 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:36:35,136 basehttp 8200 25604 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:36:35,218 log 8200 25604 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:36:35,219 basehttp 8200 25604 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:36:35,262 log 8200 25604 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:36:35,264 basehttp 8200 25604 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:36:35,310 log 8200 25604 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:36:35,311 basehttp 8200 25604 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:38:53,459 log 8200 30216 Unauthorized: /api/admin/dashboard/stats/
-WARNING 2025-07-19 12:38:53,460 basehttp 8200 30216 "GET /api/admin/dashboard/stats/ HTTP/1.1" 401 5289
-INFO 2025-07-19 12:38:53,623 basehttp 8200 26448 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
-INFO 2025-07-19 12:38:53,626 basehttp 8200 30216 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
-INFO 2025-07-19 12:38:53,630 basehttp 8200 24072 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3426
-INFO 2025-07-19 12:38:53,643 basehttp 8200 26448 "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
-INFO 2025-07-19 12:38:53,662 basehttp 8200 24072 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3796
-INFO 2025-07-19 12:38:53,677 basehttp 8200 26448 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
-INFO 2025-07-19 12:38:53,732 basehttp 8200 24072 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
-INFO 2025-07-19 12:38:53,735 basehttp 8200 30216 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 200 87533
-INFO 2025-07-19 12:38:53,745 basehttp 8200 26448 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
-INFO 2025-07-19 12:38:53,757 basehttp 8200 30216 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 200 59
-INFO 2025-07-19 12:38:53,763 basehttp 8200 26448 "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458
-INFO 2025-07-19 12:38:53,767 basehttp 8200 24072 "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
-WARNING 2025-07-19 12:38:53,856 log 8200 24072 Not Found: /favicon.ico
-WARNING 2025-07-19 12:38:53,856 basehttp 8200 24072 "GET /favicon.ico HTTP/1.1" 404 67512
-INFO 2025-07-19 12:38:54,772 basehttp 8200 29144 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3796
-INFO 2025-07-19 12:38:54,772 basehttp 8200 19872 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
-INFO 2025-07-19 12:38:54,773 basehttp 8200 10152 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 200 59
-INFO 2025-07-19 12:38:54,773 basehttp 8200 27396 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
-INFO 2025-07-19 12:38:54,774 basehttp 8200 17232 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
-INFO 2025-07-19 12:38:54,775 basehttp 8200 19872 "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
-INFO 2025-07-19 12:38:54,775 basehttp 8200 580 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 200 87533
-WARNING 2025-07-19 12:39:47,593 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:47,594 log 8200 29548 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:39:47,595 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:39:47,595 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:39:47,628 log 8200 29548 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:39:47,629 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:47,630 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:39:47,630 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:39:48,239 log 8200 30564 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:48,240 log 8200 29548 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:39:48,240 basehttp 8200 30564 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:39:48,240 basehttp 8200 29548 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-WARNING 2025-07-19 12:39:48,266 log 8200 29156 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:48,268 log 8200 30564 Not Found: /api/api/admin/projects/stats/
-WARNING 2025-07-19 12:39:48,268 basehttp 8200 29156 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:39:48,269 basehttp 8200 30564 "GET /api/api/admin/projects/stats/ HTTP/1.1" 404 67566
-INFO 2025-07-19 12:39:58,490 basehttp 8200 8148 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:39:58,491 basehttp 8200 29568 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-WARNING 2025-07-19 12:39:58,508 log 8200 26244 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:58,509 basehttp 8200 26244 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:39:58,531 log 8200 8148 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:39:58,532 basehttp 8200 8148 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-INFO 2025-07-19 12:40:03,122 basehttp 8200 29568 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-WARNING 2025-07-19 12:40:06,978 log 8200 26456 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:40:06,980 basehttp 8200 26456 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-WARNING 2025-07-19 12:40:07,057 log 8200 26456 Not Found: /api/api/admin/dashboard/stats/
-WARNING 2025-07-19 12:40:07,058 basehttp 8200 26456 "GET /api/api/admin/dashboard/stats/ HTTP/1.1" 404 67569
-INFO 2025-07-19 12:40:07,465 basehttp 8200 29568 - Broken pipe from ('127.0.0.1', 55912)
-INFO 2025-07-19 12:40:11,405 basehttp 8200 25720 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:40:15,781 basehttp 8200 25720 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:41:28,515 basehttp 8200 23912 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:41:28,515 basehttp 8200 26832 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 12:41:33,062 basehttp 8200 24860 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:41:36,963 basehttp 8200 26832 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:41:37,853 basehttp 8200 24860 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:41:43,249 basehttp 8200 28844 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:41:43,333 basehttp 8200 26832 - Broken pipe from ('127.0.0.1', 56113)
-INFO 2025-07-19 12:41:45,330 basehttp 8200 24860 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:41:47,453 basehttp 8200 28844 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:41:51,269 basehttp 8200 24860 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:43:33,647 basehttp 8200 29448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:43:35,487 basehttp 8200 26572 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:43:37,991 basehttp 8200 29448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:43:42,174 basehttp 8200 26572 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:49:48,968 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:49:50,848 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:49:53,505 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:49:57,411 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:49:58,108 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:50:02,959 basehttp 8200 27400 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:50:04,032 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:50:11,249 basehttp 8200 16124 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:53:08,025 basehttp 8200 9284 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:53:10,228 basehttp 8200 1412 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:53:12,633 basehttp 8200 9284 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:53:16,958 basehttp 8200 1412 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:53:50,586 basehttp 8200 31540 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:53:52,828 basehttp 8200 24100 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:53:56,324 basehttp 8200 31540 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:53:59,150 basehttp 8200 24100 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:54:36,591 basehttp 8200 29632 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:54:38,908 basehttp 8200 29532 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 12:54:41,081 basehttp 8200 29632 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 12:54:45,720 basehttp 8200 29532 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-ERROR 2025-07-19 12:58:34,317 admin_auth_views 8200 32472 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
-
-ERROR 2025-07-19 12:58:34,320 log 8200 32472 Internal Server Error: /api/auth/admin-login/
-ERROR 2025-07-19 12:58:34,321 basehttp 8200 32472 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
-ERROR 2025-07-19 12:59:30,559 admin_auth_views 8200 30416 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
-
-ERROR 2025-07-19 12:59:30,561 log 8200 30416 Internal Server Error: /api/auth/admin-login/
-ERROR 2025-07-19 12:59:30,562 basehttp 8200 30416 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
-ERROR 2025-07-19 12:59:46,327 admin_auth_views 8200 30416 Erreur lors de la connexion admin: could not translate host name "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com" to address: Name or service not known
-
-ERROR 2025-07-19 12:59:46,329 log 8200 30416 Internal Server Error: /api/auth/admin-login/
-ERROR 2025-07-19 12:59:46,330 basehttp 8200 30416 "POST /api/auth/admin-login/ HTTP/1.1" 500 61
-INFO 2025-07-19 13:01:46,313 admin_auth_views 8200 20612 Connexion admin réussie pour: admin@gmail.com
-INFO 2025-07-19 13:01:46,568 basehttp 8200 20612 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
-INFO 2025-07-19 13:01:50,747 basehttp 8200 17088 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:01:52,612 basehttp 8200 20612 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:01:54,730 basehttp 8200 17088 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:01:58,823 basehttp 8200 20612 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:10:23,910 basehttp 8200 27024 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:10:26,165 basehttp 8200 18452 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:10:28,452 basehttp 8200 27024 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:10:32,304 basehttp 8200 18452 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:11:53,618 basehttp 8200 27164 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:11:56,751 admin_auth_views 8200 27164 Connexion admin réussie pour: admin@gmail.com
-INFO 2025-07-19 13:11:57,020 basehttp 8200 27164 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
-INFO 2025-07-19 13:11:57,048 basehttp 8200 27164 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:11:57,048 basehttp 8200 24984 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:11:57,051 basehttp 8200 27164 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:11:57,051 basehttp 8200 24984 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:12:01,176 basehttp 8200 24984 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:12:03,112 basehttp 8200 27164 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:12:05,417 basehttp 8200 24984 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:12:09,198 basehttp 8200 27164 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:20:18,465 basehttp 8200 15240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:20:21,254 basehttp 8200 17448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:20:23,717 basehttp 8200 15240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:20:26,763 basehttp 8200 31948 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:20:28,325 basehttp 8200 16760 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:20:28,838 basehttp 8200 17448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:20:31,725 basehttp 8200 31948 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:20:35,193 basehttp 8200 16760 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:21:11,288 basehttp 8200 17448 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:21:14,822 admin_auth_views 8200 17448 Connexion admin réussie pour: admin@gmail.com
-INFO 2025-07-19 13:21:15,088 basehttp 8200 17448 "POST /api/auth/admin-login/ HTTP/1.1" 200 964
-INFO 2025-07-19 13:21:15,108 basehttp 8200 17448 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:21:15,108 basehttp 8200 15240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:21:15,111 basehttp 8200 15240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:21:15,111 basehttp 8200 17448 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:21:20,045 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:21:21,477 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:21:24,268 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:21:30,020 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:22:33,637 basehttp 8200 15240 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:33,637 basehttp 8200 17448 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:36,675 basehttp 8200 27324 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:36,675 basehttp 8200 31760 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:37,030 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:22:39,661 basehttp 8200 28576 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:22:40,468 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:22:41,501 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:22:43,573 basehttp 8200 27324 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:43,575 basehttp 8200 27324 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:22:43,921 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:22:44,028 basehttp 8200 28576 "GET /api/admin/projects/stats/ HTTP/1.1" 200 548
-INFO 2025-07-19 13:22:46,026 basehttp 8200 27324 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:22:47,872 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:22:48,180 basehttp 8200 15240 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1082
-INFO 2025-07-19 13:22:48,204 basehttp 8200 27324 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:22:49,084 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:22:51,615 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:22:55,833 basehttp 8200 17448 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2814
-INFO 2025-07-19 13:23:02,640 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:10,083 basehttp 8200 15240 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:23:12,871 basehttp 8200 15240 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:23:14,484 basehttp 8200 17448 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:14,540 basehttp 8200 27324 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:17,554 basehttp 8200 31760 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:22,818 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:33,071 basehttp 8200 27324 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:23:33,072 basehttp 8200 31760 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
-INFO 2025-07-19 13:23:35,111 basehttp 8200 27324 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:23:37,121 basehttp 8200 27324 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
-INFO 2025-07-19 13:23:42,438 basehttp 8200 27324 "GET /api/categories/ HTTP/1.1" 200 4234
-INFO 2025-07-19 13:23:42,591 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:23:44,923 basehttp 8200 17448 "GET /api/categories/ HTTP/1.1" 200 4234
-INFO 2025-07-19 13:23:45,479 basehttp 8200 31760 "GET /api/subcategories/ HTTP/1.1" 200 4423
-INFO 2025-07-19 13:23:50,751 basehttp 8200 17448 "GET /api/subcategories/ HTTP/1.1" 200 4423
-INFO 2025-07-19 13:23:55,506 basehttp 8200 28576 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 1896
-INFO 2025-07-19 13:24:01,519 basehttp 8200 28576 "OPTIONS /api/categories/1/ HTTP/1.1" 200 0
-INFO 2025-07-19 13:24:09,860 basehttp 8200 28576 "DELETE /api/categories/1/ HTTP/1.1" 204 0
-INFO 2025-07-19 13:25:11,184 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 494
-INFO 2025-07-19 13:25:13,659 basehttp 8200 28576 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1012
-INFO 2025-07-19 13:25:15,402 basehttp 8200 17448 "GET /api/admin/projects/stats/ HTTP/1.1" 200 494
-INFO 2025-07-19 13:25:20,950 basehttp 8200 28576 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1012
-WARNING 2025-07-19 19:16:10,643 log 8200 30256 Unauthorized: /api/admin/dashboard/stats/
-WARNING 2025-07-19 19:16:10,646 basehttp 8200 30256 "GET /api/admin/dashboard/stats/ HTTP/1.1" 401 5289
-INFO 2025-07-19 19:16:10,695 basehttp 8200 5876 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3426
-INFO 2025-07-19 19:16:10,699 basehttp 8200 30256 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
-INFO 2025-07-19 19:16:10,719 basehttp 8200 5876 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
-INFO 2025-07-19 19:16:10,720 basehttp 8200 30256 "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
-INFO 2025-07-19 19:16:10,790 basehttp 8200 30256 - Broken pipe from ('127.0.0.1', 57906)
-INFO 2025-07-19 19:16:10,914 basehttp 8200 5876 - Broken pipe from ('127.0.0.1', 57907)
+WARNING 2025-07-30 13:00:56,454 log 29604 25564 Unauthorized: /api/auth/admin-login/
+WARNING 2025-07-30 13:00:56,454 basehttp 29604 25564 "POST /api/auth/admin-login/ HTTP/1.1" 401 72
+INFO 2025-07-30 13:43:31,424 autoreload 29604 26916 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 13:43:35,045 autoreload 32540 29772 Watching for file changes with StatReloader
+INFO 2025-07-30 13:44:17,602 autoreload 32540 29772 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\middleware.py changed, reloading.
+INFO 2025-07-30 13:44:18,882 autoreload 17412 14748 Watching for file changes with StatReloader
+WARNING 2025-07-30 13:45:01,217 admin_auth_views 17412 18020 Django authenticate a échoué mais password check OK - utilisation directe de l'utilisateur
+INFO 2025-07-30 13:45:01,218 admin_auth_views 17412 18020 Connexion admin réussie pour: admin1@gmail.com
+INFO 2025-07-30 13:45:01,228 basehttp 17412 18020 "POST /api/auth/admin-login/ HTTP/1.1" 200 966
+INFO 2025-07-30 13:45:01,338 basehttp 17412 18020 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 13:45:01,342 basehttp 17412 19240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 13:45:01,350 basehttp 17412 19240 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 13:45:01,504 basehttp 17412 19240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 13:45:01,576 basehttp 17412 18020 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 13:45:01,735 basehttp 17412 19240 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 13:45:01,777 basehttp 17412 18020 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 14:16:48,838 autoreload 17412 14748 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:16:52,223 autoreload 9196 32340 Watching for file changes with StatReloader
+INFO 2025-07-30 14:16:57,124 autoreload 9196 32340 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:16:58,559 autoreload 29596 21300 Watching for file changes with StatReloader
+INFO 2025-07-30 14:17:06,996 autoreload 29596 21300 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:17:08,414 autoreload 23476 32392 Watching for file changes with StatReloader
+INFO 2025-07-30 14:17:29,274 autoreload 23476 32392 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:17:30,451 autoreload 9876 4496 Watching for file changes with StatReloader
+INFO 2025-07-30 14:17:44,599 autoreload 9876 4496 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:17:46,005 autoreload 16732 13136 Watching for file changes with StatReloader
+INFO 2025-07-30 14:18:01,078 autoreload 16732 13136 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:18:02,585 autoreload 20608 15960 Watching for file changes with StatReloader
+INFO 2025-07-30 14:18:17,952 autoreload 20608 15960 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:18:19,233 autoreload 20092 25620 Watching for file changes with StatReloader
+INFO 2025-07-30 14:58:31,555 autoreload 20092 25620 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 14:58:35,901 autoreload 24048 29808 Watching for file changes with StatReloader
+INFO 2025-07-30 15:11:37,723 basehttp 24048 23116 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:11:37,748 basehttp 24048 25192 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:11:37,959 basehttp 24048 23116 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:11:37,971 basehttp 24048 25192 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:20:27,028 basehttp 24048 24200 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-30 15:20:27,029 basehttp 24048 26448 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 15:20:27,030 basehttp 24048 24120 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-30 15:20:27,031 basehttp 24048 20784 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+WARNING 2025-07-30 15:20:27,088 log 24048 26448 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:20:27,089 log 24048 24120 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:20:27,090 basehttp 24048 26448 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:20:27,090 basehttp 24048 24120 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:20:27,118 log 24048 24200 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:20:27,120 log 24048 20784 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:20:27,121 basehttp 24048 24200 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:20:27,121 basehttp 24048 20784 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:20:37,199 log 24048 24200 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:20:37,200 log 24048 20784 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:20:37,201 basehttp 24048 24200 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:20:37,201 basehttp 24048 20784 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:20:37,265 log 24048 24120 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:20:37,266 log 24048 24200 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:20:37,267 basehttp 24048 24120 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:20:37,267 basehttp 24048 24200 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:23:05,003 log 24048 31588 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:05,007 basehttp 24048 31588 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:23:05,009 log 24048 31824 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:05,014 basehttp 24048 31824 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:23:05,057 log 24048 31588 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:05,059 basehttp 24048 31588 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:23:05,104 log 24048 31824 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:05,104 basehttp 24048 31824 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+INFO 2025-07-30 15:23:11,977 basehttp 24048 31824 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:23:11,978 basehttp 24048 31588 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:23:12,149 basehttp 24048 31588 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:23:12,185 basehttp 24048 31824 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:23:15,079 basehttp 24048 28500 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:15,080 basehttp 24048 3492 "OPTIONS /api/users/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:15,266 basehttp 24048 3492 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:23:15,436 basehttp 24048 3492 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:23:15,617 basehttp 24048 3492 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:23:16,263 basehttp 24048 28500 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:16,263 basehttp 24048 3492 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:16,530 basehttp 24048 3492 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-30 15:23:16,816 basehttp 24048 3492 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+WARNING 2025-07-30 15:23:17,587 log 24048 3492 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:17,588 log 24048 28500 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:17,589 basehttp 24048 3492 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:23:17,589 basehttp 24048 28500 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:23:17,656 log 24048 17808 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:17,662 log 24048 3492 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:17,664 basehttp 24048 17808 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:23:17,665 basehttp 24048 3492 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+INFO 2025-07-30 15:23:19,197 basehttp 24048 3492 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-30 15:23:19,445 basehttp 24048 3492 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+WARNING 2025-07-30 15:23:26,406 log 24048 25220 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:26,408 log 24048 30220 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:26,409 basehttp 24048 30220 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:23:26,409 basehttp 24048 25220 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:23:26,459 log 24048 25220 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:23:26,461 log 24048 30220 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:23:26,461 basehttp 24048 25220 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:23:26,462 basehttp 24048 30220 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+INFO 2025-07-30 15:23:27,929 basehttp 24048 30220 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:27,929 basehttp 24048 25220 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:28,034 basehttp 24048 25220 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-30 15:23:28,179 basehttp 24048 25220 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-30 15:23:29,116 basehttp 24048 25220 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:29,116 basehttp 24048 30220 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-30 15:23:29,222 basehttp 24048 30220 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-30 15:23:29,337 basehttp 24048 30220 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+WARNING 2025-07-30 15:25:37,268 log 24048 18140 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:25:37,269 basehttp 24048 18140 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:25:37,269 log 24048 30964 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:25:37,270 basehttp 24048 30964 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:25:37,301 log 24048 18140 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:25:37,303 basehttp 24048 18140 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:25:37,303 log 24048 30964 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:25:37,304 basehttp 24048 30964 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+INFO 2025-07-30 15:27:50,115 basehttp 24048 28812 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:27:50,155 basehttp 24048 24448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:27:50,276 basehttp 24048 28812 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:27:50,339 basehttp 24048 24448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:27:50,803 basehttp 24048 28812 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:27:50,828 basehttp 24048 24448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:27:50,964 basehttp 24048 28812 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 15:27:51,024 basehttp 24048 24448 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 15:27:57,809 basehttp 24048 13280 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:27:58,002 basehttp 24048 13280 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:27:58,296 basehttp 24048 13280 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:27:58,463 basehttp 24048 25416 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+WARNING 2025-07-30 15:27:58,620 log 24048 13280 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:27:58,626 basehttp 24048 13280 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:27:58,682 log 24048 13280 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:27:58,684 basehttp 24048 13280 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:27:58,732 log 24048 13280 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:27:58,736 basehttp 24048 13280 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:27:58,784 log 24048 13280 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:27:58,787 basehttp 24048 13280 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+INFO 2025-07-30 15:27:58,825 basehttp 24048 25416 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-30 15:28:00,403 basehttp 24048 25416 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:28:00,563 basehttp 24048 25416 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 15:28:00,919 basehttp 24048 25416 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+WARNING 2025-07-30 15:28:02,990 log 24048 25416 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:28:02,997 log 24048 13280 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:28:03,000 basehttp 24048 25416 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:28:03,003 basehttp 24048 13280 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:28:03,129 log 24048 26112 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:28:03,131 basehttp 24048 26112 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:28:03,132 log 24048 25416 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:28:03,135 basehttp 24048 25416 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:28:12,542 log 24048 27128 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:28:12,544 basehttp 24048 27128 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:28:12,545 log 24048 31956 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:28:12,546 basehttp 24048 31956 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:28:12,668 log 24048 31956 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:28:12,671 basehttp 24048 31956 "GET /api/admin/conversations/? HTTP/1.1" 404 71144
+WARNING 2025-07-30 15:28:12,674 log 24048 27128 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:28:12,676 basehttp 24048 27128 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:28:43,086 log 24048 976 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:28:43,087 basehttp 24048 976 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71162
+WARNING 2025-07-30 15:28:43,249 log 24048 976 Not Found: /favicon.ico
+WARNING 2025-07-30 15:28:43,250 basehttp 24048 976 "GET /favicon.ico HTTP/1.1" 404 71105
+WARNING 2025-07-30 15:29:35,957 log 24048 31460 Not Found: /api/admin/conversations/
+WARNING 2025-07-30 15:29:35,958 basehttp 24048 31460 "GET /api/admin/conversations/ HTTP/1.1" 404 71144
+INFO 2025-07-30 15:32:08,399 autoreload 24048 29808 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:32:12,818 autoreload 26312 28200 Watching for file changes with StatReloader
+WARNING 2025-07-30 15:32:15,445 log 26312 26836 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:32:15,449 basehttp 26312 26836 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71153
+WARNING 2025-07-30 15:32:15,510 log 26312 26836 Not Found: /api/admin/conversations/stats/
+WARNING 2025-07-30 15:32:15,511 basehttp 26312 26836 "GET /api/admin/conversations/stats/ HTTP/1.1" 404 71153
+INFO 2025-07-30 15:32:15,640 basehttp 26312 24288 "GET /api/admin/conversations/? HTTP/1.1" 200 304
+INFO 2025-07-30 15:32:15,779 basehttp 26312 24288 "GET /api/admin/conversations/? HTTP/1.1" 200 304
+INFO 2025-07-30 15:33:20,877 autoreload 26312 28200 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 15:33:22,499 autoreload 11660 30200 Watching for file changes with StatReloader
+INFO 2025-07-30 15:33:58,360 autoreload 11660 30200 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:33:59,588 autoreload 27364 19808 Watching for file changes with StatReloader
+INFO 2025-07-30 15:34:04,312 autoreload 27364 19808 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:34:05,631 autoreload 12520 23924 Watching for file changes with StatReloader
+INFO 2025-07-30 15:34:21,813 autoreload 12520 23924 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:34:23,950 autoreload 32276 26232 Watching for file changes with StatReloader
+INFO 2025-07-30 15:35:19,734 autoreload 32276 26232 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:35:21,186 autoreload 22400 19280 Watching for file changes with StatReloader
+INFO 2025-07-30 15:35:28,323 autoreload 22400 19280 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:35:29,588 autoreload 28860 8456 Watching for file changes with StatReloader
+INFO 2025-07-30 15:35:37,427 basehttp 28860 29272 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:35:37,431 basehttp 28860 30232 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:35:37,578 basehttp 28860 29272 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:35:37,594 basehttp 28860 30232 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:39:21,365 autoreload 28860 8456 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 15:39:26,349 autoreload 24020 29188 Watching for file changes with StatReloader
+INFO 2025-07-30 15:39:29,634 autoreload 24020 29188 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 15:39:31,074 autoreload 27520 27260 Watching for file changes with StatReloader
+INFO 2025-07-30 15:39:33,234 basehttp 27520 24448 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:39:33,252 basehttp 27520 17696 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:39:33,523 basehttp 27520 24448 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:39:33,595 basehttp 27520 17696 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:40:07,425 basehttp 27520 13076 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:40:07,444 basehttp 27520 18736 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:40:07,574 basehttp 27520 13076 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 15:40:07,593 basehttp 27520 18736 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137

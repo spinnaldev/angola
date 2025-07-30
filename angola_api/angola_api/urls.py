@@ -30,7 +30,7 @@ from operation.admin_views import (
     admin_dashboard_stats, admin_recent_activity
 )
 from operation.admin_auth_views import (
-    admin_login, check_admin_status, admin_setup_status
+    AdminConversationViewSet, admin_login, bulk_mark_read, check_admin_status, admin_setup_status, conversation_overview, delete_message
 )
 
 router = DefaultRouter()
@@ -63,6 +63,8 @@ router.register(r'api/project-favorites', views.ProjectFavoriteViewSet, basename
 # NOUVEAUX ENDPOINTS ADMIN
 router.register(r'api/admin/projects', AdminProjectViewSet, basename='admin-projects')
 router.register(r'api/admin/disputes', AdminDisputeViewSet, basename='admin-disputes')
+
+router.register(r'api/admin/conversations', AdminConversationViewSet, basename='admin-conversations')
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
@@ -100,6 +102,13 @@ urlpatterns = [
     path('api/admin/dashboard/stats/', admin_dashboard_stats, name='admin-dashboard-stats'),
     path('api/admin/dashboard/recent-activity/', admin_recent_activity, name='admin-recent-activity'),
 
+
+    # URLs Admin Conversations
+    path('api/admin/conversations/overview/', conversation_overview, name='admin-conversations-overview'),
+    path('api/admin/conversations/stats/', AdminConversationViewSet.as_view({'get': 'stats'}), name='admin-conversations-stats'),
+    path('api/admin/messages/<int:message_id>/delete/', delete_message, name='admin-delete-message'),
+    path('api/admin/conversations/bulk-mark-read/', bulk_mark_read, name='admin-bulk-mark-read'),
+    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

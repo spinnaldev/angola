@@ -66,7 +66,7 @@ const DashboardLayout = ({ children }) => {
       bgColor: 'bg-cyan-50',
       hoverColor: 'hover:bg-cyan-100',
       activeColor: 'bg-cyan-100 text-cyan-700 border-r-3 border-cyan-600',
-      badge: 'new' // Badge pour indiquer la nouveauté
+      // badge: 'new' // Badge pour indiquer la nouveauté
     },
     { 
       path: '/disputes', 

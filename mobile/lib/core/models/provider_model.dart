@@ -13,7 +13,7 @@ class ProviderModel {
   final bool isFeatured;
   final bool isVerified;
   final double trustScore;
-
+  double? distance;
 
   ProviderModel({
     required this.id,
@@ -30,6 +30,7 @@ class ProviderModel {
     this.isFeatured = false,
     this.isVerified = false,
     this.trustScore = 0.0,
+    this.distance,
   });
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) {

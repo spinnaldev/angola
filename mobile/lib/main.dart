@@ -40,6 +40,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'providers/location_provider.dart';
 import 'providers/offers_provider.dart';
 import 'core/services/websocket_service.dart';
+import 'core/services/improved_location_service.dart';
+import 'providers/improved_nearby_provider.dart';
+
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
@@ -165,6 +168,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) =>
               LocationProvider(), // Nouveau provider pour la localisation
+        ),
+        ChangeNotifierProvider(create: (_) => ImprovedLocationService()),
+        ChangeNotifierProvider(
+          create: (context) => ImprovedNearbyProvider(
+            context.read<ImprovedLocationService>(),
+            context.read<ApiService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => DisputeProvider(

@@ -427,3 +427,13 @@ LOGGING = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_CHARSET = 'utf-8'
+
+
+# {
+#     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
+#     "NAME": "angola_db_fzta",
+#     "USER": "angola_db_user",
+#     "HOST": "dpg-d1gjocmmcj7s73csa70g-a.oregon-postgres.render.com",
+#     "PORT": "5432",
+#     "PASS": "4qwsXj8nrYPbWCpT9sFnT3M14WcLTwpy"
+# }
