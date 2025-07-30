@@ -139,7 +139,18 @@ class _ImprovedMapScreenState extends State<ImprovedMapScreen>
   Widget _buildMap() {
     return Consumer2<ImprovedLocationService, ImprovedNearbyProvider>(
       builder: (context, locationService, nearbyProvider, child) {
-        LatLng initialPosition = locationService.getCurrentOrDefaultPosition();
+        // Utiliser Google Maps LatLng directement
+        LatLng initialPosition;
+        
+        if (locationService.hasValidPosition) {
+          initialPosition = LatLng(
+            locationService.currentPosition!.latitude,
+            locationService.currentPosition!.longitude,
+          );
+        } else {
+          // Position par défaut: Cotonou, Bénin
+          initialPosition = const LatLng(6.3728, 2.3905);
+        }
         
         return GoogleMap(
           initialCameraPosition: CameraPosition(

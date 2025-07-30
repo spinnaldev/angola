@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart'; // AJOUT pour la localisation
+import 'package:teyago/core/models/provider_model.dart';
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
@@ -28,6 +29,9 @@ import 'search_results_screen.dart';
 import '../widgets/service_image.dart'; 
 import '../../providers/notification_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../core/services/improved_location_service.dart';
+import '../../providers/improved_nearby_provider.dart';
+import 'dart:math' show Random;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -171,6 +175,25 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _convertProvidersToServices(List<ProviderModel> providers) {
+      _nearbyServices = providers.take(6).map((provider) {
+        return Service(
+          id: 200 + provider.id,
+          title: provider.services.isNotEmpty ? provider.services.first.title : provider.name,
+          description: provider.description,
+          imageUrl: provider.profileImageUrl.isNotEmpty ? provider.profileImageUrl : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+          rating: provider.rating,
+          reviewCount: provider.reviewCount,
+          provider_id: provider.id,
+          businessType: provider.businessType,
+          price: 50.0 + Random().nextInt(150).toDouble(),
+          categoryId: 1 + Random().nextInt(5),
+          priceType: Random().nextBool() ? 'quote' : 'fixed',
+          distance: provider.distance,
+        );
+      }).toList();
+    }
+    
   // MÉTHODE AMÉLIORÉE _loadServicesData avec gestion de la localisation
   Future<void> _loadServicesData() async {
     final categoryProvider =
@@ -184,61 +207,92 @@ class _HomeScreenState extends State<HomeScreen>
       _isLocationLoading = true;
     });
 
-    final locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
+    final locationService = Provider.of<ImprovedLocationService>(context, listen: false);
+    final nearbyProvider = Provider.of<ImprovedNearbyProvider>(context, listen: false);
 
     try {
-      // Vérifier les services de localisation
-      bool servicesEnabled = await locationProvider.checkLocationServices();
-      if (!servicesEnabled) {
-        setState(() {
-          _locationPermissionDenied = true;
-          _isLocationLoading = false;
-        });
-        // Continuer sans localisation
-        await _loadServicesWithoutLocation();
-        return;
-      }
-
-      // Demander la permission et récupérer la position
-      bool permissionGranted = await locationProvider.requestLocationPermission();
-      if (!permissionGranted) {
-        setState(() {
-          _locationPermissionDenied = true;
-          _isLocationLoading = false;
-        });
-        // Continuer sans localisation
-        await _loadServicesWithoutLocation();
-        return;
-      }
-
-      // Récupérer la position actuelle
-      bool locationSuccess = await locationProvider.getCurrentLocation();
-      if (locationSuccess && locationProvider.currentPosition != null) {
+      bool locationSuccess = await locationService.getCurrentLocation();
+      if (locationSuccess && locationService.hasValidPosition) {
         setState(() {
           _locationPermissionDenied = false;
           _isLocationLoading = false;
         });
         
-        // Récupérer le nom de la ville (optionnel)
-        await _getCurrentLocationName(locationProvider.currentPosition!);
-
-        // Charger les prestataires à proximité
-        await _loadNearbyProviders(locationProvider.currentPosition!);
+        await nearbyProvider.searchNearbyProviders(radius: 10.0, forceRefresh: true);
+        _convertProvidersToServices(nearbyProvider.nearbyProviders);
+        await _getCurrentLocationName(locationService.currentPosition!);
       } else {
         setState(() {
+          _locationPermissionDenied = true;
           _isLocationLoading = false;
         });
-        // Continuer sans localisation
         await _loadServicesWithoutLocation();
       }
     } catch (e) {
-      print('Erreur lors de la récupération de la localisation: $e');
+      print('Erreur localisation: $e');
       setState(() {
         _isLocationLoading = false;
+        _locationPermissionDenied = true;
       });
       await _loadServicesWithoutLocation();
     }
+
+    
+    // final locationProvider =
+    //     Provider.of<LocationProvider>(context, listen: false);
+
+    // try {
+    //   // Vérifier les services de localisation
+    //   bool servicesEnabled = await locationProvider.checkLocationServices();
+    //   if (!servicesEnabled) {
+    //     setState(() {
+    //       _locationPermissionDenied = true;
+    //       _isLocationLoading = false;
+    //     });
+    //     // Continuer sans localisation
+    //     await _loadServicesWithoutLocation();
+    //     return;
+    //   }
+
+    //   // Demander la permission et récupérer la position
+    //   bool permissionGranted = await locationProvider.requestLocationPermission();
+    //   if (!permissionGranted) {
+    //     setState(() {
+    //       _locationPermissionDenied = true;
+    //       _isLocationLoading = false;
+    //     });
+    //     // Continuer sans localisation
+    //     await _loadServicesWithoutLocation();
+    //     return;
+    //   }
+
+    //   // Récupérer la position actuelle
+    //   bool locationSuccess = await locationProvider.getCurrentLocation();
+    //   if (locationSuccess && locationProvider.currentPosition != null) {
+    //     setState(() {
+    //       _locationPermissionDenied = false;
+    //       _isLocationLoading = false;
+    //     });
+        
+    //     // Récupérer le nom de la ville (optionnel)
+    //     await _getCurrentLocationName(locationProvider.currentPosition!);
+
+    //     // Charger les prestataires à proximité
+    //     await _loadNearbyProviders(locationProvider.currentPosition!);
+    //   } else {
+    //     setState(() {
+    //       _isLocationLoading = false;
+    //     });
+    //     // Continuer sans localisation
+    //     await _loadServicesWithoutLocation();
+    //   }
+    // } catch (e) {
+    //   print('Erreur lors de la récupération de la localisation: $e');
+    //   setState(() {
+    //     _isLocationLoading = false;
+    //   });
+    //   await _loadServicesWithoutLocation();
+    // }
 
     // Charger les autres services (récents, mieux notés)
     final serviceProvider =

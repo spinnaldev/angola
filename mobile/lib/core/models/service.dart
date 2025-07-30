@@ -18,6 +18,7 @@ class Service {
   final bool isAvailable;
   final List<GalleryImage> galleryImages;
   final List<ServiceOption> options;
+  double? distance;
 
   Service({
     required this.id,
@@ -35,6 +36,7 @@ class Service {
     this.isAvailable = true,
     this.galleryImages = const [],
     this.options = const [],
+    this.distance,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {

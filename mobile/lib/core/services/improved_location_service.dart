@@ -25,7 +25,7 @@ class ImprovedLocationService with ChangeNotifier {
   // Configuration
   static const Duration _timeoutDuration = Duration(seconds: 15);
   static const Duration _cacheValidityDuration = Duration(minutes: 5);
-  static const double _minimumDistanceFilter = 100; // mètres
+  static const int _minimumDistanceFilter = 100; // mètres
   
   // Cache timestamp
   DateTime? _lastPositionUpdate;
@@ -96,7 +96,7 @@ class ImprovedLocationService with ChangeNotifier {
     try {
       const LocationSettings locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: _minimumDistanceFilter.toInt(),
+        distanceFilter: _minimumDistanceFilter,
       );
 
       _positionStreamSubscription = Geolocator.getPositionStream(
@@ -312,9 +312,9 @@ class ImprovedLocationService with ChangeNotifier {
   }
 
   // Méthode utilitaire pour obtenir une position de fallback
-  LatLng getDefaultPosition() {
+  ({double latitude, double longitude}) getDefaultPosition() {
     // Position par défaut: Cotonou, Bénin
-    return const LatLng(6.3728, 2.3905);
+    return (latitude: 6.3728, longitude: 2.3905);
   }
 
   // Méthode pour forcer un refresh de la position
@@ -325,33 +325,33 @@ class ImprovedLocationService with ChangeNotifier {
 
 // Extension pour faciliter l'utilisation
 extension LocationServiceExtension on ImprovedLocationService {
-  // Obtenir la position ou la position par défaut
-  LatLng getCurrentOrDefaultPosition() {
+  // Obtenir la position Google Maps ou la position par défaut
+  getCurrentOrDefaultPosition() {
     if (hasValidPosition) {
-      return LatLng(currentPosition!.latitude, currentPosition!.longitude);
+      return (latitude: currentPosition!.latitude, longitude: currentPosition!.longitude);
     }
     return getDefaultPosition();
   }
 }
 
-// Classe utilitaire pour les coordonnées
-class LatLng {
-  final double latitude;
-  final double longitude;
+// // Classe utilitaire pour les coordonnées
+// class LatLng {
+//   final double latitude;
+//   final double longitude;
 
-  const LatLng(this.latitude, this.longitude);
+//   const LatLng(this.latitude, this.longitude);
 
-  @override
-  String toString() => 'LatLng($latitude, $longitude)';
+//   @override
+//   String toString() => 'LatLng($latitude, $longitude)';
   
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LatLng &&
-          runtimeType == other.runtimeType &&
-          latitude == other.latitude &&
-          longitude == other.longitude;
+//   @override
+//   bool operator ==(Object other) =>
+//       identical(this, other) ||
+//       other is LatLng &&
+//           runtimeType == other.runtimeType &&
+//           latitude == other.latitude &&
+//           longitude == other.longitude;
 
-  @override
-  int get hashCode => latitude.hashCode ^ longitude.hashCode;
-}
+//   @override
+//   int get hashCode => latitude.hashCode ^ longitude.hashCode;
+// }

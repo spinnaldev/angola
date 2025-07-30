@@ -181,7 +181,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
                     ),
                   ),
                   child: Text(
-                    widget.provider.businessType,
+                    _getLocalizedBusinessType(),
                     style: TextStyle(
                       color: _getBusinessTypeColor(),
                       fontWeight: FontWeight.w600,
@@ -281,15 +281,40 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   Color _getBusinessTypeColor() {
     switch (widget.provider.businessType.toLowerCase()) {
       case 'entreprise':
+      case 'company':
         return Colors.blue;
       case 'freelance':
+      case 'freelancer':
         return Colors.orange;
+      case 'particulier':
+      case 'individual':
+        return Colors.green;
       default:
         return Colors.grey;
     }
   }
 
+  String _getLocalizedBusinessType() {
+    final localizations = AppLocalizations.of(context)!;
+    switch (widget.provider.businessType.toLowerCase()) {
+      case 'entreprise':
+      case 'company':
+        return localizations.company;
+      case 'freelance':
+      case 'freelancer':
+        return localizations.freelance;
+      case 'particulier':
+      case 'individual':
+        return localizations.individual;
+      default:
+        return widget.provider.businessType.isNotEmpty 
+            ? widget.provider.businessType 
+            : localizations.unknown;
+    }
+  }
+
   Widget _buildTabBar() {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -298,10 +323,10 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
       ),
       child: TabBar(
         controller: _tabController,
-        tabs: const [
-          Tab(text: 'Aperçu'),
-          Tab(text: 'Services'),
-          Tab(text: 'Avis'),
+        tabs: [
+          Tab(text: localizations.overview),
+          Tab(text: localizations.services),
+          Tab(text: localizations.reviews),
         ],
         labelColor: Theme.of(context).primaryColor,
         unselectedLabelColor: Colors.grey,
@@ -323,6 +348,8 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   }
 
   Widget _buildOverviewTab() {
+    final localizations = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(20),
@@ -332,7 +359,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           // Description
           if (widget.provider.description.isNotEmpty) ...[
             Text(
-              'Description',
+              localizations.description,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -344,46 +371,67 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
               textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 20),
+          ] else ...[
+            Text(
+              localizations.description,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              localizations.noDescriptionAvailable,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
           
           // Informations de contact
           Text(
-            'Informations de contact',
+            localizations.contactInformation,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
           
-          if (widget.provider.phone?.isNotEmpty == true)
-            _buildContactItem(
-              Icons.phone,
-              'Téléphone',
-              widget.provider.phone!,
-              () => _launchPhone(widget.provider.phone!),
-            ),
-          
-          if (widget.provider.email?.isNotEmpty == true)
-            _buildContactItem(
-              Icons.email,
-              'Email',
-              widget.provider.email!,
-              () => _launchEmail(widget.provider.email!),
-            ),
-          
+          // Adresse (si disponible)
           if (widget.provider.address?.isNotEmpty == true)
             _buildContactItem(
               Icons.location_on,
-              'Adresse',
+              localizations.address,
               widget.provider.address!,
               () => _launchMaps(),
+            )
+          else
+            _buildNoContactInfoItem(
+              Icons.location_on,
+              localizations.address,
+              localizations.notAvailable,
             ),
+          
+          // Note: phone et email ne sont pas dans ProviderModel
+          // Affichage d'un message générique
+          _buildNoContactInfoItem(
+            Icons.phone,
+            localizations.phone,
+            localizations.contactProvider,
+          ),
+          
+          _buildNoContactInfoItem(
+            Icons.email,
+            localizations.email,
+            localizations.contactProvider,
+          ),
           
           const SizedBox(height: 20),
           
           // Statistiques
           Text(
-            'Statistiques',
+            localizations.statistics,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -394,16 +442,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Prestations',
-                  '${widget.provider.completedJobs ?? 0}',
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Avis',
+                  localizations.reviewsCount,
                   '${widget.provider.reviewCount}',
                   Icons.star,
                   Colors.amber,
@@ -412,14 +451,52 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Années',
-                  '${widget.provider.experienceYears ?? 0}',
-                  Icons.calendar_today,
-                  Colors.blue,
+                  localizations.trustScore,
+                  widget.provider.trustScore > 0 
+                      ? '${widget.provider.trustScore.toStringAsFixed(1)}/5'
+                      : localizations.notAvailable,
+                  Icons.shield,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  localizations.companyType,
+                  _getLocalizedBusinessType(),
+                  Icons.business,
+                  _getBusinessTypeColor(),
                 ),
               ),
             ],
           ),
+          
+          // Si le prestataire est mis en avant
+          if (widget.provider.isFeatured) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Text(
+                    localizations.featured,
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -468,6 +545,42 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
     );
   }
 
+  Widget _buildNoContactInfoItem(IconData icon, String label, String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.grey[400], size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -483,17 +596,21 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 10,
               color: Colors.grey[600],
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -501,6 +618,8 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   }
 
   Widget _buildServicesTab() {
+    final localizations = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(20),
@@ -508,7 +627,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Services proposés',
+            localizations.servicesOffered,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -528,7 +647,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Aucun service listé',
+                    localizations.noServicesListed,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 16,
@@ -542,7 +661,9 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
     );
   }
 
-  Widget _buildServiceItem(dynamic service) {
+  Widget _buildServiceItem(ServiceItem service) {
+    final localizations = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -555,34 +676,39 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            service.title ?? 'Service',
+            service.title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (service.description?.isNotEmpty == true) ...[
-            const SizedBox(height: 8),
-            Text(
-              service.description!,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-          if (service.price != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'À partir de ${service.price}€',
-              style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  service.priceType,
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildReviewsTab() {
+    final localizations = AppLocalizations.of(context)!;
+    
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(20),
@@ -593,7 +719,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           Row(
             children: [
               Text(
-                'Avis clients',
+                localizations.clientReviews,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -623,7 +749,6 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           const SizedBox(height: 16),
           
           // Placeholder pour les avis
-          // Dans un vrai projet, vous devriez récupérer les avis depuis l'API
           _buildReviewPlaceholder(),
         ],
       ),
@@ -631,6 +756,8 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   }
 
   Widget _buildReviewPlaceholder() {
+    final localizations = AppLocalizations.of(context)!;
+    
     return Center(
       child: Column(
         children: [
@@ -641,7 +768,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           ),
           const SizedBox(height: 16),
           Text(
-            'Chargement des avis...',
+            localizations.loadingReviews,
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 16,
@@ -649,11 +776,12 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
           ),
           const SizedBox(height: 8),
           Text(
-            'Les avis détaillés seront affichés ici',
+            localizations.detailedReviewsWillBeShown,
             style: TextStyle(
               color: Colors.grey[500],
               fontSize: 12,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -661,6 +789,8 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   }
 
   Widget _buildActionButtons() {
+    final localizations = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -675,30 +805,6 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
       ),
       child: Row(
         children: [
-          // Bouton Appeler
-          if (widget.provider.phone?.isNotEmpty == true)
-            Expanded(
-              child: ScaleTransition(
-                scale: _buttonAnimation,
-                child: ElevatedButton.icon(
-                  onPressed: () => _launchPhone(widget.provider.phone!),
-                  icon: const Icon(Icons.phone),
-                  label: const Text('Appeler'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          
-          if (widget.provider.phone?.isNotEmpty == true)
-            const SizedBox(width: 12),
-          
           // Bouton Message
           Expanded(
             child: ScaleTransition(
@@ -706,7 +812,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
               child: ElevatedButton.icon(
                 onPressed: _openChat,
                 icon: const Icon(Icons.message),
-                label: const Text('Message'),
+                label: Text(localizations.message),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
@@ -718,26 +824,35 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
               ),
             ),
           ),
+          
+          const SizedBox(width: 12),
+          
+          // Bouton Voir Profil
+          Expanded(
+            child: ScaleTransition(
+              scale: _buttonAnimation,
+              child: ElevatedButton.icon(
+                onPressed: _viewProfile,
+                icon: const Icon(Icons.person),
+                label: Text(localizations.viewProfile),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[100],
+                  foregroundColor: Colors.grey[700],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey[300]!),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   // Méthodes d'action
-  void _launchPhone(String phone) async {
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  void _launchEmail(String email) async {
-    final uri = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
   void _launchMaps() async {
     if (widget.provider.latitude != null && widget.provider.longitude != null) {
       final uri = Uri.parse(
@@ -752,6 +867,24 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
   void _openChat() {
     // Implémenter l'ouverture du chat
     Navigator.of(context).pop(); // Fermer le bottom sheet
-    // Navigator.push pour aller au chat
+    // Ajouter navigation vers le chat
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Chat avec ${widget.provider.name}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _viewProfile() {
+    // Implémenter la navigation vers le profil complet
+    Navigator.of(context).pop(); // Fermer le bottom sheet
+    // Ajouter navigation vers le profil
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Profil de ${widget.provider.name}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }
