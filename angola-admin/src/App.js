@@ -17,7 +17,7 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
-
+import NotificationsPage from './pages/NotificationsPage'
 // Pages Conversations (nouvelles)
 import ConversationsList from './pages/ConversationsList';
 import ConversationDetail from './pages/ConversationDetail';
@@ -173,7 +173,14 @@ function App() {
               </ProtectedPageWithLayout>
             }
           />
-          
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedPageWithLayout>
+                <NotificationsPage />
+              </ProtectedPageWithLayout>
+            }
+          />
           <Route
             path="/conversations/:conversationId"
             element={

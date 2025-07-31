@@ -1,3 +1,5 @@
+import random
+import string
 from django.db import models
 from django.utils import timezone
 # Create your models here.
@@ -6,7 +8,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class TimeStampMixin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,6 +39,10 @@ class User(AbstractUser, TimeStampMixin):
     def __str__(self):
         return self.email
 
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+    
 class ResetPasswordCode(models.Model):
     """
     Modèle pour stocker les codes de réinitialisation de mot de passe
@@ -662,6 +668,10 @@ class AdminAction(models.Model):
         ('user_suspend', 'Suspension utilisateur'),
         ('provider_verify', 'Vérification prestataire'),
         ('bulk_action', 'Action groupée'),
+        ('provider_verification_approve', 'Approbation vérification prestataire'),
+        ('provider_verification_reject', 'Rejet vérification prestataire'),
+        ('phone_verification_reset', 'Reset vérification téléphone'),
+        ('verification_bulk_action', 'Action groupée vérifications'),
     )
     
     admin_user = models.ForeignKey(
@@ -783,3 +793,389 @@ class SystemSettings(models.Model):
             return json.loads(self.value)
         else:
             return self.value
+        
+
+##########################################################################################################
+########################################## VERIFICATIO PROFIL ##################################
+
+class ProviderVerification(TimeStampMixin):
+    """
+    Modèle pour la vérification des prestataires avec documents
+    Gère la vérification par carte d'identité (2 faces) ou passeport
+    """
+    
+    VERIFICATION_STATUS_CHOICES = (
+        ('not_started', 'Non commencé'),
+        ('pending', 'En attente'),
+        ('verified', 'Vérifié'),
+        ('rejected', 'Rejeté'),
+    )
+    
+    DOCUMENT_TYPE_CHOICES = (
+        ('id_card', 'Carte d\'identité'),
+        ('passport', 'Passeport'),
+    )
+    
+    provider = models.OneToOneField(
+        Provider, 
+        on_delete=models.CASCADE, 
+        related_name='verification',
+        verbose_name="Prestataire"
+    )
+    
+  
+    is_business = models.BooleanField(
+        default=False,
+        verbose_name="Est une entreprise"
+    )
+    
+    document_type = models.CharField(
+        max_length=20, 
+        choices=DOCUMENT_TYPE_CHOICES, 
+        default='id_card',
+        verbose_name="Type de document"
+    )
+  
+    business_name = models.CharField(
+        max_length=200, 
+        blank=True,
+        verbose_name="Nom de l'entreprise"
+    )
+    business_nif = models.CharField(
+        max_length=50, 
+        blank=True,
+        verbose_name="NIF de l'entreprise",
+        help_text="Numéro d'identification fiscale"
+    )
+    business_registration_number = models.CharField(
+        max_length=100, 
+        blank=True,
+        verbose_name="Numéro d'enregistrement",
+        help_text="Numéro RCCM ou équivalent"
+    )
+    
+
+    id_card_front = models.ImageField(
+        upload_to='verifications/id_cards/front/', 
+        null=True, 
+        blank=True,
+        verbose_name="Carte d'identité (recto)"
+    )
+    id_card_back = models.ImageField(
+        upload_to='verifications/id_cards/back/', 
+        null=True, 
+        blank=True,
+        verbose_name="Carte d'identité (verso)"
+    )
+    passport_image = models.ImageField(
+        upload_to='verifications/passports/', 
+        null=True, 
+        blank=True,
+        verbose_name="Photo du passeport"
+    )
+   
+    business_registration_doc = models.FileField(
+        upload_to='verifications/business_docs/', 
+        null=True, 
+        blank=True,
+        verbose_name="Document d'enregistrement d'entreprise"
+    )
+    
+
+    verification_status = models.CharField(
+        max_length=20, 
+        choices=VERIFICATION_STATUS_CHOICES, 
+        default='not_started',
+        verbose_name="Statut de vérification"
+    )
+    
+    # Dates importantes
+    submitted_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Date de soumission"
+    )
+    verified_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Date de vérification"
+    )
+    
+    # Admin qui a validé
+    verified_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='verified_providers',
+        verbose_name="Vérifié par"
+    )
+    
+    # Raison de rejet et notes admin
+    rejection_reason = models.TextField(
+        blank=True,
+        verbose_name="Raison du rejet"
+    )
+    admin_notes = models.TextField(
+        blank=True,
+        verbose_name="Notes administratives"
+    )
+    
+    
+    class Meta:
+        verbose_name = "Vérification Prestataire"
+        verbose_name_plural = "Vérifications Prestataires"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Vérification {self.provider.user.username} - {self.get_verification_status_display()}"
+    
+    
+    def clean(self):
+        """Validation personnalisée"""
+        from django.core.exceptions import ValidationError
+        
+        # Vérifier que les documents requis sont fournis
+        if self.document_type == 'id_card':
+            if not self.id_card_front or not self.id_card_back:
+                raise ValidationError({
+                    'id_card_front': 'Les deux faces de la carte d\'identité sont requises',
+                    'id_card_back': 'Les deux faces de la carte d\'identité sont requises'
+                })
+        elif self.document_type == 'passport':
+            if not self.passport_image:
+                raise ValidationError({
+                    'passport_image': 'L\'image du passeport est requise'
+                })
+        
+        # Vérifier les informations entreprise si nécessaire
+        if self.is_business:
+            if not self.business_name:
+                raise ValidationError({
+                    'business_name': 'Le nom de l\'entreprise est requis pour les entreprises'
+                })
+    
+    def save(self, *args, **kwargs):
+        """Logique personnalisée lors de la sauvegarde"""
+        
+        # Mettre à jour la date de soumission si le statut passe à pending
+        if (self.verification_status == 'pending' and 
+            self.submitted_at is None):
+            self.submitted_at = timezone.now()
+        
+        # Mettre à jour la date de vérification si approuvé
+        if (self.verification_status == 'verified' and 
+            self.verified_at is None):
+            self.verified_at = timezone.now()
+        
+        # Sauvegarder d'abord
+        super().save(*args, **kwargs)
+        
+        # Mettre à jour le statut is_verified du Provider
+        self._update_provider_verification_status()
+    
+    def _update_provider_verification_status(self):
+        """Met à jour le statut is_verified du Provider"""
+        if self.verification_status == 'verified':
+            self.provider.is_verified = True
+        else:
+            self.provider.is_verified = False
+        
+        # Éviter la récursion infinie
+        Provider.objects.filter(id=self.provider.id).update(
+            is_verified=self.provider.is_verified
+        )
+    
+    def is_pending(self):
+        """Vérifie si la vérification est en attente"""
+        return self.verification_status == 'pending'
+    
+    def is_verified(self):
+        """Vérifie si la vérification est approuvée"""
+        return self.verification_status == 'verified'
+    
+    def is_rejected(self):
+        """Vérifie si la vérification est rejetée"""
+        return self.verification_status == 'rejected'
+    
+    def can_be_modified(self):
+        """Vérifie si la vérification peut être modifiée"""
+        return self.verification_status in ['not_started', 'rejected']
+    
+    def get_documents_list(self):
+        """Retourne la liste des documents fournis"""
+        documents = []
+        if self.id_card_front:
+            documents.append('Carte d\'identité (recto)')
+        if self.id_card_back:
+            documents.append('Carte d\'identité (verso)')
+        if self.passport_image:
+            documents.append('Passeport')
+        if self.business_registration_doc:
+            documents.append('Document d\'entreprise')
+        return documents
+
+
+# ================================================================
+# 2. MODÈLE DE VÉRIFICATION PAR TÉLÉPHONE (CLIENTS)
+# ================================================================
+
+class PhoneVerification(TimeStampMixin):
+    """
+    Modèle pour la vérification par SMS des clients
+    Gère l'envoi et la vérification des codes SMS
+    """
+    
+    VERIFICATION_STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('verified', 'Vérifié'),
+        ('expired', 'Expiré'),
+        ('failed', 'Échec'),
+    )
+    
+   
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='phone_verification',
+        verbose_name="Utilisateur"
+    )
+    
+    
+    phone_number = models.CharField(
+        max_length=20,
+        verbose_name="Numéro de téléphone"
+    )
+    verification_code = models.CharField(
+        max_length=6,
+        verbose_name="Code de vérification"
+    )
+    
+    
+    status = models.CharField(
+        max_length=20, 
+        choices=VERIFICATION_STATUS_CHOICES, 
+        default='pending',
+        verbose_name="Statut"
+    )
+    
+    attempts = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Nombre de tentatives"
+    )
+    max_attempts = models.PositiveIntegerField(
+        default=3,
+        verbose_name="Tentatives maximales"
+    )
+    
+    
+    expires_at = models.DateTimeField(
+        verbose_name="Expire le"
+    )
+    verified_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Vérifié le"
+    )
+    last_code_sent_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Dernier code envoyé le"
+    )
+    
+   
+    class Meta:
+        verbose_name = "Vérification Téléphone"
+        verbose_name_plural = "Vérifications Téléphone"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Vérification téléphone {self.user.username} ({self.phone_number}) - {self.get_status_display()}"
+    
+ 
+    # ============================================================
+    @classmethod
+    def generate_code(cls):
+        """Génère un code de vérification à 6 chiffres"""
+        return ''.join(random.choices(string.digits, k=6))
+    
+    def is_expired(self):
+        """Vérifie si le code a expiré"""
+        return timezone.now() > self.expires_at
+    
+    def can_verify(self):
+        """Vérifie si la vérification peut encore être tentée"""
+        return (
+            self.status == 'pending' and 
+            not self.is_expired() and 
+            self.attempts < self.max_attempts
+        )
+    
+    def can_resend_code(self):
+        """Vérifie si un nouveau code peut être envoyé"""
+        # Empêcher l'envoi trop fréquent (1 minute minimum)
+        if self.last_code_sent_at:
+            time_since_last = timezone.now() - self.last_code_sent_at
+            return time_since_last.total_seconds() >= 60
+        return True
+    
+    def increment_attempt(self):
+        """Incrémente le nombre de tentatives"""
+        self.attempts += 1
+        if self.attempts >= self.max_attempts:
+            self.status = 'failed'
+        self.save()
+    
+    def verify_code(self, provided_code):
+        """Vérifie le code fourni"""
+        if not self.can_verify():
+            return False
+        
+        self.increment_attempt()
+        
+        if self.verification_code == provided_code:
+            self.status = 'verified'
+            self.verified_at = timezone.now()
+            self.save()
+            
+            # Mettre à jour le statut utilisateur
+            self._update_user_verification_status()
+            return True
+        
+        return False
+    
+    def _update_user_verification_status(self):
+        """Met à jour le statut is_verified de l'utilisateur"""
+        if self.status == 'verified':
+            self.user.is_verified = True
+            self.user.save()
+    
+    def regenerate_code(self):
+        """Génère un nouveau code et prolonge l'expiration"""
+        if not self.can_resend_code():
+            raise ValueError("Vous devez attendre avant de demander un nouveau code")
+        
+        self.verification_code = self.generate_code()
+        self.expires_at = timezone.now() + timedelta(minutes=10)
+        self.attempts = 0  # Reset les tentatives
+        self.status = 'pending'
+        self.last_code_sent_at = timezone.now()
+        self.save()
+        
+        return self.verification_code
+    
+    def save(self, *args, **kwargs):
+        """Logique personnalisée lors de la sauvegarde"""
+        
+        # Générer un code si c'est une nouvelle instance
+        if not self.pk and not self.verification_code:
+            self.verification_code = self.generate_code()
+        
+        # Définir l'expiration si pas déjà définie
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(minutes=10)
+        
+        # Marquer comme expiré si nécessaire
+        if self.is_expired() and self.status == 'pending':
+            self.status = 'expired'
+        
+        super().save(*args, **kwargs)

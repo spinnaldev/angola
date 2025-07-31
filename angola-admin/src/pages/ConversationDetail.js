@@ -188,7 +188,7 @@ const ConversationDetail = () => {
                 Conversation #{conversation.id}
               </h1>
               <p className="text-sm text-gray-500">
-                {conversation.client.full_name} ↔ {conversation.provider.user.full_name}
+                {conversation.client.full_name} ↔ {conversation.provider.full_name}
               </p>
             </div>
           </div>
@@ -223,7 +223,7 @@ const ConversationDetail = () => {
               <span className="font-medium">Client:</span> {conversation.client.email}
             </div>
             <div>
-              <span className="font-medium">Provider:</span> {conversation.provider.user.email}
+              <span className="font-medium">Provider:</span> {conversation.provider.email}
             </div>
             <div>
               <span className="font-medium">Messages totaux:</span> {conversation.total_messages}
@@ -253,7 +253,7 @@ const ConversationDetail = () => {
               <div className="flex items-center space-x-2 mb-2">
                 {getSenderTypeIcon(message.sender_type)}
                 <span className="font-medium text-gray-900">
-                  {message.sender.full_name}
+                  {message.sender_name}
                 </span>
                 <span className="text-xs text-gray-500 uppercase font-medium">
                   {message.sender_type}

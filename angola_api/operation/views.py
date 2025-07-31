@@ -14,6 +14,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
+from .permissions import VerificationPermissionMixin
+from operation.decorators import require_verification
 from .models import *
 from rest_framework.views import APIView
 from django.core.mail import send_mail
@@ -1050,51 +1052,80 @@ class ProviderViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def nearby(self, request):
-        lat = request.query_params.get('latitude')
-        lng = request.query_params.get('longitude')
-        radius = request.query_params.get('radius', 10)  # Default 10km
+        """Endpoint optimisé pour récupérer les prestataires à proximité"""
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+        radius = float(request.query_params.get('radius', 10.0))
         
-        if not lat or not lng:
-            return Response({"detail": "latitude and longitude parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not (latitude and longitude):
+            # Fallback vers les prestataires récents
+            queryset = Provider.objects.filter(
+                is_active=True,
+                latitude__isnull=False,
+                longitude__isnull=False
+            ).order_by('-created_at')[:20]
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"results": serializer.data, "count": len(serializer.data)})
         
         try:
-            lat = float(lat)
-            lng = float(lng)
-            radius = float(radius)
-        except ValueError:
-            return Response({"detail": "Invalid coordinates or radius"}, status=status.HTTP_400_BAD_REQUEST)
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Coordonnées invalides"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        # Filtrer les prestataires avec latitude et longitude non nulles
+        # Calcul optimisé de la zone de recherche
+        import math
+        lat_radius = radius / 111.0  # 1° latitude ≈ 111 km
+        lng_radius = radius / (111.0 * math.cos(math.radians(latitude)))
+        
+        # Filtrer les prestataires dans la zone
         providers = Provider.objects.filter(
+            # is_active=True,
+            latitude__isnull=False,
             longitude__isnull=False,
-            latitude__isnull=False
+            latitude__gte=latitude - lat_radius,
+            latitude__lte=latitude + lat_radius,
+            longitude__gte=longitude - lng_radius,
+            longitude__lte=longitude + lng_radius
         )
         
-        # Calculer une zone approximative basée sur le rayon (approche simplifiée)
-        # 1 degré de latitude ≈ 111 km
-        # 1 degré de longitude ≈ 111 km * cos(latitude)
-        lat_radius = radius / 111.0
-        lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
+        # Calculer les distances exactes
+        providers_with_distance = []
+        for provider in providers:
+            if provider.latitude and provider.longitude:
+                # Calcul de distance avec la formule de Haversine
+                distance = self._calculate_distance(
+                    latitude, longitude,
+                    float(provider.latitude), float(provider.longitude)
+                )
+                if distance <= radius:
+                    providers_with_distance.append((provider, distance))
         
-        providers = providers.filter(
-            latitude__gte=lat - lat_radius,
-            latitude__lte=lat + lat_radius,
-            longitude__gte=lng - lng_radius,
-            longitude__lte=lng + lng_radius
-        )
+        # Trier par distance
+        providers_with_distance.sort(key=lambda x: x[1])
+        sorted_providers = [p[0] for p in providers_with_distance[:20]]
         
-        # Tri par distance approximative (Pythagore)
-        providers = sorted(providers, key=lambda p: (
-            (p.latitude - lat) ** 2 + (p.longitude - lng) ** 2
-        ))
+        serializer = self.get_serializer(sorted_providers, many=True)
+        return Response({"results": serializer.data, "count": len(serializer.data)})
+
+    def _calculate_distance(self, lat1, lon1, lat2, lon2):
+        """Calcul de distance avec la formule de Haversine"""
+        from math import radians, cos, sin, asin, sqrt
         
-        page = self.paginate_queryset(providers)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        # Convertir en radians
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
         
-        serializer = self.get_serializer(providers, many=True)
-        return Response(serializer.data)
+        # Formule de Haversine
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        r = 6371  # Rayon de la Terre en kilomètres
+        
+        return c * r
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def stats(self, request):
@@ -1269,7 +1300,8 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         """
         print(self.request.user)
         serializer.save(provider=self.request.user.provider_profile)
-
+    
+    @require_verification("créer un service")
     def create(self, request, *args, **kwargs):
         # Extraire les données des fichiers et du formulaire
         gallery_images = []
@@ -1318,6 +1350,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
+    @require_verification("modifier un service")
     def update(self, request, *args, **kwargs):
         # Code similaire à la méthode create pour traiter les images et options
         # ...
@@ -2317,7 +2350,8 @@ def mark_all_notifications_read(request):
     except (ValueError, User.DoesNotExist):
         return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
 
-  
+
+
 class DisputeViewSet(viewsets.ModelViewSet):
     queryset = Dispute.objects.all()
     serializer_class = DisputeSerializer
@@ -2333,6 +2367,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
         else:
             return Dispute.objects.filter(client=user)
     
+    @require_verification("ouvrir un litige")
     def perform_create(self, serializer):
         service_id = self.request.data.get('service_id') or self.request.data.get('service')
         provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
@@ -2554,6 +2589,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         else:
             return QuoteRequest.objects.filter(client=user)
     
+    @require_verification("faire une demande de devis")
     def perform_create(self, serializer):
         """Créer une demande de devis"""
         service_id = self.request.data.get('service_id') or self.request.data.get('service')
@@ -2871,7 +2907,8 @@ class NearbyProvidersView(generics.ListAPIView):
             longitude__gte=longitude - lng_radius,
             longitude__lte=longitude + lng_radius
         )
- 
+
+
 class ClientProjectViewSet(viewsets.ModelViewSet):
     """ViewSet pour la gestion des projets clients"""
     serializer_class = ClientProjectListSerializer
@@ -2959,6 +2996,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
             return ClientProjectDetailSerializer
         return ClientProjectListSerializer
     
+    @require_verification("créer un projet")
     def perform_create(self, serializer):
         # La création nécessite toujours une authentification
         if not self.request.user.is_authenticated:
@@ -3356,7 +3394,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                 {'error': f'Erreur lors de la récupération des offres: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
+    @require_verification
     def _create_project_offer(self, request, project):
         """Créer une nouvelle offre sur un projet"""
         try:
@@ -3488,6 +3526,7 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
             return ProjectOfferCreateSerializer
         return ProjectOfferSerializer
     
+    @require_verification("faire une offre")
     def create(self, request, *args, **kwargs):
         """Créer une nouvelle offre"""
         if not hasattr(request.user, 'provider_profile'):
@@ -3697,3 +3736,584 @@ class ProjectFavoriteViewSet(viewsets.ModelViewSet):
                 {'message': 'Projet déjà en favoris'},
                 status=status.HTTP_200_OK
             )
+        
+class ProviderVerificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour gérer les vérifications de prestataires
+    
+    Endpoints disponibles:
+    - GET /provider-verification/ : Liste des vérifications (limitée au prestataire connecté)
+    - GET /provider-verification/{id}/ : Détail d'une vérification
+    - POST /provider-verification/ : Créer une nouvelle demande
+    - PUT/PATCH /provider-verification/{id}/ : Modifier une demande
+    - DELETE /provider-verification/{id}/ : Supprimer une demande (seulement si not_started)
+    
+    Actions personnalisées:
+    - GET /provider-verification/my-status/ : Statut de ma vérification
+    - POST /provider-verification/submit-business/ : Soumettre vérification entreprise
+    - POST /provider-verification/submit-individual/ : Soumettre vérification individuelle
+    - POST /provider-verification/resend-documents/ : Renvoyer documents après rejet
+    """
+    
+    serializer_class = ProviderVerificationSerializer
+    permission_classes = [IsAuthenticated, IsProviderOwner]
+    
+    def get_queryset(self):
+        """Limiter aux vérifications du prestataire connecté"""
+        if not hasattr(self.request.user, 'provider_profile'):
+            return ProviderVerification.objects.none()
+        
+        return ProviderVerification.objects.filter(
+            provider=self.request.user.provider_profile
+        )
+    
+    def perform_create(self, serializer):
+        """Associer automatiquement au prestataire connecté"""
+        if not hasattr(self.request.user, 'provider_profile'):
+            raise ValidationError("Profil prestataire requis")
+        
+        serializer.save(provider=self.request.user.provider_profile)
+    
+    @action(detail=False, methods=['get'], url_path='my-status')
+    def my_status(self, request):
+        """
+        Récupérer le statut de vérification du prestataire connecté
+        
+        Retourne:
+        - Les détails de la vérification si elle existe
+        - Un objet vide avec status 'not_started' sinon
+        """
+        try:
+            provider = request.user.provider_profile
+            verification = ProviderVerification.objects.get(provider=provider)
+            serializer = self.get_serializer(verification)
+            return Response(serializer.data)
+        except ProviderVerification.DoesNotExist:
+            return Response({
+                'verification_status': 'not_started',
+                'message': 'Aucune demande de vérification trouvée',
+                'can_start': True
+            })
+        except AttributeError:
+            return Response(
+                {'detail': 'Profil prestataire requis'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['post'], url_path='submit-business')
+    def submit_business(self, request):
+        """
+        Soumettre une vérification d'entreprise
+        
+        Données requises:
+        - business_name: Nom de l'entreprise
+        - business_nif: NIF (optionnel)
+        - business_registration_number: Numéro RCCM (optionnel)
+        - id_card_front: Image recto carte d'identité
+        - id_card_back: Image verso carte d'identité
+        - business_registration_doc: Document d'entreprise (optionnel)
+        """
+        try:
+            provider = request.user.provider_profile
+        except AttributeError:
+            return Response(
+                {'detail': 'Profil prestataire requis'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Récupérer ou créer la vérification
+        verification, created = ProviderVerification.objects.get_or_create(
+            provider=provider,
+            defaults={
+                'is_business': True,
+                'document_type': 'id_card'
+            }
+        )
+        
+        # Vérifier si modification autorisée
+        if not created and not verification.can_be_modified():
+            return Response({
+                'detail': 'Cette vérification ne peut plus être modifiée',
+                'current_status': verification.verification_status
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Valider et sauvegarder
+        serializer = self.get_serializer(
+            verification, 
+            data=request.data, 
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            # Forcer les valeurs pour entreprise
+            serializer.save(
+                is_business=True,
+                document_type='id_card',
+                verification_status='pending',
+                submitted_at=timezone.now(),
+                # Effacer les données de rejet précédentes
+                rejection_reason='',
+                verified_by=None,
+                verified_at=None
+            )
+            
+            logger.info(f"Vérification entreprise soumise pour {provider.user.username}")
+            
+            return Response({
+                'message': 'Demande de vérification soumise avec succès',
+                'verification': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='submit-individual')
+    def submit_individual(self, request):
+        """
+        Soumettre une vérification individuelle
+        
+        Données requises (au choix):
+        - Pour carte d'identité: id_card_front + id_card_back
+        - Pour passeport: passport_image
+        """
+        try:
+            provider = request.user.provider_profile
+        except AttributeError:
+            return Response(
+                {'detail': 'Profil prestataire requis'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Déterminer le type de document basé sur les données fournies
+        document_type = 'id_card'  # défaut
+        if request.data.get('passport_image') and not (
+            request.data.get('id_card_front') or request.data.get('id_card_back')
+        ):
+            document_type = 'passport'
+        
+        # Récupérer ou créer la vérification
+        verification, created = ProviderVerification.objects.get_or_create(
+            provider=provider,
+            defaults={
+                'is_business': False,
+                'document_type': document_type
+            }
+        )
+        
+        # Vérifier si modification autorisée
+        if not created and not verification.can_be_modified():
+            return Response({
+                'detail': 'Cette vérification ne peut plus être modifiée',
+                'current_status': verification.verification_status
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Valider et sauvegarder
+        serializer = self.get_serializer(
+            verification, 
+            data=request.data, 
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            # Forcer les valeurs pour individuel
+            serializer.save(
+                is_business=False,
+                document_type=document_type,
+                verification_status='pending',
+                submitted_at=timezone.now(),
+                # Effacer les données de rejet précédentes
+                rejection_reason='',
+                verified_by=None,
+                verified_at=None
+            )
+            
+            logger.info(f"Vérification individuelle soumise pour {provider.user.username}")
+            
+            return Response({
+                'message': 'Demande de vérification soumise avec succès',
+                'verification': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], url_path='resend-documents')
+    def resend_documents(self, request, pk=None):
+        """
+        Renvoyer des documents après un rejet
+        Permet de modifier une vérification rejetée
+        """
+        verification = self.get_object()
+        
+        if verification.verification_status != 'rejected':
+            return Response({
+                'detail': 'Cette action n\'est disponible que pour les vérifications rejetées'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Utiliser la logique de mise à jour normale
+        serializer = self.get_serializer(
+            verification, 
+            data=request.data, 
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            
+            logger.info(f"Documents renvoyés pour {verification.provider.user.username}")
+            
+            return Response({
+                'message': 'Nouveaux documents soumis avec succès',
+                'verification': serializer.data
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], url_path='requirements')
+    def requirements(self, request):
+        """
+        Retourner les exigences pour la vérification
+        """
+        return Response({
+            'document_types': [
+                {
+                    'value': 'id_card',
+                    'label': 'Carte d\'identité',
+                    'description': 'Les deux faces de la carte d\'identité sont requises',
+                    'required_files': ['id_card_front', 'id_card_back']
+                },
+                {
+                    'value': 'passport',
+                    'label': 'Passeport',
+                    'description': 'Page principale du passeport avec photo',
+                    'required_files': ['passport_image']
+                }
+            ],
+            'business_fields': [
+                {
+                    'field': 'business_name',
+                    'label': 'Nom de l\'entreprise',
+                    'required': True,
+                    'description': 'Nom officiel de votre entreprise'
+                },
+                {
+                    'field': 'business_nif',
+                    'label': 'NIF',
+                    'required': False,
+                    'description': 'Numéro d\'identification fiscale'
+                },
+                {
+                    'field': 'business_registration_number',
+                    'label': 'Numéro d\'enregistrement',
+                    'required': False,
+                    'description': 'Numéro RCCM ou équivalent'
+                }
+            ],
+            'file_requirements': {
+                'max_size_mb': 5,
+                'allowed_formats': ['jpg', 'jpeg', 'png', 'pdf'],
+                'image_min_resolution': '800x600'
+            }
+        })
+
+
+# ================================================================
+# 4. VIEWSET POUR VÉRIFICATION PAR TÉLÉPHONE
+# ================================================================
+
+class PhoneVerificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour gérer les vérifications par téléphone (clients)
+    
+    Endpoints disponibles:
+    - GET /phone-verification/ : Liste des vérifications (limitée à l'utilisateur connecté)
+    - GET /phone-verification/{id}/ : Détail d'une vérification
+    - POST /phone-verification/ : Créer une nouvelle demande
+    
+    Actions personnalisées:
+    - GET /phone-verification/my-status/ : Mon statut de vérification
+    - POST /phone-verification/send-code/ : Envoyer un code SMS
+    - POST /phone-verification/verify-code/ : Vérifier le code SMS
+    - POST /phone-verification/resend-code/ : Renvoyer le code
+    """
+    
+    serializer_class = PhoneVerificationSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Limiter aux vérifications de l'utilisateur connecté"""
+        return PhoneVerification.objects.filter(user=self.request.user)
+    
+    def get_permissions(self):
+        """Permissions spécifiques par action"""
+        if hasattr(self, 'action') and self.action in ['my_status', 'send_code', 'verify_code', 'resend_code']:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+    
+    @action(detail=False, methods=['get'], url_path='my-status')
+    def my_status(self, request):
+        """
+        Récupérer le statut de vérification téléphone de l'utilisateur connecté
+        """
+        try:
+            verification = PhoneVerification.objects.get(user=request.user)
+            serializer = self.get_serializer(verification)
+            return Response(serializer.data)
+        except PhoneVerification.DoesNotExist:
+            return Response({
+                'status': 'not_started',
+                'message': 'Aucune vérification téléphone trouvée',
+                'can_start': True
+            })
+    
+    @action(detail=False, methods=['post'], url_path='send-code')
+    def send_code(self, request):
+        """
+        Envoyer un code de vérification par SMS
+        
+        Données requises:
+        - phone_number: Numéro de téléphone
+        """
+        serializer = PhoneVerificationSendCodeSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        phone_number = serializer.validated_data['phone_number']
+        
+        try:
+            with transaction.atomic():
+                # Récupérer ou créer la vérification
+                verification, created = PhoneVerification.objects.get_or_create(
+                    user=request.user,
+                    defaults={
+                        'phone_number': phone_number,
+                        'verification_code': PhoneVerification.generate_code(),
+                        'expires_at': timezone.now() + timedelta(minutes=10)
+                    }
+                )
+                
+                if not created:
+                    # Vérifier si on peut renvoyer un code
+                    if not verification.can_resend_code():
+                        return Response({
+                            'detail': 'Vous devez attendre avant de demander un nouveau code',
+                            'retry_after': 60
+                        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+                    
+                    # Régénérer le code
+                    code = verification.regenerate_code()
+                else:
+                    code = verification.verification_code
+                
+                # TODO: Intégrer avec votre service SMS (Twilio, etc.)
+                # success = send_sms(phone_number, f"Votre code de vérification: {code}")
+                success = True  # Simuler l'envoi pour le développement
+                
+                if success:
+                    logger.info(f"Code SMS envoyé à {request.user.username} ({phone_number})")
+                    
+                    # En développement, logger le code
+                    if settings.DEBUG:
+                        logger.info(f"CODE DE VÉRIFICATION (DEV): {code}")
+                    
+                    response_serializer = self.get_serializer(verification)
+                    return Response({
+                        'message': 'Code envoyé avec succès',
+                        'verification': response_serializer.data,
+                        'debug_code': code if settings.DEBUG else None  # Seulement en dev
+                    })
+                else:
+                    return Response({
+                        'detail': 'Erreur lors de l\'envoi du SMS'
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        except Exception as e:
+            logger.error(f"Erreur envoi SMS pour {request.user.username}: {str(e)}")
+            return Response({
+                'detail': 'Erreur technique lors de l\'envoi'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='verify-code')
+    def verify_code(self, request):
+        """
+        Vérifier le code SMS reçu
+        
+        Données requises:
+        - code: Code de vérification à 6 chiffres
+        """
+        serializer = PhoneVerificationCodeSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        code = serializer.validated_data['code']
+        
+        try:
+            verification = PhoneVerification.objects.get(user=request.user)
+        except PhoneVerification.DoesNotExist:
+            return Response({
+                'detail': 'Aucune vérification en cours'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Vérifier le code
+        if verification.verify_code(code):
+            logger.info(f"Vérification téléphone réussie pour {request.user.username}")
+            
+            response_serializer = self.get_serializer(verification)
+            return Response({
+                'message': 'Téléphone vérifié avec succès',
+                'verification': response_serializer.data,
+                'user_verified': True
+            })
+        else:
+            # Déterminer la raison de l'échec
+            if verification.is_expired():
+                message = 'Le code a expiré'
+            elif verification.attempts >= verification.max_attempts:
+                message = 'Nombre maximum de tentatives atteint'
+            else:
+                message = 'Code incorrect'
+                attempts_remaining = verification.max_attempts - verification.attempts
+                message += f' ({attempts_remaining} tentatives restantes)'
+            
+            return Response({
+                'detail': message,
+                'attempts_remaining': max(0, verification.max_attempts - verification.attempts),
+                'expired': verification.is_expired()
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='resend-code')
+    def resend_code(self, request):
+        """
+        Renvoyer le code de vérification
+        """
+        try:
+            verification = PhoneVerification.objects.get(user=request.user)
+        except PhoneVerification.DoesNotExist:
+            return Response({
+                'detail': 'Aucune vérification en cours'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        if verification.status == 'verified':
+            return Response({
+                'detail': 'Votre téléphone est déjà vérifié'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not verification.can_resend_code():
+            return Response({
+                'detail': 'Vous devez attendre avant de demander un nouveau code',
+                'retry_after': 60
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        
+        try:
+            # Régénérer et envoyer le code
+            code = verification.regenerate_code()
+            
+            # TODO: Intégrer avec votre service SMS
+            # success = send_sms(verification.phone_number, f"Votre nouveau code: {code}")
+            success = True  # Simuler l'envoi
+            
+            if success:
+                logger.info(f"Nouveau code SMS envoyé à {request.user.username}")
+                
+                # En développement, logger le code
+                if settings.DEBUG:
+                    logger.info(f"NOUVEAU CODE DE VÉRIFICATION (DEV): {code}")
+                
+                response_serializer = self.get_serializer(verification)
+                return Response({
+                    'message': 'Nouveau code envoyé avec succès',
+                    'verification': response_serializer.data,
+                    'debug_code': code if settings.DEBUG else None
+                })
+            else:
+                return Response({
+                    'detail': 'Erreur lors de l\'envoi du SMS'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        except Exception as e:
+            logger.error(f"Erreur renvoi SMS pour {request.user.username}: {str(e)}")
+            return Response({
+                'detail': 'Erreur technique lors du renvoi'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ================================================================
+# 5. VUES POUR VÉRIFIER LES BLOCAGES D'ACTIONS
+# ================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_verification_status(request):
+    """
+    Endpoint pour vérifier le statut de vérification global de l'utilisateur
+    Utilisé par le frontend pour déterminer les actions autorisées
+    """
+    
+    user = request.user
+    needs_verification, reason, verification_type = VerificationPermissionMixin.user_needs_verification(user)
+    
+    response_data = {
+        'user_id': user.id,
+        'user_role': user.role,
+        'is_verified': not needs_verification,
+        'needs_verification': needs_verification,
+        'verification_type': verification_type,
+        'reason': reason,
+        'is_staff': user.is_staff
+    }
+    
+    # Ajouter les détails spécifiques selon le rôle
+    if user.role == 'client':
+        phone_verification = getattr(user, 'phone_verification', None)
+        response_data['phone_verification'] = {
+            'exists': phone_verification is not None,
+            'status': phone_verification.status if phone_verification else 'not_started',
+            'phone_number': phone_verification.phone_number if phone_verification else None,
+            'verified_at': phone_verification.verified_at if phone_verification else None
+        }
+    
+    elif user.role == 'provider':
+        provider = getattr(user, 'provider_profile', None)
+        if provider:
+            verification = getattr(provider, 'verification', None)
+            response_data['provider_verification'] = {
+                'exists': verification is not None,
+                'status': verification.verification_status if verification else 'not_started',
+                'is_business': verification.is_business if verification else False,
+                'submitted_at': verification.submitted_at if verification else None,
+                'verified_at': verification.verified_at if verification else None,
+                'rejection_reason': verification.rejection_reason if verification else None
+            }
+        else:
+            response_data['provider_verification'] = {
+                'exists': False,
+                'status': 'no_provider_profile'
+            }
+    
+    return Response(response_data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def check_action_permission(request):
+    """
+    Endpoint pour vérifier si une action spécifique est autorisée
+    
+    Données requises:
+    - action: Description de l'action (ex: "créer un service")
+    """
+    action = request.data.get('action', 'cette action')
+    
+    
+    error_response = VerificationPermissionMixin.get_verification_error_response(
+        request.user, action
+    )
+    
+    if error_response:
+        return error_response
+    
+    return Response({
+        'action': action,
+        'allowed': True,
+        'message': 'Action autorisée'
+    })

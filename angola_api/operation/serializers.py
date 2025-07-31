@@ -10,12 +10,20 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     company_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
+    verification_status = serializers.SerializerMethodField()
+    verification_details = serializers.SerializerMethodField()
+    is_phone_verified = serializers.SerializerMethodField()
+    is_provider_verified = serializers.SerializerMethodField()
+    needs_verification = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 
                  'bio', 'profile_picture', 'role', 'is_verified', 'location', 'date_joined',
-                 'company_name')
+                 'company_name' , 'full_name', 'verification_status', 'verification_details', 'is_phone_verified', 
+                'is_provider_verified', 'needs_verification' )
         read_only_fields = ('date_joined', 'is_verified')
         extra_kwargs = {'password': {'write_only': True}}
     
@@ -45,6 +53,75 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
         return user
 
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
+    
+    def get_verification_status(self, obj):
+        """Statut de vérification global"""
+        if obj.role == 'client':
+            phone_verification = getattr(obj, 'phone_verification', None)
+            if phone_verification:
+                return phone_verification.status
+            return 'not_started'
+        elif obj.role == 'provider':
+            provider = getattr(obj, 'provider_profile', None)
+            if provider and hasattr(provider, 'verification'):
+                return provider.verification.verification_status
+            return 'not_started'
+        return 'not_applicable'
+    
+    def get_verification_details(self, obj):
+        """Détails de la vérification selon le rôle"""
+        if obj.role == 'client':
+            phone_verification = getattr(obj, 'phone_verification', None)
+            if phone_verification:
+                return {
+                    'type': 'phone',
+                    'phone_number': phone_verification.phone_number,
+                    'verified_at': phone_verification.verified_at,
+                    'status': phone_verification.status
+                }
+        elif obj.role == 'provider':
+            provider = getattr(obj, 'provider_profile', None)
+            if provider and hasattr(provider, 'verification'):
+                verification = provider.verification
+                return {
+                    'type': 'documents',
+                    'is_business': verification.is_business,
+                    'document_type': verification.document_type,
+                    'submitted_at': verification.submitted_at,
+                    'verified_at': verification.verified_at,
+                    'status': verification.verification_status,
+                    'rejection_reason': verification.rejection_reason
+                }
+        return None
+    
+    def get_is_phone_verified(self, obj):
+        """Vérifie si le téléphone est vérifié"""
+        if obj.role == 'client':
+            phone_verification = getattr(obj, 'phone_verification', None)
+            return phone_verification and phone_verification.status == 'verified'
+        return obj.role != 'client'  # Les non-clients n'ont pas besoin de vérification téléphone
+    
+    def get_is_provider_verified(self, obj):
+        """Vérifie si le profil prestataire est vérifié"""
+        if obj.role == 'provider':
+            provider = getattr(obj, 'provider_profile', None)
+            return provider and provider.is_verified
+        return obj.role != 'provider'  # Les non-prestataires n'ont pas besoin de vérification documents
+    
+    def get_needs_verification(self, obj):
+        """Vérifie si l'utilisateur a besoin de vérification"""
+        if obj.is_staff:
+            return False
+        
+        if obj.role == 'client':
+            return not self.get_is_phone_verified(obj)
+        elif obj.role == 'provider':
+            return not self.get_is_provider_verified(obj)
+        
+        return False
+    
     def get_company_name(self, obj):
         """
         Récupérer le nom de l'entreprise pour les prestataires
@@ -65,7 +142,68 @@ class UserSerializer(serializers.ModelSerializer):
 #         model = User
 #         fields = ['first_name', 'last_name', 'phone_number', 'bio', 'location', 'profile_picture']
         
+
+
+
+# ================================================================
+# 4. SERIALIZERS POUR LES STATISTIQUES ET RAPPORTS
+# ================================================================
+
+class VerificationStatsSerializer(serializers.Serializer):
+    """
+    Serializer pour les statistiques de vérification (admin)
+    """
     
+    # Statistiques prestataires
+    provider_verifications = serializers.DictField(read_only=True)
+    provider_pending_count = serializers.IntegerField(read_only=True)
+    provider_verified_count = serializers.IntegerField(read_only=True)
+    provider_rejected_count = serializers.IntegerField(read_only=True)
+    
+    # Statistiques clients
+    phone_verifications = serializers.DictField(read_only=True)
+    phone_verified_count = serializers.IntegerField(read_only=True)
+    phone_pending_count = serializers.IntegerField(read_only=True)
+    
+    # Statistiques globales
+    total_users = serializers.IntegerField(read_only=True)
+    verified_users_percentage = serializers.FloatField(read_only=True)
+    
+    # Tendances (optionnel)
+    weekly_verifications = serializers.ListField(read_only=True)
+    average_approval_time = serializers.FloatField(read_only=True)
+
+
+# ================================================================
+# 5. SERIALIZERS POUR LES PERMISSIONS ET BLOCAGES
+# ================================================================
+
+class VerificationRequiredSerializer(serializers.Serializer):
+    """
+    Serializer pour les réponses de blocage de vérification
+    """
+    detail = serializers.CharField(help_text="Message d'erreur")
+    verification_required = serializers.BooleanField(default=True)
+    verification_type = serializers.ChoiceField(
+        choices=[('phone', 'Téléphone'), ('documents', 'Documents'), ('login', 'Connexion')]
+    )
+    reason = serializers.CharField(help_text="Raison du blocage")
+    redirect_url = serializers.CharField(required=False, help_text="URL de redirection suggérée")
+
+
+class ActionBlockedSerializer(serializers.Serializer):
+    """
+    Serializer pour les actions bloquées
+    """
+    action = serializers.CharField(help_text="Action tentée")
+    blocked = serializers.BooleanField(default=True)
+    reason = serializers.CharField(help_text="Raison du blocage")
+    required_verification = serializers.CharField(help_text="Type de vérification requis")
+    user_role = serializers.CharField(help_text="Rôle de l'utilisateur")
+    suggestions = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Suggestions pour débloquer l'action"
+    )
     
 class UserUpdateSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False)
@@ -667,7 +805,7 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
             'urgency', 'status', 'offers_count', 'views_count', 'created_at',
             'time_since_posted', 'deadline', 'remote_possible', 'is_favorited',
             'has_user_offered','min_budget', 'max_budget','offers_count', 'favorites_count', 'views_count',
-            'admin_notes'
+            'admin_notes', 'client_picture'
         ]
     
     def get_client_name(self, obj):
@@ -983,27 +1121,345 @@ class ProjectFilterSerializer(serializers.Serializer):
     search = serializers.CharField(max_length=255, required=False)
     
 
-# Serializers spéciaux pour les statistiques admin
-class AdminStatsSerializer(serializers.Serializer):
-    total_users = serializers.IntegerField()
-    total_providers = serializers.IntegerField()
-    total_projects = serializers.IntegerField()
-    total_disputes = serializers.IntegerField()
-    new_users_this_month = serializers.IntegerField()
-    active_projects = serializers.IntegerField()
-    open_disputes = serializers.IntegerField()
-    monthly_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+# ================================================================
+# 1. SERIALIZERS POUR VÉRIFICATION DES PRESTATAIRES
+# ================================================================c
+class ProviderVerificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer principal pour la vérification des prestataires
+    Utilisé pour la création et la mise à jour des demandes de vérification
+    """
+    
+    # Champs calculés en lecture seule
+    provider_name = serializers.CharField(source='provider.user.username', read_only=True)
+    provider_email = serializers.CharField(source='provider.user.email', read_only=True)
+    company_name = serializers.CharField(source='provider.company_name', read_only=True)
+    days_since_submission = serializers.SerializerMethodField()
+    can_be_modified = serializers.SerializerMethodField()
+    documents_provided = serializers.SerializerMethodField()
+    verification_progress = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProviderVerification
+        fields = [
+            # Champs de base
+            'id', 'provider', 'provider_name', 'provider_email', 'company_name',
+            
+            # Configuration de la vérification
+            'is_business', 'document_type',
+            
+            # Informations d'entreprise
+            'business_name', 'business_nif', 'business_registration_number',
+            
+            # Documents
+            'id_card_front', 'id_card_back', 'passport_image', 'business_registration_doc',
+            
+            # Statut et dates
+            'verification_status', 'submitted_at', 'verified_at', 'verified_by',
+            'rejection_reason', 'admin_notes',
+            
+            # Champs calculés
+            'days_since_submission', 'can_be_modified', 'documents_provided',
+            'verification_progress', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'verification_status', 'submitted_at', 'verified_at', 'verified_by',
+            'rejection_reason', 'admin_notes', 'created_at', 'updated_at'
+        ]
+    
+    def get_days_since_submission(self, obj):
+        """Calcule le nombre de jours depuis la soumission"""
+        if obj.submitted_at:
+            return (timezone.now() - obj.submitted_at).days
+        return None
+    
+    def get_can_be_modified(self, obj):
+        """Vérifie si la vérification peut être modifiée"""
+        return obj.can_be_modified()
+    
+    def get_documents_provided(self, obj):
+        """Liste des documents fournis"""
+        return obj.get_documents_list()
+    
+    def get_verification_progress(self, obj):
+        """Pourcentage de progression de la vérification"""
+        required_fields = []
+        provided_fields = []
+        
+        # Documents d'identité obligatoires
+        if obj.document_type == 'id_card':
+            required_fields.extend(['id_card_front', 'id_card_back'])
+            if obj.id_card_front:
+                provided_fields.append('id_card_front')
+            if obj.id_card_back:
+                provided_fields.append('id_card_back')
+        else:  # passport
+            required_fields.append('passport_image')
+            if obj.passport_image:
+                provided_fields.append('passport_image')
+        
+        # Informations d'entreprise si applicable
+        if obj.is_business:
+            required_fields.append('business_name')
+            if obj.business_name:
+                provided_fields.append('business_name')
+        
+        if not required_fields:
+            return 0
+        
+        return int((len(provided_fields) / len(required_fields)) * 100)
+    
+    def validate(self, attrs):
+        """Validation globale des données"""
+        document_type = attrs.get('document_type', self.instance.document_type if self.instance else 'id_card')
+        is_business = attrs.get('is_business', self.instance.is_business if self.instance else False)
+        
+        # Validation des documents selon le type
+        if document_type == 'id_card':
+            if not (attrs.get('id_card_front') or (self.instance and self.instance.id_card_front)):
+                raise serializers.ValidationError({
+                    'id_card_front': 'La face avant de la carte d\'identité est requise'
+                })
+            if not (attrs.get('id_card_back') or (self.instance and self.instance.id_card_back)):
+                raise serializers.ValidationError({
+                    'id_card_back': 'La face arrière de la carte d\'identité est requise'
+                })
+        elif document_type == 'passport':
+            if not (attrs.get('passport_image') or (self.instance and self.instance.passport_image)):
+                raise serializers.ValidationError({
+                    'passport_image': 'L\'image du passeport est requise'
+                })
+        
+        # Validation des informations d'entreprise
+        if is_business:
+            if not attrs.get('business_name') and not (self.instance and self.instance.business_name):
+                raise serializers.ValidationError({
+                    'business_name': 'Le nom de l\'entreprise est requis pour les entreprises'
+                })
+        
+        return attrs
+    
+    def create(self, validated_data):
+        """Création d'une nouvelle demande de vérification"""
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'provider_profile'):
+            raise serializers.ValidationError("Profil prestataire requis")
+        
+        # Associer automatiquement au prestataire connecté
+        validated_data['provider'] = request.user.provider_profile
+        
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        """Mise à jour d'une demande de vérification"""
+        
+        # Vérifier si la modification est autorisée
+        if not instance.can_be_modified():
+            raise serializers.ValidationError(
+                "Cette vérification ne peut plus être modifiée car elle est déjà en cours de traitement ou approuvée"
+            )
+        
+        # Si on modifie des documents, remettre le statut à pending
+        document_fields = ['id_card_front', 'id_card_back', 'passport_image', 'business_registration_doc']
+        if any(field in validated_data for field in document_fields):
+            validated_data['verification_status'] = 'pending'
+            validated_data['submitted_at'] = timezone.now()
+            # Effacer les données de rejet précédentes
+            validated_data['rejection_reason'] = ''
+            validated_data['verified_by'] = None
+            validated_data['verified_at'] = None
+        
+        return super().update(instance, validated_data)
 
 
-class ProjectStatsSerializer(serializers.Serializer):
-    total_projects = serializers.IntegerField()
-    by_status = serializers.DictField()
-    monthly_stats = serializers.ListField()
-    top_categories = serializers.ListField()
+class ProviderVerificationListSerializer(serializers.ModelSerializer):
+    """
+    Serializer allégé pour les listes de vérifications (admin)
+    """
+    provider_name = serializers.CharField(source='provider.user.username', read_only=True)
+    provider_email = serializers.CharField(source='provider.user.email', read_only=True)
+    company_name = serializers.CharField(source='provider.company_name', read_only=True)
+    days_pending = serializers.SerializerMethodField()
+    status_badge = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProviderVerification
+        fields = [
+            'id', 'provider_name', 'provider_email', 'company_name',
+            'verification_status', 'is_business', 'submitted_at',
+            'days_pending', 'status_badge'
+        ]
+    
+    def get_days_pending(self, obj):
+        """Nombre de jours en attente"""
+        if obj.submitted_at and obj.verification_status == 'pending':
+            return (timezone.now() - obj.submitted_at).days
+        return None
+    
+    def get_status_badge(self, obj):
+        """Informations pour l'affichage du badge de statut"""
+        status_info = {
+            'not_started': {'color': 'grey', 'text': 'Non commencé'},
+            'pending': {'color': 'orange', 'text': 'En attente'},
+            'verified': {'color': 'green', 'text': 'Vérifié'},
+            'rejected': {'color': 'red', 'text': 'Rejeté'},
+        }
+        return status_info.get(obj.verification_status, {'color': 'grey', 'text': 'Inconnu'})
 
 
-class DisputeStatsSerializer(serializers.Serializer):
-    total_disputes = serializers.IntegerField()
-    by_status = serializers.DictField()
-    by_priority = serializers.DictField()
-    avg_resolution_time_hours = serializers.FloatField(allow_null=True)
+class ProviderVerificationAdminSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour les actions admin (approbation/rejet)
+    """
+    provider_info = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProviderVerification
+        fields = [
+            'id', 'provider_info', 'verification_status', 'verified_by',
+            'verified_at', 'rejection_reason', 'admin_notes'
+        ]
+    
+    def get_provider_info(self, obj):
+        """Informations du prestataire pour l'admin"""
+        return {
+            'id': obj.provider.id,
+            'username': obj.provider.user.username,
+            'email': obj.provider.user.email,
+            'company_name': obj.provider.company_name,
+            'phone_number': obj.provider.user.phone_number,
+        }
+    
+    def update(self, instance, validated_data):
+        """Mise à jour avec logique admin"""
+        request = self.context.get('request')
+        
+        # Si changement de statut vers verified ou rejected
+        if 'verification_status' in validated_data:
+            new_status = validated_data['verification_status']
+            
+            if new_status == 'verified':
+                validated_data['verified_by'] = request.user if request else None
+                validated_data['verified_at'] = timezone.now()
+                validated_data['rejection_reason'] = ''  # Effacer raison rejet précédente
+            
+            elif new_status == 'rejected':
+                validated_data['verified_by'] = request.user if request else None
+                validated_data['verified_at'] = None
+                # La rejection_reason doit être fournie dans les données
+        
+        return super().update(instance, validated_data)
+    
+
+
+# ================================================================
+# 2. SERIALIZERS POUR VÉRIFICATION PAR TÉLÉPHONE
+# ================================================================
+
+class PhoneVerificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer principal pour la vérification par téléphone
+    """
+    
+    # Champs calculés
+    time_remaining = serializers.SerializerMethodField()
+    can_resend = serializers.SerializerMethodField()
+    attempts_remaining = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PhoneVerification
+        fields = [
+            'id', 'user', 'phone_number', 'status', 'attempts',
+            'max_attempts', 'expires_at', 'verified_at', 'last_code_sent_at',
+            'time_remaining', 'can_resend', 'attempts_remaining',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'user', 'status', 'attempts', 'verified_at', 'last_code_sent_at',
+            'created_at', 'updated_at', 'expires_at'
+        ]
+        extra_kwargs = {
+            'phone_number': {'write_only': False, 'required': True}
+        }
+    
+    def get_time_remaining(self, obj):
+        """Temps restant avant expiration en secondes"""
+        if obj.expires_at and not obj.is_expired():
+            remaining = obj.expires_at - timezone.now()
+            return max(0, int(remaining.total_seconds()))
+        return 0
+    
+    def get_can_resend(self, obj):
+        """Vérifie si un nouveau code peut être envoyé"""
+        return obj.can_resend_code()
+    
+    def get_attempts_remaining(self, obj):
+        """Tentatives restantes"""
+        return max(0, obj.max_attempts - obj.attempts)
+    
+    def validate_phone_number(self, value):
+        """Validation du numéro de téléphone"""
+        # Validation basique du format
+        if not value or len(value) < 8:
+            raise serializers.ValidationError(
+                "Le numéro de téléphone doit contenir au moins 8 caractères"
+            )
+        
+        # Supprimer les espaces et caractères spéciaux
+        cleaned_number = ''.join(filter(str.isdigit, value))
+        if len(cleaned_number) < 8:
+            raise serializers.ValidationError(
+                "Format de numéro de téléphone invalide"
+            )
+        
+        return value
+    
+    def create(self, validated_data):
+        """Création d'une nouvelle vérification téléphone"""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("Utilisateur non authentifié")
+        
+        # Associer à l'utilisateur connecté
+        validated_data['user'] = request.user
+        
+        # Générer le code et définir l'expiration
+        validated_data['verification_code'] = PhoneVerification.generate_code()
+        validated_data['expires_at'] = timezone.now() + timedelta(minutes=10)
+        
+        return super().create(validated_data)
+
+
+class PhoneVerificationCodeSerializer(serializers.Serializer):
+    """
+    Serializer pour la vérification du code SMS
+    """
+    code = serializers.CharField(
+        max_length=6, 
+        min_length=6,
+        help_text="Code de vérification à 6 chiffres"
+    )
+    
+    def validate_code(self, value):
+        """Validation du code"""
+        if not value.isdigit():
+            raise serializers.ValidationError("Le code doit contenir uniquement des chiffres")
+        return value
+
+
+class PhoneVerificationSendCodeSerializer(serializers.Serializer):
+    """
+    Serializer pour l'envoi d'un nouveau code
+    """
+    phone_number = serializers.CharField(
+        max_length=20,
+        help_text="Numéro de téléphone pour recevoir le code"
+    )
+    
+    def validate_phone_number(self, value):
+        """Validation du numéro de téléphone"""
+        if not value or len(value) < 8:
+            raise serializers.ValidationError(
+                "Le numéro de téléphone doit contenir au moins 8 caractères"
+            )
+        return value

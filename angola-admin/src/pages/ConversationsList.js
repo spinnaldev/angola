@@ -323,10 +323,10 @@ const ConversationsList = () => {
                     <div className="flex items-center space-x-4">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          {conversation.client.full_name} ↔ {conversation.provider.user.full_name}
+                          {conversation.client.full_name} ↔ {conversation.provider.full_name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Client: {conversation.client.email} | Provider: {conversation.provider.user.email}
+                          Client: {conversation.client.email} | Provider: {conversation.provider.email}
                         </p>
                       </div>
                     </div>

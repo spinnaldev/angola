@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 from operation.models import (
-    ClientProject, Dispute, Notification, ProjectOffer, QuoteRequest, Message
+    AdminAction, ClientProject, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
 )
 
 # Obtenir la couche de canal pour WebSocket
@@ -374,3 +374,51 @@ def message_created(sender, instance, created, **kwargs):
                     'message': message_data
                 }
             )
+
+
+
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=ProviderVerification)
+def log_provider_verification_change(sender, instance, created, **kwargs):
+    """Log automatique des changements de vérification prestataire"""
+    if created:
+        # Log de création
+        AdminAction.objects.create(
+            admin_user=instance.verified_by if instance.verified_by else None,
+            action_type='provider_verification_create',
+            target_model='ProviderVerification',
+            target_id=instance.id,
+            description=f"Nouvelle demande de vérification pour {instance.provider.user.username}"
+        )
+    else:
+        # Log des changements de statut
+        if instance.verification_status == 'verified':
+            AdminAction.objects.create(
+                admin_user=instance.verified_by,
+                action_type='provider_verification_approve',
+                target_model='ProviderVerification',
+                target_id=instance.id,
+                description=f"Vérification approuvée pour {instance.provider.user.username}"
+            )
+        elif instance.verification_status == 'rejected':
+            AdminAction.objects.create(
+                admin_user=instance.verified_by if instance.verified_by else None,
+                action_type='provider_verification_reject',
+                target_model='ProviderVerification',
+                target_id=instance.id,
+                description=f"Vérification rejetée pour {instance.provider.user.username}: {instance.rejection_reason}"
+            )
+
+@receiver(post_save, sender=PhoneVerification)
+def log_phone_verification_change(sender, instance, created, **kwargs):
+    """Log automatique des changements de vérification téléphone"""
+    if instance.status == 'verified' and instance.verified_at:
+        AdminAction.objects.create(
+            admin_user=None,  # Action automatique
+            action_type='phone_verification_success',
+            target_model='PhoneVerification',
+            target_id=instance.id,
+            description=f"Vérification téléphone réussie pour {instance.user.username} ({instance.phone_number})"
+        )

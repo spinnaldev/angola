@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:teyago/core/models/verification_result.dart';
+import 'package:teyago/core/services/api_service.dart';
 import 'package:teyago/core/services/phone_verification_service.dart';
 import 'package:teyago/core/services/provider_verification_service.dart';
 import '../core/services/auth_service.dart';
@@ -38,7 +39,12 @@ class AuthProvider with ChangeNotifier {
   AuthStatus _status = AuthStatus.uninitialized;
   User? _currentUser;
   String? _errorMessage;
-  
+  final apiService = ApiService(
+      baseUrl: dotenv.env['API_BASE_URL'] ?? 'http://localhost:8004/api',
+      // baseUrl: 'http://10.0.2.2:8003/api',
+      // baseUrl: "https://angola.onrender.com/api",
+      apiKey: 'your_api_key_here',
+    );
   // État pour le reset de mot de passe
   PasswordResetStatus _resetStatus = PasswordResetStatus.initial;
   String? _resetEmail;
@@ -81,8 +87,8 @@ class AuthProvider with ChangeNotifier {
   // Initialiser les providers de vérification
   void _initializeVerificationProviders() {
     if (_authService != null) {
-      final providerService = ProviderVerificationService(_authService!.apiService);
-      final phoneService = PhoneVerificationService(_authService!.apiService);
+      final providerService = ProviderVerificationService(apiService);
+      final phoneService = PhoneVerificationService(apiService);
       
       _providerVerificationProvider = ProviderVerificationProvider(providerService);
       _phoneVerificationProvider = PhoneVerificationProvider(phoneService);
@@ -751,5 +757,6 @@ class AuthProvider with ChangeNotifier {
     
     return _verificationGuardProvider!.checkAccess(_currentUser, actionDescription);
   }
+ 
   
 }

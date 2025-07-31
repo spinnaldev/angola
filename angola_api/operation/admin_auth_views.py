@@ -4,19 +4,21 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from .permissions import IsSuperAdminOnly
 from operation.models import User
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 from django.utils import timezone
 from datetime import timedelta
-from .models import Conversation, Message, User
-from .serializers import ConversationSerializer, MessageSerializer
+from .models import AdminAction, Conversation, Message, Notification, PhoneVerification, Provider, ProviderVerification, User
+from .serializers import ConversationSerializer, MessageSerializer, NotificationSerializer, PhoneVerificationSerializer, ProviderVerificationAdminSerializer, ProviderVerificationListSerializer, ProviderVerificationSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q, Count, Prefetch
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 import logging
+from django.db.models import Q, Case, When, IntegerField 
 
 logger = logging.getLogger(__name__)
 
@@ -538,3 +540,884 @@ def bulk_mark_read(request):
         return Response({
             'error': 'Erreur lors du marquage en lot'
         }, status=500)
+    
+
+
+
+
+# *******************NOTIFICATIONS **************************
+
+class AdminNotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        total = Notification.objects.count()
+        unread = Notification.objects.filter(is_read=False).count()
+        recent = Notification.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=1)
+        ).count()
+        
+        return Response({
+            'total': total,
+            'unread': unread,
+            'recent': recent,
+            'activeUsers': User.objects.filter(
+                notifications__created_at__gte=timezone.now() - timedelta(days=7)
+            ).distinct().count()
+        })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def send_notification_to_user(request):
+    user_id = request.data.get('user_id')
+    title = request.data.get('title')
+    message = request.data.get('message')
+    notification_type = request.data.get('notification_type', 'system')
+    
+    try:
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(
+            user=user,
+            title=title,
+            message=message,
+            notification_type=notification_type
+        )
+        return Response(NotificationSerializer(notification).data)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def broadcast_notification(request):
+    title = request.data.get('title')
+    message = request.data.get('message')
+    notification_type = request.data.get('notification_type', 'system')
+    
+    users = User.objects.filter(is_active=True)
+    notifications = []
+    
+    for user in users:
+        notifications.append(Notification(
+            user=user,
+            title=title,
+            message=message,
+            notification_type=notification_type
+        ))
+    
+    Notification.objects.bulk_create(notifications)
+    return Response({'count': len(notifications), 'message': 'Notifications envoyées'})
+
+
+
+
+
+# ================================================================
+# 2. VIEWSET ADMIN POUR VÉRIFICATION DES PRESTATAIRES
+# ================================================================
+
+class AdminProviderVerificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet admin pour gérer toutes les vérifications de prestataires
+    
+    Endpoints disponibles pour les admins:
+    - GET /admin/provider-verification/ : Liste de toutes les vérifications
+    - GET /admin/provider-verification/{id}/ : Détail d'une vérification
+    - PUT/PATCH /admin/provider-verification/{id}/ : Modifier une vérification
+    
+    Actions personnalisées:
+    - GET /admin/provider-verification/pending/ : Vérifications en attente
+    - GET /admin/provider-verification/statistics/ : Statistiques globales
+    - POST /admin/provider-verification/{id}/approve/ : Approuver
+    - POST /admin/provider-verification/{id}/reject/ : Rejeter
+    - POST /admin/provider-verification/bulk-approve/ : Approbation en lot
+    - POST /admin/provider-verification/bulk-reject/ : Rejet en lot
+    """
+    
+    queryset = ProviderVerification.objects.all().select_related(
+        'provider__user', 'verified_by'
+    ).order_by('-created_at')
+    
+    permission_classes = [IsAdminUser]
+    
+    def get_serializer_class(self):
+        """Choisir le serializer selon l'action"""
+        if self.action == 'list':
+            return ProviderVerificationListSerializer
+        elif self.action in ['approve', 'reject', 'bulk_approve', 'bulk_reject']:
+            return ProviderVerificationAdminSerializer
+        return ProviderVerificationSerializer
+    
+    def get_queryset(self):
+        """Filtrage avancé pour les admins"""
+        queryset = super().get_queryset()
+        
+        # Filtres par paramètres GET
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(verification_status=status_filter)
+        
+        business_filter = self.request.query_params.get('is_business')
+        if business_filter is not None:
+            is_business = business_filter.lower() == 'true'
+            queryset = queryset.filter(is_business=is_business)
+        
+        # Filtre par période
+        days_filter = self.request.query_params.get('days')
+        if days_filter:
+            try:
+                days = int(days_filter)
+                date_threshold = timezone.now() - timedelta(days=days)
+                queryset = queryset.filter(submitted_at__gte=date_threshold)
+            except ValueError:
+                pass
+        
+        # Recherche par nom/email
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(provider__user__username__icontains=search) |
+                Q(provider__user__email__icontains=search) |
+                Q(provider__user__first_name__icontains=search) |
+                Q(provider__user__last_name__icontains=search) |
+                Q(provider__company_name__icontains=search)
+            )
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'], url_path='pending')
+    def pending(self, request):
+        """
+        Récupérer toutes les vérifications en attente
+        Triées par date de soumission (plus anciennes en premier)
+        """
+        pending_verifications = self.get_queryset().filter(
+            verification_status='pending'
+        ).order_by('submitted_at')
+        
+        serializer = ProviderVerificationListSerializer(
+            pending_verifications, 
+            many=True,
+            context={'request': request}
+        )
+        
+        return Response({
+            'count': pending_verifications.count(),
+            'results': serializer.data
+        })
+    
+    @action(detail=False, methods=['get'], url_path='statistics')
+    def statistics(self, request):
+        """
+        Statistiques complètes des vérifications prestataires
+        """
+        # Compter par statut
+        status_counts = ProviderVerification.objects.aggregate(
+            total=Count('id'),
+            pending=Count(Case(When(verification_status='pending', then=1), 
+                              output_field=IntegerField())),
+            verified=Count(Case(When(verification_status='verified', then=1), 
+                               output_field=IntegerField())),
+            rejected=Count(Case(When(verification_status='rejected', then=1), 
+                               output_field=IntegerField())),
+            not_started=Count(Case(When(verification_status='not_started', then=1), 
+                                  output_field=IntegerField()))
+        )
+        
+        # Compter par type (entreprise/particulier)
+        type_counts = ProviderVerification.objects.aggregate(
+            businesses=Count(Case(When(is_business=True, then=1), 
+                                 output_field=IntegerField())),
+            individuals=Count(Case(When(is_business=False, then=1), 
+                                  output_field=IntegerField()))
+        )
+        
+        # Statistiques temporelles (30 derniers jours)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_stats = ProviderVerification.objects.filter(
+            submitted_at__gte=thirty_days_ago
+        ).aggregate(
+            recent_submissions=Count('id'),
+            recent_approvals=Count(Case(When(
+                verification_status='verified',
+                verified_at__gte=thirty_days_ago,
+                then=1
+            ), output_field=IntegerField()))
+        )
+        
+        # Temps moyen d'approbation
+        approved_verifications = ProviderVerification.objects.filter(
+            verification_status='verified',
+            submitted_at__isnull=False,
+            verified_at__isnull=False
+        )
+        
+        avg_approval_time = None
+        if approved_verifications.exists():
+            total_time = 0
+            count = 0
+            for verification in approved_verifications:
+                if verification.submitted_at and verification.verified_at:
+                    time_diff = verification.verified_at - verification.submitted_at
+                    total_time += time_diff.total_seconds()
+                    count += 1
+            
+            if count > 0:
+                avg_approval_time = total_time / count / 3600  # en heures
+        
+        # Vérifications urgentes (en attente depuis plus de 7 jours)
+        urgent_threshold = timezone.now() - timedelta(days=7)
+        urgent_count = ProviderVerification.objects.filter(
+            verification_status='pending',
+            submitted_at__lte=urgent_threshold
+        ).count()
+        
+        return Response({
+            'status_distribution': status_counts,
+            'type_distribution': type_counts,
+            'recent_activity': recent_stats,
+            'average_approval_time_hours': avg_approval_time,
+            'urgent_verifications': urgent_count,
+            'total_providers': Provider.objects.count(),
+            'verified_providers': Provider.objects.filter(is_verified=True).count()
+        })
+    
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """
+        Approuver une vérification de prestataire
+        
+        Données optionnelles:
+        - admin_notes: Notes administratives
+        """
+        verification = self.get_object()
+        
+        if verification.verification_status == 'verified':
+            return Response({
+                'detail': 'Cette vérification est déjà approuvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        with transaction.atomic():
+            # Mettre à jour la vérification
+            verification.verification_status = 'verified'
+            verification.verified_by = request.user
+            verification.verified_at = timezone.now()
+            verification.rejection_reason = ''  # Effacer raison rejet précédente
+            
+            # Ajouter notes admin si fournies
+            admin_notes = request.data.get('admin_notes', '')
+            if admin_notes:
+                existing_notes = verification.admin_notes or ''
+                timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                new_note = f"[{timestamp} - {request.user.username}] {admin_notes}"
+                verification.admin_notes = f"{existing_notes}\n{new_note}".strip()
+            
+            verification.save()
+            
+            # Logger l'action
+            AdminAction.objects.create(
+                admin_user=request.user,
+                action_type='provider_verification_approve',
+                target_model='ProviderVerification',
+                target_id=verification.id,
+                description=f"Vérification approuvée pour {verification.provider.user.username}",
+                new_value={'status': 'verified', 'admin_notes': verification.admin_notes}
+            )
+            
+            logger.info(f"Vérification approuvée par {request.user.username} pour {verification.provider.user.username}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification approuvée avec succès',
+            'verification': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        """
+        Rejeter une vérification de prestataire
+        
+        Données requises:
+        - rejection_reason: Raison du rejet
+        
+        Données optionnelles:
+        - admin_notes: Notes administratives supplémentaires
+        """
+        verification = self.get_object()
+        rejection_reason = request.data.get('rejection_reason', '').strip()
+        
+        if not rejection_reason:
+            return Response({
+                'detail': 'La raison du rejet est requise'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if verification.verification_status == 'rejected':
+            return Response({
+                'detail': 'Cette vérification est déjà rejetée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        with transaction.atomic():
+            # Mettre à jour la vérification
+            verification.verification_status = 'rejected'
+            verification.verified_by = request.user
+            verification.verified_at = None
+            verification.rejection_reason = rejection_reason
+            
+            # Ajouter notes admin si fournies
+            admin_notes = request.data.get('admin_notes', '')
+            if admin_notes:
+                existing_notes = verification.admin_notes or ''
+                timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                new_note = f"[{timestamp} - {request.user.username}] {admin_notes}"
+                verification.admin_notes = f"{existing_notes}\n{new_note}".strip()
+            
+            verification.save()
+            
+            # Logger l'action
+            AdminAction.objects.create(
+                admin_user=request.user,
+                action_type='provider_verification_reject',
+                target_model='ProviderVerification',
+                target_id=verification.id,
+                description=f"Vérification rejetée pour {verification.provider.user.username}: {rejection_reason}",
+                new_value={'status': 'rejected', 'rejection_reason': rejection_reason}
+            )
+            
+            logger.info(f"Vérification rejetée par {request.user.username} pour {verification.provider.user.username}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification rejetée avec succès',
+            'verification': serializer.data
+        })
+    
+    @action(detail=False, methods=['post'], url_path='bulk-approve')
+    def bulk_approve(self, request):
+        """
+        Approuver plusieurs vérifications en lot
+        
+        Données requises:
+        - verification_ids: Liste des IDs à approuver
+        
+        Données optionnelles:
+        - admin_notes: Notes appliquées à toutes les vérifications
+        """
+        verification_ids = request.data.get('verification_ids', [])
+        admin_notes = request.data.get('admin_notes', '')
+        
+        if not verification_ids:
+            return Response({
+                'detail': 'Liste des vérifications requise'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Filtrer les vérifications modifiables
+        verifications = ProviderVerification.objects.filter(
+            id__in=verification_ids,
+            verification_status__in=['pending', 'rejected']
+        )
+        
+        if not verifications.exists():
+            return Response({
+                'detail': 'Aucune vérification valide trouvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        approved_count = 0
+        errors = []
+        
+        with transaction.atomic():
+            for verification in verifications:
+                try:
+                    # Mettre à jour
+                    verification.verification_status = 'verified'
+                    verification.verified_by = request.user
+                    verification.verified_at = timezone.now()
+                    verification.rejection_reason = ''
+                    
+                    # Ajouter notes si fournies
+                    if admin_notes:
+                        existing_notes = verification.admin_notes or ''
+                        timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                        new_note = f"[{timestamp} - {request.user.username}] {admin_notes}"
+                        verification.admin_notes = f"{existing_notes}\n{new_note}".strip()
+                    
+                    verification.save()
+                    
+                    # Logger
+                    AdminAction.objects.create(
+                        admin_user=request.user,
+                        action_type='verification_bulk_action',
+                        target_model='ProviderVerification',
+                        target_id=verification.id,
+                        description=f"Approbation en lot pour {verification.provider.user.username}"
+                    )
+                    
+                    approved_count += 1
+                    
+                except Exception as e:
+                    errors.append({
+                        'verification_id': verification.id,
+                        'error': str(e)
+                    })
+        
+        logger.info(f"Approbation en lot par {request.user.username}: {approved_count} vérifications approuvées")
+        
+        return Response({
+            'message': f'{approved_count} vérifications approuvées avec succès',
+            'approved_count': approved_count,
+            'errors': errors
+        })
+    
+    @action(detail=False, methods=['post'], url_path='bulk-reject')
+    def bulk_reject(self, request):
+        """
+        Rejeter plusieurs vérifications en lot
+        
+        Données requises:
+        - verification_ids: Liste des IDs à rejeter
+        - rejection_reason: Raison du rejet (commune à toutes)
+        """
+        verification_ids = request.data.get('verification_ids', [])
+        rejection_reason = request.data.get('rejection_reason', '').strip()
+        admin_notes = request.data.get('admin_notes', '')
+        
+        if not verification_ids:
+            return Response({
+                'detail': 'Liste des vérifications requise'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not rejection_reason:
+            return Response({
+                'detail': 'Raison du rejet requise'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Filtrer les vérifications modifiables
+        verifications = ProviderVerification.objects.filter(
+            id__in=verification_ids,
+            verification_status__in=['pending', 'verified']
+        )
+        
+        rejected_count = 0
+        errors = []
+        
+        with transaction.atomic():
+            for verification in verifications:
+                try:
+                    verification.verification_status = 'rejected'
+                    verification.verified_by = request.user
+                    verification.verified_at = None
+                    verification.rejection_reason = rejection_reason
+                    
+                    if admin_notes:
+                        existing_notes = verification.admin_notes or ''
+                        timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                        new_note = f"[{timestamp} - {request.user.username}] {admin_notes}"
+                        verification.admin_notes = f"{existing_notes}\n{new_note}".strip()
+                    
+                    verification.save()
+                    
+                    AdminAction.objects.create(
+                        admin_user=request.user,
+                        action_type='verification_bulk_action',
+                        target_model='ProviderVerification',
+                        target_id=verification.id,
+                        description=f"Rejet en lot pour {verification.provider.user.username}: {rejection_reason}"
+                    )
+                    
+                    rejected_count += 1
+                    
+                except Exception as e:
+                    errors.append({
+                        'verification_id': verification.id,
+                        'error': str(e)
+                    })
+        
+        logger.info(f"Rejet en lot par {request.user.username}: {rejected_count} vérifications rejetées")
+        
+        return Response({
+            'message': f'{rejected_count} vérifications rejetées avec succès',
+            'rejected_count': rejected_count,
+            'errors': errors
+        })
+
+
+# ================================================================
+# 3. VIEWSET ADMIN POUR VÉRIFICATION PAR TÉLÉPHONE
+# ================================================================
+
+class AdminPhoneVerificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet admin pour consulter les vérifications téléphone
+    (lecture seule - pas de modification des vérifications téléphone par les admins)
+    
+    Actions personnalisées:
+    - GET /admin/phone-verification/statistics/ : Statistiques des vérifications téléphone
+    - POST /admin/phone-verification/{id}/reset/ : Réinitialiser une vérification
+    """
+    
+    queryset = PhoneVerification.objects.all().select_related('user').order_by('-created_at')
+    serializer_class = PhoneVerificationSerializer
+    permission_classes = [IsAdminUser]
+    
+    def get_queryset(self):
+        """Filtrage pour les admins"""
+        queryset = super().get_queryset()
+        
+        # Filtre par statut
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        # Recherche par utilisateur
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(user__username__icontains=search) |
+                Q(user__email__icontains=search) |
+                Q(phone_number__icontains=search)
+            )
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'], url_path='statistics')
+    def statistics(self, request):
+        """Statistiques des vérifications téléphone"""
+        
+        # Compter par statut
+        status_counts = PhoneVerification.objects.aggregate(
+            total=Count('id'),
+            verified=Count(Case(When(status='verified', then=1), 
+                               output_field=IntegerField())),
+            pending=Count(Case(When(status='pending', then=1), 
+                              output_field=IntegerField())),
+            expired=Count(Case(When(status='expired', then=1), 
+                              output_field=IntegerField())),
+            failed=Count(Case(When(status='failed', then=1), 
+                             output_field=IntegerField()))
+        )
+        
+        # Taux de succès
+        total_attempts = PhoneVerification.objects.count()
+        success_rate = 0
+        if total_attempts > 0:
+            success_rate = (status_counts['verified'] / total_attempts) * 100
+        
+        # Statistiques temporelles
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_verifications = PhoneVerification.objects.filter(
+            created_at__gte=thirty_days_ago
+        ).count()
+        
+        return Response({
+            'status_distribution': status_counts,
+            'success_rate_percentage': round(success_rate, 2),
+            'recent_verifications_30_days': recent_verifications,
+            'total_users': User.objects.filter(role='client').count(),
+            'verified_users': User.objects.filter(
+                role='client',
+                phone_verification__status='verified'
+            ).count()
+        })
+    
+    @action(detail=True, methods=['post'], url_path='reset')
+    def reset(self, request, pk=None):
+        """
+        Réinitialiser une vérification téléphone
+        Permet à l'utilisateur de recommencer le processus
+        """
+        verification = self.get_object()
+        
+        if verification.status == 'verified':
+            return Response({
+                'detail': 'Impossible de réinitialiser une vérification approuvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Réinitialiser
+        verification.status = 'pending'
+        verification.attempts = 0
+        verification.verification_code = PhoneVerification.generate_code()
+        verification.expires_at = timezone.now() + timedelta(minutes=10)
+        verification.last_code_sent_at = timezone.now()
+        verification.save()
+        
+        # Mettre à jour le statut utilisateur
+        verification.user.is_verified = False
+        verification.user.save()
+        
+        # Logger l'action
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type='phone_verification_reset',
+            target_model='PhoneVerification',
+            target_id=verification.id,
+            description=f"Vérification téléphone réinitialisée pour {verification.user.username}"
+        )
+        
+        logger.info(f"Vérification téléphone réinitialisée par {request.user.username} pour {verification.user.username}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification téléphone réinitialisée avec succès',
+            'verification': serializer.data
+        })
+
+
+# ================================================================
+# 4. DASHBOARD ET STATISTIQUES GLOBALES
+# ================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def verification_dashboard(request):
+    """
+    Dashboard global des vérifications pour les admins
+    Vue d'ensemble de tous les types de vérifications
+    """
+    
+    # Statistiques prestataires
+    provider_stats = ProviderVerification.objects.aggregate(
+        total=Count('id'),
+        pending=Count(Case(When(verification_status='pending', then=1), 
+                          output_field=IntegerField())),
+        verified=Count(Case(When(verification_status='verified', then=1), 
+                           output_field=IntegerField())),
+        rejected=Count(Case(When(verification_status='rejected', then=1), 
+                           output_field=IntegerField()))
+    )
+    
+    # Statistiques clients
+    client_stats = PhoneVerification.objects.aggregate(
+        total=Count('id'),
+        verified=Count(Case(When(status='verified', then=1), 
+                           output_field=IntegerField())),
+        pending=Count(Case(When(status='pending', then=1), 
+                          output_field=IntegerField()))
+    )
+    
+    # Vérifications urgentes (en attente depuis >7 jours)
+    urgent_threshold = timezone.now() - timedelta(days=7)
+    urgent_verifications = ProviderVerification.objects.filter(
+        verification_status='pending',
+        submitted_at__lte=urgent_threshold
+    ).count()
+    
+    # Activité récente (7 derniers jours)
+    week_ago = timezone.now() - timedelta(days=7)
+    recent_activity = {
+        'new_provider_verifications': ProviderVerification.objects.filter(
+            submitted_at__gte=week_ago
+        ).count(),
+        'approved_verifications': ProviderVerification.objects.filter(
+            verification_status='verified',
+            verified_at__gte=week_ago
+        ).count(),
+        'new_phone_verifications': PhoneVerification.objects.filter(
+            created_at__gte=week_ago
+        ).count()
+    }
+    
+    # Taux de vérification globaux
+    total_providers = Provider.objects.count()
+    verified_providers = Provider.objects.filter(is_verified=True).count()
+    provider_verification_rate = (verified_providers / total_providers * 100) if total_providers > 0 else 0
+    
+    total_clients = User.objects.filter(role='client').count()
+    verified_clients = User.objects.filter(
+        role='client',
+        phone_verification__status='verified'
+    ).count()
+    client_verification_rate = (verified_clients / total_clients * 100) if total_clients > 0 else 0
+    
+    return Response({
+        'provider_verifications': provider_stats,
+        'phone_verifications': client_stats,
+        'urgent_verifications_count': urgent_verifications,
+        'recent_activity': recent_activity,
+        'verification_rates': {
+            'providers': round(provider_verification_rate, 2),
+            'clients': round(client_verification_rate, 2)
+        },
+        'totals': {
+            'total_providers': total_providers,
+            'verified_providers': verified_providers,
+            'total_clients': total_clients,
+            'verified_clients': verified_clients
+        }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def verification_reports(request):
+    """
+    Rapports détaillés des vérifications
+    Avec données pour graphiques et analyses
+    """
+    
+    # Évolution dans le temps (30 derniers jours)
+    daily_stats = []
+    for i in range(30):
+        day = timezone.now().date() - timedelta(days=i)
+        day_start = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time()))
+        day_end = day_start + timedelta(days=1)
+        
+        provider_submissions = ProviderVerification.objects.filter(
+            submitted_at__gte=day_start,
+            submitted_at__lt=day_end
+        ).count()
+        
+        provider_approvals = ProviderVerification.objects.filter(
+            verified_at__gte=day_start,
+            verified_at__lt=day_end,
+            verification_status='verified'
+        ).count()
+        
+        phone_verifications = PhoneVerification.objects.filter(
+            verified_at__gte=day_start,
+            verified_at__lt=day_end,
+            status='verified'
+        ).count()
+        
+        daily_stats.append({
+            'date': day.isoformat(),
+            'provider_submissions': provider_submissions,
+            'provider_approvals': provider_approvals,
+            'phone_verifications': phone_verifications
+        })
+    
+    # Répartition par type de document
+    document_stats = ProviderVerification.objects.aggregate(
+        id_cards=Count(Case(When(document_type='id_card', then=1), 
+                           output_field=IntegerField())),
+        passports=Count(Case(When(document_type='passport', then=1), 
+                            output_field=IntegerField())),
+        businesses=Count(Case(When(is_business=True, then=1), 
+                             output_field=IntegerField())),
+        individuals=Count(Case(When(is_business=False, then=1), 
+                              output_field=IntegerField()))
+    )
+    
+    # Top des raisons de rejet
+    rejection_reasons = ProviderVerification.objects.filter(
+        verification_status='rejected',
+        rejection_reason__isnull=False
+    ).exclude(rejection_reason='').values_list('rejection_reason', flat=True)
+    
+    # Compter les raisons les plus fréquentes
+    reason_counts = {}
+    for reason in rejection_reasons:
+        reason_counts[reason] = reason_counts.get(reason, 0) + 1
+    
+    top_rejection_reasons = sorted(
+        reason_counts.items(), 
+        key=lambda x: x[1], 
+        reverse=True
+    )[:10]
+    
+    return Response({
+        'daily_evolution': daily_stats,
+        'document_distribution': document_stats,
+        'top_rejection_reasons': [
+            {'reason': reason, 'count': count} 
+            for reason, count in top_rejection_reasons
+        ],
+        'generated_at': timezone.now().isoformat()
+    })
+
+
+# ================================================================
+# 5. ACTIONS ADMIN AVANCÉES
+# ================================================================
+
+@api_view(['POST'])
+@permission_classes([IsSuperAdminOnly])
+def reset_all_verifications(request):
+    """
+    ATTENTION: Action destructrice réservée aux super-admins
+    Remet à zéro toutes les vérifications (pour tests/développement)
+    """
+    
+    if not request.data.get('confirm') == 'RESET_ALL_VERIFICATIONS':
+        return Response({
+            'detail': 'Confirmation requise: envoyez {"confirm": "RESET_ALL_VERIFICATIONS"}'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    with transaction.atomic():
+        # Reset vérifications prestataires
+        provider_count = ProviderVerification.objects.count()
+        ProviderVerification.objects.all().delete()
+        Provider.objects.update(is_verified=False)
+        
+        # Reset vérifications téléphone
+        phone_count = PhoneVerification.objects.count()
+        PhoneVerification.objects.all().delete()
+        User.objects.filter(role='client').update(is_verified=False)
+        
+        # Logger l'action
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type='verification_reset_all',
+            target_model='All',
+            target_id=0,
+            description=f"Reset complet des vérifications: {provider_count} prestataires, {phone_count} clients"
+        )
+    
+    logger.warning(f"RESET COMPLET DES VÉRIFICATIONS par {request.user.username}")
+    
+    return Response({
+        'message': 'Toutes les vérifications ont été réinitialisées',
+        'provider_verifications_deleted': provider_count,
+        'phone_verifications_deleted': phone_count
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def export_verifications(request):
+    """
+    Exporter les données de vérifications en CSV
+    """
+    import csv
+    from django.http import HttpResponse
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="verifications_export.csv"'
+    
+    writer = csv.writer(response)
+    
+    # En-têtes
+    writer.writerow([
+        'Type', 'Utilisateur', 'Email', 'Statut', 'Date soumission', 
+        'Date vérification', 'Vérifié par', 'Raison rejet'
+    ])
+    
+    # Vérifications prestataires
+    for verification in ProviderVerification.objects.select_related(
+        'provider__user', 'verified_by'
+    ).all():
+        writer.writerow([
+            'Prestataire',
+            verification.provider.user.username,
+            verification.provider.user.email,
+            verification.get_verification_status_display(),
+            verification.submitted_at,
+            verification.verified_at,
+            verification.verified_by.username if verification.verified_by else '',
+            verification.rejection_reason
+        ])
+    
+    # Vérifications téléphone
+    for verification in PhoneVerification.objects.select_related('user').all():
+        writer.writerow([
+            'Client',
+            verification.user.username,
+            verification.user.email,
+            verification.get_status_display(),
+            verification.created_at,
+            verification.verified_at,
+            'Automatique',
+            ''
+        ])
+    
+    return response

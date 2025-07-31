@@ -191,3 +191,252 @@ INFO 2025-07-30 15:40:07,425 basehttp 27520 13076 "GET /api/admin/conversations/
 INFO 2025-07-30 15:40:07,444 basehttp 27520 18736 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
 INFO 2025-07-30 15:40:07,574 basehttp 27520 13076 "GET /api/admin/conversations/? HTTP/1.1" 200 52
 INFO 2025-07-30 15:40:07,593 basehttp 27520 18736 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 15:59:12,351 autoreload 27520 27260 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 15:59:16,230 autoreload 31552 7948 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:10,970 autoreload 31552 7948 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:12,162 autoreload 11532 21804 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:16,741 autoreload 11532 21804 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:18,357 autoreload 23528 31504 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:22,178 autoreload 23528 31504 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:23,796 autoreload 29040 25928 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:25,594 autoreload 29040 25928 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:27,566 autoreload 26076 25500 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:30,187 autoreload 26076 25500 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:31,622 autoreload 30132 29804 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:39,318 autoreload 30132 29804 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:40,707 autoreload 30940 5636 Watching for file changes with StatReloader
+INFO 2025-07-30 16:00:42,288 autoreload 30940 5636 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-30 16:00:43,700 autoreload 4756 3048 Watching for file changes with StatReloader
+INFO 2025-07-30 16:03:39,767 autoreload 4756 3048 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:03:41,273 autoreload 27004 27552 Watching for file changes with StatReloader
+INFO 2025-07-30 16:03:57,445 autoreload 27004 27552 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:03:58,790 autoreload 31656 13160 Watching for file changes with StatReloader
+INFO 2025-07-30 16:04:01,288 autoreload 31656 13160 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:04:02,724 autoreload 22400 32448 Watching for file changes with StatReloader
+INFO 2025-07-30 16:04:08,177 autoreload 22400 32448 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:04:09,655 autoreload 26676 20796 Watching for file changes with StatReloader
+INFO 2025-07-30 16:04:16,498 autoreload 26676 20796 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:04:18,163 autoreload 26428 30292 Watching for file changes with StatReloader
+INFO 2025-07-30 16:08:03,500 autoreload 29808 27880 Watching for file changes with StatReloader
+INFO 2025-07-30 16:08:53,712 autoreload 31992 27116 Watching for file changes with StatReloader
+INFO 2025-07-30 16:09:02,748 autoreload 31992 27116 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:09:04,718 autoreload 3168 2228 Watching for file changes with StatReloader
+INFO 2025-07-30 16:09:06,596 autoreload 3168 2228 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:09:08,172 autoreload 26056 14676 Watching for file changes with StatReloader
+INFO 2025-07-30 16:09:43,754 autoreload 24332 30652 Watching for file changes with StatReloader
+INFO 2025-07-30 16:10:00,236 basehttp 24332 8360 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:10:00,241 basehttp 24332 21892 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 16:10:00,433 basehttp 24332 21892 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 16:10:00,449 basehttp 24332 8360 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:10:03,518 basehttp 24332 26160 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:10:03,639 basehttp 24332 26160 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:10:03,801 basehttp 24332 26160 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:13:46,618 basehttp 24332 8604 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:13:46,869 basehttp 24332 8604 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:13:47,034 basehttp 24332 8604 "GET /api/users/?page=1&page_size=10 HTTP/1.1" 200 2816
+INFO 2025-07-30 16:26:17,888 basehttp 24332 16516 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:26:17,889 basehttp 24332 31572 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:26:17,889 basehttp 24332 31348 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:26:17,893 basehttp 24332 31964 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:26:18,053 basehttp 24332 31572 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 16:26:18,088 basehttp 24332 31964 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 16:26:18,234 basehttp 24332 31572 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-30 16:26:18,328 basehttp 24332 31964 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-30 16:32:03,290 basehttp 24332 13496 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:32:03,292 basehttp 24332 27108 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:32:03,364 basehttp 24332 13496 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:32:03,370 basehttp 24332 27108 "OPTIONS /api/admin/notifications/? HTTP/1.1" 200 0
+INFO 2025-07-30 16:32:03,478 basehttp 24332 13496 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:32:03,481 basehttp 24332 27108 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:32:03,582 basehttp 24332 27108 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:32:07,494 basehttp 24332 27108 "OPTIONS /api/users/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:32:07,685 basehttp 24332 27108 "GET /api/users/ HTTP/1.1" 200 2803
+INFO 2025-07-30 16:32:19,358 basehttp 24332 27108 "OPTIONS /api/users/?search=p HTTP/1.1" 200 0
+INFO 2025-07-30 16:32:19,446 basehttp 24332 27108 "GET /api/users/?search=p HTTP/1.1" 200 2812
+INFO 2025-07-30 16:32:56,010 basehttp 24332 32120 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:32:56,024 basehttp 24332 17440 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 16:32:56,211 basehttp 24332 32120 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:32:56,220 basehttp 24332 17440 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-30 16:32:58,811 basehttp 24332 17440 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:32:59,032 basehttp 24332 17440 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:32:59,051 basehttp 24332 32120 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:32:59,173 basehttp 24332 32120 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:33:02,869 basehttp 24332 32120 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:33:03,052 basehttp 24332 17440 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:33:03,079 basehttp 24332 32120 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:33:03,309 basehttp 24332 32120 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:33:08,878 basehttp 24332 29960 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:33:09,086 basehttp 24332 29960 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:33:11,096 basehttp 24332 29960 "GET /api/users/ HTTP/1.1" 200 2803
+INFO 2025-07-30 16:33:14,822 basehttp 24332 22504 "GET /api/users/ HTTP/1.1" 200 2803
+INFO 2025-07-30 16:33:25,126 basehttp 24332 26424 "OPTIONS /api/admin/notifications/broadcast/ HTTP/1.1" 200 0
+WARNING 2025-07-30 16:33:25,220 log 24332 26424 Method Not Allowed: /api/admin/notifications/broadcast/
+WARNING 2025-07-30 16:33:25,221 basehttp 24332 26424 "POST /api/admin/notifications/broadcast/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:33:30,499 log 24332 26424 Method Not Allowed: /api/admin/notifications/broadcast/
+WARNING 2025-07-30 16:33:30,500 basehttp 24332 26424 "POST /api/admin/notifications/broadcast/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:33:38,782 log 24332 28772 Method Not Allowed: /api/admin/notifications/broadcast/
+WARNING 2025-07-30 16:33:38,782 basehttp 24332 28772 "POST /api/admin/notifications/broadcast/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:34:37,570 log 24332 23712 Method Not Allowed: /api/admin/notifications/broadcast/
+WARNING 2025-07-30 16:34:37,571 basehttp 24332 23712 "POST /api/admin/notifications/broadcast/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:35:07,047 log 24332 32356 Method Not Allowed: /api/admin/notifications/broadcast/
+WARNING 2025-07-30 16:35:07,048 basehttp 24332 32356 "POST /api/admin/notifications/broadcast/ HTTP/1.1" 405 50
+INFO 2025-07-30 16:37:10,169 autoreload 24332 30652 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:37:15,262 autoreload 13120 29224 Watching for file changes with StatReloader
+INFO 2025-07-30 16:37:17,607 autoreload 13120 29224 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-30 16:37:20,143 autoreload 2836 4868 Watching for file changes with StatReloader
+INFO 2025-07-30 16:37:49,729 basehttp 2836 31604 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:37:49,963 basehttp 2836 31604 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:37:50,251 basehttp 2836 31604 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:37:50,462 basehttp 2836 31604 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 16:37:51,295 basehttp 2836 31604 "GET /api/users/ HTTP/1.1" 200 2803
+INFO 2025-07-30 16:38:01,702 basehttp 2836 26380 "OPTIONS /api/admin/broadcast/notifications HTTP/1.1" 200 0
+INFO 2025-07-30 16:38:01,907 basehttp 2836 26380 "POST /api/admin/broadcast/notifications HTTP/1.1" 200 48
+INFO 2025-07-30 16:38:02,363 basehttp 2836 26380 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:38:02,594 basehttp 2836 26380 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:38:10,577 basehttp 2836 19024 "OPTIONS /api/notifications/15/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:38:10,666 basehttp 2836 19024 "DELETE /api/notifications/15/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:38:10,763 basehttp 2836 19024 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:38:10,849 basehttp 2836 19024 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:38:15,180 basehttp 2836 30520 "OPTIONS /api/notifications/24/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:38:15,337 basehttp 2836 30520 "DELETE /api/notifications/24/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:38:15,525 basehttp 2836 30520 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:38:15,686 basehttp 2836 30520 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:38:20,194 basehttp 2836 30520 "OPTIONS /api/notifications/bulk_delete/ HTTP/1.1" 200 0
+WARNING 2025-07-30 16:38:20,291 log 2836 30520 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:38:20,292 basehttp 2836 30520 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:38:23,374 log 2836 30520 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:38:23,375 basehttp 2836 30520 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:38:23,602 log 2836 30520 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:38:23,603 basehttp 2836 30520 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:38:23,794 log 2836 30520 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:38:23,795 basehttp 2836 30520 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+WARNING 2025-07-30 16:38:31,120 log 2836 30252 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:38:31,120 basehttp 2836 30252 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+INFO 2025-07-30 16:39:16,198 basehttp 2836 13404 "OPTIONS /api/notifications/13/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:39:16,303 basehttp 2836 13404 "DELETE /api/notifications/13/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:39:16,433 basehttp 2836 13404 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:39:16,635 basehttp 2836 13404 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+WARNING 2025-07-30 16:40:33,315 log 2836 6536 Method Not Allowed: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:40:33,316 basehttp 2836 6536 "POST /api/notifications/bulk_delete/ HTTP/1.1" 405 50
+INFO 2025-07-30 16:41:08,282 basehttp 2836 30648 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:08,408 basehttp 2836 30648 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:08,515 basehttp 2836 15456 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:41:08,878 basehttp 2836 15456 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+WARNING 2025-07-30 16:41:17,395 log 2836 25236 Bad Request: /api/notifications/bulk_delete/
+WARNING 2025-07-30 16:41:17,396 basehttp 2836 25236 "DELETE /api/notifications/bulk_delete/ HTTP/1.1" 400 38
+INFO 2025-07-30 16:41:36,774 basehttp 2836 14212 "OPTIONS /api/notifications/23/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:36,916 basehttp 2836 14212 "DELETE /api/notifications/23/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:37,047 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:37,185 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:41:39,807 basehttp 2836 14212 "OPTIONS /api/notifications/19/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:39,950 basehttp 2836 14212 "DELETE /api/notifications/19/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:40,102 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:40,242 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1653
+INFO 2025-07-30 16:41:42,750 basehttp 2836 14212 "OPTIONS /api/notifications/22/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:42,953 basehttp 2836 14212 "DELETE /api/notifications/22/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:43,085 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:43,220 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1652
+INFO 2025-07-30 16:41:45,432 basehttp 2836 14212 "OPTIONS /api/notifications/21/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:45,557 basehttp 2836 14212 "DELETE /api/notifications/21/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:45,696 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:45,821 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1651
+INFO 2025-07-30 16:41:47,759 basehttp 2836 14212 "OPTIONS /api/notifications/20/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:47,840 basehttp 2836 14212 "DELETE /api/notifications/20/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:47,944 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:48,072 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1650
+INFO 2025-07-30 16:41:49,825 basehttp 2836 14212 "OPTIONS /api/notifications/18/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:49,909 basehttp 2836 14212 "DELETE /api/notifications/18/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:50,014 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:50,224 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1649
+INFO 2025-07-30 16:41:51,984 basehttp 2836 14212 "OPTIONS /api/notifications/17/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:52,067 basehttp 2836 14212 "DELETE /api/notifications/17/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:52,160 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:52,250 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1648
+INFO 2025-07-30 16:41:53,885 basehttp 2836 14212 "OPTIONS /api/notifications/16/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:53,978 basehttp 2836 14212 "DELETE /api/notifications/16/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:54,073 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:54,160 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1647
+INFO 2025-07-30 16:41:55,810 basehttp 2836 14212 "OPTIONS /api/notifications/14/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:55,899 basehttp 2836 14212 "DELETE /api/notifications/14/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:56,010 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:56,102 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1646
+INFO 2025-07-30 16:41:58,080 basehttp 2836 14212 "OPTIONS /api/notifications/12/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:41:58,169 basehttp 2836 14212 "DELETE /api/notifications/12/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:41:58,261 basehttp 2836 14212 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:41:58,349 basehttp 2836 14212 "GET /api/admin/notifications/? HTTP/1.1" 200 1645
+INFO 2025-07-30 16:42:00,334 basehttp 2836 23100 "OPTIONS /api/notifications/11/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:00,417 basehttp 2836 23100 "DELETE /api/notifications/11/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:00,548 basehttp 2836 23100 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 53
+INFO 2025-07-30 16:42:00,640 basehttp 2836 23100 "GET /api/admin/notifications/? HTTP/1.1" 200 1593
+INFO 2025-07-30 16:42:02,402 basehttp 2836 23100 "OPTIONS /api/notifications/10/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:02,481 basehttp 2836 23100 "DELETE /api/notifications/10/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:02,587 basehttp 2836 23100 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:02,678 basehttp 2836 23100 "GET /api/admin/notifications/? HTTP/1.1" 200 1437
+INFO 2025-07-30 16:42:04,768 basehttp 2836 23100 "OPTIONS /api/notifications/9/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:04,886 basehttp 2836 23100 "DELETE /api/notifications/9/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:05,034 basehttp 2836 23100 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:05,140 basehttp 2836 23100 "GET /api/admin/notifications/? HTTP/1.1" 200 1283
+INFO 2025-07-30 16:42:07,047 basehttp 2836 23100 "OPTIONS /api/notifications/8/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:07,131 basehttp 2836 23100 "DELETE /api/notifications/8/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:07,235 basehttp 2836 23100 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:07,322 basehttp 2836 23100 "GET /api/admin/notifications/? HTTP/1.1" 200 1129
+INFO 2025-07-30 16:42:09,150 basehttp 2836 23100 "OPTIONS /api/notifications/7/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:09,234 basehttp 2836 23100 "DELETE /api/notifications/7/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:09,336 basehttp 2836 23100 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:09,447 basehttp 2836 23100 "GET /api/admin/notifications/? HTTP/1.1" 200 975
+INFO 2025-07-30 16:42:11,481 basehttp 2836 19144 "OPTIONS /api/notifications/6/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:11,560 basehttp 2836 19144 "DELETE /api/notifications/6/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:11,684 basehttp 2836 19144 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:11,786 basehttp 2836 19144 "GET /api/admin/notifications/? HTTP/1.1" 200 821
+INFO 2025-07-30 16:42:13,627 basehttp 2836 19144 "OPTIONS /api/notifications/5/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:13,729 basehttp 2836 19144 "DELETE /api/notifications/5/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:13,863 basehttp 2836 19144 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:13,994 basehttp 2836 19144 "GET /api/admin/notifications/? HTTP/1.1" 200 667
+INFO 2025-07-30 16:42:15,592 basehttp 2836 19144 "OPTIONS /api/notifications/4/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:15,710 basehttp 2836 19144 "DELETE /api/notifications/4/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:15,851 basehttp 2836 19144 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:15,991 basehttp 2836 19144 "GET /api/admin/notifications/? HTTP/1.1" 200 513
+INFO 2025-07-30 16:42:17,661 basehttp 2836 19144 "OPTIONS /api/notifications/3/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:17,757 basehttp 2836 19144 "DELETE /api/notifications/3/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:17,862 basehttp 2836 19144 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:17,984 basehttp 2836 19144 "GET /api/admin/notifications/? HTTP/1.1" 200 359
+INFO 2025-07-30 16:42:19,879 basehttp 2836 19144 "OPTIONS /api/notifications/2/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:19,973 basehttp 2836 19144 "DELETE /api/notifications/2/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:20,374 basehttp 2836 15788 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:20,474 basehttp 2836 15788 "GET /api/admin/notifications/? HTTP/1.1" 200 205
+INFO 2025-07-30 16:42:22,565 basehttp 2836 15788 "OPTIONS /api/notifications/1/ HTTP/1.1" 200 0
+INFO 2025-07-30 16:42:22,648 basehttp 2836 15788 "DELETE /api/notifications/1/ HTTP/1.1" 204 0
+INFO 2025-07-30 16:42:22,738 basehttp 2836 15788 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-30 16:42:22,924 basehttp 2836 15788 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-30 17:10:37,076 autoreload 2836 4868 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\models.py changed, reloading.
+INFO 2025-07-30 17:10:41,380 autoreload 12344 25368 Watching for file changes with StatReloader
+INFO 2025-07-30 17:10:55,391 autoreload 12344 25368 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\serializers.py changed, reloading.
+INFO 2025-07-30 17:10:57,441 autoreload 11916 23924 Watching for file changes with StatReloader
+INFO 2025-07-30 17:11:07,118 autoreload 11916 23924 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\serializers.py changed, reloading.
+INFO 2025-07-30 17:11:08,674 autoreload 16716 32272 Watching for file changes with StatReloader
+INFO 2025-07-30 17:11:15,885 autoreload 16716 32272 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\serializers.py changed, reloading.
+INFO 2025-07-30 17:11:17,628 autoreload 28984 32484 Watching for file changes with StatReloader
+INFO 2025-07-31 08:48:32,902 autoreload 9932 29608 Watching for file changes with StatReloader
+INFO 2025-07-31 08:48:54,051 autoreload 27780 25432 Watching for file changes with StatReloader
+INFO 2025-07-31 08:49:18,070 autoreload 19008 26876 Watching for file changes with StatReloader
+INFO 2025-07-31 08:51:58,583 autoreload 26060 24340 Watching for file changes with StatReloader
+INFO 2025-07-31 08:52:10,317 autoreload 28620 30552 Watching for file changes with StatReloader
+INFO 2025-07-31 08:52:20,470 autoreload 28620 30552 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:52:21,625 autoreload 30500 20280 Watching for file changes with StatReloader
+INFO 2025-07-31 08:52:35,021 autoreload 30500 20280 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:52:36,104 autoreload 25888 27456 Watching for file changes with StatReloader
+INFO 2025-07-31 08:52:46,431 autoreload 25888 27456 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:52:47,487 autoreload 23824 28072 Watching for file changes with StatReloader
+INFO 2025-07-31 08:52:59,101 autoreload 26904 17728 Watching for file changes with StatReloader
+INFO 2025-07-31 08:53:33,084 autoreload 26904 17728 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:53:34,142 autoreload 7652 3548 Watching for file changes with StatReloader
+INFO 2025-07-31 08:53:39,324 autoreload 7652 3548 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:53:40,413 autoreload 27760 26224 Watching for file changes with StatReloader
+INFO 2025-07-31 08:53:47,542 autoreload 27760 26224 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:53:48,693 autoreload 29644 12052 Watching for file changes with StatReloader
+INFO 2025-07-31 08:53:54,796 autoreload 29644 12052 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\urls.py changed, reloading.
+INFO 2025-07-31 08:53:55,985 autoreload 23024 29996 Watching for file changes with StatReloader
+INFO 2025-07-31 08:54:05,971 autoreload 23024 29996 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-31 08:54:07,338 autoreload 28316 21144 Watching for file changes with StatReloader
+INFO 2025-07-31 08:54:11,582 autoreload 28316 21144 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-31 08:54:13,243 autoreload 8248 26860 Watching for file changes with StatReloader

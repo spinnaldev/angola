@@ -24,7 +24,7 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
               {provider.user?.profile_picture ? (
                 <img
                   className="h-10 w-10 rounded-full object-cover"
-                  src={provider.user.profile_picture}
+                  src={provider.profile_picture}
                   alt={provider.full_name}
                 />
               ) : (
@@ -137,7 +137,7 @@ const ProviderDetail = ({ provider, onClose }) => {
                     {provider.user?.profile_picture ? (
                       <img
                         className="h-24 w-24 rounded-full object-cover"
-                        src={provider.user.profile_picture}
+                        src={provider.profile_picture}
                         alt={provider.full_name}
                       />
                     ) : (

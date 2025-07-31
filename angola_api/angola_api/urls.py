@@ -29,9 +29,7 @@ from operation.admin_views import (
     AdminProjectViewSet, AdminDisputeViewSet,
     admin_dashboard_stats, admin_recent_activity
 )
-from operation.admin_auth_views import (
-    AdminConversationViewSet, admin_login, bulk_mark_read, check_admin_status, admin_setup_status, conversation_overview, delete_message
-)
+from operation.admin_auth_views import *
 
 router = DefaultRouter()
 router.register(r'api/users', views.UserViewSet)
@@ -60,11 +58,22 @@ router.register(r'api/project-offers', views.ProjectOfferViewSet, basename='proj
 # Favoris projets
 router.register(r'api/project-favorites', views.ProjectFavoriteViewSet, basename='projectfavorite')
 
-# NOUVEAUX ENDPOINTS ADMIN
+# # NOUVEAUX ENDPOINTS ADMIN
+
+router.register(r'api/provider-verification', views.ProviderVerificationViewSet, basename='provider-verification')
+router.register(r'api/phone-verification', views.PhoneVerificationViewSet, basename='phone-verification')
+
+
 router.register(r'api/admin/projects', AdminProjectViewSet, basename='admin-projects')
 router.register(r'api/admin/disputes', AdminDisputeViewSet, basename='admin-disputes')
 
 router.register(r'api/admin/conversations', AdminConversationViewSet, basename='admin-conversations')
+
+router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='admin-notifications')
+
+router.register(r'api/admin/provider-verification', AdminProviderVerificationViewSet, basename='admin-provider-verification')
+
+router.register(r'api/admin/phone-verification', AdminPhoneVerificationViewSet, basename='admin-phone-verification')
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
@@ -108,7 +117,24 @@ urlpatterns = [
     path('api/admin/conversations/stats/', AdminConversationViewSet.as_view({'get': 'stats'}), name='admin-conversations-stats'),
     path('api/admin/messages/<int:message_id>/delete/', delete_message, name='admin-delete-message'),
     path('api/admin/conversations/bulk-mark-read/', bulk_mark_read, name='admin-bulk-mark-read'),
+
+    # path('api/admin/notifications/', AdminNotificationViewSet.as_view(), name='admin-notifications'),
+    path('api/admin/notifications/stats/', AdminNotificationViewSet.as_view({'get': 'stats'}), name='admin-notification-stats'),
+    path('api/admin/notifications/send/', send_notification_to_user, name='send-notification'),
+    path('api/admin/broadcast/notifications', broadcast_notification, name='broadcast-notification'),
     
+    # Vérification du statut global
+    path('api/verification/status/', views.check_verification_status, name='verification-status'),
+    
+    path('api/verification/check-action/', views.check_action_permission, name='check-action-permission' ),
+
+    path('api/dashboard/', verification_dashboard,  name='admin-verification-dashboard'),
+    
+    # Rapports détaillés
+    path('api/reports/', verification_reports, name='admin-verification-reports'),
+    
+    # Export des données
+    path('api/export/', export_verifications, name='admin-export-verifications'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

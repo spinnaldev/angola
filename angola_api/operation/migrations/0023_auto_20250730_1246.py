@@ -98,9 +98,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            create_default_admin,
-            remove_default_admin,
-            elidable=True,
-        ),
+        # migrations.RunPython(
+        #     create_default_admin,
+        #     remove_default_admin,
+        #     elidable=True,
+        # ),
     ]

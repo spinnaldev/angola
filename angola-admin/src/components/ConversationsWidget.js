@@ -116,7 +116,7 @@ const ConversationsWidget = () => {
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {conversation.client.full_name} ↔ {conversation.provider.user.full_name}
+                        {conversation.client.full_name} ↔ {conversation.provider.full_name}
                       </p>
                       {conversation.last_message && (
                         <p className="text-xs text-gray-500 truncate">
