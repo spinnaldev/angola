@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT
+import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
 import '../../../providers/dispute_provider.dart';
 import '../../../core/services/profile_manager.dart';
 import '../../../core/models/dispute.dart';
@@ -104,7 +105,9 @@ class _DisputesScreenState extends State<DisputesScreen>
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      
+      floatingActionButton : ProtectedFloatingActionButton(
+        actionDescription: l10n.newComplaint,
         onPressed: () {
           Navigator.push(
             context,
@@ -113,11 +116,24 @@ class _DisputesScreenState extends State<DisputesScreen>
             ),
           ).then((_) => _loadData());
         },
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: Text(_getFabLabel(l10n)), // ✅ PASSER l10n
-      ),
+        child: const Icon(Icons.add),
+        backgroundColor: Colors.white,
+      )
+      
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => const CreateDisputeScreen(),
+      //       ),
+      //     ).then((_) => _loadData());
+      //   },
+      //   backgroundColor: Theme.of(context).primaryColor,
+      //   foregroundColor: Colors.white,
+      //   icon: const Icon(Icons.add),
+      //   label: Text(_getFabLabel(l10n)), // ✅ PASSER l10n
+      // ),
     );
   }
 

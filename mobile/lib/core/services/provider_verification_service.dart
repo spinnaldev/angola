@@ -1,42 +1,41 @@
-// lib/core/services/provider_verification_service.dart - VERSION CORRIGÉE avec ApiClient
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../models/provider_verification.dart';
+import '../api/api_client.dart';
 import 'api_service.dart';
-import '../api/api_client.dart'; // ✅ Import ApiClient
 
 class ProviderVerificationService {
   final ApiService _apiService;
-  late final ApiClient _apiClient; // ✅ Référence ApiClient
+  late final ApiClient _apiClient;
   
   ProviderVerificationService(this._apiService) {
-    // ✅ Initialiser ApiClient pour bénéficier des corrections d'encodage
     _apiClient = ApiClient(baseUrl: _apiService.baseUrl);
   }
   
-  // ✅ MÉTHODE CORRIGÉE: getProviderVerification
-  Future<ProviderVerification?> getProviderVerification() async {
+  /// Récupérer le statut de vérification du prestataire connecté
+  Future<ProviderVerification?> getMyVerificationStatus() async {
     try {
-      print('📋 Récupération des informations de vérification...');
+      print('📋 Récupération du statut de vérification prestataire...');
       
-      // ✅ Utiliser ApiClient au lieu de http.get
-      final responseData = await _apiClient.get('provider/verification/', requireAuth: true);
+      final responseData = await _apiClient.get(
+        'provider-verification/my-status/', 
+        requireAuth: true
+      );
       
       if (responseData != null) {
-        // ✅ Debug encodage des données de vérification
-        if (responseData['business_name'] != null) {
-          print('✅ Nom d\'entreprise: ${responseData['business_name']} (encodage correct)');
+        // Si verification_status existe, c'est une vérification existante
+        if (responseData['verification_status'] != null) {
+          return ProviderVerification.fromJson(responseData);
         }
-        
-        return ProviderVerification.fromJson(responseData);
-      } else {
-        // Pas encore de vérification
+        // Sinon, pas encore de vérification
         return null;
       }
+      
+      return null;
     } catch (e) {
-      print('❌ Error in getProviderVerification: $e');
+      print('❌ Erreur récupération statut vérification: $e');
       
       // Gérer le cas 404 (pas de vérification)
       if (e.toString().contains('404')) {
@@ -47,262 +46,298 @@ class ProviderVerificationService {
     }
   }
   
-  // ✅ MÉTHODE CORRIGÉE: submitBusinessVerification (MultipartRequest conservé mais headers corrigés)
-  Future<ProviderVerification> submitBusinessVerification(
-    String businessName,
-    String businessNif,
-    String businessRegistrationNumber,
-    File? registrationDoc,
-  ) async {
+  /// Soumettre une vérification d'entreprise
+  Future<ProviderVerification> submitBusinessVerification({
+    required String businessName,
+    String? businessNif,
+    String? businessRegistrationNumber,
+    required File idCardFront,
+    required File idCardBack,
+    File? businessRegistrationDoc,
+  }) async {
     try {
-      print('🏢 Soumission de la vérification entreprise...');
-      print('✅ Nom entreprise: $businessName (encodage correct)');
+      print('🏢 Soumission vérification entreprise...');
+      print('✅ Nom entreprise: $businessName');
       
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${_apiService.baseUrl}/provider/verification/business/'),
+        Uri.parse('${_apiService.baseUrl}/provider-verification/submit-business/'),
       );
       
-      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
+      // Utiliser les headers de ApiClient pour cohérence
       final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
       
-      // Ajouter les champs du formulaire
+      // Champs du formulaire
       request.fields['business_name'] = businessName;
-      request.fields['business_nif'] = businessNif;
-      request.fields['business_registration_number'] = businessRegistrationNumber;
+      if (businessNif != null) {
+        request.fields['business_nif'] = businessNif;
+      }
+      if (businessRegistrationNumber != null) {
+        request.fields['business_registration_number'] = businessRegistrationNumber;
+      }
       request.fields['is_business'] = 'true';
+      request.fields['document_type'] = 'id_card';
       
-      // Ajouter le document d'enregistrement si fourni
-      if (registrationDoc != null) {
-        final fileName = registrationDoc.path.split('/').last;
-        final fileExtension = fileName.split('.').last.toLowerCase();
-        
-        print('📎 Ajout du document: $fileName');
-        
-        request.files.add(
-          http.MultipartFile(
-            'business_registration_doc',
-            registrationDoc.readAsBytes().asStream(),
-            registrationDoc.lengthSync(),
-            filename: fileName,
-            contentType: _getContentType(fileExtension),
-          ),
-        );
+      // Ajouter les fichiers
+      await _addFileToRequest(request, 'id_card_front', idCardFront);
+      await _addFileToRequest(request, 'id_card_back', idCardBack);
+      
+      if (businessRegistrationDoc != null) {
+        await _addFileToRequest(request, 'business_registration_doc', businessRegistrationDoc);
       }
       
-      // Envoyer la requête
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
       
-      print('📡 Statut réponse vérification entreprise: ${response.statusCode}');
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
-        String responseBody;
-        try {
-          responseBody = utf8.decode(response.bodyBytes);
-        } catch (e) {
-          responseBody = response.body;
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Vérification entreprise soumise avec succès');
+        
+        // Le backend retourne { "message": "...", "verification": {...} }
+        if (data['verification'] != null) {
+          return ProviderVerification.fromJson(data['verification']);
+        } else {
+          return ProviderVerification.fromJson(data);
         }
-        
-        final data = json.decode(responseBody);
-        
-        // ✅ Debug encodage de la réponse
-        if (data['business_name'] != null) {
-          print('✅ Vérification créée pour: ${data['business_name']} (encodage correct)');
-        }
-        
-        return ProviderVerification.fromJson(data);
       } else {
-        throw Exception('Failed to submit business verification: ${response.body}');
+        print('❌ Erreur soumission entreprise: ${response.statusCode}');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Erreur lors de la soumission');
       }
     } catch (e) {
-      print('❌ Error in submitBusinessVerification: $e');
+      print('❌ Exception soumission entreprise: $e');
       rethrow;
     }
   }
   
-  // ✅ MÉTHODE CORRIGÉE: submitIndividualVerification (MultipartRequest conservé mais headers corrigés)
-  Future<ProviderVerification> submitIndividualVerification(
-    File idCardFront,
-    File idCardBack,
-  ) async {
+  /// Soumettre une vérification individuelle avec carte d'identité
+  Future<ProviderVerification> submitIndividualVerificationWithId({
+    required File idCardFront,
+    required File idCardBack,
+  }) async {
     try {
-      print('👤 Soumission de la vérification individuelle...');
+      print('👤 Soumission vérification individuelle (carte ID)...');
       
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${_apiService.baseUrl}/provider/verification/individual/'),
+        Uri.parse('${_apiService.baseUrl}/provider-verification/submit-individual/'),
       );
       
-      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
       final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
       
-      // Indiquer qu'il s'agit d'un particulier
+      // Champs du formulaire
       request.fields['is_business'] = 'false';
+      request.fields['document_type'] = 'id_card';
       
-      // Ajouter les images de la pièce d'identité
-      final frontFileName = idCardFront.path.split('/').last;
-      final frontFileExtension = frontFileName.split('.').last.toLowerCase();
+      // Ajouter les fichiers
+      await _addFileToRequest(request, 'id_card_front', idCardFront);
+      await _addFileToRequest(request, 'id_card_back', idCardBack);
       
-      print('📎 Ajout recto carte d\'identité: $frontFileName');
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
       
-      request.files.add(
-        http.MultipartFile(
-          'id_card_front',
-          idCardFront.readAsBytes().asStream(),
-          idCardFront.lengthSync(),
-          filename: frontFileName,
-          contentType: MediaType('image', frontFileExtension),
-        ),
-      );
-      
-      final backFileName = idCardBack.path.split('/').last;
-      final backFileExtension = backFileName.split('.').last.toLowerCase();
-      
-      print('📎 Ajout verso carte d\'identité: $backFileName');
-      
-      request.files.add(
-        http.MultipartFile(
-          'id_card_back',
-          idCardBack.readAsBytes().asStream(),
-          idCardBack.lengthSync(),
-          filename: backFileName,
-          contentType: MediaType('image', backFileExtension),
-        ),
-      );
-      
-      // Envoyer la requête
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      
-      print('📡 Statut réponse vérification individuelle: ${response.statusCode}');
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
-        String responseBody;
-        try {
-          responseBody = utf8.decode(response.bodyBytes);
-        } catch (e) {
-          responseBody = response.body;
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Vérification carte ID soumise avec succès');
+        
+        if (data['verification'] != null) {
+          return ProviderVerification.fromJson(data['verification']);
+        } else {
+          return ProviderVerification.fromJson(data);
         }
-        
-        final data = json.decode(responseBody);
-        
-        print('✅ Vérification individuelle créée avec succès');
-        
-        return ProviderVerification.fromJson(data);
       } else {
-        throw Exception('Failed to submit individual verification: ${response.body}');
+        print('❌ Erreur soumission carte ID: ${response.statusCode}');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Erreur lors de la soumission');
       }
     } catch (e) {
-      print('❌ Error in submitIndividualVerification: $e');
+      print('❌ Exception soumission carte ID: $e');
       rethrow;
     }
   }
   
-  // ✅ NOUVELLE MÉTHODE: Mettre à jour le statut de vérification
-  Future<ProviderVerification> updateVerificationStatus(String status, String? notes) async {
+  /// Soumettre une vérification individuelle avec passeport
+  Future<ProviderVerification> submitIndividualVerificationWithPassport({
+    required File passportImage,
+  }) async {
     try {
-      print('🔄 Mise à jour du statut de vérification: $status');
+      print('🛂 Soumission vérification individuelle (passeport)...');
       
-      // ✅ Utiliser ApiClient
-      final responseData = await _apiClient.put(
-        'provider/verification/',
-        data: {
-          'status': status,
-          if (notes != null) 'admin_notes': notes,
-        },
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${_apiService.baseUrl}/provider-verification/submit-individual/'),
+      );
+      
+      final headers = await _apiClient.getHeaders();
+      request.headers.addAll(headers);
+      
+      // Champs du formulaire
+      request.fields['is_business'] = 'false';
+      request.fields['document_type'] = 'passport';
+      
+      // Ajouter le fichier passeport
+      await _addFileToRequest(request, 'passport_image', passportImage);
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Vérification passeport soumise avec succès');
+        
+        if (data['verification'] != null) {
+          return ProviderVerification.fromJson(data['verification']);
+        } else {
+          return ProviderVerification.fromJson(data);
+        }
+      } else {
+        print('❌ Erreur soumission passeport: ${response.statusCode}');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Erreur lors de la soumission');
+      }
+    } catch (e) {
+      print('❌ Exception soumission passeport: $e');
+      rethrow;
+    }
+  }
+  
+  /// Renvoyer des documents après rejet
+  Future<ProviderVerification> resendDocuments({
+    required int verificationId,
+    File? idCardFront,
+    File? idCardBack,
+    File? passportImage,
+    File? businessRegistrationDoc,
+    String? businessName,
+    String? businessNif,
+    String? businessRegistrationNumber,
+  }) async {
+    try {
+      print('🔄 Renvoi de documents...');
+      
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${_apiService.baseUrl}/provider-verification/$verificationId/resend-documents/'),
+      );
+      
+      final headers = await _apiClient.getHeaders();
+      request.headers.addAll(headers);
+      
+      // Ajouter les champs texte si fournis
+      if (businessName != null) {
+        request.fields['business_name'] = businessName;
+      }
+      if (businessNif != null) {
+        request.fields['business_nif'] = businessNif;
+      }
+      if (businessRegistrationNumber != null) {
+        request.fields['business_registration_number'] = businessRegistrationNumber;
+      }
+      
+      // Ajouter les fichiers si fournis
+      if (idCardFront != null) {
+        await _addFileToRequest(request, 'id_card_front', idCardFront);
+      }
+      if (idCardBack != null) {
+        await _addFileToRequest(request, 'id_card_back', idCardBack);
+      }
+      if (passportImage != null) {
+        await _addFileToRequest(request, 'passport_image', passportImage);
+      }
+      if (businessRegistrationDoc != null) {
+        await _addFileToRequest(request, 'business_registration_doc', businessRegistrationDoc);
+      }
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Documents renvoyés avec succès');
+        
+        if (data['verification'] != null) {
+          return ProviderVerification.fromJson(data['verification']);
+        } else {
+          return ProviderVerification.fromJson(data);
+        }
+      } else {
+        print('❌ Erreur renvoi documents: ${response.statusCode}');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Erreur lors du renvoi');
+      }
+    } catch (e) {
+      print('❌ Exception renvoi documents: $e');
+      rethrow;
+    }
+  }
+  
+  /// Récupérer les exigences de vérification
+  Future<Map<String, dynamic>> getVerificationRequirements() async {
+    try {
+      final responseData = await _apiClient.get(
+        'provider-verification/requirements/', 
         requireAuth: true
       );
-
+      
       if (responseData != null) {
-        // ✅ Debug encodage
-        if (responseData['admin_notes'] != null) {
-          print('✅ Notes admin: ${responseData['admin_notes']} (encodage correct)');
-        }
-        
-        return ProviderVerification.fromJson(responseData);
-      } else {
-        throw Exception('Réponse nulle lors de la mise à jour du statut');
+        return responseData;
       }
+      
+      // Fallback avec exigences par défaut
+      return {
+        'document_types': [
+          {
+            'value': 'id_card',
+            'label': 'Carte d\'identité',
+            'description': 'Les deux faces de la carte d\'identité sont requises',
+            'required_files': ['id_card_front', 'id_card_back']
+          },
+          {
+            'value': 'passport',
+            'label': 'Passeport',
+            'description': 'Page principale du passeport avec photo',
+            'required_files': ['passport_image']
+          }
+        ],
+        'file_requirements': {
+          'max_size_mb': 5,
+          'allowed_formats': ['jpg', 'jpeg', 'png', 'pdf'],
+          'image_min_resolution': '800x600'
+        }
+      };
     } catch (e) {
-      print('❌ Error in updateVerificationStatus: $e');
+      print('❌ Erreur récupération exigences: $e');
       rethrow;
     }
   }
-
-  // ✅ NOUVELLE MÉTHODE: Récupérer toutes les vérifications (admin)
-  Future<List<ProviderVerification>> getAllVerifications() async {
-    try {
-      print('📋 Récupération de toutes les vérifications (admin)...');
-      
-      // ✅ Utiliser ApiClient
-      final responseData = await _apiClient.get('admin/verifications/', requireAuth: true);
-      
-      if (responseData != null) {
-        List<dynamic> data = [];
-        
-        if (responseData is Map<String, dynamic>) {
-          data = responseData['results'] ?? [];
-        } else if (responseData is List) {
-          data = responseData;
-        }
-        
-        print('✅ ${data.length} vérifications trouvées');
-        
-        final verifications = data.map((item) {
-          // ✅ Debug encodage
-          if (item['business_name'] != null) {
-            print('✅ Vérification: ${item['business_name']} (encodage correct)');
-          }
-          return ProviderVerification.fromJson(item);
-        }).toList();
-        
-        return verifications;
-      } else {
-        return [];
-      }
-    } catch (e) {
-      print('❌ Error in getAllVerifications: $e');
-      return [];
-    }
-  }
-
-  // ✅ NOUVELLE MÉTHODE: Supprimer une vérification
-  Future<bool> deleteVerification() async {
-    try {
-      print('🗑️ Suppression de la vérification...');
-      
-      // ✅ Utiliser ApiClient
-      await _apiClient.delete('provider/verification/', requireAuth: true);
-      
-      print('✅ Vérification supprimée avec succès');
-      return true;
-    } catch (e) {
-      print('❌ Error in deleteVerification: $e');
-      return false;
-    }
-  }
   
-  // Définir le type de contenu en fonction de l'extension du fichier
-  MediaType _getContentType(String extension) {
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return MediaType('image', 'jpeg');
-      case 'png':
-        return MediaType('image', 'png');
-      case 'pdf':
-        return MediaType('application', 'pdf');
-      case 'doc':
-        return MediaType('application', 'msword');
-      case 'docx':
-        return MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
-      default:
-        return MediaType('application', 'octet-stream');
+  /// Méthode utilitaire pour ajouter un fichier à la requête
+  Future<void> _addFileToRequest(
+    http.MultipartRequest request, 
+    String fieldName, 
+    File file
+  ) async {
+    final fileName = file.path.split('/').last;
+    final fileExtension = fileName.split('.').last.toLowerCase();
+    
+    // Déterminer le type MIME
+    MediaType? contentType;
+    if (['jpg', 'jpeg'].contains(fileExtension)) {
+      contentType = MediaType('image', 'jpeg');
+    } else if (fileExtension == 'png') {
+      contentType = MediaType('image', 'png');
+    } else if (fileExtension == 'pdf') {
+      contentType = MediaType('application', 'pdf');
     }
+    
+    final multipartFile = await http.MultipartFile.fromPath(
+      fieldName,
+      file.path,
+      contentType: contentType,
+    );
+    
+    request.files.add(multipartFile);
   }
 }

@@ -193,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen>
         );
       }).toList();
     }
-    
+
   // MÉTHODE AMÉLIORÉE _loadServicesData avec gestion de la localisation
   Future<void> _loadServicesData() async {
     final categoryProvider =

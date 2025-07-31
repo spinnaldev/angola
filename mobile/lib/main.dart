@@ -8,6 +8,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/core/services/notification_service.dart';
+import 'package:teyago/core/services/phone_verification_service.dart';
+import 'package:teyago/core/services/provider_verification_service.dart';
 import 'package:teyago/core/services/websocket_service.dart';
 import 'package:teyago/providers/realtime_messaging_provider.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
@@ -42,6 +44,8 @@ import 'providers/offers_provider.dart';
 import 'core/services/websocket_service.dart';
 import 'core/services/improved_location_service.dart';
 import 'providers/improved_nearby_provider.dart';
+import 'providers/provider_verification_provider.dart';
+import 'providers/phone_verification_provider.dart';
 
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
@@ -185,6 +189,26 @@ class MyApp extends StatelessWidget {
           create: (context) => OffersProvider(apiService),
           update: (context, authProvider, previous) =>
               previous ?? OffersProvider(apiService),
+        ),
+
+        ChangeNotifierProxyProvider<ApiService, ProviderVerificationProvider>(
+          create: (context) => ProviderVerificationProvider(
+            ProviderVerificationService(context.read<ApiService>())
+          ),
+          update: (context, apiService, previous) => 
+              previous ?? ProviderVerificationProvider(
+                ProviderVerificationService(apiService)
+              ),
+        ),
+        
+        ChangeNotifierProxyProvider<ApiService, PhoneVerificationProvider>(
+          create: (context) => PhoneVerificationProvider(
+            PhoneVerificationService(context.read<ApiService>())
+          ),
+          update: (context, apiService, previous) => 
+              previous ?? PhoneVerificationProvider(
+                PhoneVerificationService(apiService)
+              ),
         ),
         // ChangeNotifierProxyProvider3<NotificationService, WebSocketService, AuthService, RealtimeNotificationProvider>(
         //   create: (context) => RealtimeNotificationProvider(

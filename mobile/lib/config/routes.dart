@@ -19,6 +19,8 @@ import '../ui/screens/provider/service_management_screen.dart';
 import '../ui/screens/provider/quote_requests_screen.dart';
 import '../ui/screens/client/my_quote_requests_screen.dart';
 import '../ui/screens/notifications_screen.dart';
+import '../ui/screens/provider/provider_verification_screen.dart';
+import '../ui/screens/client/phone_verification_screen.dart';
 
 class AppRoutes {
   static const String home = '/home';
@@ -43,6 +45,8 @@ class AppRoutes {
   static const String searchServices = '/search-services';
   static const String searchProjets = '/search-projects';
   static const String notifications = '/notifications';
+  static const String providerVerification = '/provider-verification';
+  static const String phoneVerification = '/phone-verification';
 
   static Map<String, WidgetBuilder> get routes => {
         home: (context) => const HomeScreen(),
@@ -63,6 +67,8 @@ class AppRoutes {
         disputes: (context) => const QuoteRequestsScreen(),
         projectsList: (context) => const ProjectsListScreen(),
         notifications: (context) => NotificationsScreen(),
+        providerVerification: (context) => const ProviderVerificationScreen(),
+        phoneVerification: (context) => const PhoneVerificationScreen(),
       };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {

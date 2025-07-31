@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:teyago/core/models/verification_result.dart';
+import 'package:teyago/core/services/phone_verification_service.dart';
+import 'package:teyago/core/services/provider_verification_service.dart';
 import '../core/services/auth_service.dart';
 import '../core/models/user.dart';
 import 'dart:io';
@@ -10,6 +13,9 @@ import 'dart:convert';
 import '../core/services/profile_manager.dart';
 import '../core/api/api_client.dart'; // ✅ Import ApiClient
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'provider_verification_provider.dart';
+import 'phone_verification_provider.dart';
+import 'verification_guard_provider.dart';
 
 enum AuthStatus {
   uninitialized,
@@ -56,6 +62,14 @@ class AuthProvider with ChangeNotifier {
   String? get resetEmail => _resetEmail;
   String? get resetCode => _resetCode;
 
+  ProviderVerificationProvider? _providerVerificationProvider;
+  PhoneVerificationProvider? _phoneVerificationProvider;
+  VerificationGuardProvider? _verificationGuardProvider;
+
+  ProviderVerificationProvider? get providerVerificationProvider => _providerVerificationProvider;
+  PhoneVerificationProvider? get phoneVerificationProvider => _phoneVerificationProvider;
+  VerificationGuardProvider? get verificationGuardProvider => _verificationGuardProvider;
+
   @override
   void addListener(VoidCallback listener) {
     super.addListener(listener);
@@ -63,6 +77,37 @@ class AuthProvider with ChangeNotifier {
     ProfileManager.setAuthProvider(this);
   }
 
+
+  // Initialiser les providers de vérification
+  void _initializeVerificationProviders() {
+    if (_authService != null) {
+      final providerService = ProviderVerificationService(_authService!.apiService);
+      final phoneService = PhoneVerificationService(_authService!.apiService);
+      
+      _providerVerificationProvider = ProviderVerificationProvider(providerService);
+      _phoneVerificationProvider = PhoneVerificationProvider(phoneService);
+      _verificationGuardProvider = VerificationGuardProvider();
+      
+      notifyListeners();
+    }
+  }
+  
+  // Charger les statuts de vérification après connexion
+  Future<void> _loadVerificationStatuses() async {
+    if (_currentUser == null) return;
+    
+    try {
+      if (_currentUser!.role == 'provider' && _providerVerificationProvider != null) {
+        await _providerVerificationProvider!.fetchVerificationStatus();
+      } else if (_currentUser!.role == 'client' && _phoneVerificationProvider != null) {
+        await _phoneVerificationProvider!.fetchVerificationStatus();
+      }
+    } catch (e) {
+      print('❌ Erreur chargement statuts vérification: $e');
+    }
+  }
+
+  
   // ✅ MÉTHODE CORRIGÉE: refreshToken
   Future<bool> refreshToken() async {
     try {
@@ -206,6 +251,12 @@ class AuthProvider with ChangeNotifier {
         // AJOUT: Synchroniser le ProfileManager avec le rôle utilisateur
         ProfileManager.setAuthProvider(this);
         await ProfileManager.forceSync();
+        // Initialiser les providers de vérification
+        _initializeVerificationProviders();
+        
+        // Charger les statuts de vérification
+        await _loadVerificationStatuses();
+
         
         notifyListeners();
         return true;
@@ -635,6 +686,12 @@ class AuthProvider with ChangeNotifier {
             ProfileManager.setAuthProvider(this);
             await ProfileManager.forceSync();
             
+            // Initialiser les providers de vérification
+            _initializeVerificationProviders();
+            
+            // Charger les statuts de vérification
+            await _loadVerificationStatuses();
+            
             print('✅ Utilisateur restauré: ${user.firstName} ${user.lastName}');
           } else {
             await _clearStoredCredentials();
@@ -668,4 +725,31 @@ class AuthProvider with ChangeNotifier {
       print('❌ Erreur lors du nettoyage des identifiants: $e');
     }
   }
+
+  // Rafraîchir les statuts de vérification
+  Future<void> refreshVerificationStatuses() async {
+    await _loadVerificationStatuses();
+    _verificationGuardProvider?.clearCache();
+  }
+  
+  // Vérifier si l'utilisateur peut effectuer une action
+  bool canPerformAction(String actionDescription) {
+    if (_verificationGuardProvider == null) return false;
+    
+    final result = _verificationGuardProvider!.checkAccess(_currentUser, actionDescription);
+    return result.canAccess;
+  }
+  
+  // Obtenir le résultat de vérification pour une action
+  VerificationResult getVerificationResult(String actionDescription) {
+    if (_verificationGuardProvider == null) {
+      return VerificationResult.blocked(
+        title: 'Erreur',
+        message: 'Service de vérification non initialisé',
+      );
+    }
+    
+    return _verificationGuardProvider!.checkAccess(_currentUser, actionDescription);
+  }
+  
 }

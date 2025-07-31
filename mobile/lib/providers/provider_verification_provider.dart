@@ -1,4 +1,4 @@
-// lib/providers/provider_verification_provider.dart
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../core/models/provider_verification.dart';
@@ -6,106 +6,261 @@ import '../core/services/provider_verification_service.dart';
 
 class ProviderVerificationProvider with ChangeNotifier {
   final ProviderVerificationService _verificationService;
+  
   ProviderVerification? _verification;
   bool _isLoading = false;
   String? _errorMessage;
+  Map<String, dynamic>? _requirements;
 
   ProviderVerificationProvider(this._verificationService);
 
+  // ================================================================
+  // GETTERS
+  // ================================================================
+  
   ProviderVerification? get verification => _verification;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  Map<String, dynamic>? get requirements => _requirements;
   
-  // Vérifier si le prestataire est vérifié
+  /// Vérifier si le prestataire est vérifié
   bool get isVerified => _verification?.isVerified ?? false;
   
-  // Vérifier si le prestataire est une entreprise
-  bool get isBusiness => _verification?.isBusiness ?? false;
+  /// Vérifier si la vérification est en attente
+  bool get isPending => _verification?.isPending ?? false;
   
-  // Obtenir le statut de vérification
-  String get verificationStatus => _verification?.verificationStatus ?? 'pending';
+  /// Vérifier si la vérification est rejetée
+  bool get isRejected => _verification?.isRejected ?? false;
+  
+  /// Vérifier si aucune vérification n'a été commencée
+  bool get isNotStarted => _verification == null || _verification!.verificationStatus == 'not_started';
+  
+  /// Obtenir le statut pour affichage
+  String get statusDisplayText {
+    if (_verification == null) {
+      return 'Non commencé';
+    }
+    return _verification!.statusLabel;
+  }
+  
+  /// Obtenir la couleur du statut
+  Color get statusColor {
+    if (_verification == null) {
+      return Colors.grey;
+    }
+    return _verification!.statusColor;
+  }
+  
+  /// Obtenir l'icône du statut
+  IconData get statusIcon {
+    if (_verification == null) {
+      return Icons.assignment;
+    }
+    return _verification!.statusIcon;
+  }
+  
+  /// Obtenir le message d'instruction
+  String get instructionMessage {
+    if (_verification == null) {
+      return 'Complétez votre vérification pour accéder à toutes les fonctionnalités.';
+    }
+    return _verification!.instructionMessage;
+  }
+  
+  /// Obtenir le pourcentage de progression
+  int get progressPercentage => _verification?.verificationProgress ?? 0;
+  
+  /// Vérifier si la vérification peut être modifiée
+  bool get canBeModified => _verification?.canBeModified ?? true;
+  
+  /// Obtenir les documents fournis
+  List<String> get documentsProvided => _verification?.documentsProvided ?? [];
+  
+  /// Obtenir les documents manquants
+  List<String> get missingDocuments => _verification?.missingDocuments ?? [];
 
-  // Récupérer les informations de vérification du prestataire
-  Future<void> fetchVerificationInfo() async {
-    _isLoading = true;
+  // ================================================================
+  // MÉTHODES PRINCIPALES
+  // ================================================================
+  
+  /// Récupérer le statut de vérification
+  Future<void> fetchVerificationStatus() async {
+    _setLoading(true);
     _errorMessage = null;
-    notifyListeners();
 
     try {
-      _verification = await _verificationService.getProviderVerification();
-      _isLoading = false;
-      notifyListeners();
+      _verification = await _verificationService.getMyVerificationStatus();
+      print('📋 Statut récupéré: ${_verification?.verificationStatus ?? 'Aucune vérification'}');
     } catch (e) {
-      _isLoading = false;
       _errorMessage = e.toString();
-      notifyListeners();
+      print('❌ Erreur fetch status: $_errorMessage');
+    } finally {
+      _setLoading(false);
     }
   }
-
-  // Soumettre les informations de vérification pour une entreprise
-  Future<bool> submitBusinessVerification(
-    String businessName,
-    String businessNif,
-    String businessRegistrationNumber,
-    File? registrationDoc,
-  ) async {
-    _isLoading = true;
+  
+  /// Récupérer les exigences de vérification
+  Future<void> fetchRequirements() async {
+    try {
+      _requirements = await _verificationService.getVerificationRequirements();
+      notifyListeners();
+    } catch (e) {
+      print('❌ Erreur fetch requirements: $e');
+      // Ne pas afficher l'erreur à l'utilisateur pour les exigences
+    }
+  }
+  
+  /// Soumettre une vérification d'entreprise
+  Future<bool> submitBusinessVerification({
+    required String businessName,
+    String? businessNif,
+    String? businessRegistrationNumber,
+    required File idCardFront,
+    required File idCardBack,
+    File? businessRegistrationDoc,
+  }) async {
+    _setLoading(true);
     _errorMessage = null;
-    notifyListeners();
 
     try {
       _verification = await _verificationService.submitBusinessVerification(
-        businessName,
-        businessNif,
-        businessRegistrationNumber,
-        registrationDoc,
+        businessName: businessName,
+        businessNif: businessNif,
+        businessRegistrationNumber: businessRegistrationNumber,
+        idCardFront: idCardFront,
+        idCardBack: idCardBack,
+        businessRegistrationDoc: businessRegistrationDoc,
       );
       
-      _isLoading = false;
-      notifyListeners();
-      
+      print('✅ Vérification entreprise soumise avec succès');
       return true;
     } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-      
+      _errorMessage = _getReadableError(e.toString());
+      print('❌ Erreur soumission entreprise: $_errorMessage');
       return false;
+    } finally {
+      _setLoading(false);
     }
-  
   }
-
-  // Soumettre les informations de vérification pour un particulier
-  Future<bool> submitIndividualVerification(
-    File idCardFront,
-    File idCardBack,
-  ) async {
-    _isLoading = true;
+  
+  /// Soumettre une vérification individuelle avec carte d'identité
+  Future<bool> submitIndividualVerificationWithId({
+    required File idCardFront,
+    required File idCardBack,
+  }) async {
+    _setLoading(true);
     _errorMessage = null;
-    notifyListeners();
 
     try {
-      _verification = await _verificationService.submitIndividualVerification(
-        idCardFront,
-        idCardBack,
+      _verification = await _verificationService.submitIndividualVerificationWithId(
+        idCardFront: idCardFront,
+        idCardBack: idCardBack,
       );
       
-      _isLoading = false;
-      notifyListeners();
-      
+      print('✅ Vérification carte ID soumise avec succès');
       return true;
     } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-      
+      _errorMessage = _getReadableError(e.toString());
+      print('❌ Erreur soumission carte ID: $_errorMessage');
       return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  /// Soumettre une vérification individuelle avec passeport
+  Future<bool> submitIndividualVerificationWithPassport({
+    required File passportImage,
+  }) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      _verification = await _verificationService.submitIndividualVerificationWithPassport(
+        passportImage: passportImage,
+      );
+      
+      print('✅ Vérification passeport soumise avec succès');
+      return true;
+    } catch (e) {
+      _errorMessage = _getReadableError(e.toString());
+      print('❌ Erreur soumission passeport: $_errorMessage');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  /// Renvoyer des documents après rejet
+  Future<bool> resendDocuments({
+    File? idCardFront,
+    File? idCardBack,
+    File? passportImage,
+    File? businessRegistrationDoc,
+    String? businessName,
+    String? businessNif,
+    String? businessRegistrationNumber,
+  }) async {
+    if (_verification?.id == null) {
+      _errorMessage = 'Aucune vérification à modifier';
+      return false;
+    }
+    
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      _verification = await _verificationService.resendDocuments(
+        verificationId: _verification!.id!,
+        idCardFront: idCardFront,
+        idCardBack: idCardBack,
+        passportImage: passportImage,
+        businessRegistrationDoc: businessRegistrationDoc,
+        businessName: businessName,
+        businessNif: businessNif,
+        businessRegistrationNumber: businessRegistrationNumber,
+      );
+      
+      print('✅ Documents renvoyés avec succès');
+      return true;
+    } catch (e) {
+      _errorMessage = _getReadableError(e.toString());
+      print('❌ Erreur renvoi documents: $_errorMessage');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Effacer les erreurs
+  // ================================================================
+  // MÉTHODES UTILITAIRES
+  // ================================================================
+  
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+  
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+  
+  String _getReadableError(String error) {
+    if (error.contains('Documents illisibles')) {
+      return 'Les documents fournis ne sont pas lisibles. Veuillez prendre des photos plus nettes.';
+    } else if (error.contains('Format non supporté')) {
+      return 'Format de fichier non supporté. Utilisez JPG, PNG ou PDF.';
+    } else if (error.contains('Fichier trop volumineux')) {
+      return 'Le fichier est trop volumineux. Taille maximum : 5MB.';
+    } else if (error.contains('Données manquantes')) {
+      return 'Certaines informations obligatoires sont manquantes.';
+    } else if (error.contains('Network')) {
+      return 'Erreur de connexion. Vérifiez votre connexion internet.';
+    } else if (error.contains('500')) {
+      return 'Erreur serveur temporaire. Veuillez réessayer plus tard.';
+    }
+    
+    return 'Une erreur est survenue. Veuillez réessayer.';
   }
 }

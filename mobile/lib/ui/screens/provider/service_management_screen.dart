@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
 import '../../../providers/service_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/subcategory_provider.dart';
@@ -50,10 +51,16 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
         : serviceProvider.myServices.isEmpty 
           ? _buildEmptyState() 
           : _buildServiceList(serviceProvider.myServices),
-      floatingActionButton: FloatingActionButton(
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => _navigateToAddService(context),
+      //   backgroundColor: Theme.of(context).primaryColor,
+      //   child: Icon(Icons.add),
+      // ),
+      floatingActionButton : ProtectedFloatingActionButton(
+        actionDescription: "",
         onPressed: () => _navigateToAddService(context),
-        backgroundColor: Theme.of(context).primaryColor,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
+        backgroundColor: Colors.white,
       ),
     );
   }

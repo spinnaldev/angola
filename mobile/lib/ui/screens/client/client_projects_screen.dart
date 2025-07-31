@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/models/client_project.dart';
@@ -187,13 +188,20 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         },
       ),
       // Bouton flottant alternatif (optionnel)
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton : ProtectedFloatingActionButton(
+        actionDescription: l10n.addProjectTooltip,
         onPressed: _navigateToAddProject,
-        backgroundColor: const Color(0xFF142FE2),
-        foregroundColor: Colors.white,
-        tooltip: l10n.addProjectTooltip,
         child: const Icon(Icons.add),
-      ),
+        backgroundColor: Colors.white,
+      )
+
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: _navigateToAddProject,
+      //   backgroundColor: const Color(0xFF142FE2),
+      //   foregroundColor: Colors.white,
+      //   tooltip: l10n.addProjectTooltip,
+      //   child: const Icon(Icons.add),
+      // ),
     );
   }
 

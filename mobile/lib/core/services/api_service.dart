@@ -4220,22 +4220,9 @@ class ApiService {
   // MÉTHODES MOCK POUR LES TESTS
   // ===============================
 
-  User _getMockUser() {
-    return User(
-      id: 1,
-      username: 'bryan_cooper',
-      email: 'bryan.cooper@example.com',
-      firstName: 'Bryan',
-      lastName: 'Cooper',
-      phoneNumber: '+2345678901',
-      bio: 'Client à la recherche de services de qualité',
-      profilePicture: 'https://randomuser.me/api/portraits/men/32.jpg',
-      role: 'client',
-      isVerified: true,
-      location: 'Angola',
-      dateJoined: DateTime.parse('2025-03-15T00:00:00Z'),
-    );
-  }
+  // User _getMockUser() {
+  //   return [];
+  // }
 
   List<ProviderModel> _getMockProviders() {
     return List.generate(10, (index) {

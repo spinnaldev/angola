@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
 import '../../core/models/client_project.dart';
 import '../../core/services/api_service.dart';
 import '../../providers/auth_provider.dart';
@@ -496,17 +497,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _submitOffer,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF142FE2),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
+          child: ProtectedActionButton(
+            actionDescription: '',
+            onPressed: _submitOffer,
             child: _isLoading
                 ? const SizedBox(
                     height: 20,
@@ -523,7 +516,35 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-          ),
+          )
+          // child: ElevatedButton(
+          //   onPressed: _isLoading ? null : _submitOffer,
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: const Color(0xFF142FE2),
+          //     foregroundColor: Colors.white,
+          //     padding: const EdgeInsets.symmetric(vertical: 16),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     elevation: 0,
+          //   ),
+          //   child: _isLoading
+          //       ? const SizedBox(
+          //           height: 20,
+          //           width: 20,
+          //           child: CircularProgressIndicator(
+          //             strokeWidth: 2,
+          //             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          //           ),
+          //         )
+          //       : Text(
+          //           l10n.sendMyOffer,
+          //           style: const TextStyle(
+          //             fontSize: 16,
+          //             fontWeight: FontWeight.w600,
+          //           ),
+          //         ),
+          // ),
         ),
       ),
     );

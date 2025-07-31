@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
+import 'package:teyago/ui/widgets/verification/verification_status_card.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/project_provider.dart';
@@ -49,6 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Provider.of<ProjectProvider>(context, listen: false);
         await projectProvider.fetchUserProjects();
       }
+
+      // NOUVELLE SECTION DE VÉRIFICATION
+      _buildVerificationSection(user);
     }
   }
 
@@ -121,6 +125,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildVerificationSection(User user) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return VerificationStatusCard(
+          user: user,
+          onVerifyPressed: () => _navigateToVerification(user.role),
+        );
+      },
+    );
+  }
+
+  void _navigateToVerification(String role) {
+    if (role == 'provider') {
+      Navigator.pushNamed(context, '/provider-verification');
+    } else if (role == 'client') {
+      Navigator.pushNamed(context, '/phone-verification');
+    }
   }
 
   Widget _buildHeader(AppLocalizations l10n) {
