@@ -440,3 +440,5 @@ INFO 2025-07-31 08:54:05,971 autoreload 23024 29996 C:\Users\AGL\Documents\SPINA
 INFO 2025-07-31 08:54:07,338 autoreload 28316 21144 Watching for file changes with StatReloader
 INFO 2025-07-31 08:54:11,582 autoreload 28316 21144 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
 INFO 2025-07-31 08:54:13,243 autoreload 8248 26860 Watching for file changes with StatReloader
+INFO 2025-07-31 17:41:13,558 autoreload 18648 5388 Watching for file changes with StatReloader
+INFO 2025-07-31 17:41:48,626 autoreload 27076 27020 Watching for file changes with StatReloader

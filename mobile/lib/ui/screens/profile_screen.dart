@@ -29,6 +29,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // ✅ NOUVEAU : Flag pour éviter les rechargements multiples
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,21 +40,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<void> _loadData() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.currentUser;
+  // ✅ NOUVEAU : Recharger à chaque fois qu'on revient sur cette page
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recharger les données chaque fois qu'on navigue vers cette page
+    if (!_isLoading) {
+      _loadData();
+    }
+  }
 
-    if (user != null) {
-      if (user.role == 'provider') {
-        // Charger les services du prestataire
-        final serviceProvider =
-            Provider.of<ServiceProvider>(context, listen: false);
-        await serviceProvider.fetchMyServices();
-      } else {
-        // Charger les projets du client
-        final projectProvider =
-            Provider.of<ProjectProvider>(context, listen: false);
-        await projectProvider.fetchUserProjects();
+  // ✅ MÉTHODE MODIFIÉE : Ajouter le rechargement du profil utilisateur
+  Future<void> _loadData() async {
+    if (_isLoading) return; // Éviter les appels multiples
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      // ✅ NOUVEAU : Recharger d'abord le profil utilisateur
+      await authProvider.refreshUserProfile();
+      
+      final user = authProvider.currentUser;
+
+      if (user != null) {
+        if (user.role == 'provider') {
+          // Charger les services du prestataire
+          final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
+          await serviceProvider.fetchMyServices();
+        } else {
+          // Charger les projets du client
+          final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+          await projectProvider.fetchUserProjects();
+        }
+      }
+    } catch (e) {
+      print('Erreur lors du rechargement des données du profil: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -88,42 +120,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return SafeArea(
-            child: Column(
-              children: [
-                // Header avec titre et crayon d'édition
-                _buildHeader(l10n),
+          // ✅ NOUVEAU : Ajouter RefreshIndicator pour pull-to-refresh
+          return RefreshIndicator(
+            onRefresh: _loadData,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header avec titre et crayon d'édition
+                  _buildHeader(l10n),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      // ✅ NOUVEAU : Toujours permettre le scroll pour le pull-to-refresh
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
 
-                        // Section profil utilisateur avec badges de vérification
-                        _buildUserProfileSection(user, l10n),
+                          // Section profil utilisateur avec badges de vérification
+                          _buildUserProfileSection(user, l10n),
 
-                        _buildDivider(),
+                          _buildDivider(),
 
-                        // NOUVELLE SECTION : Statut de vérification
-                        _buildVerificationSection(user, l10n),
+                          // NOUVELLE SECTION : Statut de vérification
+                          _buildVerificationSection(user, l10n),
 
-                        _buildDivider(),
-                        
-                        // Section adresse et membre depuis
-                        _buildLocationAndMemberSection(user, l10n),
+                          _buildDivider(),
+                          
+                          // Section adresse et membre depuis
+                          _buildLocationAndMemberSection(user, l10n),
 
-                        _buildDivider(),
+                          _buildDivider(),
 
-                        // Section Mes projets/services avec vérification
-                        _buildProjectsSection(user, l10n),
+                          // Section Mes projets/services avec vérification
+                          _buildProjectsSection(user, l10n),
 
-                        const SizedBox(height: 100), // Espace pour la bottom nav
-                      ],
+                          const SizedBox(height: 100), // Espace pour la bottom nav
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -262,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     // AJOUT : Indicateur compact du statut de vérification
-                    _buildCompactVerificationStatus(user),
+                    _buildCompactVerificationStatus(user, l10n), // ✅ CORRIGER : Passer l10n
                   ],
                 ),
               ],
@@ -322,8 +360,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // NOUVELLE MÉTHODE : Indicateur compact de vérification
-  Widget _buildCompactVerificationStatus(User user) {
+  // ✅ MÉTHODE CORRIGÉE : Utiliser les traductions au lieu du texte hardcodé
+  Widget _buildCompactVerificationStatus(User user, AppLocalizations l10n) {
     final verificationInfo = user.verificationInfo;
     
     return Container(
@@ -347,10 +385,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 4),
           Text(
             verificationInfo.status == 'verified' 
-                ? 'Vérifié'
+                ? l10n.verified // ✅ UTILISER LA TRADUCTION
                 : verificationInfo.status == 'pending'
-                    ? 'En cours'
-                    : 'Non vérifié',
+                    ? l10n.verificationPending // ✅ UTILISER LA TRADUCTION
+                    : l10n.notVerified, // ✅ UTILISER LA TRADUCTION
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -519,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           // MODIFICATION : Vérifier si l'utilisateur peut voir ses projets/services
           if (!user.canPerformActions) ...[
-            // Affichage si pas vérifié
+            // ✅ CORRIGER : Utiliser les traductions au lieu du texte hardcodé
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -534,9 +572,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Icon(Icons.info_outline, color: Colors.orange, size: 20),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Vérification requise',
-                        style: TextStyle(
+                      Text(
+                        l10n.verificationRequired, // ✅ UTILISER LA TRADUCTION
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: Colors.orange,
                         ),
@@ -546,8 +584,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 8),
                   Text(
                     user.role == 'provider'
-                        ? 'Vérifiez votre profil pour proposer des services et répondre aux projets.'
-                        : 'Vérifiez votre téléphone pour publier des projets et contacter des prestataires.',
+                        ? l10n.profileVerificationDescription // ✅ UTILISER LA TRADUCTION
+                        : l10n.phoneVerificationDescription, // ✅ UTILISER LA TRADUCTION
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -561,8 +599,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Text(
                         user.role == 'provider' 
-                            ? 'Vérifier mon profil'
-                            : 'Vérifier mon téléphone',
+                            ? l10n.verifyMyProfile // ✅ UTILISER LA TRADUCTION
+                            : l10n.verifyMyPhone, // ✅ UTILISER LA TRADUCTION
                       ),
                     ),
                   ),
@@ -584,7 +622,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProviderServicesCarousel(AppLocalizations l10n) {
     return Consumer<ServiceProvider>(
       builder: (context, serviceProvider, child) {
-        if (serviceProvider.isLoading) {
+        // ✅ CORRIGER : Utiliser le nouveau flag _isLoading
+        if (serviceProvider.isLoading || _isLoading) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(20.0),
@@ -653,7 +692,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildClientProjectsCarousel(AppLocalizations l10n) {
     return Consumer<ProjectProvider>(
       builder: (context, projectProvider, child) {
-        if (projectProvider.isLoadingUserProjects) {
+        // ✅ CORRIGER : Utiliser le nouveau flag _isLoading
+        if (projectProvider.isLoadingUserProjects || _isLoading) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(20.0),

@@ -1,3 +1,4 @@
+// src/App.js - Version mise à jour
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -5,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 // Layout
 import DashboardLayout from './layouts/DashboardLayout';
 
-// Pages
+// Pages existantes
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -17,10 +18,14 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
-import NotificationsPage from './pages/NotificationsPage'
-// Pages Conversations (nouvelles)
+import NotificationsPage from './pages/NotificationsPage';
+
+// Pages Conversations
 import ConversationsList from './pages/ConversationsList';
 import ConversationDetail from './pages/ConversationDetail';
+
+// 🆕 NOUVELLE PAGE: Vérification des utilisateurs
+import UserVerification from './pages/UserVerification';
 
 // Route protégée SANS layout automatique
 const ProtectedRoute = ({ children }) => {
@@ -41,7 +46,6 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Retourne seulement les enfants sans layout automatique
   return children;
 };
 
@@ -60,139 +64,146 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Routes>
-          {/* Route publique (sans layout) */}
-          <Route path="/login" element={<Login />} />
+        <div className="App">
+          <Routes>
+            {/* Route publique */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Routes protégées - Pages qui ont DÉJÀ leur propre layout */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Navigate to="/dashboard" replace />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/users"
-            element={
-              <ProtectedRoute>
-                <Users />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/providers"
-            element={
-              <ProtectedRoute>
-                <Providers />
-              </ProtectedRoute>
-            }
-          />
+            {/* Routes protégées avec layout */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Dashboard />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Users />
+                </ProtectedPageWithLayout>
+              } 
+            />
 
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <Projects />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/projects/:id"
-            element={
-              <ProtectedRoute>
-                <ProjectDetail />
-              </ProtectedRoute>
-            }
-          />
+            {/* 🆕 NOUVELLE ROUTE: Vérification des utilisateurs */}
+            <Route 
+              path="/user-verification" 
+              element={
+                <ProtectedPageWithLayout>
+                  <UserVerification />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/providers" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Providers />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/categories" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Categories />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/projects" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Projects />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/projects/:id" 
+              element={
+                <ProtectedPageWithLayout>
+                  <ProjectDetail />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/disputes" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Disputes />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/disputes/:id" 
+              element={
+                <ProtectedPageWithLayout>
+                  <DisputeDetail />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/conversations" 
+              element={
+                <ProtectedPageWithLayout>
+                  <ConversationsList />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/conversations/:id" 
+              element={
+                <ProtectedPageWithLayout>
+                  <ConversationDetail />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/notifications" 
+              element={
+                <ProtectedPageWithLayout>
+                  <NotificationsPage />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Reports />
+                </ProtectedPageWithLayout>
+              } 
+            />
+            
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedPageWithLayout>
+                  <Settings />
+                </ProtectedPageWithLayout>
+              } 
+            />
 
-          <Route
-            path="/disputes"
-            element={
-              <ProtectedRoute>
-                <Disputes />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/disputes/:id"
-            element={
-              <ProtectedRoute>
-                <DisputeDetail />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/categories"
-            element={
-              <ProtectedRoute>
-                <Categories />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Routes Conversations - AVEC layout explicite car elles n'en ont pas */}
-          <Route
-            path="/conversations"
-            element={
-              <ProtectedPageWithLayout>
-                <ConversationsList />
-              </ProtectedPageWithLayout>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedPageWithLayout>
-                <NotificationsPage />
-              </ProtectedPageWithLayout>
-            }
-          />
-          <Route
-            path="/conversations/:conversationId"
-            element={
-              <ProtectedPageWithLayout>
-                <ConversationDetail />
-              </ProtectedPageWithLayout>
-            }
-          />
-
-          {/* Route 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Redirection par défaut */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Page 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
       </Router>
     </AuthProvider>
   );

@@ -758,5 +758,39 @@ class AuthProvider with ChangeNotifier {
     return _verificationGuardProvider!.checkAccess(context ,_currentUser, actionDescription);
   }
  
+  Future<void> refreshUserProfile() async {
+    if (_currentUser == null) return;
+    
+    try {
+      print('🔄 Rechargement du profil utilisateur...');
+      
+      final userData = await _authService.getCurrentUser();
+      if (userData != null) {
+        _currentUser = userData;
+        print('✅ Profil utilisateur rechargé avec succès');
+        
+        // Recharger aussi les statuts de vérification
+        await _loadVerificationStatuses();
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      print('❌ Erreur lors du rechargement du profil: $e');
+      // Ne pas rethrow l'erreur pour éviter de casser l'UI
+    }
+  }
+
+
+  // ✅ AMÉLIORATION : Méthode pour vérifier si l'utilisateur est vérifié
+  bool get isCurrentUserVerified {
+    if (_currentUser == null) return false;
+    return _currentUser!.verificationInfo.isVerified;
+  }
+
+  // ✅ AMÉLIORATION : Obtenir le statut de vérification actuel
+  String get currentVerificationStatus {
+    if (_currentUser == null) return 'not_verified';
+    return _currentUser!.verificationInfo.status;
+  }
   
 }

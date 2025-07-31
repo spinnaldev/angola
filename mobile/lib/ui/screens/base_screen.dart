@@ -106,7 +106,6 @@ class _BaseScreenState extends State<BaseScreen> {
 
   void _handleClientNavigation(int index) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
 
     switch (index) {
       case 0: // Accueil
@@ -136,14 +135,16 @@ class _BaseScreenState extends State<BaseScreen> {
 
   void _redirectToLogin() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Afficher un message informatif
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.loginToAccessAllFeatures), // ✅ CORRIGÉ - Enlevé le ?? 'fallback'
+        content: Text(l10n
+            .loginToAccessAllFeatures), // ✅ CORRIGÉ - Enlevé le ?? 'fallback'
         backgroundColor: const Color(0xFF142FE2),
         action: SnackBarAction(
-          label: l10n.loginButton, // ✅ CORRIGÉ - Utilisé loginButton au lieu de login
+          label: l10n
+              .loginButton, // ✅ CORRIGÉ - Utilisé loginButton au lieu de login
           textColor: Colors.white,
           onPressed: () {
             Navigator.pushNamed(context, '/login');
@@ -152,10 +153,11 @@ class _BaseScreenState extends State<BaseScreen> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       appBar: widget.appBar,
       body: Stack(
@@ -184,7 +186,8 @@ class _BaseScreenState extends State<BaseScreen> {
                       width: MediaQuery.of(context).size.width * 0.85,
                       child: SideMenu(
                         onClose: _closeMenu,
-                        allowOverflow: _isMenuOpen, // ✅ Passer l'état du menu pour l'effet débordant
+                        allowOverflow:
+                            _isMenuOpen, // ✅ Passer l'état du menu pour l'effet débordant
                       ),
                     ),
                   ],
@@ -194,18 +197,23 @@ class _BaseScreenState extends State<BaseScreen> {
         ],
       ),
       bottomNavigationBar: widget.hasBottomNavigation
-          ? AppBottomNavigation(
-              currentIndex: widget.currentIndex,
-              onTap: _handleNavigation,
-            )
+          ? _buildFixedHeightBottomNav(context)
           : null,
     );
+
+    //   bottomNavigationBar: widget.hasBottomNavigation
+    //       ? AppBottomNavigation(
+    //           currentIndex: widget.currentIndex,
+    //           onTap: _handleNavigation,
+    //         )
+    //       : null,
+    // );
   }
 
   // Menu pour les utilisateurs non connectés (utilisé par le SideMenu si besoin)
   Widget _buildGuestMenu() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       color: Colors.white,
       child: SafeArea(
@@ -247,7 +255,8 @@ class _BaseScreenState extends State<BaseScreen> {
             ),
             _buildMenuItem(
               icon: Icons.search,
-              text: l10n.explore, // ✅ CORRIGÉ - Utilisé l10n au lieu de 'Explorer'
+              text: l10n
+                  .explore, // ✅ CORRIGÉ - Utilisé l10n au lieu de 'Explorer'
               onTap: () {
                 _closeMenu();
                 Navigator.pushNamed(context, '/explore');
@@ -348,6 +357,72 @@ class _BaseScreenState extends State<BaseScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  double _getBottomNavHeight(BuildContext context) {
+    const double navHeight = 85.0; // Votre hauteur souhaitée
+    final double systemPadding = MediaQuery.of(context).padding.bottom;
+    return navHeight + systemPadding;
+  }
+
+// 🎯 Widget de navigation avec hauteur fixe
+  Widget _buildFixedHeightBottomNav(BuildContext context) {
+    const double fixedNavHeight = 85.0; // Hauteur que vous voulez
+    final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      // Hauteur totale = nav + zones de sécurité système
+      height: fixedNavHeight + systemBottomPadding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Zone de navigation avec votre hauteur exacte
+          Container(
+            height: fixedNavHeight,
+            child: AppBottomNavigation(
+              currentIndex: widget.currentIndex,
+              onTap: _handleNavigation,
+            ),
+          ),
+          // Espace pour les boutons système (iPhone home indicator, Android nav)
+          SizedBox(height: systemBottomPadding),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleFixedNav(BuildContext context) {
+    return Container(
+      height: 85.0, // Votre hauteur fixe
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom, // Padding système
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: AppBottomNavigation(
+        currentIndex: widget.currentIndex,
+        onTap: _handleNavigation,
       ),
     );
   }

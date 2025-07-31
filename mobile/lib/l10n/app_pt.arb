@@ -1510,6 +1510,17 @@
   "mustBeLoggedInTo": "Você deve estar conectado para {actionDescription}.",
   "profileVerificationRequired": "Verificação de perfil obrigatória",
   "verificationInProgressMessage": "Sua solicitação de verificação está em análise. Você ainda não pode {actionDescription}.",
-  "verificationRejectedMessage": "Sua solicitação de verificação foi rejeitada. Envie novos documentos para {actionDescription}."
+  "verificationRejectedMessage": "Sua solicitação de verificação foi rejeitada. Envie novos documentos para {actionDescription}.",
 
+  "verified": "Verificado",
+  "notVerified": "Não verificado",
+  "verificationPending": "Verificação pendente",
+  "verificationRejected": "Verificação rejeitada",
+  "myProfile": "Meu Perfil",
+  "viewAll": "Ver todos",
+  "noServicesListed": "Nenhum serviço listado",
+  "services": "Serviços",
+  "recentProjects": "Projetos recentes",
+  "edit": "Editar"
+  
 }

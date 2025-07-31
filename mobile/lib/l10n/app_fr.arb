@@ -1463,7 +1463,19 @@
   "mustBeLoggedInTo": "Vous devez être connecté pour {actionDescription}.",
   "profileVerificationRequired": "Vérification profil requise",
   "verificationInProgressMessage": "Votre demande de vérification est en cours d'examen. Vous ne pouvez pas encore {actionDescription}.",
-  "verificationRejectedMessage": "Votre demande de vérification a été rejetée. Veuillez soumettre de nouveaux documents pour {actionDescription}."
+  "verificationRejectedMessage": "Votre demande de vérification a été rejetée. Veuillez soumettre de nouveaux documents pour {actionDescription}.",
 
+  "verified": "Vérifié",
+  "notVerified": "Non vérifié", 
+  "verificationPending": "Vérification en cours",
+  "verificationRejected": "Vérification rejetée",
+  "myProfile": "Mon Profil",
+  "viewAll": "Voir tout",
+  "noServicesListed": "Aucun service listé",
+  "services": "Services",
+  "recentProjects": "Projets récents",
+  "edit": "Modifier"
+
+  
   
 }

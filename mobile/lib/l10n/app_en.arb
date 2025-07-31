@@ -1441,6 +1441,17 @@
   "mustBeLoggedInTo": "You must be logged in to {actionDescription}.",
   "profileVerificationRequired": "Profile verification required",
   "verificationInProgressMessage": "Your verification request is under review. You cannot {actionDescription} yet.",
-  "verificationRejectedMessage": "Your verification request was rejected. Please submit new documents to {actionDescription}."
+  "verificationRejectedMessage": "Your verification request was rejected. Please submit new documents to {actionDescription}.",
+
+  "verified": "Verified",
+  "notVerified": "Not verified", 
+  "verificationPending": "Verification pending",
+  "verificationRejected": "Verification rejected",
+  "myProfile": "My Profile",
+  "viewAll": "View all",
+  "noServicesListed": "No services listed",
+  "services": "Services",
+  "recentProjects": "Recent projects",
+  "edit": "Edit"
 
 }
