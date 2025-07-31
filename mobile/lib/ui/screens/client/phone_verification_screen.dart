@@ -1,12 +1,16 @@
-
+// mobile/lib/ui/screens/provider/phone_verification_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:teyago/ui/widgets/loading_indicator.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../providers/phone_verification_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../widgets/verification/verification_status_card.dart';
 import '../../widgets/verification/countdown_timer_widget.dart';
+import '../../widgets/country_picker_widget.dart';
+import '../../../core/models/country.dart';
+import '../../../core/data/countries_data.dart';
 
 class PhoneVerificationScreen extends StatefulWidget {
   const PhoneVerificationScreen({Key? key}) : super(key: key);
@@ -22,7 +26,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   final _formKey = GlobalKey<FormState>();
   
   int _currentStep = 0;
-  String _selectedCountryCode = '+229'; // Bénin par défaut
+  Country _selectedCountry = CountriesData.defaultCountry; // Angola par défaut
 
   @override
   void initState() {
@@ -50,10 +54,15 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
+      backgroundColor: Colors.white, // BACKGROUND BLANC
       appBar: AppBar(
-        title: const Text('Vérification téléphone'),
+        title: Text(l10n.phoneVerification),
+        backgroundColor: Colors.white,
         elevation: 0,
+        foregroundColor: Colors.black,
       ),
       body: Consumer<PhoneVerificationProvider>(
         builder: (context, verificationProvider, _) {
@@ -63,144 +72,146 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
           
           // Si déjà vérifié
           if (verificationProvider.isVerified) {
-            return _buildVerifiedPhone();
+            return _buildVerifiedPhone(l10n, verificationProvider);
           }
           
           // Processus de vérification
-          return _buildVerificationProcess(verificationProvider);
+          return _buildVerificationProcess(l10n, verificationProvider);
         },
       ),
     );
   }
 
-  Widget _buildVerifiedPhone() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: const Icon(
-                Icons.verified,
-                size: 64,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Téléphone vérifié !',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Consumer<PhoneVerificationProvider>(
-              builder: (context, provider, _) {
-                return Text(
-                  'Votre numéro ${provider.phoneNumber} a été vérifié avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités de la plateforme.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+  Widget _buildVerifiedPhone(AppLocalizations l10n, PhoneVerificationProvider provider) {
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(50),
                 ),
-                child: const Text(
-                  'Retour au profil',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: const Icon(
+                  Icons.verified,
+                  size: 64,
+                  color: Colors.green,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Text(
+                l10n.phoneVerified,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.codeDescription(provider.phoneNumber),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.backToProfile,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVerificationProcess(PhoneVerificationProvider provider) {
-    return Column(
-      children: [
-        // Indicateur de progression
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              for (int i = 0; i < 2; i++) ...[
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: i <= _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${i + 1}',
-                      style: TextStyle(
-                        color: i <= _currentStep ? Colors.white : Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+  Widget _buildVerificationProcess(AppLocalizations l10n, PhoneVerificationProvider provider) {
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
+      child: Column(
+        children: [
+          // Indicateur de progression
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                for (int i = 0; i < 2; i++) ...[
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: i <= _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${i + 1}',
+                        style: TextStyle(
+                          color: i <= _currentStep ? Colors.white : Colors.grey[600],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                if (i < 1)
-                  Expanded(
-                    child: Container(
-                      height: 2,
-                      color: i < _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
+                  if (i < 1)
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: i < _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
+                      ),
                     ),
-                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-        
-        // Contenu des étapes
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentStep = index;
-              });
-            },
-            children: [
-              _buildPhoneInputStep(provider),
-              _buildCodeVerificationStep(provider),
-            ],
+          
+          // Contenu des étapes
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentStep = index;
+                });
+              },
+              children: [
+                _buildPhoneInputStep(l10n, provider),
+                _buildCodeVerificationStep(l10n, provider),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildPhoneInputStep(PhoneVerificationProvider provider) {
+  Widget _buildPhoneInputStep(AppLocalizations l10n, PhoneVerificationProvider provider) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -208,17 +219,17 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Votre numéro de téléphone',
-              style: TextStyle(
+            Text(
+              l10n.yourPhoneNumber,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Nous allons envoyer un code de vérification à ce numéro.',
-              style: TextStyle(
+            Text(
+              l10n.sendCodeDescription,
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
               ),
@@ -226,25 +237,22 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
             const SizedBox(height: 32),
             
             // Sélection du pays
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
+            Text(
+              l10n.country,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
-              child: Row(
-                children: [
-                  const Text('🇧🇯', style: TextStyle(fontSize: 24)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Bénin $_selectedCountryCode',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+            ),
+            const SizedBox(height: 8),
+            CountryPickerWidget(
+              selectedCountry: _selectedCountry,
+              onCountrySelected: (country) {
+                setState(() {
+                  _selectedCountry = country;
+                });
+              },
             ),
             const SizedBox(height: 16),
             
@@ -256,18 +264,20 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                 FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(
-                labelText: 'Numéro de téléphone',
-                hintText: '61234567',
-                prefixText: '$_selectedCountryCode ',
+                labelText: l10n.phoneNumber,
+                hintText: _getPhoneHint(),
+                prefixText: '${_selectedCountry.dialCode} ',
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.phone),
+                filled: true,
+                fillColor: Colors.white,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Veuillez saisir votre numéro de téléphone';
+                  return l10n.enterPhoneNumber;
                 }
-                if (value.length < 8) {
-                  return 'Numéro trop court';
+                if (value.length < _getMinPhoneLength()) {
+                  return l10n.phoneNumberTooShort;
                 }
                 return null;
               },
@@ -278,7 +288,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: provider.isLoading ? null : _sendCode,
+                onPressed: provider.isLoading ? null : () => _sendCode(l10n),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -294,9 +304,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Envoyer le code',
-                        style: TextStyle(
+                    : Text(
+                        l10n.sendCode,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -345,9 +355,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     children: [
                       const Icon(Icons.security, color: Colors.blue, size: 20),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Pourquoi vérifier votre téléphone ?',
-                        style: TextStyle(
+                      Text(
+                        l10n.whyVerifyPhone,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: Colors.blue,
                         ),
@@ -355,12 +365,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '• Protège votre compte contre les accès non autorisés\n'
-                    '• Permet de récupérer votre compte si nécessaire\n'
-                    '• Garantit la confiance entre utilisateurs\n'
-                    '• Requis pour publier des projets et laisser des avis',
-                    style: TextStyle(fontSize: 12),
+                  Text(
+                    l10n.phoneVerificationBenefits.replaceAll('\\n', '\n'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ],
               ),
@@ -371,22 +378,22 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     );
   }
 
-  Widget _buildCodeVerificationStep(PhoneVerificationProvider provider) {
+  Widget _buildCodeVerificationStep(AppLocalizations l10n, PhoneVerificationProvider provider) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Saisir le code de vérification',
-            style: TextStyle(
+          Text(
+            l10n.enterVerificationCode,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Un code à 6 chiffres a été envoyé au ${provider.phoneNumber}',
+            l10n.codeDescription(provider.phoneNumber),
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,
@@ -408,16 +415,18 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               fontWeight: FontWeight.bold,
               letterSpacing: 8,
             ),
-            decoration: const InputDecoration(
-              labelText: 'Code de vérification',
+            decoration: InputDecoration(
+              labelText: l10n.verificationCode,
               hintText: '000000',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               counterText: '',
+              filled: true,
+              fillColor: Colors.white,
             ),
             maxLength: 6,
             onChanged: (value) {
               if (value.length == 6) {
-                _verifyCode(provider);
+                _verifyCode(l10n, provider);
               }
             },
           ),
@@ -429,7 +438,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               timeRemaining: provider.verification?.timeRemaining ?? 0,
               canResend: provider.verification?.canResend ?? false,
               isLoading: provider.isLoading,
-              onResendPressed: () => _resendCode(provider),
+              onResendPressed: () => _resendCode(l10n, provider),
             ),
           ),
           const SizedBox(height: 24),
@@ -440,7 +449,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
             child: ElevatedButton(
               onPressed: provider.isLoading || _codeController.text.length != 6 
                   ? null 
-                  : () => _verifyCode(provider),
+                  : () => _verifyCode(l10n, provider),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -456,9 +465,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text(
-                        'Vérifier le code',
-                        style: TextStyle(
+                  : Text(
+                        l10n.verifyCode,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -482,7 +491,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                   curve: Curves.easeInOut,
                 );
               },
-              child: const Text('Modifier le numéro'),
+              child: Text(l10n.changeNumber),
             ),
           ),
           
@@ -525,7 +534,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                   Icon(Icons.info, color: Colors.grey[600], size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    'Tentatives restantes: ${provider.attemptsRemaining}',
+                    l10n.attemptsRemaining(provider.attemptsRemaining),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -540,11 +549,11 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     );
   }
 
-  Future<void> _sendCode() async {
+  Future<void> _sendCode(AppLocalizations l10n) async {
     if (!_formKey.currentState!.validate()) return;
     
     final provider = Provider.of<PhoneVerificationProvider>(context, listen: false);
-    final fullPhoneNumber = '$_selectedCountryCode${_phoneController.text}';
+    final fullPhoneNumber = '${_selectedCountry.dialCode}${_phoneController.text}';
     
     final success = await provider.sendVerificationCode(fullPhoneNumber);
     
@@ -558,15 +567,83 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
       );
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Code de vérification envoyé !'),
+        SnackBar(
+          content: Text(l10n.codeSent),
           backgroundColor: Colors.green,
         ),
       );
     }
   }
 
-  Future<void> _verifyCode(PhoneVerificationProvider provider) async {
+  /// Obtient l'exemple de numéro selon le pays
+  String _getPhoneHint() {
+    switch (_selectedCountry.code) {
+      case 'AO': // Angola
+        return '912345678';
+      case 'BJ': // Bénin
+        return '61234567';
+      case 'BF': // Burkina Faso
+        return '70123456';
+      case 'CM': // Cameroun
+        return '671234567';
+      case 'CI': // Côte d'Ivoire
+        return '07123456';
+      case 'GA': // Gabon
+        return '06123456';
+      case 'GH': // Ghana
+        return '201234567';
+      case 'GN': // Guinée
+        return '601234567';
+      case 'ML': // Mali
+        return '71234567';
+      case 'NE': // Niger
+        return '91234567';
+      case 'NG': // Nigéria
+        return '8012345678';
+      case 'SN': // Sénégal
+        return '771234567';
+      case 'TG': // Togo
+        return '90123456';
+      case 'FR': // France
+        return '612345678';
+      case 'PT': // Portugal
+        return '912345678';
+      case 'US': // États-Unis
+      case 'CA': // Canada
+        return '2025551234';
+      case 'BR': // Brésil
+        return '11987654321';
+      default:
+        return '123456789';
+    }
+  }
+
+  /// Obtient la longueur minimale selon le pays
+  int _getMinPhoneLength() {
+    switch (_selectedCountry.code) {
+      case 'AO': return 9; // Angola
+      case 'BJ': return 8; // Bénin
+      case 'BF': return 8; // Burkina Faso
+      case 'CM': return 9; // Cameroun
+      case 'CI': return 8; // Côte d'Ivoire
+      case 'GA': return 8; // Gabon
+      case 'GH': return 9; // Ghana
+      case 'GN': return 9; // Guinée
+      case 'ML': return 8; // Mali
+      case 'NE': return 8; // Niger
+      case 'NG': return 10; // Nigéria
+      case 'SN': return 9; // Sénégal
+      case 'TG': return 8; // Togo
+      case 'FR': return 9; // France
+      case 'PT': return 9; // Portugal
+      case 'US': 
+      case 'CA': return 10; // États-Unis/Canada
+      case 'BR': return 10; // Brésil (minimum)
+      default: return 7; // Par défaut
+    }
+  }
+
+  Future<void> _verifyCode(AppLocalizations l10n, PhoneVerificationProvider provider) async {
     if (_codeController.text.length != 6) return;
     
     final success = await provider.verifyCode(_codeController.text);
@@ -577,22 +654,22 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
       await authProvider.refreshVerificationStatuses();
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Téléphone vérifié avec succès !'),
+        SnackBar(
+          content: Text(l10n.verificationSuccess),
           backgroundColor: Colors.green,
         ),
       );
     }
   }
 
-  Future<void> _resendCode(PhoneVerificationProvider provider) async {
+  Future<void> _resendCode(AppLocalizations l10n, PhoneVerificationProvider provider) async {
     final success = await provider.resendCode();
     
     if (success) {
       _codeController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nouveau code envoyé !'),
+        SnackBar(
+          content: Text(l10n.newCodeSent),
           backgroundColor: Colors.green,
         ),
       );

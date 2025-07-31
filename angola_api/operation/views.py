@@ -4106,6 +4106,46 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
                 
                 # TODO: Intégrer avec votre service SMS (Twilio, etc.)
                 # success = send_sms(phone_number, f"Votre code de vérification: {code}")
+                # Envoyer l'email
+                subject = 'Code de réinitialisation - Teyago Services'
+                message = f"""
+                Bonjour {request.user.first_name or request.user.username},
+
+                Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Teyago Services.
+
+                Votre code de verification est : {code}
+
+                ⚠️ Important :
+                • Ce code est valable pendant 15 minutes uniquement
+                • Si vous n'avez pas demandé cette verification, ignorez cet email
+                • Ne partagez jamais ce code avec personne
+
+                Cordialement,
+                L'équipe Teyago Services
+                                """
+                
+                try:
+                    logger.debug("Tentative d'envoi d'email...")
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [request.user.email],
+                        fail_silently=False,
+                    )
+                    logger.info(f"Email envoyé avec succès avec le code {code}")
+                    
+                    
+                    
+                except Exception as e:
+                    logger.error(f"Erreur envoi email: {str(e)}")
+                    # Même en cas d'erreur d'email, on retourne une réponse positive pour la sécurité
+                    return Response(
+                        {"detail": _("Si cet email existe, un code de réinitialisation a été envoyé")}, 
+                        status=status.HTTP_200_OK
+                    )
+                
+
                 success = True  # Simuler l'envoi pour le développement
                 
                 if success:

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:teyago/ui/widgets/loading_indicator.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'dart:io';
 import '../../../providers/provider_verification_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -49,10 +50,15 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
+      backgroundColor: Colors.white, // BACKGROUND BLANC
       appBar: AppBar(
-        title: const Text('Vérification du profil'),
+        title: Text(l10n.profileVerification),
+        backgroundColor: Colors.white,
         elevation: 0,
+        foregroundColor: Colors.black,
       ),
       body: Consumer<ProviderVerificationProvider>(
         builder: (context, verificationProvider, _) {
@@ -62,79 +68,297 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           
           // Si déjà vérifié
           if (verificationProvider.isVerified) {
-            return _buildVerifiedAccount();
+            return _buildVerifiedAccount(l10n);
           }
           
           // Si en attente
           if (verificationProvider.isPending) {
-            return _buildPendingVerification(verificationProvider);
+            return _buildPendingVerification(l10n, verificationProvider);
           }
           
           // Si rejeté
           if (verificationProvider.isRejected) {
-            return _buildRejectedVerification(verificationProvider);
+            return _buildRejectedVerification(l10n, verificationProvider);
           }
           
           // Formulaire de vérification
-          return _buildVerificationForm(verificationProvider);
+          return _buildVerificationForm(l10n, verificationProvider);
         },
       ),
     );
   }
 
-  Widget _buildVerifiedAccount() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+  Widget _buildVerifiedAccount(AppLocalizations l10n) {
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: const Icon(
+                  Icons.verified_user,
+                  size: 64,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                l10n.profileVerified,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.profileVerifiedDescription,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.backToProfile,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingVerification(AppLocalizations l10n, ProviderVerificationProvider provider) {
+    final verification = provider.verification!;
+    
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(50),
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
               ),
-              child: const Icon(
-                Icons.verified_user,
-                size: 64,
-                color: Colors.green,
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.hourglass_empty,
+                    size: 48,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.verificationInProgress,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.verificationPendingDescription,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (verification.daysSinceSubmission != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        l10n.submittedDaysAgo(verification.daysSinceSubmission!),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Profil vérifié !',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            
+            // Informations soumises
+            _buildSubmittedInfo(l10n, verification),
+            
+            const SizedBox(height: 24),
+            
+            // Délai estimé
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.blue, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l10n.processingTime,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Votre profil prestataire a été vérifié avec succès. Vous pouvez maintenant profiter de toutes les fonctionnalités de la plateforme.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                height: 1.4,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRejectedVerification(AppLocalizations l10n, ProviderVerificationProvider provider) {
+    final verification = provider.verification!;
+    
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.cancel,
+                    size: 48,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.verificationRejected,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.verificationRejectedDescription,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (verification.rejectionReason != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.rejectionReason,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            verification.rejectionReason!,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            
+            // Bouton pour soumettre de nouveaux documents
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  setState(() {
+                    _currentStep = 0;
+                    // Pré-remplir avec les données existantes
+                    _isBusiness = verification.isBusiness;
+                    _documentType = verification.documentType;
+                    if (verification.businessName != null) {
+                      _businessNameController.text = verification.businessName!;
+                    }
+                    if (verification.businessNif != null) {
+                      _businessNifController.text = verification.businessNif!;
+                    }
+                    if (verification.businessRegistrationNumber != null) {
+                      _businessRegistrationController.text = verification.businessRegistrationNumber!;
+                    }
+                  });
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Retour au profil',
-                  style: TextStyle(
+                child: Text(
+                  l10n.submitNewDocuments,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -147,294 +371,88 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Widget _buildPendingVerification(ProviderVerificationProvider provider) {
-    final verification = provider.verification!;
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildVerificationForm(AppLocalizations l10n, ProviderVerificationProvider provider) {
+    return Container(
+      color: Colors.white, // BACKGROUND BLANC
       child: Column(
         children: [
+          // Indicateur de progression
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
-            ),
-            child: Column(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                const Icon(
-                  Icons.hourglass_empty,
-                  size: 48,
-                  color: Colors.orange,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Vérification en cours',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Votre demande de vérification est en cours d\'examen. Nous vous notifierons dès que le processus sera terminé.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (verification.daysSinceSubmission != null)
+                for (int i = 0; i < 3; i++) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
+                      color: i <= _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
+                      shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      'Soumis il y a ${verification.daysSinceSubmission} jour${verification.daysSinceSubmission! > 1 ? 's' : ''}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
+                    child: Center(
+                      child: Text(
+                        '${i + 1}',
+                        style: TextStyle(
+                          color: i <= _currentStep ? Colors.white : Colors.grey[600],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Informations soumises
-          _buildSubmittedInfo(verification),
-          
-          const SizedBox(height: 24),
-          
-          // Délai estimé
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info, color: Colors.blue, size: 20),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Délai de traitement habituel : 24-48 heures ouvrées',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRejectedVerification(ProviderVerificationProvider provider) {
-    final verification = provider.verification!;
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.cancel,
-                  size: 48,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Vérification rejetée',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Votre demande de vérification a été rejetée. Consultez les détails ci-dessous et soumettez de nouveaux documents.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-                if (verification.rejectionReason != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
+                  if (i < 2)
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: i < _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Raison du rejet :',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          verification.rejectionReason!,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: 24),
           
-          // Bouton pour soumettre de nouveaux documents
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
+          // Contenu des étapes
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
                 setState(() {
-                  _currentStep = 0;
-                  // Pré-remplir avec les données existantes
-                  _isBusiness = verification.isBusiness;
-                  _documentType = verification.documentType;
-                  if (verification.businessName != null) {
-                    _businessNameController.text = verification.businessName!;
-                  }
-                  if (verification.businessNif != null) {
-                    _businessNifController.text = verification.businessNif!;
-                  }
-                  if (verification.businessRegistrationNumber != null) {
-                    _businessRegistrationController.text = verification.businessRegistrationNumber!;
-                  }
+                  _currentStep = index;
                 });
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Soumettre de nouveaux documents',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              children: [
+                _buildStep1TypeSelection(l10n),
+                _buildStep2DocumentUpload(l10n),
+                _buildStep3Review(l10n),
+              ],
             ),
           ),
+          
+          // Boutons de navigation
+          _buildNavigationButtons(l10n, provider),
         ],
       ),
     );
   }
 
-  Widget _buildVerificationForm(ProviderVerificationProvider provider) {
-    return Column(
-      children: [
-        // Indicateur de progression
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              for (int i = 0; i < 3; i++) ...[
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: i <= _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${i + 1}',
-                      style: TextStyle(
-                        color: i <= _currentStep ? Colors.white : Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                if (i < 2)
-                  Expanded(
-                    child: Container(
-                      height: 2,
-                      color: i < _currentStep ? Theme.of(context).primaryColor : Colors.grey[300],
-                    ),
-                  ),
-              ],
-            ],
-          ),
-        ),
-        
-        // Contenu des étapes
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentStep = index;
-              });
-            },
-            children: [
-              _buildStep1TypeSelection(),
-              _buildStep2DocumentUpload(),
-              _buildStep3Review(),
-            ],
-          ),
-        ),
-        
-        // Boutons de navigation
-        _buildNavigationButtons(provider),
-      ],
-    );
-  }
-
-  Widget _buildStep1TypeSelection() {
+  Widget _buildStep1TypeSelection(AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Type de compte',
-            style: TextStyle(
+          Text(
+            l10n.accountType,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Sélectionnez le type de compte qui correspond à votre activité.',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,
             ),
@@ -456,7 +474,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                color: !_isBusiness ? Theme.of(context).primaryColor.withOpacity(0.05) : null,
+                color: !_isBusiness ? Theme.of(context).primaryColor.withOpacity(0.05) : Colors.white,
               ),
               child: Row(
                 children: [
@@ -471,7 +489,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Particulier',
+                          l10n.individual,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -480,7 +498,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Je propose mes services en tant que personne physique',
+                          l10n.individualDescription,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -515,7 +533,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                color: _isBusiness ? Theme.of(context).primaryColor.withOpacity(0.05) : null,
+                color: _isBusiness ? Theme.of(context).primaryColor.withOpacity(0.05) : Colors.white,
               ),
               child: Row(
                 children: [
@@ -530,7 +548,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Entreprise',
+                          l10n.business,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -539,7 +557,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Je représente une entreprise ou société',
+                          l10n.businessDescription,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -560,9 +578,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           
           if (_isBusiness) ...[
             const SizedBox(height: 24),
-            const Text(
-              'Informations de l\'entreprise',
-              style: TextStyle(
+            Text(
+              l10n.businessInformation,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -572,10 +590,12 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             // Nom de l'entreprise
             TextFormField(
               controller: _businessNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de l\'entreprise *',
-                border: OutlineInputBorder(),
-                hintText: 'Ex: Mon Entreprise SARL',
+              decoration: InputDecoration(
+                labelText: l10n.businessNameRequired,
+                border: const OutlineInputBorder(),
+                hintText: l10n.businessNameHint,
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
@@ -583,10 +603,12 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             // NIF (optionnel)
             TextFormField(
               controller: _businessNifController,
-              decoration: const InputDecoration(
-                labelText: 'NIF (optionnel)',
-                border: OutlineInputBorder(),
-                hintText: 'Numéro d\'identification fiscale',
+              decoration: InputDecoration(
+                labelText: l10n.nifOptional,
+                border: const OutlineInputBorder(),
+                hintText: l10n.nifHint,
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
@@ -594,10 +616,12 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             // Numéro d'enregistrement
             TextFormField(
               controller: _businessRegistrationController,
-              decoration: const InputDecoration(
-                labelText: 'Numéro RCCM (optionnel)',
-                border: OutlineInputBorder(),
-                hintText: 'Numéro d\'enregistrement commercial',
+              decoration: InputDecoration(
+                labelText: l10n.rccmOptional,
+                border: const OutlineInputBorder(),
+                hintText: l10n.rccmHint,
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
           ],
@@ -606,15 +630,15 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Widget _buildStep2DocumentUpload() {
+  Widget _buildStep2DocumentUpload(AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Documents d\'identité',
-            style: TextStyle(
+          Text(
+            l10n.identityDocuments,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -630,9 +654,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           const SizedBox(height: 24),
           
           // Sélection du type de document
-          const Text(
-            'Type de document',
-            style: TextStyle(
+          Text(
+            l10n.documentType,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -661,7 +685,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                       borderRadius: BorderRadius.circular(8),
                       color: _documentType == 'id_card' 
                           ? Theme.of(context).primaryColor.withOpacity(0.05) 
-                          : null,
+                          : Colors.white,
                     ),
                     child: Column(
                       children: [
@@ -673,7 +697,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Carte d\'identité',
+                          l10n.idCard,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: _documentType == 'id_card' 
@@ -708,7 +732,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                       borderRadius: BorderRadius.circular(8),
                       color: _documentType == 'passport' 
                           ? Theme.of(context).primaryColor.withOpacity(0.05) 
-                          : null,
+                          : Colors.white,
                     ),
                     child: Column(
                       children: [
@@ -720,7 +744,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Passeport',
+                          l10n.passport,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: _documentType == 'passport' 
@@ -740,8 +764,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           // Upload des documents selon le type
           if (_documentType == 'id_card') ...[
             FilePickerWidget(
-              label: 'Carte d\'identité (recto)',
-              description: 'Photo claire de la face avant de votre carte d\'identité',
+              label: l10n.idCardFront,
+              description: l10n.idCardFrontDescription,
               selectedFile: _idCardFront,
               onFileSelected: (file) {
                 setState(() {
@@ -752,8 +776,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             ),
             const SizedBox(height: 16),
             FilePickerWidget(
-              label: 'Carte d\'identité (verso)',
-              description: 'Photo claire de la face arrière de votre carte d\'identité',
+              label: l10n.idCardBack,
+              description: l10n.idCardBackDescription,
               selectedFile: _idCardBack,
               onFileSelected: (file) {
                 setState(() {
@@ -764,8 +788,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             ),
           ] else ...[
             FilePickerWidget(
-              label: 'Passeport',
-              description: 'Photo claire de la page principale de votre passeport',
+              label: l10n.passport,
+              description: l10n.passportDescription,
               selectedFile: _passportImage,
               onFileSelected: (file) {
                 setState(() {
@@ -780,8 +804,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           if (_isBusiness) ...[
             const SizedBox(height: 24),
             FilePickerWidget(
-              label: 'Document d\'entreprise (optionnel)',
-              description: 'RCCM, registre de commerce ou autre document officiel',
+              label: l10n.businessDocumentOptional,
+              description: l10n.businessDocumentDescription,
               selectedFile: _businessDoc,
               onFileSelected: (file) {
                 setState(() {
@@ -809,9 +833,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   children: [
                     const Icon(Icons.lightbulb, color: Colors.blue, size: 20),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Conseils pour de bonnes photos',
-                      style: TextStyle(
+                    Text(
+                      l10n.photoTips,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.blue,
                       ),
@@ -819,12 +843,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '• Prenez les photos dans un endroit bien éclairé\n'
-                  '• Assurez-vous que tous les textes sont lisibles\n'
-                  '• Évitez les reflets et les ombres\n'
-                  '• Taille maximum : 5 MB par fichier',
-                  style: TextStyle(fontSize: 12),
+                Text(
+                  l10n.photoTipsContent.replaceAll('\\n', '\n'),
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -834,23 +855,23 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Widget _buildStep3Review() {
+  Widget _buildStep3Review(AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Vérification des informations',
-            style: TextStyle(
+          Text(
+            l10n.informationReview,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Vérifiez vos informations avant de soumettre votre demande.',
-            style: TextStyle(
+          Text(
+            l10n.reviewDescription,
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,
             ),
@@ -859,47 +880,48 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           
           // Récapitulatif
           Card(
+            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Type de compte
-                  _buildInfoRow('Type de compte', _isBusiness ? 'Entreprise' : 'Particulier'),
+                  _buildInfoRow(l10n.accountType, _isBusiness ? l10n.business : l10n.individual),
                   
                   if (_isBusiness) ...[
                     const Divider(),
-                    _buildInfoRow('Nom de l\'entreprise', _businessNameController.text.isNotEmpty ? _businessNameController.text : 'Non renseigné'),
+                    _buildInfoRow(l10n.businessName, _businessNameController.text.isNotEmpty ? _businessNameController.text : 'Non renseigné'),
                     if (_businessNifController.text.isNotEmpty) ...[
                       const Divider(),
                       _buildInfoRow('NIF', _businessNifController.text),
                     ],
                     if (_businessRegistrationController.text.isNotEmpty) ...[
                       const Divider(),
-                      _buildInfoRow('Numéro RCCM', _businessRegistrationController.text),
+                      _buildInfoRow('RCCM', _businessRegistrationController.text),
                     ],
                   ],
                   
                   const Divider(),
-                  _buildInfoRow('Type de document', _documentType == 'id_card' ? 'Carte d\'identité' : 'Passeport'),
+                  _buildInfoRow(l10n.documentType, _documentType == 'id_card' ? l10n.idCard : l10n.passport),
                   
                   const Divider(),
-                  const Text(
-                    'Documents fournis:',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                  Text(
+                    l10n.documentsProvided,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
                   
                   // Liste des documents
                   if (_documentType == 'id_card') ...[
-                    _buildDocumentStatus('Carte d\'identité (recto)', _idCardFront != null),
-                    _buildDocumentStatus('Carte d\'identité (verso)', _idCardBack != null),
+                    _buildDocumentStatus(l10n.idCardFront, _idCardFront != null),
+                    _buildDocumentStatus(l10n.idCardBack, _idCardBack != null),
                   ] else ...[
-                    _buildDocumentStatus('Passeport', _passportImage != null),
+                    _buildDocumentStatus(l10n.passport, _passportImage != null),
                   ],
                   
                   if (_isBusiness && _businessDoc != null)
-                    _buildDocumentStatus('Document d\'entreprise', true),
+                    _buildDocumentStatus(l10n.businessDocumentOptional, true),
                 ],
               ),
             ),
@@ -922,9 +944,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   children: [
                     const Icon(Icons.warning, color: Colors.orange, size: 20),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Important',
-                      style: TextStyle(
+                    Text(
+                      l10n.important,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.orange,
                       ),
@@ -932,11 +954,9 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Assurez-vous que toutes les informations sont exactes. '
-                  'Les documents fournis doivent être valides et lisibles. '
-                  'Toute information erronée peut entraîner un rejet de votre demande.',
-                  style: TextStyle(fontSize: 12),
+                Text(
+                  l10n.importantWarning,
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -996,36 +1016,37 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Widget _buildSubmittedInfo(verification) {
+  Widget _buildSubmittedInfo(AppLocalizations l10n, verification) {
     return Card(
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Informations soumises',
-              style: TextStyle(
+            Text(
+              l10n.submittedInformation,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
             
-            _buildInfoRow('Type', verification.isBusiness ? 'Entreprise' : 'Particulier'),
+            _buildInfoRow(l10n.accountType, verification.isBusiness ? l10n.business : l10n.individual),
             
             if (verification.businessName != null) ...[
               const Divider(),
-              _buildInfoRow('Entreprise', verification.businessName!),
+              _buildInfoRow(l10n.businessName, verification.businessName!),
             ],
             
             const Divider(),
-            _buildInfoRow('Document', verification.documentType == 'id_card' ? 'Carte d\'identité' : 'Passeport'),
+            _buildInfoRow(l10n.documentType, verification.documentType == 'id_card' ? l10n.idCard : l10n.passport),
             
             const Divider(),
-            const Text(
-              'Documents:',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            Text(
+              '${l10n.documents}:',
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             
@@ -1047,7 +1068,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Widget _buildNavigationButtons(ProviderVerificationProvider provider) {
+  Widget _buildNavigationButtons(AppLocalizations l10n, ProviderVerificationProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1071,7 +1092,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                     curve: Curves.easeInOut,
                   );
                 },
-                child: const Text('Précédent'),
+                child: Text(l10n.previous),
               ),
             ),
           if (_currentStep > 0) const SizedBox(width: 16),
@@ -1079,7 +1100,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             flex: _currentStep == 0 ? 1 : 1,
             child: ElevatedButton(
               onPressed: _canProceed() 
-                  ? (_currentStep < 2 ? _nextStep : () => _submitVerification(provider))
+                  ? (_currentStep < 2 ? _nextStep : () => _submitVerification(l10n, provider))
                   : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1093,7 +1114,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                         color: Colors.white,
                       ),
                     )
-                  : Text(_currentStep < 2 ? 'Suivant' : 'Soumettre'),
+                  : Text(_currentStep < 2 ? l10n.next : l10n.submit),
             ),
           ),
         ],
@@ -1128,7 +1149,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     );
   }
 
-  Future<void> _submitVerification(ProviderVerificationProvider provider) async {
+  Future<void> _submitVerification(AppLocalizations l10n, ProviderVerificationProvider provider) async {
     bool success = false;
     
     if (_isBusiness) {
@@ -1155,8 +1176,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Demande de vérification soumise avec succès !'),
+        SnackBar(
+          content: Text(l10n.verificationSubmitted),
           backgroundColor: Colors.green,
         ),
       );

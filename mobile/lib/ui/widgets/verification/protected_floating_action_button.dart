@@ -35,10 +35,10 @@ class ProtectedFloatingActionButton extends StatelessWidget {
   }
 
   void _handlePress(BuildContext context, AuthProvider authProvider) {
-    if (authProvider.canPerformAction(actionDescription)) {
+    if (authProvider.canPerformAction(context , actionDescription)) {
       onPressed();
     } else {
-      final result = authProvider.getVerificationResult(actionDescription);
+      final result = authProvider.getVerificationResult(context , actionDescription);
       VerificationRequiredDialog.show(context, result);
     }
   }

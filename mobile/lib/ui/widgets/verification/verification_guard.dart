@@ -21,7 +21,7 @@ class VerificationGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-        final result = authProvider.getVerificationResult(actionDescription);
+        final result = authProvider.getVerificationResult(context , actionDescription);
         
         if (result.canAccess) {
           return child;

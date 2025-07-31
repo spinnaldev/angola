@@ -739,15 +739,15 @@ class AuthProvider with ChangeNotifier {
   }
   
   // Vérifier si l'utilisateur peut effectuer une action
-  bool canPerformAction(String actionDescription) {
+  bool canPerformAction(BuildContext context, String actionDescription) {
     if (_verificationGuardProvider == null) return false;
     
-    final result = _verificationGuardProvider!.checkAccess(_currentUser, actionDescription);
+    final result = _verificationGuardProvider!.checkAccess(context, _currentUser, actionDescription);
     return result.canAccess;
   }
   
   // Obtenir le résultat de vérification pour une action
-  VerificationResult getVerificationResult(String actionDescription) {
+  VerificationResult getVerificationResult(BuildContext context, String actionDescription) {
     if (_verificationGuardProvider == null) {
       return VerificationResult.blocked(
         title: 'Erreur',
@@ -755,7 +755,7 @@ class AuthProvider with ChangeNotifier {
       );
     }
     
-    return _verificationGuardProvider!.checkAccess(_currentUser, actionDescription);
+    return _verificationGuardProvider!.checkAccess(context ,_currentUser, actionDescription);
   }
  
   

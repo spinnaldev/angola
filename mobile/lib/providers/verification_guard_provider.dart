@@ -11,7 +11,7 @@ class VerificationGuardProvider with ChangeNotifier {
   Map<String, VerificationResult> _cachedResults = {};
   
   /// Vérifier si une action est autorisée (avec cache)
-  VerificationResult checkAccess(User? user, String actionDescription) {
+  VerificationResult checkAccess(BuildContext context, User? user, String actionDescription) {
     final cacheKey = '${user?.id}_$actionDescription';
     
     // Utiliser le cache si disponible et récent
@@ -20,7 +20,7 @@ class VerificationGuardProvider with ChangeNotifier {
     }
     
     // Calculer le résultat
-    final result = VerificationGuardService.checkAccess(user, actionDescription);
+    final result = VerificationGuardService.checkAccess(context , user, actionDescription);
     
     // Mettre en cache pendant 30 secondes
     _cachedResults[cacheKey] = result;

@@ -1311,5 +1311,205 @@
   "company": "Empresa",
   "freelance": "Freelancer",
   "unknown": "Desconhecido",
-  "notAvailable": "Não Disponível"
+  "notAvailable": "Não Disponível",
+
+  "profileVerification": "Verificação do perfil",
+  "phoneVerification": "Verificação do telefone",
+  "phoneNotVerified": "Telefone não verificado",
+  "phoneVerified": "Telefone verificado",
+  "profileNotVerified": "Perfil não verificado", 
+  "profileVerified": "Perfil verificado",
+  "verificationInProgress": "Verificação em andamento",
+  "verificationRejected": "Verificação rejeitada",
+  "verificationRequired": "Verificação necessária",
+  
+  "verifyMyPhone": "Verificar meu telefone",
+  "verifyMyProfile": "Verificar meu perfil",
+  "submitNewDocuments": "Enviar novos documentos",
+  "viewStatus": "Ver status",
+  "backToProfile": "Voltar ao perfil",
+  
+  "phoneVerificationDescription": "Você precisa verificar seu número de telefone",
+  "profileVerificationDescription": "Você precisa verificar seu perfil de prestador",
+  "phoneVerifiedDescription": "Seu número de telefone está verificado",
+  "profileVerifiedDescription": "Seu perfil de prestador está verificado",
+  "verificationPendingDescription": "Sua solicitação de verificação está sendo analisada",
+  "verificationRejectedDescription": "Sua solicitação foi rejeitada. Entre em contato com o suporte.",
+  
+  "accountType": "Tipo de conta",
+  "individual": "Individual",
+  "business": "Empresa",
+  "individualDescription": "Ofereço meus serviços como pessoa física",
+  "businessDescription": "Represento uma empresa ou sociedade",
+  
+  "businessInformation": "Informações da empresa",
+  "businessName": "Nome da empresa",
+  "businessNameRequired": "Nome da empresa *",
+  "businessNameHint": "Ex: Minha Empresa Ltda",
+  "nifOptional": "CNPJ (opcional)",
+  "nifHint": "Número de identificação fiscal",
+  "rccmOptional": "Número de registro (opcional)",
+  "rccmHint": "Número de registro comercial",
+  
+  "identityDocuments": "Documentos de identidade",
+  "documentType": "Tipo de documento",
+  "idCard": "Carteira de identidade",
+  "passport": "Passaporte",
+  "idCardFront": "Carteira de identidade (frente)",
+  "idCardBack": "Carteira de identidade (verso)",
+  "idCardFrontDescription": "Foto clara da frente da sua carteira de identidade",
+  "idCardBackDescription": "Foto clara do verso da sua carteira de identidade",
+  "passportDescription": "Foto clara da página principal do seu passaporte",
+  
+  "businessDocumentOptional": "Documento da empresa (opcional)",
+  "businessDocumentDescription": "Contrato social ou outro documento oficial",
+  
+  "photoTips": "Dicas para boas fotos",
+  "photoTipsContent": "• Tire fotos em local bem iluminado\\n• Certifique-se de que todo texto seja legível\\n• Evite reflexos e sombras\\n• Tamanho máximo: 5 MB por arquivo",
+  
+  "informationReview": "Revisão das informações",
+  "reviewDescription": "Revise suas informações antes de enviar sua solicitação.",
+  "documentsProvided": "Documentos fornecidos:",
+  "important": "Importante",
+  "importantWarning": "Certifique-se de que todas as informações estão corretas. Os documentos fornecidos devem ser válidos e legíveis. Qualquer informação incorreta pode resultar na rejeição de sua solicitação.",
+  
+  "previous": "Anterior",
+  "next": "Próximo",
+  "submit": "Enviar",
+  "submittedInformation": "Informações enviadas",
+  "documents": "Documentos:",
+  "processingTime": "Tempo usual de processamento: 24-48 horas úteis",
+  
+  "rejectionReason": "Motivo da rejeição:",
+  "submittedDaysAgo": "{days, plural, =0{Enviado hoje} =1{Enviado há 1 dia} other{Enviado há {days} dias}}",
+  "@submittedDaysAgo": {
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  
+  "yourPhoneNumber": "Seu número de telefone",
+  "sendCodeDescription": "Enviaremos um código de verificação para este número.",
+  "phoneNumber": "Número de telefone",
+  "phoneHint": "61234567",
+  "enterPhoneNumber": "Por favor, digite seu número de telefone",
+  "phoneNumberTooShort": "Número muito curto",
+  "sendCode": "Enviar código",
+  
+  "enterVerificationCode": "Digite o código de verificação",
+  "codeDescription": "Um código de 6 dígitos foi enviado para {phoneNumber}",
+  "@codeDescription": {
+    "placeholders": {
+      "phoneNumber": {"type": "String"}
+    }
+  },
+  "verificationCode": "Código de verificação",
+  "verifyCode": "Verificar código",
+  "changeNumber": "Alterar número",
+  "attemptsRemaining": "Tentativas restantes: {attempts}",
+  "@attemptsRemaining": {
+    "placeholders": {
+      "attempts": {"type": "int"}
+    }
+  },
+  
+  "whyVerifyPhone": "Por que verificar seu telefone?",
+  "phoneVerificationBenefits": "• Protege sua conta contra acesso não autorizado\\n• Permite recuperar sua conta se necessário\\n• Garante confiança entre usuários\\n• Necessário para publicar projetos e deixar avaliações",
+  
+  "verificationSuccess": "Telefone verificado com sucesso!",
+  "verificationSubmitted": "Solicitação de verificação enviada com sucesso!",
+  "newCodeSent": "Novo código enviado!",
+  "codeSent": "Código de verificação enviado!",
+
+  "selectCountry": "Selecionar um país",
+  "searchCountry": "Procurar um país...",
+  "popularCountries": "Populares",
+  "allCountries": "Todos os países",
+  "country": "País",
+  "countryCode": "Código",
+  
+  "// Country names in Portuguese": "",
+  "angola": "Angola",
+  "benin": "Benin",
+  "burkinaFaso": "Burkina Faso",
+  "cameroon": "Camarões",
+  "capeVerde": "Cabo Verde",
+  "centralAfricanRepublic": "República Centro-Africana",
+  "chad": "Chade",
+  "congo": "República do Congo",
+  "democraticRepublicCongo": "República Democrática do Congo",
+  "coteDivoire": "Costa do Marfim",
+  "gabon": "Gabão",
+  "gambia": "Gâmbia",
+  "ghana": "Gana",
+  "guinea": "Guiné",
+  "guineaBissau": "Guiné-Bissau",
+  "equatorialGuinea": "Guiné Equatorial",
+  "liberia": "Libéria",
+  "mali": "Mali",
+  "mauritania": "Mauritânia",
+  "mozambique": "Moçambique",
+  "niger": "Níger",
+  "nigeria": "Nigéria",
+  "saoTome": "São Tomé e Príncipe",
+  "senegal": "Senegal",
+  "sierraLeone": "Serra Leoa",
+  "togo": "Togo",
+  "france": "França",
+  "portugal": "Portugal",
+  "spain": "Espanha",
+  "italy": "Itália",
+  "germany": "Alemanha",
+  "unitedKingdom": "Reino Unido",
+  "switzerland": "Suíça",
+  "belgium": "Bélgica",
+  "unitedStates": "Estados Unidos",
+  "canada": "Canadá",
+  "brazil": "Brasil",
+  "argentina": "Argentina",
+  "china": "China",
+  "india": "Índia",
+  "japan": "Japão",
+  "morocco": "Marrocos",
+  "tunisia": "Tunísia",
+  "algeria": "Argélia",
+  "egypt": "Egito",
+
+  "phoneVerificationRequired": "Verificação de telefone necessária",
+  "phoneVerificationRequiredMessage": "Para usar esta funcionalidade, você precisa verificar seu número de telefone.",
+  "phoneVerificationProtection": "A verificação do telefone protege contra contas falsas",
+  "cancel": "Cancelar",
+  "verifyMyPhone": "Verificar meu telefone",
+  
+
+  "phoneVerificationForProjects": "Para publicar projetos, você precisa verificar seu número de telefone.",
+  "phoneVerificationForOffers": "Para fazer ofertas, você precisa verificar seu número de telefone.",
+  "phoneVerificationForMessages": "Para enviar mensagens, você precisa verificar seu número de telefone.",
+  "phoneVerificationForReviews": "Para deixar avaliações, você precisa verificar seu número de telefone.",
+  "phoneVerificationForDisputes": "Para abrir uma disputa, você precisa verificar seu número de telefone.",
+  
+ 
+  "phoneVerificationBenefit1": "Proteção contra contas fraudulentas",
+  "phoneVerificationBenefit2": "Segurança da sua conta",
+  "phoneVerificationBenefit3": "Maior confiança entre usuários",
+
+  "verify_phone_create_project": "Para publicar um projeto e receber propostas de prestadores, você precisa primeiro verificar seu número de telefone. Isso garante segurança e confiança na nossa plataforma.",
+  "verify_phone_request_quote": "Para solicitar um orçamento personalizado, você precisa verificar seu número de telefone. Esta etapa nos ajuda a protegê-lo contra solicitações fraudulentas.",
+  "verify_phone_open_dispute": "Para abrir uma disputa e proteger seus interesses, você precisa primeiro verificar seu número de telefone.",
+  "verify_phone_leave_review": "Para deixar uma avaliação sobre um prestador, você deve verificar seu número de telefone para evitar avaliações falsas.",
+  "verify_phone_start_conversation": "Para entrar em contato com um prestador, você precisa verificar seu número de telefone.",
+  "verify_phone_generic": "Para utilizar este recurso, você deve verificar seu número de telefone.",
+
+  "verify_provider_create_service": "Para oferecer seus serviços e receber clientes, você precisa primeiro verificar seu perfil de prestador. Envie seus documentos de identidade para garantir a confiança dos clientes.",
+  "verify_provider_make_offer": "Para responder aos projetos dos clientes, você deve verificar seu perfil de prestador. Esta verificação tranquiliza os clientes sobre sua identidade.",
+  "verify_provider_open_dispute": "Para abrir uma disputa, você deve primeiro ser um prestador verificado na nossa plataforma.",
+  "verify_provider_send_message": "Para entrar em contato com os clientes, você precisa verificar seu perfil de prestador.",
+  "verify_provider_generic": "Para usar esta funcionalidade de prestador, você precisa verificar seu perfil com documentos de identidade.",
+  "verify_provider_pending": "Sua verificação está em andamento. Aguarde ou envie novos documentos.",
+  "loginRequired": "Login obrigatório",
+  "mustBeLoggedInTo": "Você deve estar conectado para {actionDescription}.",
+  "profileVerificationRequired": "Verificação de perfil obrigatória",
+  "verificationInProgressMessage": "Sua solicitação de verificação está em análise. Você ainda não pode {actionDescription}.",
+  "verificationRejectedMessage": "Sua solicitação de verificação foi rejeitada. Envie novos documentos para {actionDescription}."
+
 }

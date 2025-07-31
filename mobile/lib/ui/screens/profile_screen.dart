@@ -1,19 +1,22 @@
-// lib/ui/screens/profile_screen.dart - VERSION MULTILINGUE COMPLÈTE
+// lib/ui/screens/profile_screen.dart - VERSION AVEC VÉRIFICATION INTÉGRÉE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // AJOUT
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/ui/widgets/verification/verification_status_card.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../core/models/user.dart';
 import '../../core/models/service.dart';
-import '../../core/models/client_project.dart'; // Changé de project.dart vers client_project.dart
-// import '../common/bottom_navigation.dart';
+import '../../core/models/client_project.dart';
+// IMPORTS AJOUTÉS POUR LA VÉRIFICATION
+import '../widgets/verification_status_widget.dart';
+import '../../core/services/verification_helper.dart';
+
 import 'edit_profile_screen.dart';
 import 'service_detail_screen.dart';
-import 'user_projects_screen.dart'; // Ajouté pour la navigation
-import 'project_detail_screen.dart'; // Ajouté pour la navigation
+import 'user_projects_screen.dart';
+import 'project_detail_screen.dart';
 import 'package:intl/intl.dart';
 import './base_screen.dart';
 import '../screens/client/client_projects_screen.dart';
@@ -50,9 +53,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Provider.of<ProjectProvider>(context, listen: false);
         await projectProvider.fetchUserProjects();
       }
-
-      // NOUVELLE SECTION DE VÉRIFICATION
-      _buildVerificationSection(user);
     }
   }
 
@@ -76,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfilContent() {
-    final l10n = AppLocalizations.of(context)!; // AJOUT
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -100,21 +100,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         const SizedBox(height: 20),
 
-                        // Section profil utilisateur
+                        // Section profil utilisateur avec badges de vérification
                         _buildUserProfileSection(user, l10n),
 
                         _buildDivider(),
 
+                        // NOUVELLE SECTION : Statut de vérification
+                        _buildVerificationSection(user, l10n),
+
+                        _buildDivider(),
+                        
                         // Section adresse et membre depuis
                         _buildLocationAndMemberSection(user, l10n),
 
                         _buildDivider(),
 
-                        // Section Mes projets/services
+                        // Section Mes projets/services avec vérification
                         _buildProjectsSection(user, l10n),
 
-                        const SizedBox(
-                            height: 100), // Espace pour la bottom nav
+                        const SizedBox(height: 100), // Espace pour la bottom nav
                       ],
                     ),
                   ),
@@ -127,17 +131,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildVerificationSection(User user) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        return VerificationStatusCard(
-          user: user,
-          onVerifyPressed: () => _navigateToVerification(user.role),
-        );
-      },
+  // NOUVELLE MÉTHODE : Section de vérification
+  Widget _buildVerificationSection(User user, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: VerificationStatusCard(
+        user: user,
+        onVerifyPressed: () => _navigateToVerification(user.role),
+        showExpanded: !user.verificationInfo.isVerified, // Étendu si pas vérifié
+      ),
     );
   }
 
+  // NOUVELLE MÉTHODE : Navigation vers vérification
   void _navigateToVerification(String role) {
     if (role == 'provider') {
       Navigator.pushNamed(context, '/provider-verification');
@@ -153,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            l10n.myProfile, // TRADUIT
+            l10n.myProfile,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -189,13 +195,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.fullName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                // Nom avec badge de vérification
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        user.fullName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    // AJOUT : Badge de vérification à côté du nom
+                    if (user.verificationInfo.isVerified)
+                      VerificationBadge(
+                        user: user,
+                        size: 18,
+                        showLabel: true,
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -210,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      l10n.onlineOneMinuteAgo, // TRADUIT
+                      l10n.onlineOneMinuteAgo,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -219,56 +239,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: user.role == 'provider'
-                        ? const Color(0xFF142FE2).withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    user.role == 'provider'
-                        ? l10n.provider
-                        : l10n.client, // TRADUIT
-                    style: TextStyle(
-                      color: user.role == 'provider'
-                          ? const Color(0xFF142FE2)
-                          : Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: user.role == 'provider'
+                            ? const Color(0xFF142FE2).withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        user.role == 'provider' ? l10n.provider : l10n.client,
+                        style: TextStyle(
+                          color: user.role == 'provider'
+                              ? const Color(0xFF142FE2)
+                              : Colors.green,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    // AJOUT : Indicateur compact du statut de vérification
+                    _buildCompactVerificationStatus(user),
+                  ],
                 ),
               ],
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFF142FE2),
-                width: 3,
-              ),
-            ),
-            child: CircleAvatar(
-              radius: 35,
-              backgroundImage:
-                  user.profilePicture != null && user.profilePicture!.isNotEmpty
-                      ? NetworkImage(user.profilePicture!)
+          // Photo de profil avec badge de vérification
+          Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF142FE2),
+                    width: 3,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 35,
+                  backgroundImage:
+                      user.profilePicture != null && user.profilePicture!.isNotEmpty
+                          ? NetworkImage(user.profilePicture!)
+                          : null,
+                  child: user.profilePicture == null || user.profilePicture!.isEmpty
+                      ? Text(
+                          user.firstName.isNotEmpty ? user.firstName[0] : 'U',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )
                       : null,
-              child: user.profilePicture == null || user.profilePicture!.isEmpty
-                  ? Text(
-                      user.firstName.isNotEmpty ? user.firstName[0] : 'U',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    )
-                  : null,
-              backgroundColor: const Color(0xFF142FE2),
+                  backgroundColor: const Color(0xFF142FE2),
+                ),
+              ),
+              // AJOUT : Badge de vérification sur la photo
+              if (user.verificationInfo.isVerified)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: VerificationBadge(
+                      user: user,
+                      size: 20,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NOUVELLE MÉTHODE : Indicateur compact de vérification
+  Widget _buildCompactVerificationStatus(User user) {
+    final verificationInfo = user.verificationInfo;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: verificationInfo.statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: verificationInfo.statusColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            verificationInfo.statusIcon,
+            size: 12,
+            color: verificationInfo.statusColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            verificationInfo.status == 'verified' 
+                ? 'Vérifié'
+                : verificationInfo.status == 'pending'
+                    ? 'En cours'
+                    : 'Non vérifié',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: verificationInfo.statusColor,
             ),
           ),
         ],
@@ -302,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.locationLabel, // TRADUIT
+                      l10n.locationLabel,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -311,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.location ?? l10n.defaultLocation, // TRADUIT
+                      user.location ?? l10n.defaultLocation,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -346,7 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.memberSince, // TRADUIT
+                      l10n.memberSince,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -397,7 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 user.role == 'provider'
                     ? l10n.myServices
-                    : l10n.myProjects, // TRADUIT
+                    : l10n.myProjects,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -411,13 +497,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Navigation vers gestion des services
                     Navigator.pushNamed(context, '/service-management');
                   } else {
-                    // Navigation vers gestion des projets
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => const UserProjectsScreen(),
-                    //   ),
-                    // );
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -427,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
                 child: Text(
-                  l10n.viewAll, // TRADUIT
+                  l10n.viewAll,
                   style: const TextStyle(
                     color: Color(0xFF6366F1),
                     fontWeight: FontWeight.w600,
@@ -437,10 +516,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (user.role == 'provider')
-            _buildProviderServicesCarousel(l10n)
-          else
-            _buildClientProjectsCarousel(l10n),
+          
+          // MODIFICATION : Vérifier si l'utilisateur peut voir ses projets/services
+          if (!user.canPerformActions) ...[
+            // Affichage si pas vérifié
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Vérification requise',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    user.role == 'provider'
+                        ? 'Vérifiez votre profil pour proposer des services et répondre aux projets.'
+                        : 'Vérifiez votre téléphone pour publier des projets et contacter des prestataires.',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => _navigateToVerification(user.role),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange,
+                        side: const BorderSide(color: Colors.orange),
+                      ),
+                      child: Text(
+                        user.role == 'provider' 
+                            ? 'Vérifier mon profil'
+                            : 'Vérifier mon téléphone',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            // Affichage normal si vérifié
+            if (user.role == 'provider')
+              _buildProviderServicesCarousel(l10n)
+            else
+              _buildClientProjectsCarousel(l10n),
+          ],
         ],
       ),
     );
@@ -479,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    l10n.noServiceAdded, // TRADUIT
+                    l10n.noServiceAdded,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -488,7 +623,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    l10n.createFirstService, // TRADUIT
+                    l10n.createFirstService,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -541,14 +676,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icon(
-                  //   Icons.folder_outline,
-                  //   size: 48,
-                  //   color: Colors.grey[400],
-                  // ),
                   const SizedBox(height: 8),
                   Text(
-                    l10n.noProjectCreated, // TRADUIT
+                    l10n.noProjectCreated,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -557,7 +687,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    l10n.createFirstProject, // TRADUIT
+                    l10n.createFirstProject,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -670,7 +800,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 4),
                     Text(
                       service.priceType == 'quote'
-                          ? l10n.onQuote // TRADUIT
+                          ? l10n.onQuote
                           : '${service.price.toInt()}AOA',
                       style: const TextStyle(
                         fontSize: 12,
@@ -745,7 +875,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _getProjectStatusText(project, l10n), // TRADUIT
+                      _getProjectStatusText(project, l10n),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -796,7 +926,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    l10n.offersCount(project.offersCount), // TRADUIT
+                    l10n.offersCount(project.offersCount),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
