@@ -1521,6 +1521,34 @@
   "noServicesListed": "Nenhum serviço listado",
   "services": "Serviços",
   "recentProjects": "Projetos recentes",
-  "edit": "Editar"
+  "edit": "Editar",
+
+  "locationDisabled": "Localização desativada",
+  "enableLocationToSeeNearby": "Ative a localização para ver {type} próximos",
+  "retry": "Tentar novamente",
+  "locationActivated": "Localização ativada", 
+  "nearbyCount": "{count} {type} próximos",
   
+  "providersNearby": "prestadores",
+  "clientsNearby": "clientes",
+  "projectsNearby": "projetos",
+  
+  "enableLocationForProviders": "Ative a localização para ver prestadores próximos",
+  "enableLocationForClients": "Ative a localização para ver clientes próximos", 
+  "enableLocationForProjects": "Ative a localização para ver projetos próximos",
+  "notifications": "Notificações",
+  "notifications_all": "Todas",
+  "notifications_unread": "Não lidas",
+  "notifications_read": "Lidas",
+  "mark_all_as_read": "Marcar todas como lidas",
+  "marked_all_as_read": "Todas as notificações marcadas como lidas",
+  "error_loading_notifications": "Erro: {error}",
+  "retry": "Tentar novamente",
+  "no_notifications_title": "Nenhuma notificação",
+  "no_notifications_subtitle": "As novas notificações aparecerão aqui",
+  "just_now": "Agora mesmo",
+  "minutes_ago": "Há {minutes} min",
+  "hours_ago": "Há {hours}h",
+  "days_ago": "Há {days} dia{plural}"
+
 }

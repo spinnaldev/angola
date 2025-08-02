@@ -387,7 +387,7 @@ class ClientProject {
 
   @override
   String toString() {
-    return 'ClientProject(id: $id, title: $title, status: $status, clientName: $clientName)';
+    return 'ClientProject(id: $id, title: $title, status: $status, client_name: $clientName)';
   }
 
   @override

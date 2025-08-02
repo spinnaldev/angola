@@ -457,7 +457,7 @@ class SideMenu extends StatelessWidget {
             // Naviguer vers l'écran des notifications
             Navigator.pushNamed(context, '/notifications');
           },
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
         );
       },
     );

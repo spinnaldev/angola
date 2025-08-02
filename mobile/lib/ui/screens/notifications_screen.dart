@@ -53,10 +53,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           labelColor: Theme.of(context).primaryColor,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Theme.of(context).primaryColor,
-          tabs: const [
-            Tab(text: 'Toutes'),
-            Tab(text: 'Non lues'),
-            Tab(text: 'Lues'),
+          tabs: [
+            Tab(text: l10n.notifications_all),
+            Tab(text: l10n.notifications_unread),
+            Tab(text: l10n.notifications_read),
           ],
         ),
         actions: [
@@ -70,9 +70,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     final success = await provider.markAllAsRead();
                     if (mounted && success) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Toutes les notifications marquées comme lues'),
-                          duration: Duration(seconds: 2),
+                        SnackBar(
+                          content: Text(l10n.marked_all_as_read),
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     }
@@ -104,14 +104,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Erreur: ${provider.errorMessage}',
+                      '${l10n.error_loading_notifications(provider.errorMessage ?? "")}',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => provider.loadNotifications(forceRefresh: true),
-                      child: const Text('Réessayer'),
+                      child: Text(l10n.retry),
                     ),
                   ],
                 ),
@@ -134,6 +134,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   Widget _buildNotificationList(List<NotificationModel> notifications) {
     if (notifications.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
@@ -147,7 +148,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Aucune notification',
+                l10n.no_notifications_title,
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.grey[500],
@@ -156,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Les nouvelles notifications apparaîtront ici',
+                l10n.no_notifications_subtitle,
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontSize: 14,
@@ -295,17 +296,19 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   String _formatDate(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(date);
     
     if (difference.inMinutes < 1) {
-      return 'À l\'instant';
+      return l10n.just_now;
     } else if (difference.inMinutes < 60) {
-      return 'Il y a ${difference.inMinutes} min';
+      return l10n.minutes_ago(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return 'Il y a ${difference.inHours}h';
+      return l10n.hours_ago(difference.inHours);
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} jour${difference.inDays > 1 ? 's' : ''}';
+      final plural = difference.inDays > 1 ? 's' : '';
+      return l10n.days_ago(difference.inDays.toString() , plural);
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

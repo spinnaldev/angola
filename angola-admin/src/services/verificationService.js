@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 class VerificationService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/api/admin/provider-verification`;
+    this.baseURL = `${API_BASE_URL}/admin/provider-verification`;
   }
 
   // Méthode utilitaire pour obtenir les headers d'authentification
@@ -183,7 +183,7 @@ class VerificationService {
   // Obtenir le dashboard des vérifications
   async getDashboard() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/dashboard/`, {
+      const response = await fetch(`${API_BASE_URL}/dashboard/`, {
         headers: this.getAuthHeaders(),
       });
       
@@ -206,7 +206,7 @@ class VerificationService {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/export/?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/export/?${params}`, {
         headers: this.getAuthHeaders(),
       });
 
@@ -233,7 +233,7 @@ class VerificationService {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/reports/?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/reports/?${params}`, {
         headers: this.getAuthHeaders(),
       });
       

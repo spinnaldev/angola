@@ -480,10 +480,10 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       // Pour l'instant, générer des projets mockés basés sur la localisation
       // Vous pouvez adapter selon votre API
-      _nearbyProjects = _generateNearbyProjectsMock(position);
+      _nearbyProjects = [];
     } catch (e) {
       print('Erreur lors du chargement des projets à proximité: $e');
-      _nearbyProjects = _generateNearbyProjectsMock(position);
+      _nearbyProjects = [];
     }
   }
 
@@ -748,8 +748,28 @@ class _HomeScreenState extends State<HomeScreen>
 
   // NOUVEAU WIDGET pour afficher le statut de localisation
   Widget _buildLocationStatus() {
-    return Consumer<LocationProvider>(
-      builder: (context, locationProvider, child) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Consumer2<LocationProvider, AuthProvider>(
+      builder: (context, locationProvider, authProvider, child) {
+        // ✅ NOUVEAU : Déterminer le type d'utilisateur connecté
+        final user = authProvider.currentUser;
+        final isProvider = user?.role == 'provider';
+        
+        // ✅ NOUVEAU : Définir le type d'entités à afficher selon le rôle
+        String nearbyType;
+        String enableLocationMessage;
+        
+        if (isProvider) {
+          // Si je suis prestataire, je veux voir les clients à proximité
+          nearbyType = l10n.clientsNearby;
+          enableLocationMessage = l10n.enableLocationForClients;
+        } else {
+          // Si je suis client, je veux voir les prestataires à proximité  
+          nearbyType = l10n.providersNearby;
+          enableLocationMessage = l10n.enableLocationForProviders;
+        }
+
         if (_locationPermissionDenied) {
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -768,14 +788,14 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Localisation désactivée',
+                        l10n.locationDisabled, // ✅ TRADUCTION
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.orange[800],
                         ),
                       ),
                       Text(
-                        'Activez la localisation pour voir les prestataires à proximité',
+                        enableLocationMessage, // ✅ TRADUCTION + LOGIQUE RÔLE
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.orange[700],
@@ -789,12 +809,20 @@ class _HomeScreenState extends State<HomeScreen>
                     // Réessayer d'obtenir la localisation
                     await _loadData();
                   },
-                  child: Text('Réessayer'),
+                  child: Text(l10n.retry), // ✅ TRADUCTION
                 ),
               ],
             ),
           );
         } else if (locationProvider.currentPosition != null) {
+          // ✅ NOUVEAU : Ne montrer que si on a de vraies données
+          final nearbyCount = _getNearbyCount(isProvider);
+          
+          // ✅ NOUVEAU : N'afficher que s'il y a vraiment des données
+          if (nearbyCount == 0) {
+            return const SizedBox.shrink(); // Ne rien afficher si pas de données
+          }
+          
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             padding: const EdgeInsets.all(12),
@@ -809,7 +837,7 @@ class _HomeScreenState extends State<HomeScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _currentLocationName ?? 'Localisation activée',
+                    _currentLocationName ?? l10n.locationActivated, // ✅ TRADUCTION
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Colors.green[800],
@@ -817,7 +845,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 Text(
-                  '${_nearbyServices.length} prestataires à proximité',
+                  l10n.nearbyCount(nearbyCount.toString(), nearbyType),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.green[700],
@@ -832,6 +860,15 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  int _getNearbyCount(bool isProvider) {
+  if (isProvider) {
+    // Si je suis prestataire, compter les clients/projets à proximité
+    return _nearbyProjects.length; // ou _nearbyClients.length si vous avez cette liste
+  } else {
+    // Si je suis client, compter les prestataires à proximité  
+    return _nearbyServices.length;
+  }
+}
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;

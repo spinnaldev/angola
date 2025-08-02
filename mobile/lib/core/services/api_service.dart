@@ -2362,7 +2362,8 @@ class ApiService {
         print('✅ Token rafraîchi et sauvegardé');
         return true;
       } else {
-        print('❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
+        print(
+            '❌ Échec du rafraîchissement: ${response.statusCode} - ${response.body}');
 
         // Supprimer les tokens invalides
         await _secureStorage.delete(key: 'access_token');
@@ -2685,7 +2686,8 @@ class ApiService {
       print('📥 Données brutes reçues: $data'); // Debug
 
       final List<dynamic> providersData = data['results'] ?? [];
-      print('📋 Nombre de prestataires dans les données: ${providersData.length}');
+      print(
+          '📋 Nombre de prestataires dans les données: ${providersData.length}');
 
       final List<ProviderModel> providers = [];
       final Set<int> seenIds = <int>{};
@@ -2694,19 +2696,19 @@ class ApiService {
       for (int i = 0; i < providersData.length; i++) {
         try {
           final providerJson = providersData[i];
-          print('🔍 Parsing provider $i: ${providerJson['id']} - ${providerJson['name']}');
-          
+          print(
+              '🔍 Parsing provider $i: ${providerJson['id']} - ${providerJson['name']}');
+
           final provider = ProviderModel.fromJson(providerJson);
-          
+
           // ✅ Vérifier les doublons
           if (seenIds.contains(provider.id)) {
             print('⚠️ Provider ${provider.id} déjà vu, ignoré');
             continue;
           }
-          
+
           seenIds.add(provider.id);
           providers.add(provider);
-          
         } catch (e, stackTrace) {
           print('❌ Erreur parsing provider $i: $e');
           print('📋 Données problématiques: ${providersData[i]}');
@@ -2717,7 +2719,6 @@ class ApiService {
 
       print('✅ Prestataires récupérés avec succès: ${providers.length}');
       return providers;
-      
     } catch (e, stackTrace) {
       print('❌ Erreur dans getProviders: $e');
       print('📍 Stack trace: $stackTrace');
@@ -2824,7 +2825,8 @@ class ApiService {
       print('📋 Récupération des détails du projet $projectId...');
 
       // Charger les détails complets du projet
-      final data = await _apiClient.get('projects/$projectId/', requireAuth: true);
+      final data =
+          await _apiClient.get('projects/$projectId/', requireAuth: true);
 
       if (data != null) {
         print('✅ Détails du projet récupérés avec succès');
@@ -2838,6 +2840,7 @@ class ApiService {
       return null;
     }
   }
+
   Future<ProviderModel> getProviderByServiceId(int serviceId) async {
     try {
       print('👥 Récupération du prestataire pour le service $serviceId...');
@@ -3233,7 +3236,7 @@ class ApiService {
           requireAuth: true);
 
       final List<dynamic> offers = data['results'] ?? [];
-      
+
       // Enrichir les données d'offres avec l'ID du provider si manquant
       for (var offer in offers) {
         if (offer['provider'] != null) {
@@ -3605,7 +3608,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> startConversationWithClient(int clientId, String? initialMessage) async {
+  Future<Map<String, dynamic>> startConversationWithClient(
+      int clientId, String? initialMessage) async {
     try {
       final userId = await getCurrentUserId();
       final Map<String, dynamic> requestData = {
@@ -3691,10 +3695,12 @@ class ApiService {
       print('🔔 Récupération des notifications...');
 
       final userId = await getCurrentUserId();
-      final data = await _apiClient.get('notifications/?user_id=$userId', requireAuth: true);
+      final data = await _apiClient.get('notifications/?user_id=$userId',
+          requireAuth: true);
 
       final List<dynamic> results = data['results'] ?? data;
-      final notifications = results.map((item) => NotificationModel.fromJson(item)).toList();
+      final notifications =
+          results.map((item) => NotificationModel.fromJson(item)).toList();
 
       print('✅ ${notifications.length} notifications récupérées');
       return notifications;
@@ -3756,7 +3762,8 @@ class ApiService {
     try {
       print('🗑️ Suppression notification $notificationId...');
 
-      await _apiClient.delete('notifications/$notificationId/', requireAuth: true);
+      await _apiClient.delete('notifications/$notificationId/',
+          requireAuth: true);
 
       print('✅ Notification supprimée');
       return true;
@@ -3771,7 +3778,7 @@ class ApiService {
   // ===============================
 
   Future<ClientProject> createProject(
-    Map<String, dynamic> projectData, List<File?> attachments) async {
+      Map<String, dynamic> projectData, List<File?> attachments) async {
     const int maxRetries = 3;
     int retryCount = 0;
 
@@ -3779,7 +3786,8 @@ class ApiService {
       try {
         print('📤 Tentative ${retryCount + 1} de création de projet...');
 
-        var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
+        var request =
+            http.MultipartRequest('POST', Uri.parse('$baseUrl/projects/'));
 
         // Ajouter les headers d'authentification
         final headers = await _apiClient.getHeaders();
@@ -3796,7 +3804,8 @@ class ApiService {
                 request.fields[key] = json.encode(value);
               } catch (e) {
                 print('Error encoding list for key $key: $e');
-                final stringList = value.map((item) => item.toString()).toList();
+                final stringList =
+                    value.map((item) => item.toString()).toList();
                 request.fields[key] = json.encode(stringList);
               }
             } else {
@@ -3829,9 +3838,9 @@ class ApiService {
           final data = json.decode(utf8.decode(response.bodyBytes));
           print('✅ Projet créé avec succès');
           return ClientProject.fromJson(data);
-          
         } else if (response.statusCode == 401) {
-          print('❌ Erreur 401 - Token invalide ou expiré (tentative ${retryCount + 1})');
+          print(
+              '❌ Erreur 401 - Token invalide ou expiré (tentative ${retryCount + 1})');
           print('Corps de la réponse: ${response.body}');
 
           if (retryCount < maxRetries - 1) {
@@ -3853,16 +3862,17 @@ class ApiService {
         } else {
           print('❌ Erreur HTTP ${response.statusCode}');
           print('Corps de la réponse: ${response.body}');
-          throw Exception('Erreur lors de la création du projet: ${response.statusCode}');
+          throw Exception(
+              'Erreur lors de la création du projet: ${response.statusCode}');
         }
-
       } catch (e) {
         print('❌ Erreur dans createProject: $e');
-        
+
         if (retryCount == maxRetries - 1) {
           // Dernière tentative échouée
           rethrow;
-        } else if (e.toString().contains('Non autorisé') || e.toString().contains('401')) {
+        } else if (e.toString().contains('Non autorisé') ||
+            e.toString().contains('401')) {
           // Pour les erreurs 401, essayer de rafraîchir le token
           retryCount++;
         } else {
@@ -3872,10 +3882,10 @@ class ApiService {
       }
     }
 
-    throw Exception('Impossible de créer le projet après $maxRetries tentatives');
+    throw Exception(
+        'Impossible de créer le projet après $maxRetries tentatives');
   }
 
-  
   // Méthode privée pour créer un projet avec fichiers (utilise http directement)
   Future<ClientProject> _createProjectWithFiles(
       Map<String, dynamic> projectData, List<File?> attachments) async {
@@ -4082,7 +4092,8 @@ class ApiService {
         return;
       } catch (e) {
         print('❌ Toutes les méthodes ont échoué');
-        throw Exception('Impossible de retirer l\'offre. Méthodes HTTP non supportées.');
+        throw Exception(
+            'Impossible de retirer l\'offre. Méthodes HTTP non supportées.');
       }
     } catch (e) {
       print('❌ Erreur dans deleteOffer: $e');
@@ -4097,7 +4108,8 @@ class ApiService {
 
       // Méthode 1: Essayer l'endpoint spécifique de retrait s'il existe
       try {
-        await _apiClient.post('project-offers/$offerId/withdraw/', requireAuth: true);
+        await _apiClient.post('project-offers/$offerId/withdraw/',
+            requireAuth: true);
         print('✅ Offre retirée via endpoint /withdraw/');
         return;
       } catch (e) {
@@ -4105,7 +4117,7 @@ class ApiService {
       }
 
       // Méthode 2: Utiliser PATCH avec status
-  
+
       // Méthode 3: Utiliser POST sur un endpoint d'action
       try {
         await _apiClient.post(
@@ -4117,11 +4129,12 @@ class ApiService {
         return;
       } catch (e) {
         print('❌ Toutes les méthodes ont échoué');
-        throw Exception('Service temporairement indisponible. Réessayez plus tard.');
+        throw Exception(
+            'Service temporairement indisponible. Réessayez plus tard.');
       }
     } catch (e) {
       print('❌ Erreur dans withdrawOfferSafely: $e');
-      
+
       // Donner un message d'erreur plus user-friendly
       if (e.toString().contains('405')) {
         throw Exception('Action non autorisée par le serveur');
@@ -4142,16 +4155,20 @@ class ApiService {
 
       // Option 1: Essayer l'endpoint projects/{id}
       try {
-        final data = await _apiClient.get('projects/$projectId/', requireAuth: true);
+        final data =
+            await _apiClient.get('projects/$projectId/', requireAuth: true);
+        print(data);
         print('✅ Projet récupéré via /projects/$projectId/');
         return data;
       } catch (e) {
-        print('⚠️ Échec /projects/$projectId/, tentative endpoint alternatif...');
+        print(
+            '⚠️ Échec /projects/$projectId/, tentative endpoint alternatif...');
       }
 
       // Option 2: Essayer l'endpoint client-projects/{id}
       try {
-        final data = await _apiClient.get('client-projects/$projectId/', requireAuth: true);
+        final data = await _apiClient.get('client-projects/$projectId/',
+            requireAuth: true);
         print('✅ Projet récupéré via /client-projects/$projectId/');
         return data;
       } catch (e) {
@@ -4160,15 +4177,16 @@ class ApiService {
 
       // Option 3: Chercher dans la liste de tous les projets
       try {
-        final allProjectsData = await _apiClient.get('projects/', requireAuth: true);
+        final allProjectsData =
+            await _apiClient.get('projects/', requireAuth: true);
         final projects = allProjectsData['results'] as List<dynamic>?;
-        
+
         if (projects != null) {
           final project = projects.firstWhere(
             (p) => p['id'] == projectId,
             orElse: () => null,
           );
-          
+
           if (project != null) {
             print('✅ Projet trouvé dans la liste des projets');
             return project as Map<String, dynamic>;
@@ -4180,7 +4198,6 @@ class ApiService {
 
       print('❌ Projet $projectId non trouvé dans tous les endpoints');
       return null;
-
     } catch (e) {
       print('❌ Erreur dans getProjectById: $e');
       throw Exception('Erreur lors de la récupération du projet: $e');

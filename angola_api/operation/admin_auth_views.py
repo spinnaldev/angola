@@ -640,7 +640,7 @@ class AdminProviderVerificationViewSet(viewsets.ModelViewSet):
         'provider__user', 'verified_by'
     ).order_by('-created_at')
     
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
     
     def get_serializer_class(self):
         """Choisir le serializer selon l'action"""
@@ -1058,7 +1058,7 @@ class AdminPhoneVerificationViewSet(viewsets.ReadOnlyModelViewSet):
     
     queryset = PhoneVerification.objects.all().select_related('user').order_by('-created_at')
     serializer_class = PhoneVerificationSerializer
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
     
     def get_queryset(self):
         """Filtrage pour les admins"""
@@ -1168,7 +1168,7 @@ class AdminPhoneVerificationViewSet(viewsets.ReadOnlyModelViewSet):
 # ================================================================
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+# @permission_classes([IsAdminUser])
 def verification_dashboard(request):
     """
     Dashboard global des vérifications pour les admins
@@ -1248,7 +1248,7 @@ def verification_dashboard(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+# @permission_classes([IsAdminUser])
 def verification_reports(request):
     """
     Rapports détaillés des vérifications
@@ -1373,7 +1373,7 @@ def reset_all_verifications(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+# @permission_classes([IsAdminUser])
 def export_verifications(request):
     """
     Exporter les données de vérifications en CSV

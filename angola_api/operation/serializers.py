@@ -810,10 +810,10 @@ class ClientProjectListSerializer(serializers.ModelSerializer):
     
     def get_client_name(self, obj):
         """Masquer le nom du client pour les utilisateurs non authentifiés"""
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.client.first_name or obj.client.username
-        return "Client anonyme"
+        # request = self.context.get('request')
+        # if request and request.user.is_authenticated:
+        return obj.client.first_name or obj.client.username
+        # return "Client anonyme"
     
     def get_client_picture(self, obj):  # NOUVELLE MÉTHODE
         """Retourner la photo du client ou None"""

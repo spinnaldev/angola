@@ -442,3 +442,864 @@ INFO 2025-07-31 08:54:11,582 autoreload 28316 21144 C:\Users\AGL\Documents\SPINA
 INFO 2025-07-31 08:54:13,243 autoreload 8248 26860 Watching for file changes with StatReloader
 INFO 2025-07-31 17:41:13,558 autoreload 18648 5388 Watching for file changes with StatReloader
 INFO 2025-07-31 17:41:48,626 autoreload 27076 27020 Watching for file changes with StatReloader
+INFO 2025-07-31 17:41:57,829 basehttp 27076 24828 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
+WARNING 2025-07-31 17:41:59,057 admin_auth_views 27076 24828 Django authenticate a échoué mais password check OK - utilisation directe de l'utilisateur
+INFO 2025-07-31 17:41:59,057 admin_auth_views 27076 24828 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-31 17:41:59,069 basehttp 27076 24828 "POST /api/auth/admin-login/ HTTP/1.1" 200 943
+INFO 2025-07-31 17:41:59,115 basehttp 27076 24828 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:41:59,118 basehttp 27076 28520 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:41:59,124 basehttp 27076 28520 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:41:59,308 basehttp 27076 28520 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 17:41:59,334 basehttp 27076 24828 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 17:41:59,423 basehttp 27076 28520 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 17:41:59,468 basehttp 27076 24828 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 17:42:05,509 basehttp 27076 28520 "OPTIONS /api/api/admin/provider-verification/statistics/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:42:05,509 basehttp 27076 25156 "OPTIONS /api/api/admin/provider-verification/statistics/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:42:05,509 basehttp 27076 24828 "OPTIONS /api/api/admin/provider-verification/? HTTP/1.1" 200 0
+INFO 2025-07-31 17:42:05,510 basehttp 27076 4852 "OPTIONS /api/api/admin/provider-verification/? HTTP/1.1" 200 0
+ERROR 2025-07-31 17:42:05,513 middleware 27076 4852 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 17:42:05,514 middleware 27076 24828 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:42:05,588 log 27076 24828 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:42:05,589 basehttp 27076 24828 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:42:05,590 log 27076 4852 Not Found: /api/api/admin/provider-verification/statistics/
+ERROR 2025-07-31 17:42:05,592 middleware 27076 25156 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:42:05,593 basehttp 27076 4852 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+ERROR 2025-07-31 17:42:05,594 middleware 27076 24828 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:42:05,628 log 27076 25156 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:42:05,630 basehttp 27076 25156 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:42:05,631 log 27076 24828 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 17:42:05,632 basehttp 27076 24828 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+INFO 2025-07-31 17:42:18,088 basehttp 27076 25156 "OPTIONS /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:42:18,088 basehttp 27076 24828 "OPTIONS /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:42:18,212 basehttp 27076 24828 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 17:42:18,294 basehttp 27076 24828 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+ERROR 2025-07-31 17:42:22,691 middleware 27076 24828 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 17:42:22,692 middleware 27076 25156 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:42:22,738 log 27076 24828 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:42:22,738 log 27076 25156 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 17:42:22,739 basehttp 27076 24828 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:42:22,739 basehttp 27076 25156 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+ERROR 2025-07-31 17:42:22,743 middleware 27076 4852 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 17:42:22,743 middleware 27076 28520 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:42:22,790 log 27076 4852 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:42:22,792 log 27076 28520 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 17:42:22,792 basehttp 27076 4852 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:42:22,793 basehttp 27076 28520 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+INFO 2025-07-31 17:44:34,623 basehttp 27076 28520 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:34,624 basehttp 27076 24828 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:34,624 basehttp 27076 4852 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:34,624 basehttp 27076 25156 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:34,735 basehttp 27076 24828 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:34,736 basehttp 27076 28520 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 17:44:34,835 basehttp 27076 24828 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:34,843 basehttp 27076 28520 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 17:44:35,754 basehttp 27076 28520 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:35,754 basehttp 27076 24828 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:35,834 basehttp 27076 28520 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:36,016 basehttp 27076 28520 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:37,794 basehttp 27076 28520 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:37,795 basehttp 27076 24828 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:37,876 basehttp 27076 24828 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 17:44:37,883 basehttp 27076 28520 "OPTIONS /api/admin/notifications/? HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:37,988 basehttp 27076 28520 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:37,989 basehttp 27076 24828 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 17:44:38,073 basehttp 27076 24828 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:39,063 basehttp 27076 24828 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 17:44:39,091 basehttp 27076 28520 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 17:44:39,156 basehttp 27076 25156 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 17:44:39,202 basehttp 27076 28520 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 17:44:39,519 basehttp 27076 28520 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:39,528 basehttp 27076 25156 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 17:44:39,641 basehttp 27076 28520 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:39,652 basehttp 27076 25156 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 17:44:39,895 basehttp 27076 25156 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:39,895 basehttp 27076 28520 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:39,981 basehttp 27076 28520 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:40,062 basehttp 27076 28520 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 17:44:40,397 basehttp 27076 25156 "OPTIONS /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:40,398 basehttp 27076 28520 "OPTIONS /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 200 0
+ERROR 2025-07-31 17:44:40,910 log 27076 25156 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 17:44:40,928 basehttp 27076 25156 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+ERROR 2025-07-31 17:44:41,006 middleware 27076 25156 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 17:44:41,006 middleware 27076 24828 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:44:41,057 log 27076 25156 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:44:41,060 log 27076 24828 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 17:44:41,061 basehttp 27076 25156 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:44:41,063 basehttp 27076 24828 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+ERROR 2025-07-31 17:44:41,064 middleware 27076 4852 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 17:44:41,087 middleware 27076 25156 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 17:44:41,090 log 27076 4852 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 17:44:41,119 basehttp 27076 4852 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 17:44:41,121 log 27076 25156 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 17:44:41,124 basehttp 27076 25156 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+ERROR 2025-07-31 17:44:41,176 log 27076 28520 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 17:44:41,186 basehttp 27076 28520 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+INFO 2025-07-31 17:44:41,534 basehttp 27076 28520 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:41,534 basehttp 27076 25156 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 17:44:41,706 basehttp 27076 25156 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 17:44:41,897 basehttp 27076 25156 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 17:44:42,027 basehttp 27076 28520 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 17:44:42,046 basehttp 27076 25156 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 17:44:42,177 basehttp 27076 28520 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 17:44:42,204 basehttp 27076 25156 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 17:44:42,519 basehttp 27076 25156 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 17:44:42,645 basehttp 27076 25156 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:35,986 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:36,059 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:37,186 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:37,274 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:41,027 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:41,126 basehttp 27076 27256 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 18:58:43,673 basehttp 27076 27256 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 18:58:43,801 basehttp 27076 27256 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+ERROR 2025-07-31 18:58:44,851 log 27076 27256 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 18:58:44,859 basehttp 27076 27256 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+ERROR 2025-07-31 18:58:44,995 log 27076 18700 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 18:58:45,003 basehttp 27076 18700 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+INFO 2025-07-31 18:58:45,199 basehttp 27076 18700 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:45,276 basehttp 27076 18700 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:45,907 basehttp 27076 18700 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:45,917 basehttp 27076 27256 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 18:58:45,993 basehttp 27076 18700 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:45,999 basehttp 27076 27256 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 18:58:46,651 basehttp 27076 27256 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 18:58:46,678 basehttp 27076 18700 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 18:58:46,729 basehttp 27076 27256 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 18:58:46,776 basehttp 27076 18700 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 18:58:47,279 basehttp 27076 18700 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 18:58:47,360 basehttp 27076 18700 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 18:58:47,369 basehttp 27076 27256 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:47,443 basehttp 27076 27256 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:48,388 basehttp 27076 27256 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 18:58:48,561 basehttp 27076 27256 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:19,756 basehttp 27076 9372 "OPTIONS /api/auth/admin-login/ HTTP/1.1" 200 0
+WARNING 2025-07-31 19:03:20,811 admin_auth_views 27076 9372 Django authenticate a échoué mais password check OK - utilisation directe de l'utilisateur
+INFO 2025-07-31 19:03:20,811 admin_auth_views 27076 9372 Connexion admin réussie pour: admin@gmail.com
+INFO 2025-07-31 19:03:20,828 basehttp 27076 9372 "POST /api/auth/admin-login/ HTTP/1.1" 200 943
+INFO 2025-07-31 19:03:20,878 basehttp 27076 9372 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:20,879 basehttp 27076 12416 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:20,881 basehttp 27076 9372 "OPTIONS /api/admin/dashboard/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:20,881 basehttp 27076 12416 "OPTIONS /api/admin/projects/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:20,966 basehttp 27076 12416 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:03:21,038 basehttp 27076 12416 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:03:21,079 basehttp 27076 9372 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:03:21,259 basehttp 27076 9372 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:03:23,297 basehttp 27076 22784 "OPTIONS /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:23,297 basehttp 27076 9372 "OPTIONS /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:23,473 basehttp 27076 9372 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:03:23,550 basehttp 27076 9372 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:03:25,196 basehttp 27076 22784 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:25,197 basehttp 27076 9372 "OPTIONS /api/providers/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:25,306 basehttp 27076 9372 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 19:03:25,421 basehttp 27076 9372 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 19:03:26,353 basehttp 27076 9372 "OPTIONS /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:26,353 basehttp 27076 22784 "OPTIONS /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 200 0
+ERROR 2025-07-31 19:03:26,444 log 27076 9372 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 19:03:26,449 basehttp 27076 9372 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159025
+ERROR 2025-07-31 19:03:26,548 log 27076 22784 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 19:03:26,553 basehttp 27076 22784 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159025
+INFO 2025-07-31 19:03:32,858 basehttp 27076 27296 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:32,859 basehttp 27076 27416 "OPTIONS /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:32,916 basehttp 27076 27416 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:32,978 basehttp 27076 27416 "GET /api/disputes/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:33,594 basehttp 27076 27416 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:33,596 basehttp 27076 27416 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:33,596 basehttp 27076 24712 "OPTIONS /api/admin/conversations/? HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:33,597 basehttp 27076 27296 "OPTIONS /api/admin/conversations/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:33,676 basehttp 27076 24712 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:33,684 basehttp 27076 27416 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 19:03:33,813 basehttp 27076 24712 "GET /api/admin/conversations/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:33,816 basehttp 27076 27416 "GET /api/admin/conversations/stats/ HTTP/1.1" 200 137
+INFO 2025-07-31 19:03:35,514 basehttp 27076 27416 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 19:03:35,537 basehttp 27076 24712 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 19:03:35,587 basehttp 27076 27416 "GET /api/categories/ HTTP/1.1" 200 4234
+INFO 2025-07-31 19:03:35,618 basehttp 27076 24712 "GET /api/subcategories/ HTTP/1.1" 200 4423
+INFO 2025-07-31 19:03:36,772 basehttp 27076 24712 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:36,773 basehttp 27076 27416 "OPTIONS /api/admin/notifications/stats/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:36,836 basehttp 27076 27416 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 19:03:36,841 basehttp 27076 24712 "OPTIONS /api/admin/notifications/? HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:36,909 basehttp 27076 27416 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 19:03:36,911 basehttp 27076 24712 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:36,981 basehttp 27076 24712 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:37,898 basehttp 27076 24712 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:37,898 basehttp 27076 27416 "OPTIONS /api/reports/?page=1&page_size=10 HTTP/1.1" 200 0
+INFO 2025-07-31 19:03:37,967 basehttp 27076 27416 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 19:03:38,031 basehttp 27076 27416 "GET /api/reports/?page=1&page_size=10 HTTP/1.1" 200 52
+INFO 2025-07-31 19:05:29,374 basehttp 27076 14292 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:29,459 basehttp 27076 14292 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:33,430 basehttp 27076 14292 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:33,520 basehttp 27076 8908 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:36,150 basehttp 27076 8908 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:36,236 basehttp 27076 14292 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:36,874 basehttp 27076 14292 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+INFO 2025-07-31 19:05:36,985 basehttp 27076 14292 "GET /api/providers/?page=1&page_size=10 HTTP/1.1" 200 2708
+ERROR 2025-07-31 19:05:37,841 log 27076 14292 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 19:05:37,846 basehttp 27076 14292 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+ERROR 2025-07-31 19:05:37,956 log 27076 8908 Internal Server Error: /api/admin/projects/
+Traceback (most recent call last):
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 63, in list
+    queryset = self.get_queryset()
+  File "C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_views.py", line 30, in get_queryset
+    ).annotate(
+      ~~~~~~~~^
+        offers_count=Count('offers'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        favorites_count=Count('favorites'),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        views_count=Count('project_views')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1635, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\query.py", line 1687, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 181, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 2046, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1897, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\AGL\Documents\SOURCE\angola\angola_api\env\Lib\site-packages\django\db\models\sql\query.py", line 1802, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'offers' into field. Choices are: admin_notes, attachment1, attachment2, attachment3, budget_range, category, category_id, client, client_id, closed_at, completed_at, contact_via_platform, created_at, deadline, description, favorites, id, is_featured, location, max_budget, min_budget, project_offers, project_views, remote_possible, required_skills, show_email, show_phone, started_at, status, subcategory, subcategory_id, title, updated_at, urgency, views_count
+ERROR 2025-07-31 19:05:37,961 basehttp 27076 8908 "GET /api/admin/projects/?page=1&page_size=20 HTTP/1.1" 500 159053
+INFO 2025-07-31 19:05:40,180 basehttp 27076 8908 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:40,256 basehttp 27076 8908 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:05:42,613 basehttp 27076 8908 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 19:05:42,695 basehttp 27076 14292 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:05:42,695 basehttp 27076 8908 "GET /api/admin/notifications/stats/ HTTP/1.1" 200 49
+INFO 2025-07-31 19:05:42,766 basehttp 27076 8908 "GET /api/admin/notifications/? HTTP/1.1" 200 52
+INFO 2025-07-31 19:07:32,667 basehttp 27076 20012 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:07:32,681 basehttp 27076 7508 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:07:32,795 basehttp 27076 20012 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:07:32,824 basehttp 27076 7508 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:07:36,202 basehttp 27076 20012 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:07:36,210 basehttp 27076 7508 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:07:36,306 basehttp 27076 20012 "GET /api/admin/projects/stats/ HTTP/1.1" 200 430
+INFO 2025-07-31 19:07:36,328 basehttp 27076 7508 "GET /api/admin/dashboard/stats/ HTTP/1.1" 200 1075
+INFO 2025-07-31 19:07:37,455 basehttp 27076 11332 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:07:37,561 basehttp 27076 11332 "GET /api/users/?page[page]=1&page[search]=&page[role]=&page[verification_status]=&page[page_size]=10&page_size=10 HTTP/1.1" 200 4588
+INFO 2025-07-31 19:08:06,717 basehttp 27076 24784 "OPTIONS /api/api/admin/provider-verification/statistics/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:08:06,717 basehttp 27076 4340 "OPTIONS /api/api/admin/provider-verification/? HTTP/1.1" 200 0
+INFO 2025-07-31 19:08:06,717 basehttp 27076 2996 "OPTIONS /api/api/admin/provider-verification/statistics/ HTTP/1.1" 200 0
+INFO 2025-07-31 19:08:06,717 basehttp 27076 15708 "OPTIONS /api/api/admin/provider-verification/? HTTP/1.1" 200 0
+ERROR 2025-07-31 19:08:06,721 middleware 27076 2996 Erreur décodage token: Not enough segments
+ERROR 2025-07-31 19:08:06,721 middleware 27076 15708 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 19:08:06,771 log 27076 2996 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 19:08:06,772 basehttp 27076 2996 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 19:08:06,773 log 27076 15708 Not Found: /api/api/admin/provider-verification/statistics/
+ERROR 2025-07-31 19:08:06,774 middleware 27076 24784 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 19:08:06,775 basehttp 27076 15708 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+ERROR 2025-07-31 19:08:06,786 middleware 27076 2996 Erreur décodage token: Not enough segments
+WARNING 2025-07-31 19:08:06,789 log 27076 24784 Not Found: /api/api/admin/provider-verification/
+WARNING 2025-07-31 19:08:06,798 basehttp 27076 24784 "GET /api/api/admin/provider-verification/? HTTP/1.1" 404 95553
+WARNING 2025-07-31 19:08:06,799 log 27076 2996 Not Found: /api/api/admin/provider-verification/statistics/
+WARNING 2025-07-31 19:08:06,800 basehttp 27076 2996 "GET /api/api/admin/provider-verification/statistics/ HTTP/1.1" 404 95586
+INFO 2025-07-31 20:35:32,424 autoreload 27076 27020 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-31 20:35:36,065 autoreload 21356 24780 Watching for file changes with StatReloader
+INFO 2025-07-31 20:36:04,066 autoreload 21356 24780 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\views.py changed, reloading.
+INFO 2025-07-31 20:36:05,321 autoreload 21244 22432 Watching for file changes with StatReloader
+INFO 2025-07-31 20:46:41,818 autoreload 21244 22432 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-31 20:46:44,743 autoreload 28528 24848 Watching for file changes with StatReloader
+INFO 2025-07-31 20:47:01,208 autoreload 28528 24848 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-31 20:47:02,488 autoreload 7976 15144 Watching for file changes with StatReloader
+INFO 2025-07-31 20:47:08,554 autoreload 7976 15144 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-31 20:47:09,595 autoreload 20912 21688 Watching for file changes with StatReloader
+INFO 2025-07-31 20:47:15,614 autoreload 20912 21688 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-31 20:47:16,665 autoreload 27832 25360 Watching for file changes with StatReloader
+INFO 2025-07-31 20:47:21,751 autoreload 27832 25360 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\admin_auth_views.py changed, reloading.
+INFO 2025-07-31 20:47:22,847 autoreload 27368 12328 Watching for file changes with StatReloader
+INFO 2025-07-31 22:00:53,423 autoreload 27368 12328 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\serializers.py changed, reloading.
+INFO 2025-07-31 22:00:56,773 autoreload 19844 25088 Watching for file changes with StatReloader
+INFO 2025-07-31 22:00:59,803 autoreload 19844 25088 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\operation\serializers.py changed, reloading.
+INFO 2025-07-31 22:01:00,891 autoreload 24296 2564 Watching for file changes with StatReloader

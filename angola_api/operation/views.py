@@ -4357,3 +4357,5 @@ def check_action_permission(request):
         'allowed': True,
         'message': 'Action autorisée'
     })
+
+
