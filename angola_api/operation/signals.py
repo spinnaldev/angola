@@ -65,36 +65,70 @@ def send_message_notification(user_id, message_data):
             }
         )
 
-@receiver(post_save, sender=Dispute)
-def dispute_status_changed(sender, instance, created, **kwargs):
-    """Signal quand le statut d'un litige change"""
-    if not created and instance.status == 'resolved':
-        # Créer une notification automatique
+# ✅ FONCTION UTILITAIRE ROBUSTE - Ne lève jamais d'exception
+def create_and_send_notification(user, title, message, notification_type, related_object_id=None):
+    """
+    Fonction utilitaire pour créer une notification et l'envoyer via WebSocket
+    ROBUSTE : Ne lève jamais d'exception, continue toujours
+    """
+    try:
+        # Créer la notification en base
         notification = Notification.objects.create(
-            user=instance.client,
-            title="Litige résolu",
-            message=f"Votre litige '{instance.title}' a été résolu.",
-            notification_type='dispute'
+            user=user,
+            title=title,
+            message=message,
+            notification_type=notification_type,
+            related_object_id=related_object_id
         )
         
-        # Envoyer via WebSocket
+        print(f"✅ Notification créée: {notification.id} pour user {user.id}")
+        
+        # Préparer les données pour WebSocket
         notification_data = {
             'id': notification.id,
             'title': notification.title,
             'message': notification.message,
             'notification_type': notification.notification_type,
+            'related_object_id': notification.related_object_id,
             'is_read': notification.is_read,
             'created_at': notification.created_at.isoformat(),
         }
         
-        send_notification_to_user(instance.client.id, notification_data)
+        # Envoyer via WebSocket (avec gestion d'erreur)
+        try:
+            send_notification_to_user(user.id, notification_data)
+        except Exception as ws_error:
+            print(f"⚠️ Erreur WebSocket notification (continue quand même): {ws_error}")
         
-        # Mettre à jour le compteur
-        unread_count = Notification.objects.filter(
-            user=instance.client, 
-            is_read=False
-        ).count()
-        send_unread_count_update(instance.client.id, unread_count)
+        # Mettre à jour le compteur (avec gestion d'erreur)
+        try:
+            unread_count = Notification.objects.filter(user=user, is_read=False).count()
+            send_unread_count_update(user.id, unread_count)
+        except Exception as count_error:
+            print(f"⚠️ Erreur compteur notifications (continue quand même): {count_error}")
+        
+        print(f"✅ Notification envoyée avec succès: {notification.id}")
+        return notification
+        
+    except Exception as e:
+        print(f"❌ Erreur création notification (continue quand même): {e}")
+        return None  # ✅ TOUJOURS retourner None en cas d'erreur
+
+# ================================================================
+# SIGNAUX REFACTORISÉS AVEC LA FONCTION UTILITAIRE
+# ================================================================
+
+@receiver(post_save, sender=Dispute)
+def dispute_status_changed(sender, instance, created, **kwargs):
+    """Signal quand le statut d'un litige change"""
+    if not created and instance.status == 'resolved':
+        # ✅ REFACTORISÉ : Utiliser la fonction utilitaire
+        create_and_send_notification(
+            user=instance.client,
+            title="Litige résolu",
+            message=f"Votre litige '{instance.title}' a été résolu.",
+            notification_type='dispute'
+        )
 
 @receiver(post_save, sender=ClientProject)
 def project_status_changed(sender, instance, created, **kwargs):
@@ -110,8 +144,8 @@ def project_status_changed(sender, instance, created, **kwargs):
 def quote_request_status_changed(sender, instance, created, **kwargs):
     """Signal pour les changements de statut des demandes de devis"""
     if created:
-        # Notification pour le prestataire quand une nouvelle demande arrive
-        notification = Notification.objects.create(
+        # ✅ REFACTORISÉ : Nouvelle demande de devis
+        create_and_send_notification(
             user=instance.provider.user,
             title="Nouvelle demande de devis",
             message=f"Vous avez reçu une nouvelle demande de devis pour '{instance.subject}' de la part de {instance.client.get_full_name() or instance.client.username}.",
@@ -119,31 +153,11 @@ def quote_request_status_changed(sender, instance, created, **kwargs):
             related_object_id=instance.id
         )
         
-        # 🔔 ENVOYER VIA WEBSOCKET
-        notification_data = {
-            'id': notification.id,
-            'title': notification.title,
-            'message': notification.message,
-            'notification_type': notification.notification_type,
-            'related_object_id': notification.related_object_id,
-            'is_read': notification.is_read,
-            'created_at': notification.created_at.isoformat(),
-        }
-        
-        send_notification_to_user(instance.provider.user.id, notification_data)
-        
-        # Mettre à jour le compteur
-        unread_count = Notification.objects.filter(
-            user=instance.provider.user, 
-            is_read=False
-        ).count()
-        send_unread_count_update(instance.provider.user.id, unread_count)
-        
     else:
         # Notifications pour les changements de statut
         if instance.status == 'accepted':
-            # Notification pour le client quand le devis est accepté
-            notification = Notification.objects.create(
+            # ✅ REFACTORISÉ : Devis accepté
+            create_and_send_notification(
                 user=instance.client,
                 title="Devis accepté",
                 message=f"Votre demande de devis '{instance.subject}' a été acceptée par {instance.provider.user.get_full_name() or instance.provider.user.username}. Vous pouvez maintenant contacter le prestataire.",
@@ -151,29 +165,9 @@ def quote_request_status_changed(sender, instance, created, **kwargs):
                 related_object_id=instance.id
             )
             
-            # 🔔 ENVOYER VIA WEBSOCKET
-            notification_data = {
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'notification_type': notification.notification_type,
-                'related_object_id': notification.related_object_id,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat(),
-            }
-            
-            send_notification_to_user(instance.client.id, notification_data)
-            
-            # Mettre à jour le compteur
-            unread_count = Notification.objects.filter(
-                user=instance.client, 
-                is_read=False
-            ).count()
-            send_unread_count_update(instance.client.id, unread_count)
-            
         elif instance.status == 'rejected':
-            # Notification pour le client quand le devis est rejeté
-            notification = Notification.objects.create(
+            # ✅ REFACTORISÉ : Devis rejeté
+            create_and_send_notification(
                 user=instance.client,
                 title="Devis rejeté",
                 message=f"Votre demande de devis '{instance.subject}' a été rejetée par {instance.provider.user.get_full_name() or instance.provider.user.username}.",
@@ -181,30 +175,10 @@ def quote_request_status_changed(sender, instance, created, **kwargs):
                 related_object_id=instance.id
             )
             
-            # 🔔 ENVOYER VIA WEBSOCKET
-            notification_data = {
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'notification_type': notification.notification_type,
-                'related_object_id': notification.related_object_id,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat(),
-            }
-            
-            send_notification_to_user(instance.client.id, notification_data)
-            
-            # Mettre à jour le compteur
-            unread_count = Notification.objects.filter(
-                user=instance.client, 
-                is_read=False
-            ).count()
-            send_unread_count_update(instance.client.id, unread_count)
-            
         elif instance.status == 'completed':
-            # Notifications pour les deux parties quand le devis est terminé
+            # ✅ REFACTORISÉ : Prestation terminée - deux notifications
             # Notification pour le client
-            client_notification = Notification.objects.create(
+            create_and_send_notification(
                 user=instance.client,
                 title="Prestation terminée",
                 message=f"La prestation '{instance.subject}' a été marquée comme terminée. N'oubliez pas de laisser un avis !",
@@ -213,42 +187,20 @@ def quote_request_status_changed(sender, instance, created, **kwargs):
             )
             
             # Notification pour le prestataire
-            provider_notification = Notification.objects.create(
+            create_and_send_notification(
                 user=instance.provider.user,
                 title="Prestation terminée",
                 message=f"Vous avez marqué la prestation '{instance.subject}' comme terminée.",
                 notification_type='quote_completed',
                 related_object_id=instance.id
             )
-            
-            # 🔔 ENVOYER VIA WEBSOCKET pour les deux
-            for notification, user in [(client_notification, instance.client), 
-                                     (provider_notification, instance.provider.user)]:
-                notification_data = {
-                    'id': notification.id,
-                    'title': notification.title,
-                    'message': notification.message,
-                    'notification_type': notification.notification_type,
-                    'related_object_id': notification.related_object_id,
-                    'is_read': notification.is_read,
-                    'created_at': notification.created_at.isoformat(),
-                }
-                
-                send_notification_to_user(user.id, notification_data)
-                
-                # Mettre à jour le compteur
-                unread_count = Notification.objects.filter(
-                    user=user, 
-                    is_read=False
-                ).count()
-                send_unread_count_update(user.id, unread_count)
 
 @receiver(post_save, sender=ProjectOffer)
 def project_offer_status_changed(sender, instance, created, **kwargs):
     """Signal pour les changements de statut des offres sur les projets"""
     if created:
-        # Notification pour le client quand une nouvelle offre arrive
-        notification = Notification.objects.create(
+        # ✅ REFACTORISÉ : Nouvelle offre reçue
+        create_and_send_notification(
             user=instance.project.client,
             title="Nouvelle offre reçue",
             message=f"Vous avez reçu une nouvelle offre de {instance.provider.user.get_full_name() or instance.provider.user.username} pour votre projet '{instance.project.title}'.",
@@ -256,31 +208,11 @@ def project_offer_status_changed(sender, instance, created, **kwargs):
             related_object_id=instance.id
         )
         
-        # 🔔 ENVOYER VIA WEBSOCKET
-        notification_data = {
-            'id': notification.id,
-            'title': notification.title,
-            'message': notification.message,
-            'notification_type': notification.notification_type,
-            'related_object_id': notification.related_object_id,
-            'is_read': notification.is_read,
-            'created_at': notification.created_at.isoformat(),
-        }
-        
-        send_notification_to_user(instance.project.client.id, notification_data)
-        
-        # Mettre à jour le compteur
-        unread_count = Notification.objects.filter(
-            user=instance.project.client, 
-            is_read=False
-        ).count()
-        send_unread_count_update(instance.project.client.id, unread_count)
-        
     else:
         # Notifications pour les changements de statut d'offre
         if instance.status == 'accepted':
-            # Notification pour le prestataire quand l'offre est acceptée
-            notification = Notification.objects.create(
+            # ✅ REFACTORISÉ : Offre acceptée
+            create_and_send_notification(
                 user=instance.provider.user,
                 title="Offre acceptée",
                 message=f"Votre offre pour le projet '{instance.project.title}' a été acceptée ! Le client va vous contacter.",
@@ -288,55 +220,15 @@ def project_offer_status_changed(sender, instance, created, **kwargs):
                 related_object_id=instance.id
             )
             
-            # 🔔 ENVOYER VIA WEBSOCKET
-            notification_data = {
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'notification_type': notification.notification_type,
-                'related_object_id': notification.related_object_id,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat(),
-            }
-            
-            send_notification_to_user(instance.provider.user.id, notification_data)
-            
-            # Mettre à jour le compteur
-            unread_count = Notification.objects.filter(
-                user=instance.provider.user, 
-                is_read=False
-            ).count()
-            send_unread_count_update(instance.provider.user.id, unread_count)
-            
         elif instance.status == 'rejected':
-            # Notification pour le prestataire quand l'offre est rejetée
-            notification = Notification.objects.create(
+            # ✅ REFACTORISÉ : Offre rejetée
+            create_and_send_notification(
                 user=instance.provider.user,
                 title="Offre rejetée",
                 message=f"Votre offre pour le projet '{instance.project.title}' a été rejetée.",
                 notification_type='offer_rejected',
                 related_object_id=instance.id
             )
-            
-            # 🔔 ENVOYER VIA WEBSOCKET
-            notification_data = {
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'notification_type': notification.notification_type,
-                'related_object_id': notification.related_object_id,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat(),
-            }
-            
-            send_notification_to_user(instance.provider.user.id, notification_data)
-            
-            # Mettre à jour le compteur
-            unread_count = Notification.objects.filter(
-                user=instance.provider.user, 
-                is_read=False
-            ).count()
-            send_unread_count_update(instance.provider.user.id, unread_count)
 
 @receiver(post_save, sender=Message)
 def message_created(sender, instance, created, **kwargs):
@@ -348,37 +240,122 @@ def message_created(sender, instance, created, **kwargs):
         if instance.sender == conversation.client:
             # Message envoyé par le client → notifier le prestataire
             recipient = conversation.provider.user
+            sender_name = conversation.client.get_full_name() or conversation.client.username
         else:
             # Message envoyé par le prestataire → notifier le client
             recipient = conversation.client
+            sender_name = conversation.provider.user.get_full_name() or conversation.provider.user.username
         
-        # Envoyer la notification de nouveau message via WebSocket
+        # ✅ REFACTORISÉ : Créer notification avec fonction utilitaire
+        create_and_send_notification(
+            user=recipient,
+            title="Nouveau message",
+            message=f"Vous avez reçu un nouveau message de {sender_name}",
+            notification_type='new_message',
+            related_object_id=conversation.id
+        )
+        
+        # 📱 ENVOYER AUSSI LA NOTIFICATION DE MESSAGE (WebSocket existant)
         message_data = {
             'id': instance.id,
             'conversation_id': conversation.id,
             'content': instance.content,
             'sender_id': instance.sender.id,
-            'sender_name': instance.sender.get_full_name() or instance.sender.username,
+            'sender_name': sender_name,
             'created_at': instance.created_at.isoformat(),
             'is_read': instance.is_read
         }
         
-        send_message_notification(recipient.id, message_data)
+        # ✅ ENVOYER AVEC GESTION D'ERREUR
+        try:
+            send_message_notification(recipient.id, message_data)
+        except Exception as e:
+            print(f"⚠️ Erreur envoi message WebSocket (continue quand même): {e}")
         
         # Envoyer aussi dans le groupe de la conversation
-        if channel_layer:
-            async_to_sync(channel_layer.group_send)(
-                f'chat_{conversation.id}',
-                {
-                    'type': 'chat_message',
-                    'message': message_data
-                }
+        try:
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'chat_{conversation.id}',
+                    {
+                        'type': 'chat_message',
+                        'message': message_data
+                    }
+                )
+        except Exception as e:
+            print(f"⚠️ Erreur chat WebSocket (continue quand même): {e}")
+
+
+@receiver(post_save, sender=ProviderVerification)
+def provider_verification_status_changed(sender, instance, created, **kwargs):
+    """Signal pour les changements de vérification prestataire"""
+    if not created:
+        # Vérification du changement de statut
+        if instance.verification_status == 'verified':
+            create_and_send_notification(
+                user=instance.provider.user,
+                title="Profil vérifié",
+                message="Félicitations ! Votre profil a été vérifié. Vous pouvez maintenant proposer vos services.",
+                notification_type='profile_verified',
+                related_object_id=instance.id
+            )
+        elif instance.verification_status == 'rejected':
+            create_and_send_notification(
+                user=instance.provider.user,
+                title="Vérification rejetée",
+                message=f"Votre demande de vérification a été rejetée. Raison: {instance.rejection_reason or 'Non spécifiée'}",
+                notification_type='profile_rejected',
+                related_object_id=instance.id
             )
 
+@receiver(post_save, sender=PhoneVerification)
+def phone_verification_status_changed(sender, instance, created, **kwargs):
+    """Signal pour les changements de vérification téléphone"""
+    if not created and instance.status == 'verified':
+        create_and_send_notification(
+            user=instance.user,
+            title="Téléphone vérifié",
+            message="Votre numéro de téléphone a été vérifié avec succès ! Vous pouvez maintenant utiliser toutes les fonctionnalités.",
+            notification_type='phone_verified',
+            related_object_id=instance.id
+        )
+# ================================================================
+# SIGNAUX POUR LES VÉRIFICATIONS (commentés mais prêts)
+# ================================================================
 
+# @receiver(post_save, sender=ProviderVerification)
+# def provider_verification_status_changed(sender, instance, created, **kwargs):
+#     """Signal pour les changements de vérification prestataire"""
+#     if not created:
+#         if instance.verification_status == 'verified':
+#             create_and_send_notification(
+#                 user=instance.provider.user,
+#                 title="Profil vérifié",
+#                 message="Félicitations ! Votre profil a été vérifié. Vous pouvez maintenant proposer vos services.",
+#                 notification_type='profile_verified'
+#             )
+#         elif instance.verification_status == 'rejected':
+#             create_and_send_notification(
+#                 user=instance.provider.user,
+#                 title="Vérification rejetée",
+#                 message=f"Votre demande de vérification a été rejetée. Raison: {instance.rejection_reason or 'Non spécifiée'}",
+#                 notification_type='profile_rejected'
+#             )
 
-from django.db.models.signals import post_save, pre_save
-from django.dispatch import receiver
+# @receiver(post_save, sender=PhoneVerification)
+# def phone_verification_status_changed(sender, instance, created, **kwargs):
+#     """Signal pour les changements de vérification téléphone"""
+#     if not created and instance.status == 'verified':
+#         create_and_send_notification(
+#             user=instance.user,
+#             title="Téléphone vérifié",
+#             message="Votre numéro de téléphone a été vérifié avec succès !",
+#             notification_type='phone_verified'
+#         )
+#         return None
+    
+# from django.db.models.signals import post_save, pre_save
+# from django.dispatch import receiver
 
 # # @receiver(post_save, sender=ProviderVerification)
 # # def log_provider_verification_change(sender, instance, created, **kwargs):

@@ -1,15 +1,30 @@
-// src/services/verificationService.js
+// ✅ CORRECTION COMPLÈTE : angola-admin/src/services/verificationService.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// ✅ Utiliser la même logique que api.js
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001/api';
 
 class VerificationService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/admin/provider-verification`;
+    // ✅ CORRIGÉ : Construction d'URL cohérente avec api.js
+    // Nettoyer les slashes pour éviter les doubles slashes
+    const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+    this.baseURL = `${baseUrl}/admin/provider-verification`;
+    
+    // ✅ Debug pour vérifier l'URL construite
+    console.log('🌐 VerificationService baseURL:', this.baseURL);
   }
 
-  // Méthode utilitaire pour obtenir les headers d'authentification
+  // ✅ Méthode utilitaire pour obtenir les headers d'authentification
   getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.warn('⚠️ Aucun token trouvé dans localStorage');
+      throw new Error('Token d\'authentification manquant');
+    }
+    
+    console.log('🔑 Token trouvé pour auth headers');
+    
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -18,8 +33,18 @@ class VerificationService {
 
   // Méthode utilitaire pour gérer les erreurs
   async handleResponse(response) {
+    console.log(`📡 Réponse API: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      console.error('❌ Erreur API:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        errorData
+      });
+      
       throw new Error(errorData.detail || errorData.message || 'Une erreur est survenue');
     }
     return response.json();
@@ -37,7 +62,10 @@ class VerificationService {
       if (filters.page) params.append('page', filters.page);
       if (filters.page_size) params.append('page_size', filters.page_size);
       
-      const response = await fetch(`${this.baseURL}/?${params}`, {
+      const url = `${this.baseURL}/?${params}`;
+      console.log('🌐 Appel API getVerifications:', url);
+      
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       
@@ -51,7 +79,10 @@ class VerificationService {
   // Récupérer les vérifications en attente
   async getPendingVerifications() {
     try {
-      const response = await fetch(`${this.baseURL}/pending/`, {
+      const url = `${this.baseURL}/pending/`;
+      console.log('🌐 Appel API getPendingVerifications:', url);
+      
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       
@@ -65,7 +96,10 @@ class VerificationService {
   // Récupérer une vérification spécifique
   async getVerification(id) {
     try {
-      const response = await fetch(`${this.baseURL}/${id}/`, {
+      const url = `${this.baseURL}/${id}/`;
+      console.log('🌐 Appel API getVerification:', url);
+      
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       
@@ -79,7 +113,10 @@ class VerificationService {
   // Approuver une vérification
   async approve(id, adminNotes = '') {
     try {
-      const response = await fetch(`${this.baseURL}/${id}/approve/`, {
+      const url = `${this.baseURL}/${id}/approve/`;
+      console.log('🌐 Appel API approve:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ admin_notes: adminNotes }),
@@ -99,7 +136,10 @@ class VerificationService {
         throw new Error('La raison du rejet est obligatoire');
       }
 
-      const response = await fetch(`${this.baseURL}/${id}/reject/`, {
+      const url = `${this.baseURL}/${id}/reject/`;
+      console.log('🌐 Appel API reject:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ 
@@ -122,7 +162,10 @@ class VerificationService {
         throw new Error('Au moins une vérification doit être sélectionnée');
       }
 
-      const response = await fetch(`${this.baseURL}/bulk-approve/`, {
+      const url = `${this.baseURL}/bulk-approve/`;
+      console.log('🌐 Appel API bulkApprove:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ 
@@ -149,7 +192,10 @@ class VerificationService {
         throw new Error('La raison du rejet est obligatoire');
       }
 
-      const response = await fetch(`${this.baseURL}/bulk-reject/`, {
+      const url = `${this.baseURL}/bulk-reject/`;
+      console.log('🌐 Appel API bulkReject:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ 
@@ -169,7 +215,10 @@ class VerificationService {
   // Obtenir les statistiques
   async getStatistics() {
     try {
-      const response = await fetch(`${this.baseURL}/statistics/`, {
+      const url = `${this.baseURL}/statistics/`;
+      console.log('🌐 Appel API getStatistics:', url);
+      
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       
@@ -183,7 +232,12 @@ class VerificationService {
   // Obtenir le dashboard des vérifications
   async getDashboard() {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/`, {
+      // ✅ CORRIGÉ : Utiliser la même base URL
+      const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+      const url = `${baseUrl}/dashboard/`;
+      console.log('🌐 Appel API getDashboard:', url);
+      
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       
@@ -206,7 +260,12 @@ class VerificationService {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/export/?${params}`, {
+      // ✅ CORRIGÉ : Utiliser la même base URL
+      const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+      const url = `${baseUrl}/export/?${params}`;
+      console.log('🌐 Appel API exportVerifications:', url);
+
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
 
@@ -214,7 +273,6 @@ class VerificationService {
         throw new Error('Erreur lors de l\'export');
       }
 
-      // Retourner le blob pour téléchargement
       return response.blob();
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
@@ -233,7 +291,12 @@ class VerificationService {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/reports/?${params}`, {
+      // ✅ CORRIGÉ : Utiliser la même base URL
+      const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+      const url = `${baseUrl}/reports/?${params}`;
+      console.log('🌐 Appel API getReports:', url);
+
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
       

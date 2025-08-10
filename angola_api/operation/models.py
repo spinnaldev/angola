@@ -340,6 +340,9 @@ class Notification(TimeStampMixin):
         ('new_offer', 'Nouvelle offre'),
         ('offer_accepted', 'Offre acceptée'),
         ('offer_rejected', 'Offre rejetée'),
+        ('profile_rejected', 'Vérification rejetée'),
+        ('profile_verified', 'Profil vérifié'),
+        ('phone_verified', 'Téléphone vérifié'),
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

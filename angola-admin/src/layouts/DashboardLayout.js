@@ -174,7 +174,7 @@ const DashboardLayout = ({ children }) => {
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">A</span>
               </div>
-              <span className="ml-2 text-xl font-semibold text-gray-900">Angola Admin</span>
+              <span className="ml-2 text-xl font-semibold text-gray-900">Teyago Admin</span>
             </div>
           )}
           <button

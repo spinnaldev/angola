@@ -20,7 +20,9 @@ class ProviderVerificationScreen extends StatefulWidget {
 class _ProviderVerificationScreenState extends State<ProviderVerificationScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  
+
+  //Variable pour forcer l'affichage du formulaire
+  bool _forceShowForm = false;
   // Formulaire
   bool _isBusiness = false;
   String _documentType = 'id_card';
@@ -77,7 +79,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           }
           
           // Si rejeté
-          if (verificationProvider.isRejected) {
+          if (verificationProvider.isRejected && !_forceShowForm) {
             return _buildRejectedVerification(l10n, verificationProvider);
           }
           
@@ -333,7 +335,10 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
               child: ElevatedButton(
                 onPressed: () {
                   setState(() {
+                    // Forcer l'affichage du formulaire
+                    _forceShowForm = true;
                     _currentStep = 0;
+                    
                     // Pré-remplir avec les données existantes
                     _isBusiness = verification.isBusiness;
                     _documentType = verification.documentType;
@@ -346,7 +351,16 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                     if (verification.businessRegistrationNumber != null) {
                       _businessRegistrationController.text = verification.businessRegistrationNumber!;
                     }
+                    
+                    // Réinitialiser les fichiers pour nouvelle soumission
+                    _idCardFront = null;
+                    _idCardBack = null;
+                    _passportImage = null;
+                    _businessDoc = null;
                   });
+                  
+                  // ✅ Plus besoin de PageController ici - le setState() va reconstruire
+                  // et afficher automatiquement le formulaire à l'étape 0
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -1152,29 +1166,43 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
   Future<void> _submitVerification(AppLocalizations l10n, ProviderVerificationProvider provider) async {
     bool success = false;
     
-    if (_isBusiness) {
-      success = await provider.submitBusinessVerification(
-        businessName: _businessNameController.text,
-        businessNif: _businessNifController.text.isNotEmpty ? _businessNifController.text : null,
-        businessRegistrationNumber: _businessRegistrationController.text.isNotEmpty ? _businessRegistrationController.text : null,
-        idCardFront: _idCardFront!,
-        idCardBack: _idCardBack!,
+    if (_forceShowForm && provider.verification != null) {
+      success = await provider.resendDocuments(
+        idCardFront: _idCardFront,
+        idCardBack: _idCardBack,
+        passportImage: _passportImage,
         businessRegistrationDoc: _businessDoc,
+        businessName: _isBusiness ? _businessNameController.text : null,
+        businessNif: _isBusiness && _businessNifController.text.isNotEmpty ? _businessNifController.text : null,
+        businessRegistrationNumber: _isBusiness && _businessRegistrationController.text.isNotEmpty ? _businessRegistrationController.text : null,
       );
     } else {
-      if (_documentType == 'id_card') {
-        success = await provider.submitIndividualVerificationWithId(
+      // ✅ Logique existante pour nouvelle soumission
+      if (_isBusiness) {
+        success = await provider.submitBusinessVerification(
+          businessName: _businessNameController.text,
+          businessNif: _businessNifController.text.isNotEmpty ? _businessNifController.text : null,
+          businessRegistrationNumber: _businessRegistrationController.text.isNotEmpty ? _businessRegistrationController.text : null,
           idCardFront: _idCardFront!,
           idCardBack: _idCardBack!,
+          businessRegistrationDoc: _businessDoc,
         );
       } else {
-        success = await provider.submitIndividualVerificationWithPassport(
-          passportImage: _passportImage!,
-        );
+        if (_documentType == 'id_card') {
+          success = await provider.submitIndividualVerificationWithId(
+            idCardFront: _idCardFront!,
+            idCardBack: _idCardBack!,
+          );
+        } else {
+          success = await provider.submitIndividualVerificationWithPassport(
+            passportImage: _passportImage!,
+          );
+        }
       }
     }
     
     if (success) {
+      _forceShowForm = false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.verificationSubmitted),

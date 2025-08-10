@@ -77,19 +77,25 @@ const authService = {
 // Service pour la gestion des utilisateurs
 const userService = {
   // Récupérer tous les utilisateurs avec pagination
-  getAll: async (page = 1, pageSize = 10, search = '') => {
+  getAll: async (params = {}) => {
     try {
-      const params = {
-        page,
-        page_size: pageSize,
+      const defaultParams = {
+        page: 1,
+        page_size: 10,
       };
       
-      if (search) {
-        params.search = search;
-      }
+      const finalParams = { ...defaultParams, ...params };
       
-      const response = await api.get('/users/', { params });
-      return response;
+      // Nettoyer les paramètres vides
+      Object.keys(finalParams).forEach(key => {
+        if (finalParams[key] === '' || finalParams[key] == null) {
+          delete finalParams[key];
+        }
+      });
+      
+      const response = await api.get('/users/', { params: finalParams });
+      
+      return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des utilisateurs:', error);
       throw error;

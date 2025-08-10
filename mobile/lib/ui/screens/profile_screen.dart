@@ -1,4 +1,4 @@
-// lib/ui/screens/profile_screen.dart - VERSION AVEC VÉRIFICATION INTÉGRÉE
+// lib/ui/screens/profile_screen.dart - VERSION AVEC RECHARGEMENT AMÉLIORÉ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -28,9 +28,11 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   // ✅ NOUVEAU : Flag pour éviter les rechargements multiples
   bool _isLoading = false;
+  // ✅ NOUVEAU : Flag pour s'assurer du rechargement au retour sur la page
+  bool _shouldReload = true;
 
   @override
   void initState() {
@@ -40,19 +42,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // ✅ NOUVEAU : Recharger à chaque fois qu'on revient sur cette page
+  // ✅ AMÉLIORÉ : Logique de rechargement plus robuste
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recharger les données chaque fois qu'on navigue vers cette page
-    if (!_isLoading) {
+    // ✅ NOUVEAU : Toujours recharger quand on arrive sur cette page
+    if (_shouldReload) {
+      _shouldReload = false; // Éviter les rechargements multiples immédiatement
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadData();
+        }
+      });
+    }
+  }
+
+  // ✅ NOUVEAU : Gérer le retour sur la page
+  void didPopNext() {
+    // Cette méthode est appelée quand on revient sur cette page
+    if (mounted) {
+      _shouldReload = true;
       _loadData();
     }
   }
 
-  // ✅ MÉTHODE MODIFIÉE : Ajouter le rechargement du profil utilisateur
+  // ✅ NOUVEAU : Méthode publique pour forcer le rechargement
+  void forceReload() {
+    if (mounted) {
+      _shouldReload = true;
+      _loadData();
+    }
+  }
+
+  // ✅ MÉTHODE AMÉLIORÉE : Rechargement plus robuste avec gestion d'erreurs améliorée
   Future<void> _loadData() async {
-    if (_isLoading) return; // Éviter les appels multiples
+    // ✅ NOUVEAU : Ne pas bloquer si un rechargement est déjà en cours,
+    // mais permettre un nouveau rechargement après un délai
+    if (_isLoading) {
+      return;
+    }
     
     setState(() {
       _isLoading = true;
@@ -61,30 +89,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
-      // ✅ NOUVEAU : Recharger d'abord le profil utilisateur
-      await authProvider.refreshUserProfile();
+      // ✅ AMÉLIORÉ : Recharger d'abord le profil utilisateur avec retry
+      await _reloadUserProfile(authProvider);
       
       final user = authProvider.currentUser;
 
       if (user != null) {
         if (user.role == 'provider') {
-          // Charger les services du prestataire
-          final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
-          await serviceProvider.fetchMyServices();
+          // Charger les services du prestataire avec retry
+          await _reloadProviderData();
         } else {
-          // Charger les projets du client
-          final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
-          await projectProvider.fetchUserProjects();
+          // Charger les projets du client avec retry
+          await _reloadClientData();
         }
       }
+      
+      // ✅ NOUVEAU : Marquer comme rechargé avec succès
+      _shouldReload = false;
+      
     } catch (e) {
       print('Erreur lors du rechargement des données du profil: $e');
+      // ✅ NOUVEAU : En cas d'erreur, permettre un nouvel essai
+      _shouldReload = true;
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Recharger le profil utilisateur avec retry
+  Future<void> _reloadUserProfile(AuthProvider authProvider) async {
+    int retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        await authProvider.refreshUserProfile();
+        return; // Succès, sortir de la boucle
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          throw e; // Relancer l'erreur après le nombre max de tentatives
+        }
+        // Attendre avant de retry
+        await Future.delayed(Duration(milliseconds: 500 * retryCount));
+      }
+    }
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Recharger les données du prestataire
+  Future<void> _reloadProviderData() async {
+    try {
+      final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
+      await serviceProvider.fetchMyServices();
+    } catch (e) {
+      print('Erreur lors du rechargement des services: $e');
+      // Ne pas faire échouer tout le rechargement pour cette erreur
+    }
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Recharger les données du client
+  Future<void> _reloadClientData() async {
+    try {
+      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      await projectProvider.fetchUserProjects();
+    } catch (e) {
+      print('Erreur lors du rechargement des projets: $e');
+      // Ne pas faire échouer tout le rechargement pour cette erreur
     }
   }
 
@@ -120,9 +194,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ✅ NOUVEAU : Ajouter RefreshIndicator pour pull-to-refresh
+          // ✅ AMÉLIORÉ : RefreshIndicator avec callback amélioré
           return RefreshIndicator(
-            onRefresh: _loadData,
+            onRefresh: () async {
+              _shouldReload = true;
+              await _loadData();
+            },
             child: SafeArea(
               child: Column(
                 children: [
@@ -136,6 +213,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         children: [
                           const SizedBox(height: 20),
+
+                          // ✅ NOUVEAU : Indicateur de chargement discret pendant le refresh
+                          if (_isLoading)
+                            Container(
+                              width: double.infinity,
+                              height: 2,
+                              child: const LinearProgressIndicator(
+                                backgroundColor: Colors.transparent,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF142FE2)),
+                              ),
+                            ),
 
                           // Section profil utilisateur avec badges de vérification
                           _buildUserProfileSection(user, l10n),
@@ -184,9 +272,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // NOUVELLE MÉTHODE : Navigation vers vérification
   void _navigateToVerification(String role) {
     if (role == 'provider') {
-      Navigator.pushNamed(context, '/provider-verification');
+      Navigator.pushNamed(context, '/provider-verification').then((_) {
+        // ✅ NOUVEAU : Forcer le rechargement au retour
+        forceReload();
+      });
     } else if (role == 'client') {
-      Navigator.pushNamed(context, '/phone-verification');
+      Navigator.pushNamed(context, '/phone-verification').then((_) {
+        // ✅ NOUVEAU : Forcer le rechargement au retour
+        forceReload();
+      });
     }
   }
 
@@ -211,7 +305,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(
                   builder: (context) => const EditProfileScreen(),
                 ),
-              ).then((_) => _loadData()); // Recharger après modification
+              ).then((_) {
+                // ✅ AMÉLIORÉ : Forcer le rechargement au retour de l'édition
+                forceReload();
+              });
             },
             icon: const Icon(
               Icons.edit,
@@ -300,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     // AJOUT : Indicateur compact du statut de vérification
-                    _buildCompactVerificationStatus(user, l10n), // ✅ CORRIGER : Passer l10n
+                    _buildCompactVerificationStatus(user, l10n),
                   ],
                 ),
               ],
@@ -360,7 +457,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ✅ MÉTHODE CORRIGÉE : Utiliser les traductions au lieu du texte hardcodé
   Widget _buildCompactVerificationStatus(User user, AppLocalizations l10n) {
     final verificationInfo = user.verificationInfo;
     
@@ -385,10 +481,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 4),
           Text(
             verificationInfo.status == 'verified' 
-                ? l10n.verified // ✅ UTILISER LA TRADUCTION
+                ? l10n.verified
                 : verificationInfo.status == 'pending'
-                    ? l10n.verificationPending // ✅ UTILISER LA TRADUCTION
-                    : l10n.notVerified, // ✅ UTILISER LA TRADUCTION
+                    ? l10n.verificationPending
+                    : l10n.notVerified,
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -533,14 +629,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () {
                   if (user.role == 'provider') {
                     // Navigation vers gestion des services
-                    Navigator.pushNamed(context, '/service-management');
+                    Navigator.pushNamed(context, '/service-management').then((_) {
+                      // ✅ NOUVEAU : Recharger au retour
+                      forceReload();
+                    });
                   } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ClientProjectsScreen(),
                       ),
-                    );
+                    ).then((_) {
+                      // ✅ NOUVEAU : Recharger au retour
+                      forceReload();
+                    });
                   }
                 },
                 child: Text(
@@ -557,7 +659,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           // MODIFICATION : Vérifier si l'utilisateur peut voir ses projets/services
           if (!user.canPerformActions) ...[
-            // ✅ CORRIGER : Utiliser les traductions au lieu du texte hardcodé
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -573,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const Icon(Icons.info_outline, color: Colors.orange, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        l10n.verificationRequired, // ✅ UTILISER LA TRADUCTION
+                        l10n.verificationRequired,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: Colors.orange,
@@ -584,8 +685,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 8),
                   Text(
                     user.role == 'provider'
-                        ? l10n.profileVerificationDescription // ✅ UTILISER LA TRADUCTION
-                        : l10n.phoneVerificationDescription, // ✅ UTILISER LA TRADUCTION
+                        ? l10n.profileVerificationDescription
+                        : l10n.phoneVerificationDescription,
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -599,8 +700,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Text(
                         user.role == 'provider' 
-                            ? l10n.verifyMyProfile // ✅ UTILISER LA TRADUCTION
-                            : l10n.verifyMyPhone, // ✅ UTILISER LA TRADUCTION
+                            ? l10n.verifyMyProfile
+                            : l10n.verifyMyPhone,
                       ),
                     ),
                   ),
@@ -622,7 +723,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProviderServicesCarousel(AppLocalizations l10n) {
     return Consumer<ServiceProvider>(
       builder: (context, serviceProvider, child) {
-        // ✅ CORRIGER : Utiliser le nouveau flag _isLoading
         if (serviceProvider.isLoading || _isLoading) {
           return const Center(
             child: Padding(
@@ -692,7 +792,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildClientProjectsCarousel(AppLocalizations l10n) {
     return Consumer<ProjectProvider>(
       builder: (context, projectProvider, child) {
-        // ✅ CORRIGER : Utiliser le nouveau flag _isLoading
         if (projectProvider.isLoadingUserProjects || _isLoading) {
           return const Center(
             child: Padding(
@@ -780,7 +879,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 providerId: service.provider_id,
               ),
             ),
-          );
+          ).then((_) {
+            // ✅ NOUVEAU : Recharger au retour
+            forceReload();
+          });
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -881,7 +983,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             MaterialPageRoute(
               builder: (context) => ProjectDetailScreen(projectId: project.id),
             ),
-          );
+          ).then((_) {
+            // ✅ NOUVEAU : Recharger au retour
+            forceReload();
+          });
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -992,6 +1097,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 20),
       color: Colors.grey[200],
+    );
+  }
+}
+
+class ProfileAvatar extends StatelessWidget {
+  final String? profilePicture;
+  final String firstName;
+  final double radius;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double borderWidth;
+
+  const ProfileAvatar({
+    Key? key,
+    this.profilePicture,
+    required this.firstName,
+    this.radius = 35,
+    this.backgroundColor,
+    this.borderColor,
+    this.borderWidth = 3,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: borderColor != null 
+            ? Border.all(
+                color: borderColor!,
+                width: borderWidth,
+              )
+            : null,
+      ),
+      child: CircleAvatar(
+        radius: radius,
+        backgroundColor: backgroundColor ?? const Color(0xFF142FE2),
+        // ✅ Ne pas utiliser backgroundImage si on veut gérer les erreurs
+        child: _buildAvatarContent(),
+      ),
+    );
+  }
+
+  Widget _buildAvatarContent() {
+    // Si pas d'image ou image vide, afficher les initiales
+    if (profilePicture == null || profilePicture!.isEmpty) {
+      return _buildInitials();
+    }
+
+    // Utiliser Image.network avec errorBuilder au lieu de NetworkImage
+    return ClipOval(
+      child: SizedBox(
+        width: radius * 2,
+        height: radius * 2,
+        child: Image.network(
+          profilePicture!,
+          fit: BoxFit.cover,
+          width: radius * 2,
+          height: radius * 2,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            
+            // Indicateur de chargement
+            return Container(
+              color: (backgroundColor ?? const Color(0xFF142FE2)).withOpacity(0.1),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      backgroundColor ?? const Color(0xFF142FE2),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            // En cas d'erreur (404, network, etc.), afficher les initiales
+            print('❌ Erreur chargement image profil: $error');
+            return _buildInitials();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitials() {
+    return Text(
+      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+      style: TextStyle(
+        fontSize: radius * 0.8, // Adapter la taille à la taille de l'avatar
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
     );
   }
 }

@@ -18,7 +18,7 @@ const VerificationDetailModal = ({ isOpen, onClose, verificationId }) => {
     try {
       const response = await fetch(`/api/admin/provider-verification/${verificationId}/`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
       const data = await response.json();

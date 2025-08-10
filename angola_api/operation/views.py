@@ -1301,7 +1301,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         print(self.request.user)
         serializer.save(provider=self.request.user.provider_profile)
     
-    @require_verification("créer un service")
+    #@require_verification("créer un service")
     def create(self, request, *args, **kwargs):
         # Extraire les données des fichiers et du formulaire
         gallery_images = []
@@ -1350,7 +1350,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-    @require_verification("modifier un service")
+    #@require_verification("modifier un service")
     def update(self, request, *args, **kwargs):
         # Code similaire à la méthode create pour traiter les images et options
         # ...
@@ -2367,7 +2367,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
         else:
             return Dispute.objects.filter(client=user)
     
-    @require_verification("ouvrir un litige")
+    #@require_verification("ouvrir un litige")
     def perform_create(self, serializer):
         service_id = self.request.data.get('service_id') or self.request.data.get('service')
         provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
@@ -2589,7 +2589,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         else:
             return QuoteRequest.objects.filter(client=user)
     
-    @require_verification("faire une demande de devis")
+    #@require_verification("faire une demande de devis")
     def perform_create(self, serializer):
         """Créer une demande de devis"""
         service_id = self.request.data.get('service_id') or self.request.data.get('service')
@@ -2996,7 +2996,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
             return ClientProjectDetailSerializer
         return ClientProjectListSerializer
     
-    @require_verification("créer un projet")
+    #@require_verification("créer un projet")
     def perform_create(self, serializer):
         # La création nécessite toujours une authentification
         if not self.request.user.is_authenticated:
@@ -3394,7 +3394,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                 {'error': f'Erreur lors de la récupération des offres: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    @require_verification
+    #@require_verification
     def _create_project_offer(self, request, project):
         """Créer une nouvelle offre sur un projet"""
         try:
@@ -3526,7 +3526,7 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
             return ProjectOfferCreateSerializer
         return ProjectOfferSerializer
     
-    @require_verification("faire une offre")
+    #@require_verification("faire une offre")
     def create(self, request, *args, **kwargs):
         """Créer une nouvelle offre"""
         if not hasattr(request.user, 'provider_profile'):
@@ -4018,21 +4018,10 @@ class ProviderVerificationViewSet(viewsets.ModelViewSet):
 # ================================================================
 # 4. VIEWSET POUR VÉRIFICATION PAR TÉLÉPHONE
 # ================================================================
-
 class PhoneVerificationViewSet(viewsets.ModelViewSet):
     """
     ViewSet pour gérer les vérifications par téléphone (clients)
-    
-    Endpoints disponibles:
-    - GET /phone-verification/ : Liste des vérifications (limitée à l'utilisateur connecté)
-    - GET /phone-verification/{id}/ : Détail d'une vérification
-    - POST /phone-verification/ : Créer une nouvelle demande
-    
-    Actions personnalisées:
-    - GET /phone-verification/my-status/ : Mon statut de vérification
-    - POST /phone-verification/send-code/ : Envoyer un code SMS
-    - POST /phone-verification/verify-code/ : Vérifier le code SMS
-    - POST /phone-verification/resend-code/ : Renvoyer le code
+    AVEC LOGS DE DEBUG DÉTAILLÉS
     """
     
     serializer_class = PhoneVerificationSerializer
@@ -4040,12 +4029,18 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Limiter aux vérifications de l'utilisateur connecté"""
-        return PhoneVerification.objects.filter(user=self.request.user)
+        print(f"📋 get_queryset appelé pour user: {self.request.user.id}")
+        queryset = PhoneVerification.objects.filter(user=self.request.user)
+        print(f"📋 Queryset trouvé: {queryset.count()} vérifications")
+        return queryset
     
     def get_permissions(self):
         """Permissions spécifiques par action"""
+        print(f"🔐 get_permissions appelé pour action: {getattr(self, 'action', 'unknown')}")
         if hasattr(self, 'action') and self.action in ['my_status', 'send_code', 'verify_code', 'resend_code']:
+            print(f"🔐 Permissions spéciales pour action: {self.action}")
             return [IsAuthenticated()]
+        print(f"🔐 Permissions par défaut")
         return super().get_permissions()
     
     @action(detail=False, methods=['get'], url_path='my-status')
@@ -4053,34 +4048,63 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
         """
         Récupérer le statut de vérification téléphone de l'utilisateur connecté
         """
+        print(f"\n=== 📱 MY_STATUS DÉMARRÉ ===")
+        print(f"🧑 User ID: {request.user.id}")
+        print(f"🧑 Username: {request.user.username}")
+        
         try:
             verification = PhoneVerification.objects.get(user=request.user)
+            print(f"✅ Vérification trouvée:")
+            print(f"   - ID: {verification.id}")
+            print(f"   - Phone: {verification.phone_number}")
+            print(f"   - Status: {verification.status}")
+            print(f"   - Attempts: {verification.attempts}")
+            print(f"   - Created: {verification.created_at}")
+            print(f"   - Expires: {verification.expires_at}")
+            
             serializer = self.get_serializer(verification)
-            return Response(serializer.data)
+            response_data = serializer.data
+            print(f"📤 Réponse my_status: {response_data}")
+            print(f"=== 📱 MY_STATUS TERMINÉ ===\n")
+            return Response(response_data)
+            
         except PhoneVerification.DoesNotExist:
-            return Response({
+            print(f"❌ Aucune vérification trouvée pour user {request.user.id}")
+            response_data = {
                 'status': 'not_started',
                 'message': 'Aucune vérification téléphone trouvée',
                 'can_start': True
-            })
+            }
+            print(f"📤 Réponse my_status (not found): {response_data}")
+            print(f"=== 📱 MY_STATUS TERMINÉ ===\n")
+            return Response(response_data)
     
     @action(detail=False, methods=['post'], url_path='send-code')
     def send_code(self, request):
         """
-        Envoyer un code de vérification par SMS
-        
-        Données requises:
-        - phone_number: Numéro de téléphone
+        Envoyer un code de vérification par SMS/Email
         """
+        print(f"\n=== 📨 SEND_CODE DÉMARRÉ ===")
+        print(f"🧑 User ID: {request.user.id}")
+        print(f"🧑 Username: {request.user.username}")
+        print(f"🧑 Email: {request.user.email}")
+        print(f"📥 Données reçues: {request.data}")
+        
         serializer = PhoneVerificationSendCodeSerializer(data=request.data)
         
         if not serializer.is_valid():
+            print(f"❌ Données invalides: {serializer.errors}")
+            print(f"=== 📨 SEND_CODE TERMINÉ (ERREUR) ===\n")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = serializer.validated_data['phone_number']
+        print(f"📞 Numéro de téléphone validé: {phone_number}")
         
         try:
+            print(f"🔄 Début de la transaction atomique...")
             with transaction.atomic():
+                print(f"🔍 Recherche/création de la vérification...")
+                
                 # Récupérer ou créer la vérification
                 verification, created = PhoneVerification.objects.get_or_create(
                     user=request.user,
@@ -4091,27 +4115,50 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
                     }
                 )
                 
+                print(f"📋 Vérification {'créée' if created else 'trouvée'}:")
+                print(f"   - ID: {verification.id}")
+                print(f"   - Phone: {verification.phone_number}")
+                print(f"   - Status: {verification.status}")
+                print(f"   - Code actuel: {verification.verification_code}")
+                print(f"   - Expire à: {verification.expires_at}")
+                print(f"   - Dernière envoi: {verification.last_code_sent_at}")
+                
                 if not created:
+                    print(f"🔍 Vérification existante - vérification des conditions...")
+                    print(f"   - Can resend?: {verification.can_resend_code()}")
+                    
                     # Vérifier si on peut renvoyer un code
                     if not verification.can_resend_code():
+                        print(f"❌ Trop tôt pour renvoyer un code")
+                        print(f"=== 📨 SEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
                         return Response({
                             'detail': 'Vous devez attendre avant de demander un nouveau code',
                             'retry_after': 60
                         }, status=status.HTTP_429_TOO_MANY_REQUESTS)
                     
                     # Régénérer le code
+                    print(f"🔄 Régénération du code...")
+                    old_code = verification.verification_code
                     code = verification.regenerate_code()
+                    print(f"   - Ancien code: {old_code}")
+                    print(f"   - Nouveau code: {code}")
                 else:
                     code = verification.verification_code
+                    print(f"🆕 Nouveau code généré: {code}")
                 
-                # TODO: Intégrer avec votre service SMS (Twilio, etc.)
-                # success = send_sms(phone_number, f"Votre code de vérification: {code}")
-                # Envoyer l'email
-                subject = 'Code de réinitialisation - Teyago Services'
+                print(f"📧 Préparation de l'email...")
+                
+                # Préparer l'email
+                subject = 'Code de vérification - Teyago Services'
+                user_name = request.user.first_name or request.user.username
+                print(f"   - Destinataire: {request.user.email}")
+                print(f"   - Nom utilisateur: {user_name}")
+                print(f"   - Code à envoyer: {code}")
+                
                 message = f"""
-                Bonjour {request.user.first_name or request.user.username},
+                Bonjour {user_name},
 
-                Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Teyago Services.
+                Vous avez demandé la vérification de votre compte Teyago Services.
 
                 Votre code de verification est : {code}
 
@@ -4122,10 +4169,14 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
 
                 Cordialement,
                 L'équipe Teyago Services
-                                """
+                """
                 
                 try:
-                    logger.debug("Tentative d'envoi d'email...")
+                    print(f"📧 Tentative d'envoi d'email...")
+                    print(f"   - FROM: {settings.DEFAULT_FROM_EMAIL}")
+                    print(f"   - TO: {request.user.email}")
+                    print(f"   - SUBJECT: {subject}")
+                    
                     send_mail(
                         subject,
                         message,
@@ -4133,148 +4184,287 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
                         [request.user.email],
                         fail_silently=False,
                     )
-                    logger.info(f"Email envoyé avec succès avec le code {code}")
                     
-                    
+                    print(f"✅ Email envoyé avec succès!")
+                    logger.info(f"Email de vérification envoyé avec succès à {request.user.email} avec le code {code}")
                     
                 except Exception as e:
+                    print(f"❌ Erreur envoi email: {str(e)}")
                     logger.error(f"Erreur envoi email: {str(e)}")
+                    
                     # Même en cas d'erreur d'email, on retourne une réponse positive pour la sécurité
-                    return Response(
-                        {"detail": _("Si cet email existe, un code de réinitialisation a été envoyé")}, 
+                    error_response = Response(
+                        {"detail": "Si cet email existe, un code de verification a été envoyé"}, 
                         status=status.HTTP_200_OK
                     )
-                
+                    print(f"📤 Réponse d'erreur email: {error_response.data}")
+                    print(f"=== 📨 SEND_CODE TERMINÉ (EMAIL_ERROR) ===\n")
+                    return error_response
 
-                success = True  # Simuler l'envoi pour le développement
+                # Simuler le succès SMS
+                success = True
+                print(f"✅ Succès simulé: {success}")
                 
                 if success:
+                    print(f"🎉 Code envoyé avec succès!")
                     logger.info(f"Code SMS envoyé à {request.user.username} ({phone_number})")
                     
                     # En développement, logger le code
                     if settings.DEBUG:
+                        print(f"🐛 CODE DE VÉRIFICATION (DEV): {code}")
                         logger.info(f"CODE DE VÉRIFICATION (DEV): {code}")
                     
                     response_serializer = self.get_serializer(verification)
-                    return Response({
+                    response_data = {
                         'message': 'Code envoyé avec succès',
                         'verification': response_serializer.data,
-                        'debug_code': code if settings.DEBUG else None  # Seulement en dev
-                    })
+                        'debug_code': code if settings.DEBUG else None
+                    }
+                    
+                    print(f"📤 Réponse de succès: {response_data}")
+                    print(f"=== 📨 SEND_CODE TERMINÉ (SUCCESS) ===\n")
+                    return Response(response_data)
                 else:
-                    return Response({
+                    print(f"❌ Échec d'envoi SMS")
+                    error_response = Response({
                         'detail': 'Erreur lors de l\'envoi du SMS'
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    print(f"📤 Réponse d'erreur SMS: {error_response.data}")
+                    print(f"=== 📨 SEND_CODE TERMINÉ (SMS_ERROR) ===\n")
+                    return error_response
         
         except Exception as e:
+            print(f"❌ ERREUR GÉNÉRALE dans send_code: {str(e)}")
             logger.error(f"Erreur envoi SMS pour {request.user.username}: {str(e)}")
-            return Response({
+            import traceback
+            print(f"❌ STACK TRACE: {traceback.format_exc()}")
+            
+            error_response = Response({
                 'detail': 'Erreur technique lors de l\'envoi'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"📤 Réponse d'erreur générale: {error_response.data}")
+            print(f"=== 📨 SEND_CODE TERMINÉ (GENERAL_ERROR) ===\n")
+            return error_response
     
     @action(detail=False, methods=['post'], url_path='verify-code')
     def verify_code(self, request):
         """
-        Vérifier le code SMS reçu
-        
-        Données requises:
-        - code: Code de vérification à 6 chiffres
+        Vérifier le code SMS/Email reçu
         """
+        print(f"\n=== ✅ VERIFY_CODE DÉMARRÉ ===")
+        print(f"🧑 User ID: {request.user.id}")
+        print(f"🧑 Username: {request.user.username}")
+        print(f"📥 Données reçues: {request.data}")
+        
         serializer = PhoneVerificationCodeSerializer(data=request.data)
         
         if not serializer.is_valid():
+            print(f"❌ Données invalides: {serializer.errors}")
+            print(f"=== ✅ VERIFY_CODE TERMINÉ (INVALID_DATA) ===\n")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         code = serializer.validated_data['code']
+        print(f"🔢 Code à vérifier: '{code}'")
         
         try:
+            print(f"🔍 Recherche de la vérification...")
             verification = PhoneVerification.objects.get(user=request.user)
+            
+            print(f"📋 Vérification trouvée:")
+            print(f"   - ID: {verification.id}")
+            print(f"   - Phone: {verification.phone_number}")
+            print(f"   - Status: {verification.status}")
+            print(f"   - Code attendu: '{verification.verification_code}'")
+            print(f"   - Code reçu: '{code}'")
+            print(f"   - Attempts: {verification.attempts}/{verification.max_attempts}")
+            print(f"   - Expire à: {verification.expires_at}")
+            print(f"   - Maintenant: {timezone.now()}")
+            print(f"   - Is expired?: {verification.is_expired()}")
+            print(f"   - Can verify?: {verification.can_verify()}")
+            
         except PhoneVerification.DoesNotExist:
-            return Response({
+            print(f"❌ Aucune vérification trouvée pour user {request.user.id}")
+            error_response = Response({
                 'detail': 'Aucune vérification en cours'
             }, status=status.HTTP_404_NOT_FOUND)
+            print(f"📤 Réponse not found: {error_response.data}")
+            print(f"=== ✅ VERIFY_CODE TERMINÉ (NOT_FOUND) ===\n")
+            return error_response
         
         # Vérifier le code
-        if verification.verify_code(code):
+        print(f"🔍 Vérification du code...")
+        print(f"   - Comparaison: '{verification.verification_code}' == '{code}' ?")
+        
+        # Sauvegarder les valeurs avant verify_code (qui modifie attempts)
+        attempts_before = verification.attempts
+        is_expired_before = verification.is_expired()
+        can_verify_before = verification.can_verify()
+        
+        print(f"📊 État avant vérification:")
+        print(f"   - Attempts avant: {attempts_before}")
+        print(f"   - Expiré avant: {is_expired_before}")
+        print(f"   - Peut vérifier avant: {can_verify_before}")
+        
+        verification_result = verification.verify_code(code)
+        print(f"🎯 Résultat verify_code: {verification_result}")
+        
+        # Recharger pour voir les changements
+        verification.refresh_from_db()
+        print(f"📊 État après vérification:")
+        print(f"   - Status: {verification.status}")
+        print(f"   - Attempts après: {verification.attempts}")
+        print(f"   - Verified_at: {verification.verified_at}")
+        
+        if verification_result:
+            print(f"🎉 VÉRIFICATION RÉUSSIE!")
             logger.info(f"Vérification téléphone réussie pour {request.user.username}")
             
             response_serializer = self.get_serializer(verification)
-            return Response({
+            response_data = {
                 'message': 'Téléphone vérifié avec succès',
                 'verification': response_serializer.data,
                 'user_verified': True
-            })
+            }
+            
+            print(f"📤 Réponse de succès: {response_data}")
+            print(f"=== ✅ VERIFY_CODE TERMINÉ (SUCCESS) ===\n")
+            return Response(response_data)
         else:
+            print(f"❌ VÉRIFICATION ÉCHOUÉE!")
+            
             # Déterminer la raison de l'échec
+            verification.refresh_from_db()  # Recharger pour avoir l'état actuel
+            
+            print(f"🔍 Analyse de l'échec:")
+            print(f"   - Is expired now?: {verification.is_expired()}")
+            print(f"   - Attempts now: {verification.attempts}")
+            print(f"   - Max attempts: {verification.max_attempts}")
+            print(f"   - Status now: {verification.status}")
+            
             if verification.is_expired():
                 message = 'Le code a expiré'
+                print(f"⏰ Raison: Code expiré")
             elif verification.attempts >= verification.max_attempts:
                 message = 'Nombre maximum de tentatives atteint'
+                print(f"🚫 Raison: Trop de tentatives")
             else:
                 message = 'Code incorrect'
                 attempts_remaining = verification.max_attempts - verification.attempts
                 message += f' ({attempts_remaining} tentatives restantes)'
+                print(f"🔢 Raison: Code incorrect, {attempts_remaining} tentatives restantes")
             
-            return Response({
+            error_response = Response({
                 'detail': message,
                 'attempts_remaining': max(0, verification.max_attempts - verification.attempts),
                 'expired': verification.is_expired()
             }, status=status.HTTP_400_BAD_REQUEST)
+            
+            print(f"📤 Réponse d'erreur: {error_response.data}")
+            print(f"=== ✅ VERIFY_CODE TERMINÉ (FAILED) ===\n")
+            return error_response
     
     @action(detail=False, methods=['post'], url_path='resend-code')
     def resend_code(self, request):
         """
         Renvoyer le code de vérification
         """
+        print(f"\n=== 🔄 RESEND_CODE DÉMARRÉ ===")
+        print(f"🧑 User ID: {request.user.id}")
+        print(f"🧑 Username: {request.user.username}")
+        
         try:
+            print(f"🔍 Recherche de la vérification...")
             verification = PhoneVerification.objects.get(user=request.user)
+            
+            print(f"📋 Vérification trouvée:")
+            print(f"   - ID: {verification.id}")
+            print(f"   - Phone: {verification.phone_number}")
+            print(f"   - Status: {verification.status}")
+            print(f"   - Last sent: {verification.last_code_sent_at}")
+            print(f"   - Can resend?: {verification.can_resend_code()}")
+            
         except PhoneVerification.DoesNotExist:
-            return Response({
+            print(f"❌ Aucune vérification trouvée")
+            error_response = Response({
                 'detail': 'Aucune vérification en cours'
             }, status=status.HTTP_404_NOT_FOUND)
+            print(f"📤 Réponse not found: {error_response.data}")
+            print(f"=== 🔄 RESEND_CODE TERMINÉ (NOT_FOUND) ===\n")
+            return error_response
         
         if verification.status == 'verified':
-            return Response({
+            print(f"✅ Déjà vérifié!")
+            error_response = Response({
                 'detail': 'Votre téléphone est déjà vérifié'
             }, status=status.HTTP_400_BAD_REQUEST)
+            print(f"📤 Réponse already verified: {error_response.data}")
+            print(f"=== 🔄 RESEND_CODE TERMINÉ (ALREADY_VERIFIED) ===\n")
+            return error_response
         
         if not verification.can_resend_code():
-            return Response({
+            print(f"⏱️ Trop tôt pour renvoyer")
+            error_response = Response({
                 'detail': 'Vous devez attendre avant de demander un nouveau code',
                 'retry_after': 60
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            print(f"📤 Réponse too many requests: {error_response.data}")
+            print(f"=== 🔄 RESEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
+            return error_response
         
         try:
-            # Régénérer et envoyer le code
+            print(f"🔄 Régénération du code...")
+            old_code = verification.verification_code
             code = verification.regenerate_code()
+            
+            print(f"   - Ancien code: {old_code}")
+            print(f"   - Nouveau code: {code}")
+            print(f"   - Nouveau expires_at: {verification.expires_at}")
             
             # TODO: Intégrer avec votre service SMS
             # success = send_sms(verification.phone_number, f"Votre nouveau code: {code}")
             success = True  # Simuler l'envoi
+            print(f"📨 Succès simulé: {success}")
             
             if success:
+                print(f"🎉 Nouveau code envoyé avec succès!")
                 logger.info(f"Nouveau code SMS envoyé à {request.user.username}")
                 
                 # En développement, logger le code
                 if settings.DEBUG:
+                    print(f"🐛 NOUVEAU CODE DE VÉRIFICATION (DEV): {code}")
                     logger.info(f"NOUVEAU CODE DE VÉRIFICATION (DEV): {code}")
                 
                 response_serializer = self.get_serializer(verification)
-                return Response({
+                response_data = {
                     'message': 'Nouveau code envoyé avec succès',
                     'verification': response_serializer.data,
                     'debug_code': code if settings.DEBUG else None
-                })
+                }
+                
+                print(f"📤 Réponse de succès: {response_data}")
+                print(f"=== 🔄 RESEND_CODE TERMINÉ (SUCCESS) ===\n")
+                return Response(response_data)
             else:
-                return Response({
+                print(f"❌ Échec d'envoi SMS")
+                error_response = Response({
                     'detail': 'Erreur lors de l\'envoi du SMS'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                print(f"📤 Réponse d'erreur SMS: {error_response.data}")
+                print(f"=== 🔄 RESEND_CODE TERMINÉ (SMS_ERROR) ===\n")
+                return error_response
         
         except Exception as e:
+            print(f"❌ ERREUR GÉNÉRALE dans resend_code: {str(e)}")
             logger.error(f"Erreur renvoi SMS pour {request.user.username}: {str(e)}")
-            return Response({
+            import traceback
+            print(f"❌ STACK TRACE: {traceback.format_exc()}")
+            
+            error_response = Response({
                 'detail': 'Erreur technique lors du renvoi'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"📤 Réponse d'erreur générale: {error_response.data}")
+            print(f"=== 🔄 RESEND_CODE TERMINÉ (GENERAL_ERROR) ===\n")
+            return error_response
 
 
 # ================================================================
