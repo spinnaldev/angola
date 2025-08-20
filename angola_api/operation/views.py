@@ -28,6 +28,7 @@ from django.db.models import Sum
 import logging
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import get_language_from_request
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -764,11 +765,15 @@ def get_profile_stats(request):
         try:
             from operation.models import Message, Conversation
             unread_messages = Message.objects.filter(
-                conversation__provider=provider,
-                is_read=False
-            ).exclude(sender=user).count()
+                conversation__provider=provider,  # Conversations du prestataire
+                sender=models.F('conversation__client'),  # Messages envoyés par le client
+                is_read=False  # Non lus
+            ).count()
+            logger.info(f"Pour les messages non lus on a  {unread_messages}")
         except:
-            unread_messages = 0
+            
+            logger.info(f"erreur Pour les messages non lus on a donc 0")
+            unread_messages = 0 
         
         # Revenus de ce mois (supposant un champ price dans QuoteRequest)
         try:
@@ -2460,13 +2465,41 @@ class NotificationViewSet(viewsets.ModelViewSet):
         # Sinon, retourner seulement les notifications de l'utilisateur
         return Notification.objects.filter(user=user).order_by('-created_at')
     
-    @action(detail=False, methods=['post'])
-    def mark_as_read(self, request, pk=None):
-        """Marquer une notification comme lue"""
-        notification = self.get_object()
-        notification.is_read = True
-        notification.save()
-        return Response({"status": "marked as read"})
+    @action(detail=True, methods=['post'], url_path='mark_read')
+    def mark_read(self, request, pk=None):
+        """Marquer une notification spécifique comme lue"""
+        try:
+            notification = self.get_object()
+            
+            # Vérifier les permissions
+            if notification.user != request.user and not (request.user.is_staff or request.user.is_superuser):
+                return Response(
+                    {"detail": "Permission refusée"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Marquer comme lue
+            notification.is_read = True
+            notification.save()
+            
+            # Réponse de succès
+            return Response({
+                "status": "success",
+                "message": "Notification marquée comme lue",
+                "notification_id": notification.id,
+                "is_read": True
+            }, status=status.HTTP_200_OK)
+            
+        except Notification.DoesNotExist:
+            return Response(
+                {"detail": "Notification non trouvée"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Erreur: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
@@ -4401,15 +4434,15 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
             print(f"=== 🔄 RESEND_CODE TERMINÉ (ALREADY_VERIFIED) ===\n")
             return error_response
         
-        if not verification.can_resend_code():
-            print(f"⏱️ Trop tôt pour renvoyer")
-            error_response = Response({
-                'detail': 'Vous devez attendre avant de demander un nouveau code',
-                'retry_after': 60
-            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-            print(f"📤 Réponse too many requests: {error_response.data}")
-            print(f"=== 🔄 RESEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
-            return error_response
+        # if not verification.can_resend_code():
+        #     print(f"⏱️ Trop tôt pour renvoyer")
+        #     error_response = Response({
+        #         'detail': 'Vous devez attendre avant de demander un nouveau code',
+        #         'retry_after': 60
+        #     }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        #     print(f"📤 Réponse too many requests: {error_response.data}")
+        #     print(f"=== 🔄 RESEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
+        #     return error_response
         
         try:
             print(f"🔄 Régénération du code...")
@@ -4549,3 +4582,193 @@ def check_action_permission(request):
     })
 
 
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def force_refresh_profile(request):
+    """
+    Endpoint pour forcer le rafraîchissement complet du profil utilisateur
+    Invalide tous les caches et resynchronise les données de vérification
+    """
+    user = request.user
+    
+    try:
+        with transaction.atomic():
+            # 1. Invalider tous les caches liés à cet utilisateur
+            cache_keys_to_delete = [
+                f'user_profile_{user.id}',
+                f'user_verification_{user.id}',
+                f'user_services_{user.id}',
+                f'user_projects_{user.id}',
+                f'provider_profile_{user.id}',
+            ]
+            
+            for key in cache_keys_to_delete:
+                cache.delete(key)
+            
+            # 2. Recharger l'utilisateur depuis la base de données
+            user.refresh_from_db()
+            
+            # 3. Resynchroniser le statut de vérification selon le rôle
+            if user.role == 'client':
+                # Vérifier le statut de vérification téléphone
+                phone_verification = getattr(user, 'phone_verification', None)
+                if phone_verification:
+                    if phone_verification.status == 'verified' and not user.is_verified:
+                        user.is_verified = True
+                        user.save()
+                        print(f"✅ Utilisateur {user.username} marqué comme vérifié (téléphone)")
+                    elif phone_verification.status != 'verified' and user.is_verified:
+                        user.is_verified = False
+                        user.save()
+                        print(f"❌ Utilisateur {user.username} marqué comme non vérifié (téléphone)")
+            
+            elif user.role == 'provider':
+                # Vérifier le statut de vérification prestataire
+                provider = getattr(user, 'provider_profile', None)
+                if provider:
+                    verification = getattr(provider, 'verification', None)
+                    if verification:
+                        if verification.verification_status == 'verified' and not user.is_verified:
+                            user.is_verified = True
+                            user.save()
+                            print(f"✅ Prestataire {user.username} marqué comme vérifié (documents)")
+                        elif verification.verification_status != 'verified' and user.is_verified:
+                            user.is_verified = False
+                            user.save()
+                            print(f"❌ Prestataire {user.username} marqué comme non vérifié (documents)")
+            
+            # 4. Recharger encore une fois pour être sûr
+            user.refresh_from_db()
+            
+            # 5. Sérialiser les données avec le contexte complet
+            serializer = UserSerializer(user, context={'request': request})
+            user_data = serializer.data
+            
+            # 6. Ajouter des métadonnées de debug
+            debug_info = {
+                'timestamp': timezone.now().isoformat(),
+                'cache_cleared': True,
+                'user_reloaded': True,
+                'verification_synced': True,
+            }
+            
+            # 7. Log pour debug
+            print(f"🔄 Profil forcé rechargé pour {user.username}")
+            print(f"   - Rôle: {user.role}")
+            print(f"   - Vérifié: {user.is_verified}")
+            if user.role == 'client':
+                phone_verification = getattr(user, 'phone_verification', None)
+                if phone_verification:
+                    print(f"   - Statut téléphone: {phone_verification.status}")
+            elif user.role == 'provider':
+                provider = getattr(user, 'provider_profile', None)
+                if provider and hasattr(provider, 'verification'):
+                    print(f"   - Statut prestataire: {provider.verification.verification_status}")
+            
+            return Response({
+                'success': True,
+                'message': 'Profil utilisateur rechargé avec succès',
+                'user': user_data,
+                'debug': debug_info
+            })
+            
+    except Exception as e:
+        print(f"❌ Erreur lors du rechargement forcé: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors du rechargement: {str(e)}',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user_detailed(request):
+    """
+    Endpoint amélioré pour récupérer le profil utilisateur actuel
+    Avec cache-busting et synchronisation des données
+    """
+    user = request.user
+    
+    # Force reload depuis la DB (pas de cache)
+    user.refresh_from_db()
+    
+    # Vérifier la cohérence des données de vérification
+    _sync_verification_status(user)
+    
+    # Sérialiser avec contexte complet
+    serializer = UserSerializer(user, context={'request': request})
+    
+    # Ajouter des informations supplémentaires selon le rôle
+    response_data = {
+        'user': serializer.data,
+        'timestamp': timezone.now().isoformat(),
+        'cache_bypassed': True,
+    }
+    
+    # Informations spécifiques aux prestataires
+    if user.role == 'provider':
+        provider = getattr(user, 'provider_profile', None)
+        if provider:
+            response_data['provider_details'] = {
+                'id': provider.id,
+                'business_type': provider.business_type,
+                'services_count': provider.provider_services.count(),
+                'verification': None
+            }
+            
+            # Détails de vérification prestataire
+            verification = getattr(provider, 'verification', None)
+            if verification:
+                response_data['provider_details']['verification'] = {
+                    'status': verification.verification_status,
+                    'submitted_at': verification.submitted_at,
+                    'verified_at': verification.verified_at,
+                    'is_business': verification.is_business,
+                    'rejection_reason': verification.rejection_reason,
+                }
+    
+    # Informations spécifiques aux clients
+    elif user.role == 'client':
+        phone_verification = getattr(user, 'phone_verification', None)
+        response_data['phone_verification_details'] = None
+        
+        if phone_verification:
+            response_data['phone_verification_details'] = {
+                'status': phone_verification.status,
+                'phone_number': phone_verification.phone_number,
+                'verified_at': phone_verification.verified_at,
+                'attempts': phone_verification.attempts,
+            }
+    
+    return Response(response_data)
+
+
+def _sync_verification_status(user):
+    """
+    Fonction utilitaire pour synchroniser le statut de vérification
+    """
+    try:
+        if user.role == 'client':
+            phone_verification = getattr(user, 'phone_verification', None)
+            if phone_verification:
+                expected_verified = phone_verification.status == 'verified'
+                if user.is_verified != expected_verified:
+                    user.is_verified = expected_verified
+                    user.save()
+                    print(f"🔄 Statut de vérification synchronisé pour {user.username}: {expected_verified}")
+        
+        elif user.role == 'provider':
+            provider = getattr(user, 'provider_profile', None)
+            if provider and hasattr(provider, 'verification'):
+                expected_verified = provider.verification.verification_status == 'verified'
+                if user.is_verified != expected_verified:
+                    user.is_verified = expected_verified
+                    user.save()
+                    print(f"🔄 Statut de vérification synchronisé pour {user.username}: {expected_verified}")
+    
+    except Exception as e:
+        print(f"❌ Erreur synchronisation vérification: {e}")

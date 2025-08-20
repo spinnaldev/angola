@@ -42,6 +42,7 @@
   "inProgress": "Em andamento",
   "unreadMessages": "Mensagens não lidas",
   "revenueThisMonth": "Receita este mês",
+  "offreEnCours" : "Ofertas atuais",
   "averageRating": "Avaliação média",
   "totalReviews": "Total de avaliações",
   
@@ -1397,12 +1398,8 @@
   "sendCode": "Enviar código",
   
   "enterVerificationCode": "Digite o código de verificação",
-  "codeDescription": "Um código de 6 dígitos foi enviado para {phoneNumber}",
-  "@codeDescription": {
-    "placeholders": {
-      "phoneNumber": {"type": "String"}
-    }
-  },
+  "codeDescription": "Um código de 6 dígitos foi enviado por email",
+  
   "verificationCode": "Código de verificação",
   "verifyCode": "Verificar código",
   "changeNumber": "Alterar número",
@@ -1549,6 +1546,26 @@
   "just_now": "Agora mesmo",
   "minutes_ago": "Há {minutes} min",
   "hours_ago": "Há {hours}h",
-  "days_ago": "Há {days} dia{plural}"
-
+  "days_ago": "Há {days} dia{plural}",
+  "priceExample": "Ex: 350.000",
+  "priceFormatHelper": "O preço será formatado automaticamente",
+  "currencyLabel": "AOA",
+  "providerOnlyPage": "Esta página é apenas para prestadores.",
+  "manageMyServices": "Gerenciar meus serviços",
+  "noServicesYet": "Você ainda não tem serviços",
+  "addFirstServices": "Adicione seus primeiros serviços para ser visível aos clientes",
+  "addService": "Adicionar serviço",
+  "onQuote": "Sob orçamento",
+  "edit": "Editar",
+  "delete": "Excluir",
+  "confirmDeletion": "Confirmar exclusão",
+  "deleteServiceConfirm": "Tem certeza de que deseja excluir este serviço? Esta ação é irreversível.",
+  "cancel": "Cancelar",
+  "serviceDeletedSuccess": "Serviço excluído com sucesso",
+  "available": "Disponível",
+  "unavailable": "Indisponível",
+  "verificationRequiredMessage": "Você deve verificar seu perfil para adicionar serviços",
+  "verify": "Verificar",
+  "verificationRequiredToSendOffer": "Você deve verificar seu perfil para enviar uma oferta",
+  "completeVerificationFirst": "Complete a verificação do seu perfil antes de poder enviar ofertas."
 }

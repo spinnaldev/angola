@@ -315,4 +315,94 @@ class AuthService {
     final token = await _secureStorage.read(key: 'access_token');
     return token != null;
   }
+
+  Future<User?> forceRefreshUserProfile() async {
+    try {
+      print('🔄 Force refresh du profil via nouvelle endpoint...');
+      
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token == null) {
+        throw Exception('Token non trouvé');
+      }
+
+      // Appel à la nouvelle endpoint de force refresh
+      final response = await http.post(
+        Uri.parse('${_apiClient.baseUrl}/user/force-refresh-profile/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      );
+
+      print('📡 Réponse force refresh: ${response.statusCode}');
+      print('📄 Corps: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['success'] == true && data['user'] != null) {
+          final userData = data['user'];
+          final user = User.fromJson(userData);
+          
+          print('✅ Force refresh réussi !');
+          print('   - Nom: ${user.fullName}');
+          print('   - Statut: ${user.verificationInfo.status}');
+          print('   - Vérifié: ${user.verificationInfo.isVerified}');
+          
+          return user;
+        } else {
+          throw Exception('Réponse invalide: ${data['message']}');
+        }
+      } else {
+        throw Exception('Erreur HTTP: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Erreur force refresh: $e');
+      rethrow;
+    }
+  }
+
+  // ✅ MÉTHODE AMÉLIORÉE : Get current user avec cache busting
+  Future<User?> getCurrentUserDetailed() async {
+    try {
+      print('🔄 Récupération profil détaillé...');
+      
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token == null) {
+        throw Exception('Token non trouvé');
+      }
+
+      // Utiliser la nouvelle endpoint détaillée
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final response = await http.get(
+        Uri.parse('${_apiClient.baseUrl}/user/profile-detailed/?t=$timestamp'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['user'] != null) {
+          final user = User.fromJson(data['user']);
+          print('✅ Profil détaillé récupéré avec succès');
+          return user;
+        } else {
+          throw Exception('Données utilisateur manquantes');
+        }
+      } else {
+        throw Exception('Erreur HTTP: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Erreur récupération profil détaillé: $e');
+      rethrow;
+    }
+  }
+
 }

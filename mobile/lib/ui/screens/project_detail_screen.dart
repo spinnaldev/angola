@@ -9,6 +9,29 @@ import '../../core/models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
 import '../widgets/offer_card.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+class PriceInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+    
+    final number = int.parse(text);
+    final formatted = NumberFormat('#,###', 'fr_FR').format(number);
+    
+    return newValue.copyWith(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class ProjectDetailScreen extends StatefulWidget {
   final int projectId;
@@ -61,6 +84,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     _offerPriceController.dispose();
     _offerDeliveryController.dispose();
     super.dispose();
+  }
+  double? parseFormattedPrice(String formattedPrice) {
+    final cleaned = formattedPrice.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.isEmpty) return null;
+    return double.tryParse(cleaned);
   }
 
   // ========== MÉTHODES DE CHARGEMENT DES DONNÉES ==========
@@ -398,7 +426,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   void _showOfferBottomSheet() {
     final l10n = AppLocalizations.of(context)!;
 
-    // Variables locales pour le bottom sheet
     bool localIncludesMaterials = _includesMaterials;
     bool localTravelCostsIncluded = _travelCostsIncluded;
 
@@ -410,172 +437,210 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       enableDrag: !_isSubmittingOffer,
       builder: (context) => StatefulBuilder(
         builder: (context, setBottomSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête avec indicateur et titre
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+              // En-tête fixe
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
                     ),
-                  ),
-                  const Spacer(),
-                  if (_isSubmittingOffer)
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(l10n.sendingInProgress,
-                            style: const TextStyle(color: Colors.grey)),
-                      ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              Text(
-                l10n.makeOffer,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Champ prix
-              TextFormField(
-                controller: _offerPriceController,
-                keyboardType: TextInputType.number,
-                enabled: !_isSubmittingOffer,
-                decoration: InputDecoration(
-                  labelText: l10n.proposedPrice,
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.account_balance_wallet),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Champ délai
-              TextFormField(
-                controller: _offerDeliveryController,
-                keyboardType: TextInputType.number,
-                enabled: !_isSubmittingOffer,
-                decoration: InputDecoration(
-                  labelText: l10n.deliveryTime,
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.schedule),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Champ message
-              TextFormField(
-                controller: _offerMessageController,
-                maxLines: 4,
-                enabled: !_isSubmittingOffer,
-                decoration: InputDecoration(
-                  labelText: l10n.messageForClient,
-                  border: const OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Options supplémentaires
-              CheckboxListTile(
-                title: Text(l10n.materialsIncluded),
-                value: localIncludesMaterials,
-                onChanged: _isSubmittingOffer
-                    ? null
-                    : (value) {
-                        setBottomSheetState(() {
-                          localIncludesMaterials = value ?? false;
-                        });
-                      },
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-
-              CheckboxListTile(
-                title: Text(l10n.travelCostsIncluded),
-                value: localTravelCostsIncluded,
-                onChanged: _isSubmittingOffer
-                    ? null
-                    : (value) {
-                        setBottomSheetState(() {
-                          localTravelCostsIncluded = value ?? false;
-                        });
-                      },
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-
-              const SizedBox(height: 20),
-
-              // Bouton d'envoi
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmittingOffer
-                      ? null
-                      : () {
-                          setState(() {
-                            _includesMaterials = localIncludesMaterials;
-                            _travelCostsIncluded = localTravelCostsIncluded;
-                          });
-
-                          _submitOffer(setBottomSheetState);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF142FE2),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isSubmittingOffer
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(l10n.sendingInProgress),
-                          ],
-                        )
-                      : Text(
-                          l10n.sendMyOffer,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                    const Spacer(),
+                    if (_isSubmittingOffer)
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.sendingInProgress,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              
+              // Zone scrollable
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 10,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.makeOffer,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ✅ CHAMP PRIX AMÉLIORÉ
+                      TextFormField(
+                        controller: _offerPriceController,
+                        keyboardType: TextInputType.number,
+                        enabled: !_isSubmittingOffer,
+                        inputFormatters: [
+                          PriceInputFormatter(),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: '${l10n.proposedPrice} ',
+                          hintText: l10n.priceExample,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.account_balance_wallet),
+                          helperText: l10n.priceFormatHelper,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Champ délai
+                      TextFormField(
+                        controller: _offerDeliveryController,
+                        keyboardType: TextInputType.number,
+                        enabled: !_isSubmittingOffer,
+                        decoration: InputDecoration(
+                          labelText: l10n.deliveryTime,
+                          // hintText: 'Ex: 7 jours',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.schedule),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Champ message
+                      TextFormField(
+                        controller: _offerMessageController,
+                        maxLines: 4,
+                        enabled: !_isSubmittingOffer,
+                        decoration: InputDecoration(
+                          labelText: l10n.messageForClient,
+                          border: const OutlineInputBorder(),
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Options
+                      CheckboxListTile(
+                        title: Text(l10n.materialsIncluded),
+                        value: localIncludesMaterials,
+                        onChanged: _isSubmittingOffer
+                            ? null
+                            : (value) {
+                                setBottomSheetState(() {
+                                  localIncludesMaterials = value ?? false;
+                                });
+                              },
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+
+                      CheckboxListTile(
+                        title: Text(l10n.travelCostsIncluded),
+                        value: localTravelCostsIncluded,
+                        onChanged: _isSubmittingOffer
+                            ? null
+                            : (value) {
+                                setBottomSheetState(() {
+                                  localTravelCostsIncluded = value ?? false;
+                                });
+                              },
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Bouton fixe
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 3,
+                      offset: const Offset(0, -1),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSubmittingOffer
+                        ? null
+                        : () {
+                            setState(() {
+                              _includesMaterials = localIncludesMaterials;
+                              _travelCostsIncluded = localTravelCostsIncluded;
+                            });
+
+                            _submitOfferWithFormattedPrice(setBottomSheetState);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF142FE2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _isSubmittingOffer
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            l10n.sendMyOffer,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
                 ),
               ),
             ],
@@ -584,7 +649,90 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       ),
     );
   }
+  void _submitOfferWithFormattedPrice(StateSetter setBottomSheetState) async {
+    final l10n = AppLocalizations.of(context)!;
 
+    // Validation avec prix formaté
+    final validationError = _validateOfferFormWithFormatting(l10n);
+    if (validationError != null) {
+      _showErrorInBottomSheet(validationError, setBottomSheetState);
+      return;
+    }
+
+    setBottomSheetState(() {
+      _isSubmittingOffer = true;
+    });
+
+    setState(() {
+      _isSubmittingOffer = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // ✅ Nettoyer le prix avant envoi
+      final cleanPrice = parseFormattedPrice(_offerPriceController.text.trim())!;
+
+      final offerData = {
+        'proposed_price': cleanPrice,
+        'delivery_time': int.parse(_offerDeliveryController.text.trim()),
+        'message': _offerMessageController.text.trim(),
+        'includes_materials': _includesMaterials,
+        'travel_costs_included': _travelCostsIncluded,
+      };
+
+      await apiService.submitOffer(_project!.id, offerData);
+
+      if (mounted) {
+        Navigator.pop(context);
+        setState(() {
+          _isSubmittingOffer = false;
+        });
+        _clearOfferForm();
+        await Future.delayed(const Duration(milliseconds: 300));
+        _showSuccessSnackBar(l10n.offerSentSuccessfully);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        setState(() {
+          _isSubmittingOffer = false;
+        });
+        await Future.delayed(const Duration(milliseconds: 300));
+        _showErrorSnackBar(_getErrorMessage(e.toString(), l10n));
+      }
+    }
+  }
+
+   String? _validateOfferFormWithFormatting(AppLocalizations l10n) {
+    if (_offerPriceController.text.trim().isEmpty) {
+      return l10n.pleaseEnterPrice;
+    }
+
+    if (_offerDeliveryController.text.trim().isEmpty) {
+      return l10n.pleaseEnterDeliveryTime;
+    }
+
+    if (_offerMessageController.text.trim().isEmpty) {
+      return l10n.pleaseEnterMessage;
+    }
+
+    if (_offerMessageController.text.trim().length < 50) {
+      return l10n.messageMinLength50;
+    }
+
+    final double? price = parseFormattedPrice(_offerPriceController.text.trim());
+    if (price == null || price <= 0) {
+      return l10n.pleaseEnterValidPrice;
+    }
+
+    final int? deliveryTime = int.tryParse(_offerDeliveryController.text.trim());
+    if (deliveryTime == null || deliveryTime <= 0) {
+      return l10n.pleaseEnterValidDeliveryTime;
+    }
+
+    return null;
+  }
   Future<void> _handleOfferAction(dynamic offer, String action) async {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
@@ -1210,7 +1358,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _showOfferBottomSheet,
+            onPressed: _handleOfferButtonAction,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
@@ -1263,4 +1411,79 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   bool _hasUserOffered() {
     return _project!.hasUserOffered ?? false;
   }
+  void _handleOfferButtonAction() {
+    final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+
+    if (user?.isVerified == true) {
+      _showOfferBottomSheet();
+    } else {
+      _showVerificationRequiredDialog(l10n);
+    }
+  }
+  void _showVerificationRequiredDialog(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.verified_user, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text(l10n.verificationRequired),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.verificationRequiredToSendOffer),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.completeVerificationFirst,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/provider-verification');
+            },
+            icon: Icon(Icons.verified_user, size: 18),
+            label: Text(l10n.verify),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

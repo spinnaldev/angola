@@ -42,6 +42,7 @@
   "inProgress": "In progress",
   "unreadMessages": "Unread messages",
   "revenueThisMonth": "Revenue this month",
+  "offreEnCours" : "Pending Offers",
   "averageRating": "Average rating",
   "totalReviews": "Total reviews",
   
@@ -1331,12 +1332,8 @@
   "sendCode": "Send code",
   
   "enterVerificationCode": "Enter verification code",
-  "codeDescription": "A 6-digit code has been sent to {phoneNumber}",
-  "@codeDescription": {
-    "placeholders": {
-      "phoneNumber": {"type": "String"}
-    }
-  },
+  "codeDescription": "A 6-digit code has been sent by email",
+ 
   "verificationCode": "Verification code",
   "verifyCode": "Verify code",
   "changeNumber": "Change number",
@@ -1479,6 +1476,29 @@
   "just_now": "Just now",
   "minutes_ago": "{minutes} min ago",
   "hours_ago": "{hours}h ago",
-  "days_ago": "{days} day{plural} ago"
+  "days_ago": "{days} day{plural} ago",
+  "priceExample": "Ex: 350,000",
+  "priceFormatHelper": "Price will be formatted automatically", 
+  "currencyLabel": "AOA",
+
+  "providerOnlyPage": "This page is for providers only.",
+  "manageMyServices": "Manage my services",
+  "noServicesYet": "You don't have any services yet",
+  "addFirstServices": "Add your first services to be visible to clients",
+  "addService": "Add service",
+  "onQuote": "On quote",
+  "edit": "Edit",
+  "delete": "Delete",
+  "confirmDeletion": "Confirm deletion",
+  "deleteServiceConfirm": "Are you sure you want to delete this service? This action is irreversible.",
+  "cancel": "Cancel",
+  "serviceDeletedSuccess": "Service deleted successfully",
+  "available": "Available",
+  "unavailable": "Unavailable",
+  "verificationRequiredMessage": "You must verify your profile to add services",
+  "verify": "Verify",
+  "verificationRequiredToSendOffer": "You must verify your profile to send an offer",
+  "completeVerificationFirst": "Please complete your profile verification before you can send offers."
+  
 
 }

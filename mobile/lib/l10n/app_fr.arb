@@ -42,6 +42,7 @@
   "inProgress": "En cours",
   "unreadMessages": "Messages non lus",
   "revenueThisMonth": "Revenus ce mois",
+  "offreEnCours" : "Offres en cours",
   "averageRating": "Note moyenne",
   "totalReviews": "Total avis",
   
@@ -1354,12 +1355,8 @@
   "sendCode": "Envoyer le code",
   
   "enterVerificationCode": "Saisir le code de vérification",
-  "codeDescription": "Un code à 6 chiffres a été envoyé au {phoneNumber}",
-  "@codeDescription": {
-    "placeholders": {
-      "phoneNumber": {"type": "String"}
-    }
-  },
+  "codeDescription": "Un code à 6 chiffres a été envoyé par email",
+  
   "verificationCode": "Code de vérification",
   "verifyCode": "Vérifier le code",
   "changeNumber": "Modifier le numéro",
@@ -1501,8 +1498,29 @@
   "just_now": "À l'instant",
   "minutes_ago": "Il y a {minutes} min",
   "hours_ago": "Il y a {hours}h",
-  "days_ago": "Il y a {days} jour{plural}"
+  "days_ago": "Il y a {days} jour{plural}",
+  "priceExample": "Ex: 350.000",
+  "priceFormatHelper": "Le prix sera formaté automatiquement",
+  "currencyLabel": "AOA",
 
+  "providerOnlyPage": "Cette page est réservée aux prestataires.",
+  "manageMyServices": "Gestion de mes services",
+  "noServicesYet": "Vous n'avez pas encore de services",
+  "addFirstServices": "Ajoutez vos premiers services pour être visible par les clients",
+  "addService": "Ajouter un service",
+  "onQuote": "Sur devis",
+  "edit": "Modifier",
+  "delete": "Supprimer",
+  "confirmDeletion": "Confirmer la suppression",
+  "deleteServiceConfirm": "Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.",
+  "cancel": "Annuler",
+  "serviceDeletedSuccess": "Service supprimé avec succès",
+  "available": "Disponible",
+  "unavailable": "Indisponible",
+  "verificationRequiredMessage": "Vous devez vérifier votre profil pour ajouter des services",
+  "verify": "Vérifier",
+  "verificationRequiredToSendOffer": "Vous devez vérifier votre profil pour envoyer une offre",
+  "completeVerificationFirst": "Veuillez compléter la vérification de votre profil avant de pouvoir envoyer des offres."
   
   
 }

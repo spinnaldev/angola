@@ -3,6 +3,7 @@ import 'package:teyago/ui/screens/edit_profile_screen.dart';
 import 'package:teyago/ui/screens/explore_screen.dart';
 import 'package:teyago/ui/screens/home/home_screen.dart';
 import 'package:teyago/ui/screens/profile_screen.dart';
+import 'package:teyago/ui/screens/project_detail_screen.dart';
 import 'package:teyago/ui/screens/projects_list_screen.dart';
 import 'package:teyago/ui/screens/search_results_screen.dart';
 import '../ui/screens/auth/login_screen.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String providerProjects = '/provider-projects';
   static const String projectsList = '/projects-list';
+    static const String projects = '/projects';
   static const String searchServices = '/search-services';
   static const String searchProjets = '/search-projects';
   static const String notifications = '/notifications';
@@ -134,6 +136,12 @@ class AppRoutes {
         final type = settings.arguments as String;
         return MaterialPageRoute(
           builder: (_) => SearchResultsScreen(query: query, type: type),
+        );
+
+      case projects:
+        final projectId = settings.arguments as int;
+        return MaterialPageRoute(
+          builder: (_) => ProjectDetailScreen(projectId: projectId),
         );
 
       case searchProjets:

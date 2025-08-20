@@ -113,7 +113,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                l10n.codeDescription(provider.phoneNumber),
+                l10n.codeDescription,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
@@ -393,7 +393,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            l10n.codeDescription(provider.phoneNumber),
+            l10n.codeDescription,
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,

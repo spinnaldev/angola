@@ -1118,7 +1118,7 @@ class PhoneVerification(TimeStampMixin):
         # Empêcher l'envoi trop fréquent (1 minute minimum)
         if self.last_code_sent_at:
             time_since_last = timezone.now() - self.last_code_sent_at
-            return time_since_last.total_seconds() >= 60
+            return time_since_last.total_seconds() >= 1
         return True
     
     def increment_attempt(self):

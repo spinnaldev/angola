@@ -12,6 +12,8 @@ import '../widgets/review_card.dart';
 import 'disputes/create_dispute_screen.dart';
 import '../../core/models/review.dart';
 import '../../../../providers/auth_provider.dart';
+import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
+import 'package:teyago/ui/widgets/verification/verification_required_dialog.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
@@ -232,25 +234,63 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       _selectedReviewImages = [];
     });
   }
-
   void _onRequestQuotePressed() {
-    _checkAuthAndExecute(context, () {
+    final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.canPerformAction(context, l10n.requestQuote)) {
       _openQuoteRequestForm();
-    });
+    } else {
+      final result = authProvider.getVerificationResult(context, l10n.requestQuote);
+      VerificationRequiredDialog.show(context, result);
+    }
   }
 
-  void _openDisputePressed(provider , service){
-    _checkAuthAndExecute(context, (){
-      _openDisputeScreen(provider , service);
-    });
+  // NOUVELLE MÉTHODE : Gestion protégée du litige
+  void _openDisputePressed(provider, service) {
+    final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.canPerformAction(context, l10n.reportProblem)) {
+      _openDisputeScreen(provider, service);
+    } else {
+      final result = authProvider.getVerificationResult(context, l10n.reportProblem);
+      VerificationRequiredDialog.show(context, result);
+    }
   }
-  // Utilisation pour le bouton "Signaler un problème"
+
+  // NOUVELLE MÉTHODE : Gestion protégée de l'avis
   void _onReviewFormPressed() {
-    print("Non connecté");
-    _checkAuthAndExecute(context, () {
-      _openReviewForm(); // Cette méthode sera à implémenter
-    });
+    final l10n = AppLocalizations.of(context)!; 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.canPerformAction(context, l10n.writeReview)) {
+      _openReviewForm();
+    } else {
+      final result = authProvider.getVerificationResult(context, l10n.writeReview);
+      VerificationRequiredDialog.show(context, result);
+    }
   }
+
+
+  // void _onRequestQuotePressed() {
+  //   _checkAuthAndExecute(context, () {
+  //     _openQuoteRequestForm();
+  //   });
+  // }
+
+  // void _openDisputePressed(provider , service){
+  //   _checkAuthAndExecute(context, (){
+  //     _openDisputeScreen(provider , service);
+  //   });
+  // }
+  // // Utilisation pour le bouton "Signaler un problème"
+  // void _onReviewFormPressed() {
+  //   print("Non connecté");
+  //   _checkAuthAndExecute(context, () {
+  //     _openReviewForm(); // Cette méthode sera à implémenter
+  //   });
+  // }
 
   Future<void> _submitQuoteRequest(int providerId, int serviceId) async {
     final l10n = AppLocalizations.of(context)!;
@@ -667,29 +707,38 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                           children: [
                             // Bouton signaler un problème
                             Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _openDisputePressed(provider ,service),
-                                icon:
-                                    const Icon(Icons.report_problem, size: 16),
-                                label: Text(l10n.reportProblem),
+                              child: ProtectedActionButton(
+                                actionDescription: l10n.reportProblem,
+                                onPressed: () => _openDisputeScreen(provider, service),
                                 style: OutlinedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                                   foregroundColor: Colors.orange,
                                   side: const BorderSide(color: Colors.orange),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.report_problem, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(l10n.reportProblem),
+                                  ],
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             // Bouton demander un devis
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: _onRequestQuotePressed,
+                              child: ProtectedActionButton(
+                                actionDescription: l10n.requestQuote,
+                                onPressed: _openQuoteRequestForm,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF142FE2),
                                   foregroundColor: Colors.white,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),
@@ -890,13 +939,15 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                       color: Color(0xFF142FE2),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _onReviewFormPressed,
+                  ProtectedActionButton(
+                    actionDescription: l10n.writeReview,
+                    onPressed: _openReviewForm,
                     style: TextButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                       foregroundColor: const Color(0xFF142FE2),
                     ),
                     child: Text(l10n.writeReview),
-                  ),
+                  )
                 ],
               ),
 
@@ -1130,158 +1181,175 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   }
 
   Widget _buildQuoteRequestModal(provider, service, AppLocalizations l10n) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      color: Colors.black.withOpacity(0.5),
-      child: Column(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: _closeQuoteRequestForm,
-              child: Container(
-                color: Colors.transparent,
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(0.5),
+      resizeToAvoidBottomInset: true, // IMPORTANT : Permet au contenu de se redimensionner avec le clavier
+      body: Center(
+        child: Container(
+          margin: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: MediaQuery.of(context).size.height * 0.1, // Marge du haut
+            bottom: 20,
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // En-tête
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Center(
-                  child: Text(
-                    l10n.requestQuoteFor(service.title),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Formulaire
-                Text(
-                  l10n.requestSubject,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _subjectController,
-                  decoration: InputDecoration(
-                    hintText: l10n.requestSubjectHint,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-                Text(
-                  l10n.yourBudgetOptional,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _budgetController,
-                  decoration: InputDecoration(
-                    hintText: l10n.budgetHint,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    suffixText: 'AOA',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-
-                const SizedBox(height: 16),
-                Text(
-                  l10n.yourRequest,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: l10n.requestDescriptionHint,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSubmittingQuote
-                        ? null
-                        : () => _submitQuoteRequest(provider.id, service.id),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF142FE2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8, // Limite la hauteur
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header fixe avec titre et bouton fermer
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.requestQuoteFor(service.title),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    child: _isSubmittingQuote
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            l10n.send,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: _closeQuoteRequestForm,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const Divider(height: 1),
+              
+              // Contenu scrollable
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Objet de la demande
+                      Text(
+                        l10n.requestSubject,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _subjectController,
+                        decoration: InputDecoration(
+                          hintText: l10n.requestSubjectHint,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      
+                      // Budget (optionnel)
+                      Text(
+                        l10n.yourBudgetOptional,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _budgetController,
+                        decoration: InputDecoration(
+                          hintText: l10n.budgetHint,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          suffixText: 'AOA',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+
+                      const SizedBox(height: 16),
+                      
+                      // Description de la demande
+                      Text(
+                        l10n.yourRequest,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText: l10n.requestDescriptionHint,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      
+                      // Bouton d'envoi
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isSubmittingQuote
+                              ? null
+                              : () => _submitQuoteRequest(provider.id, service.id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF142FE2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
+                          child: _isSubmittingQuote
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  l10n.send,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      
+                      // Espace supplémentaire pour éviter que le clavier cache le bouton
+                      SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1289,193 +1357,291 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   Widget _buildReviewFormModal(provider, int serviceId, providerId, AppLocalizations l10n) {
     return StatefulBuilder(
       builder: (context, setState) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
+        return Container(
           color: Colors.black.withOpacity(0.5),
-          child: Column(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: _closeReviewForm,
-                  child: Container(
-                    color: Colors.transparent,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.75, // Commence à 75% de la hauteur
+            minChildSize: 0.5,      // Minimum 50% de la hauteur
+            maxChildSize: 0.95,     // Maximum 95% de la hauteur
+            builder: (context, scrollController) {
+              return Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // En-tête
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        l10n.whatIsYourRating,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Système de notation
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (index) {
-                        return IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _rating = index + 1;
-                            });
-                          },
-                          icon: Icon(
-                            index < _rating ? Icons.star : Icons.star_border,
-                            color: index < _rating ? Colors.amber : Colors.grey,
-                            size: 32,
+                    // En-tête fixe avec handle
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        children: [
+                          // Handle pour glisser
+                          Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                        );
-                      }),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.whatIsYourRating,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-
                     
-                    // NOUVEAU: Champ titre de l'avis
-                    Text(
-                      l10n.titleAvis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _titleController,
-                      decoration: InputDecoration(
-                        hintText: l10n.avisHintext,
-                        filled: true,
-                        // fillColor: Colors.grey[200],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
+                    // Contenu scrollable
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: EdgeInsets.fromLTRB(
+                          16, 
+                          0, 
+                          16, 
+                          MediaQuery.of(context).viewInsets.bottom + 16
                         ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Système de notation
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(5, (index) {
+                                return IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _rating = index + 1;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    index < _rating ? Icons.star : Icons.star_border,
+                                    color: index < _rating ? Colors.amber : Colors.grey,
+                                    size: 32,
+                                  ),
+                                );
+                              }),
+                            ),
 
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.shareYourOpinion,
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                            const SizedBox(height: 16),
 
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _reviewController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: l10n.yourReview,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
+                            // Champ titre de l'avis
+                            Text(
+                              l10n.titleAvis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _titleController,
+                              decoration: InputDecoration(
+                                hintText: l10n.avisHintext,
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Color(0xFF142FE2)),
+                                ),
+                                contentPadding: const EdgeInsets.all(16),
+                              ),
+                            ),
 
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: _pickReviewImage,
-                      icon: const Icon(Icons.camera_alt),
-                      label: Text(l10n.addPhotos),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                        side: const BorderSide(color: Colors.blue),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
+                            const SizedBox(height: 16),
 
-                    // Affichage des images sélectionnées
-                    if (_selectedReviewImages.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 80,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _selectedReviewImages.length,
-                          itemBuilder: (context, index) {
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image:
-                                      FileImage(_selectedReviewImages[index]),
-                                  fit: BoxFit.cover,
+                            // Commentaire
+                            Text(
+                              l10n.shareYourOpinion,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _reviewController,
+                              maxLines: 5,
+                              decoration: InputDecoration(
+                                hintText: l10n.yourReview,
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Color(0xFF142FE2)),
+                                ),
+                                contentPadding: const EdgeInsets.all(16),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Bouton ajouter photos
+                            OutlinedButton.icon(
+                              onPressed: _pickReviewImage,
+                              icon: const Icon(Icons.camera_alt),
+                              label: Text(l10n.addPhotos),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF142FE2),
+                                side: const BorderSide(color: Color(0xFF142FE2)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, 
+                                  vertical: 12
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                            ),
 
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isSubmittingReview
-                            ? null
-                            : () => _submitReview(providerId, serviceId),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF142FE2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: _isSubmittingReview
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                l10n.sendReview,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                            // Affichage des images sélectionnées
+                            if (_selectedReviewImages.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 80,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _selectedReviewImages.length,
+                                  itemBuilder: (context, index) {
+                                    return Stack(
+                                      children: [
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          margin: const EdgeInsets.only(right: 8),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            image: DecorationImage(
+                                              image: FileImage(_selectedReviewImages[index]),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        // Bouton pour supprimer l'image
+                                        Positioned(
+                                          top: 4,
+                                          right: 12,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedReviewImages.removeAt(index);
+                                              });
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.all(2),
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
+                            ],
+
+                            const SizedBox(height: 24),
+
+                            // Bouton d'envoi
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: _isSubmittingReview
+                                    ? null
+                                    : () => _submitReview(providerId, serviceId),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF142FE2),
+                                  disabledBackgroundColor: Colors.grey[300],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: _isSubmittingReview
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        l10n.sendReview,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Bouton annuler
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: TextButton(
+                                onPressed: _closeReviewForm,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.grey[600],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.cancel,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Espace supplémentaire pour s'assurer que le contenu est accessible
+                            const SizedBox(height: 32),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         );
       },

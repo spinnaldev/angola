@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUTÉ
 import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
+import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
 import '../../../providers/service_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/subcategory_provider.dart';
@@ -30,42 +32,40 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUTÉ
     final serviceProvider = Provider.of<ServiceProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
     if (authProvider.currentUser?.role != 'provider') {
       return Scaffold(
         body: Center(
-          child: Text('Cette page est réservée aux prestataires.'),
+          child: Text(l10n.providerOnlyPage), 
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gestion de mes services'),
+        title: Text(l10n.manageMyServices), 
         elevation: 0,
       ),
       body: serviceProvider.isLoading 
         ? Center(child: LoadingIndicator()) 
         : serviceProvider.myServices.isEmpty 
-          ? _buildEmptyState() 
-          : _buildServiceList(serviceProvider.myServices),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () => _navigateToAddService(context),
-      //   backgroundColor: Theme.of(context).primaryColor,
-      //   child: Icon(Icons.add),
-      // ),
-      floatingActionButton : ProtectedFloatingActionButton(
-        actionDescription: "",
+          ? _buildEmptyState(l10n) // ✅ PASSÉ l10n
+          : _buildServiceList(serviceProvider.myServices, l10n), // ✅ PASSÉ l10n
+      
+      // ✅ BOUTON FLOTTANT AVEC VÉRIFICATION DU PROFIL
+      floatingActionButton: ProtectedFloatingActionButton(
+        actionDescription: l10n.addService, 
         onPressed: () => _navigateToAddService(context),
         child: const Icon(Icons.add),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) { // ✅ PARAMÈTRE AJOUTÉ
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -77,7 +77,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
           ),
           SizedBox(height: 16),
           Text(
-            'Vous n\'avez pas encore de services',
+            l10n.noServicesYet, 
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -86,17 +86,19 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
           ),
           SizedBox(height: 8),
           Text(
-            'Ajoutez vos premiers services pour être visible par les clients',
+            l10n.addFirstServices, 
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey[600],
             ),
           ),
           SizedBox(height: 24),
+          
+          // ✅ BOUTON AVEC VÉRIFICATION DU PROFIL
           ElevatedButton.icon(
-            onPressed: () => _navigateToAddService(context),
+            onPressed: () => _handleProtectedAction(context, _navigateToAddService),
             icon: Icon(Icons.add),
-            label: Text('Ajouter un service'),
+            label: Text(l10n.addService),
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -106,7 +108,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     );
   }
 
-  Widget _buildServiceList(List<Service> services) {
+  Widget _buildServiceList(List<Service> services, AppLocalizations l10n) { // ✅ PARAMÈTRE AJOUTÉ
     return ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: services.length,
@@ -137,10 +139,14 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
                           ),
                         ),
                       ),
-                      Switch(
-                        value: service.isAvailable,
-                        onChanged: (value) => _toggleServiceAvailability(service, value),
-                        activeColor: Theme.of(context).primaryColor,
+                      // ✅ SWITCH AVEC TOOLTIPS TRADUITS
+                      Tooltip(
+                        message: service.isAvailable ? l10n.available : l10n.unavailable,
+                        child: Switch(
+                          value: service.isAvailable,
+                          onChanged: (value) => _toggleServiceAvailability(service, value),
+                          activeColor: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ],
                   ),
@@ -159,7 +165,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
                     children: [
                       Text(
                         service.priceType == 'quote' 
-                          ? 'Sur devis' 
+                          ? l10n.onQuote 
                           : '${service.price} AOA',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -171,14 +177,14 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
                           IconButton(
                             icon: Icon(Icons.edit, size: 20),
                             onPressed: () => _navigateToEditService(context, service),
-                            tooltip: 'Modifier',
+                            tooltip: l10n.edit, 
                             constraints: BoxConstraints(),
                             padding: EdgeInsets.all(8),
                           ),
                           IconButton(
                             icon: Icon(Icons.delete, size: 20, color: Colors.red),
-                            onPressed: () => _showDeleteConfirmation(service),
-                            tooltip: 'Supprimer',
+                            onPressed: () => _showDeleteConfirmation(service, l10n), // ✅ PASSÉ l10n
+                            tooltip: l10n.delete, 
                             constraints: BoxConstraints(),
                             padding: EdgeInsets.all(8),
                           ),
@@ -225,24 +231,24 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     // Aucun besoin d'appeler _loadData() car le provider met déjà à jour l'état
   }
 
-  void _showDeleteConfirmation(Service service) {
+  void _showDeleteConfirmation(Service service, AppLocalizations l10n) { // ✅ PARAMÈTRE AJOUTÉ
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmer la suppression'),
-          content: Text('Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.'),
+          title: Text(l10n.confirmDeletion), 
+          content: Text(l10n.deleteServiceConfirm), 
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Annuler'),
+              child: Text(l10n.cancel), 
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                _deleteService(service);
+                _deleteService(service, l10n); // ✅ PASSÉ l10n
               },
-              child: Text('Supprimer', style: TextStyle(color: Colors.red)),
+              child: Text(l10n.delete, style: TextStyle(color: Colors.red)), 
             ),
           ],
         );
@@ -250,11 +256,46 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     );
   }
 
-  void _deleteService(Service service) async {
+  void _deleteService(Service service, AppLocalizations l10n) async { // ✅ PARAMÈTRE AJOUTÉ
     final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
     await serviceProvider.deleteService(service.id);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Service supprimé avec succès')),
+      SnackBar(content: Text(l10n.serviceDeletedSuccess)), 
     );
+  }
+
+  // ✅ MÉTHODE DE VÉRIFICATION POUR LES ACTIONS PROTÉGÉES
+  void _handleProtectedAction(BuildContext context, Function(BuildContext) action) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    final l10n = AppLocalizations.of(context)!;
+
+    // Vérifier si l'utilisateur est vérifié
+    if (user?.isVerified == true) {
+      action(context); // Exécuter l'action si vérifié
+    } else {
+      // Afficher un dialogue de vérification requise
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.verificationRequired), 
+          content: Text(l10n.verificationRequiredMessage), 
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel), 
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Rediriger vers la page de vérification
+                Navigator.pushNamed(context, '/provider-verification');
+              },
+              child: Text(l10n.verify), 
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

@@ -77,7 +77,7 @@ router.register(r'api/admin/phone-verification', AdminPhoneVerificationViewSet, 
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
-    path('', include(router.urls)),
+    
     path('api/auth/admin-login/', admin_login, name='admin_login'),
     path('api/auth/check-admin-status/', check_admin_status, name='check_admin_status'),
     path('api/auth/admin-setup-status/', admin_setup_status, name='admin_setup_status'),
@@ -94,6 +94,9 @@ urlpatterns = [
     path('api/auth/verify-reset-code/', views.VerifyResetCodeView.as_view(), name='verify_reset_code'),
     path('api/auth/password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
+    path('api/user/force-refresh-profile/', views.force_refresh_profile, name='force_refresh_profile'),
+    path('api/user/profile-detailed/', views.get_current_user_detailed, name='get_current_user_detailed'),
+    
     # Notifications endpoints
     # path('api/notifications/count/', views.get_notification_count, name='notification-count'),
     path('api/notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),
@@ -135,6 +138,7 @@ urlpatterns = [
     
     # Export des données
     path('api/export/', export_verifications, name='admin-export-verifications'),
+    path('', include(router.urls)),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

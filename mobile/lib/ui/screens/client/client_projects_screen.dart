@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
 import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -133,14 +134,14 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         elevation: 0,
         backgroundColor: const Color(0xFF142FE2),
         foregroundColor: Colors.white,
-        actions: [
-          // Bouton + pour ajouter un nouveau projet
-          IconButton(
-            onPressed: _navigateToAddProject,
-            icon: const Icon(Icons.add),
-            tooltip: l10n.addProjectTooltip,
-          ),
-        ],
+        // actions: [
+        //   // Bouton + pour ajouter un nouveau projet
+        //   IconButton(
+        //     onPressed: _navigateToAddProject,
+        //     icon: const Icon(Icons.add),
+        //     tooltip: l10n.addProjectTooltip,
+        //   ),
+        // ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -502,10 +503,9 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
+          ProtectedActionButton(
+            actionDescription: l10n.addProjectTooltip, // ou "créer un projet"
             onPressed: _navigateToAddProject,
-            icon: const Icon(Icons.add),
-            label: Text(l10n.createProject),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
@@ -514,7 +514,28 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add),
+                const SizedBox(width: 8),
+                Text(l10n.createProject),
+              ],
+            ),
+          )
+          // ElevatedButton.icon(
+          //   onPressed: _navigateToAddProject,
+          //   icon: const Icon(Icons.add),
+          //   label: Text(l10n.createProject),
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: const Color(0xFF142FE2),
+          //     foregroundColor: Colors.white,
+          //     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(8),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

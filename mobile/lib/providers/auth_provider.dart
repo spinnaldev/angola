@@ -83,6 +83,11 @@ class AuthProvider with ChangeNotifier {
     ProfileManager.setAuthProvider(this);
   }
 
+  // // ✅ NOUVELLE MÉTHODE 1: Invalider le cache
+  // void invalidateCache() {
+  //   print('🗑️ AuthProvider: Cache invalidé');
+  //   // Si vous avez d'autres variables de cache, les réinitialiser ici
+  // }
 
   // Initialiser les providers de vérification
   void _initializeVerificationProviders() {
@@ -98,6 +103,8 @@ class AuthProvider with ChangeNotifier {
     }
   }
   
+  
+
   // Charger les statuts de vérification après connexion
   Future<void> _loadVerificationStatuses() async {
     if (_currentUser == null) return;
@@ -758,27 +765,27 @@ class AuthProvider with ChangeNotifier {
     return _verificationGuardProvider!.checkAccess(context ,_currentUser, actionDescription);
   }
  
-  Future<void> refreshUserProfile() async {
-    if (_currentUser == null) return;
+  // Future<void> refreshUserProfile() async {
+  //   if (_currentUser == null) return;
     
-    try {
-      print('🔄 Rechargement du profil utilisateur...');
+  //   try {
+  //     print('🔄 Rechargement du profil utilisateur...');
       
-      final userData = await _authService.getCurrentUser();
-      if (userData != null) {
-        _currentUser = userData;
-        print('✅ Profil utilisateur rechargé avec succès');
+  //     final userData = await _authService.getCurrentUser();
+  //     if (userData != null) {
+  //       _currentUser = userData;
+  //       print('✅ Profil utilisateur rechargé avec succès');
         
-        // Recharger aussi les statuts de vérification
-        await _loadVerificationStatuses();
+  //       // Recharger aussi les statuts de vérification
+  //       await _loadVerificationStatuses();
         
-        notifyListeners();
-      }
-    } catch (e) {
-      print('❌ Erreur lors du rechargement du profil: $e');
-      // Ne pas rethrow l'erreur pour éviter de casser l'UI
-    }
-  }
+  //       notifyListeners();
+  //     }
+  //   } catch (e) {
+  //     print('❌ Erreur lors du rechargement du profil: $e');
+  //     // Ne pas rethrow l'erreur pour éviter de casser l'UI
+  //   }
+  // }
 
 
   // ✅ AMÉLIORATION : Méthode pour vérifier si l'utilisateur est vérifié
@@ -793,4 +800,110 @@ class AuthProvider with ChangeNotifier {
     return _currentUser!.verificationInfo.status;
   }
   
+
+  // ✅ NOUVELLE MÉTHODE : Force refresh complet
+  Future<void> forceCompleteRefresh() async {
+    try {
+      
+
+      print('🔄 Début force refresh complet...');
+
+      // 1. Invalider le cache local
+      invalidateCache();
+
+      // 2. Appeler la nouvelle endpoint de force refresh
+      final refreshedUser = await _authService.forceRefreshUserProfile();
+      
+      if (refreshedUser != null) {
+        _currentUser = refreshedUser;
+        print('✅ Utilisateur mis à jour via force refresh');
+        
+        // 3. Recharger les statuts de vérification
+        await _loadVerificationStatuses();
+        
+        // 4. Notifier tous les listeners
+        notifyListeners();
+        
+        print('✅ Force refresh complet terminé avec succès');
+      } else {
+        throw Exception('Aucune donnée utilisateur retournée');
+      }
+
+    } catch (e) {
+      print('❌ Erreur force refresh complet: $e');
+      
+      // Fallback: essayer la méthode traditionnelle
+      try {
+        await refreshUserProfile();
+      } catch (fallbackError) {
+        print('❌ Erreur fallback: $fallbackError');
+      }
+    } finally {
+      // setState(() {
+      //   isLoading = false;
+      // });
+    }
+  }
+
+  // ✅ MÉTHODE AMÉLIORÉE : Refresh traditionnel
+  Future<void> refreshUserProfile() async {
+    if (_currentUser == null) return;
+    
+    try {
+      print('🔄 Refresh traditionnel du profil...');
+      
+      // Essayer d'abord la nouvelle endpoint détaillée
+      final userData = await _authService.getCurrentUserDetailed();
+      
+      if (userData != null) {
+        _currentUser = userData;
+        print('✅ Profil rechargé via endpoint détaillée');
+      } else {
+        // Fallback vers l'ancienne méthode
+        final fallbackData = await _authService.getCurrentUser();
+        if (fallbackData != null) {
+          _currentUser = fallbackData;
+          print('✅ Profil rechargé via fallback');
+        }
+      }
+      
+      // Recharger aussi les statuts de vérification
+      await _loadVerificationStatuses();
+      
+      notifyListeners();
+    } catch (e) {
+      print('❌ Erreur refresh profil: $e');
+      // Ne pas rethrow pour éviter de casser l'UI
+    }
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Vérifier si refresh nécessaire
+  bool shouldRefresh() {
+    if (_currentUser == null) return true;
+    
+    // Vérifier si les données semblent obsolètes
+    final lastUpdate = _lastRefreshTime;
+    if (lastUpdate == null) return true;
+    
+    final timeSinceUpdate = DateTime.now().difference(lastUpdate);
+    return timeSinceUpdate.inMinutes > 2; // Refresh si plus de 2 minutes
+  }
+
+  DateTime? _lastRefreshTime;
+  
+  // ✅ NOUVELLE MÉTHODE : Invalider le cache
+  void invalidateCache() {
+    _lastRefreshTime = null;
+    print('🧹 Cache local invalidé');
+  }
+
+  // ✅ MÉTHODE AMÉLIORÉE : Update current user
+  void updateCurrentUser(User newUser) {
+    _currentUser = newUser;
+    _lastRefreshTime = DateTime.now();
+    notifyListeners();
+    print('✅ Utilisateur mis à jour et cache rafraîchi');
+  }
+
+
 }

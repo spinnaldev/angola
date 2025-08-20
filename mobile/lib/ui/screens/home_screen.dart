@@ -26,7 +26,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/review_provider.dart';
 import 'search_results_screen.dart';
-import '../widgets/service_image.dart'; 
+import '../widgets/service_image.dart';
 import '../../providers/notification_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/services/improved_location_service.dart';
@@ -47,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen>
   List<Service> _nearbyServices = [];
   List<Service> _topRatedServices = [];
   List<Service> _featuredServices = [];
+  List<Review> _topReviews = [];
+
   bool _hasFetchedReviews = false;
 
   // Variables pour les projets (mode prestataire)
@@ -65,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isLocationLoading = false;
   String? _currentLocationName;
   bool _locationPermissionDenied = false;
-
+  bool? _previousAuthState;
   // Add the missing random instance
   final math.Random random = math.Random();
 
@@ -88,13 +90,46 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentAuthState = authProvider.isAuthenticated;
+    
+    if (_previousAuthState != null && _previousAuthState != currentAuthState) {
+      print("🔓 Changement d'état d'authentification détecté");
+      
+      if (!currentAuthState) {
+        print("🔔 Utilisateur déconnecté - Effacement des notifications");
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        notificationProvider.clearNotifications();
+      } else {
+        print("🔔 Utilisateur connecté - Chargement des notifications");
+        _loadNotificationsIfAuthenticated();
+      }
+    }
+    
+    _previousAuthState = currentAuthState;
+    
     if (!_hasFetchedReviews) {
-      final reviewProvider =
-          Provider.of<ReviewProvider>(context, listen: false);
+      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
       reviewProvider.fetchTopReviews();
       _hasFetchedReviews = true;
     }
   }
+
+  // Ajouter cette nouvelle méthode :
+  void _loadNotificationsIfAuthenticated() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+    
+    if (authProvider.isAuthenticated) {
+      print("🔔 Utilisateur connecté - Chargement des notifications");
+      notificationProvider.loadUnreadCount();
+    } else {
+      print("🔔 Utilisateur non connecté - Effacement des notifications");
+      notificationProvider.clearNotifications();
+    }
+  }
+  
 
   @override
   void initState() {
@@ -108,8 +143,9 @@ class _HomeScreenState extends State<HomeScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
-        notificationProvider.loadUnreadCount();
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        _previousAuthState = authProvider.isAuthenticated;
+        _loadNotificationsIfAuthenticated();
       }
     });
   }
@@ -164,6 +200,10 @@ class _HomeScreenState extends State<HomeScreen>
         await _loadServicesData();
       }
 
+      final reviewProvider =
+          Provider.of<ReviewProvider>(context, listen: false);
+      _topReviews = reviewProvider.topReviews;
+
       setState(() {
         _isLoading = false;
       });
@@ -176,23 +216,27 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _convertProvidersToServices(List<ProviderModel> providers) {
-      _nearbyServices = providers.take(6).map((provider) {
-        return Service(
-          id: 200 + provider.id,
-          title: provider.services.isNotEmpty ? provider.services.first.title : provider.name,
-          description: provider.description,
-          imageUrl: provider.profileImageUrl.isNotEmpty ? provider.profileImageUrl : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-          rating: provider.rating,
-          reviewCount: provider.reviewCount,
-          provider_id: provider.id,
-          businessType: provider.businessType,
-          price: 50.0 + Random().nextInt(150).toDouble(),
-          categoryId: 1 + Random().nextInt(5),
-          priceType: Random().nextBool() ? 'quote' : 'fixed',
-          distance: provider.distance,
-        );
-      }).toList();
-    }
+    _nearbyServices = providers.take(6).map((provider) {
+      return Service(
+        id: 200 + provider.id,
+        title: provider.services.isNotEmpty
+            ? provider.services.first.title
+            : provider.name,
+        description: provider.description,
+        imageUrl: provider.profileImageUrl.isNotEmpty
+            ? provider.profileImageUrl
+            : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+        rating: provider.rating,
+        reviewCount: provider.reviewCount,
+        provider_id: provider.id,
+        businessType: provider.businessType,
+        price: 50.0 + Random().nextInt(150).toDouble(),
+        categoryId: 1 + Random().nextInt(5),
+        priceType: Random().nextBool() ? 'quote' : 'fixed',
+        distance: provider.distance,
+      );
+    }).toList();
+  }
 
   // MÉTHODE AMÉLIORÉE _loadServicesData avec gestion de la localisation
   Future<void> _loadServicesData() async {
@@ -207,8 +251,10 @@ class _HomeScreenState extends State<HomeScreen>
       _isLocationLoading = true;
     });
 
-    final locationService = Provider.of<ImprovedLocationService>(context, listen: false);
-    final nearbyProvider = Provider.of<ImprovedNearbyProvider>(context, listen: false);
+    final locationService =
+        Provider.of<ImprovedLocationService>(context, listen: false);
+    final nearbyProvider =
+        Provider.of<ImprovedNearbyProvider>(context, listen: false);
 
     try {
       bool locationSuccess = await locationService.getCurrentLocation();
@@ -217,8 +263,9 @@ class _HomeScreenState extends State<HomeScreen>
           _locationPermissionDenied = false;
           _isLocationLoading = false;
         });
-        
-        await nearbyProvider.searchNearbyProviders(radius: 10.0, forceRefresh: true);
+
+        await nearbyProvider.searchNearbyProviders(
+            radius: 10.0, forceRefresh: true);
         _convertProvidersToServices(nearbyProvider.nearbyProviders);
         await _getCurrentLocationName(locationService.currentPosition!);
       } else {
@@ -237,7 +284,6 @@ class _HomeScreenState extends State<HomeScreen>
       await _loadServicesWithoutLocation();
     }
 
-    
     // final locationProvider =
     //     Provider.of<LocationProvider>(context, listen: false);
 
@@ -273,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen>
     //       _locationPermissionDenied = false;
     //       _isLocationLoading = false;
     //     });
-        
+
     //     // Récupérer le nom de la ville (optionnel)
     //     await _getCurrentLocationName(locationProvider.currentPosition!);
 
@@ -335,7 +381,8 @@ class _HomeScreenState extends State<HomeScreen>
 
       // Générer les services à proximité
       if (providerListProvider.providers.isNotEmpty) {
-        _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+        _nearbyServices =
+            providerListProvider.providers.take(6).map((provider) {
           return Service(
             id: 200 + provider.id,
             title: provider.services.isNotEmpty
@@ -373,7 +420,8 @@ class _HomeScreenState extends State<HomeScreen>
 
       // Générer quelques services par défaut
       if (providerListProvider.providers.isNotEmpty) {
-        _nearbyServices = providerListProvider.providers.take(6).map((provider) {
+        _nearbyServices =
+            providerListProvider.providers.take(6).map((provider) {
           return Service(
             id: 200 + provider.id,
             title: provider.services.isNotEmpty
@@ -414,13 +462,15 @@ class _HomeScreenState extends State<HomeScreen>
         _isLocationLoading = true;
       });
 
-      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-      
+      final locationProvider =
+          Provider.of<LocationProvider>(context, listen: false);
+
       try {
         // Récupérer la position pour les projets à proximité
         bool servicesEnabled = await locationProvider.checkLocationServices();
         if (servicesEnabled) {
-          bool permissionGranted = await locationProvider.requestLocationPermission();
+          bool permissionGranted =
+              await locationProvider.requestLocationPermission();
           if (permissionGranted) {
             bool locationSuccess = await locationProvider.getCurrentLocation();
             if (locationSuccess && locationProvider.currentPosition != null) {
@@ -491,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen>
   List<ClientProject> _generateNearbyProjectsMock(Position position) {
     final List<String> nearbyAreas = [
       'Cotonou Centre',
-      'Calavi', 
+      'Calavi',
       'Akpakpa',
       'Godomey',
       'Fidjrossè',
@@ -504,14 +554,19 @@ class _HomeScreenState extends State<HomeScreen>
         return ClientProject(
           id: 300 + index,
           title: 'Projet ${_getLocalProjectType(index)} à proximité',
-          description: 'Projet local nécessitant une intervention rapide dans votre zone.',
+          description:
+              'Projet local nécessitant une intervention rapide dans votre zone.',
           clientName: 'Client ${nearbyAreas[index % nearbyAreas.length]}',
           categoryName: _getProjectCategory(index),
           budgetRange: _getBudgetRange(index),
-          budgetDisplay: '${_getBudgetMin(index)} - ${_getBudgetMax(index)} AOA',
+          budgetDisplay:
+              '${_getBudgetMin(index)} - ${_getBudgetMax(index)} AOA',
           location: nearbyAreas[index % nearbyAreas.length],
           remotePossible: random.nextBool(),
-          urgency: ['high', 'very_high'][random.nextInt(2)], // Projets urgents à proximité
+          urgency: [
+            'high',
+            'very_high'
+          ][random.nextInt(2)], // Projets urgents à proximité
           status: 'open',
           contactViaPlatform: true,
           showEmail: false,
@@ -519,7 +574,8 @@ class _HomeScreenState extends State<HomeScreen>
           requiredSkills: _getRequiredSkills(index),
           offersCount: random.nextInt(5), // Moins d'offres car nouveau
           viewsCount: 10 + random.nextInt(50),
-          createdAt: DateTime.now().subtract(Duration(hours: random.nextInt(24))),
+          createdAt:
+              DateTime.now().subtract(Duration(hours: random.nextInt(24))),
         );
       },
     );
@@ -529,7 +585,7 @@ class _HomeScreenState extends State<HomeScreen>
   String _getLocalProjectType(int index) {
     final types = [
       'réparation urgente',
-      'dépannage électrique', 
+      'dépannage électrique',
       'plomberie d\'urgence',
       'livraison express',
       'nettoyage après sinistre',
@@ -663,13 +719,13 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             IconButton(
               icon: Icon(
-                _locationPermissionDenied 
+                _locationPermissionDenied
                     ? Icons.location_disabled
                     : locationProvider.currentPosition != null
                         ? Icons.location_on
                         : Icons.location_searching,
-                color: _locationPermissionDenied 
-                    ? Colors.red 
+                color: _locationPermissionDenied
+                    ? Colors.red
                     : locationProvider.currentPosition != null
                         ? Colors.green
                         : Colors.grey,
@@ -709,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen>
   // NOUVELLES MÉTHODES HELPER pour la localisation
   String _getLocationTooltip(LocationProvider locationProvider) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_locationPermissionDenied) {
       return l10n.locationPermissionDenied;
     } else if (locationProvider.currentPosition != null) {
@@ -721,7 +777,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showLocationPermissionDialog() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -749,23 +805,23 @@ class _HomeScreenState extends State<HomeScreen>
   // NOUVEAU WIDGET pour afficher le statut de localisation
   Widget _buildLocationStatus() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Consumer2<LocationProvider, AuthProvider>(
       builder: (context, locationProvider, authProvider, child) {
         // ✅ NOUVEAU : Déterminer le type d'utilisateur connecté
         final user = authProvider.currentUser;
         final isProvider = user?.role == 'provider';
-        
+
         // ✅ NOUVEAU : Définir le type d'entités à afficher selon le rôle
         String nearbyType;
         String enableLocationMessage;
-        
+
         if (isProvider) {
           // Si je suis prestataire, je veux voir les clients à proximité
           nearbyType = l10n.clientsNearby;
           enableLocationMessage = l10n.enableLocationForClients;
         } else {
-          // Si je suis client, je veux voir les prestataires à proximité  
+          // Si je suis client, je veux voir les prestataires à proximité
           nearbyType = l10n.providersNearby;
           enableLocationMessage = l10n.enableLocationForProviders;
         }
@@ -817,12 +873,13 @@ class _HomeScreenState extends State<HomeScreen>
         } else if (locationProvider.currentPosition != null) {
           // ✅ NOUVEAU : Ne montrer que si on a de vraies données
           final nearbyCount = _getNearbyCount(isProvider);
-          
+
           // ✅ NOUVEAU : N'afficher que s'il y a vraiment des données
           if (nearbyCount == 0) {
-            return const SizedBox.shrink(); // Ne rien afficher si pas de données
+            return const SizedBox
+                .shrink(); // Ne rien afficher si pas de données
           }
-          
+
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             padding: const EdgeInsets.all(12),
@@ -837,7 +894,8 @@ class _HomeScreenState extends State<HomeScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _currentLocationName ?? l10n.locationActivated, // ✅ TRADUCTION
+                    _currentLocationName ??
+                        l10n.locationActivated, // ✅ TRADUCTION
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Colors.green[800],
@@ -861,14 +919,16 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   int _getNearbyCount(bool isProvider) {
-  if (isProvider) {
-    // Si je suis prestataire, compter les clients/projets à proximité
-    return _nearbyProjects.length; // ou _nearbyClients.length si vous avez cette liste
-  } else {
-    // Si je suis client, compter les prestataires à proximité  
-    return _nearbyServices.length;
+    if (isProvider) {
+      // Si je suis prestataire, compter les clients/projets à proximité
+      return _nearbyProjects
+          .length; // ou _nearbyClients.length si vous avez cette liste
+    } else {
+      // Si je suis client, compter les prestataires à proximité
+      return _nearbyServices.length;
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -977,7 +1037,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ? [
                       _buildProviderHomeTab(),
                       _buildRecentProjectsTab(),
-                      _buildNearbyProjectsTab(), // AMÉLIORÉ
+                      _buildNearbyProjectsTab(),
                     ]
                   : [
                       _buildClientHomeTab(),
@@ -1002,7 +1062,7 @@ class _HomeScreenState extends State<HomeScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          
+
           // Header avec statut de localisation - AMÉLIORÉ
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1064,7 +1124,7 @@ class _HomeScreenState extends State<HomeScreen>
                         : Icon(Icons.refresh, color: Colors.grey[600]),
                     tooltip: 'Actualiser',
                   ),
-                  
+
                   // Bouton carte
                   ElevatedButton.icon(
                     onPressed: () {
@@ -1077,7 +1137,8 @@ class _HomeScreenState extends State<HomeScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF142FE2),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -1087,9 +1148,9 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Projets à proximité avec badges - AMÉLIORÉ
           _buildVerticalProjectsList(
             _nearbyProjects,
@@ -1104,8 +1165,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildNotificationIcon(BuildContext context) {
-    return Consumer<NotificationProvider>(
-      builder: (context, notificationProvider, child) {
+    return Consumer2<NotificationProvider, AuthProvider>(
+      builder: (context, notificationProvider, authProvider, child) {
+        // 🔒 VÉRIFICATION D'AUTHENTIFICATION
+        if (!authProvider.isAuthenticated) {
+          return const SizedBox.shrink();
+        }
+        
         final unreadCount = notificationProvider.unreadCount;
         
         return Stack(
@@ -1113,7 +1179,6 @@ class _HomeScreenState extends State<HomeScreen>
             IconButton(
               icon: const Icon(Icons.notifications_none),
               onPressed: () {
-                // Naviguer vers l'écran des notifications
                 Navigator.pushNamed(context, '/notifications');
               },
             ),
@@ -1519,8 +1584,8 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.revenueThisMonth,
-                  '${(_providerStats['total_earnings_this_month'] ?? 0.0).toStringAsFixed(0)}K',
+                  l10n.offreEnCours,
+                  _providerStats['pending_offers']?.toString() ?? '0',
                   Icons.account_balance_wallet,
                   Colors.green,
                 ),
@@ -1689,10 +1754,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   // NOUVELLE MÉTHODE pour calculer la distance approximative
   String? _calculateDistance(ClientProject project) {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-    
-    if (locationProvider.currentPosition == null || 
-        project.latitude == null || 
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+
+    if (locationProvider.currentPosition == null ||
+        project.latitude == null ||
         project.longitude == null) {
       return null;
     }
@@ -1704,7 +1770,7 @@ class _HomeScreenState extends State<HomeScreen>
         project.latitude!,
         project.longitude!,
       );
-      
+
       if (distance < 1000) {
         return '${distance.round()}m';
       } else {
@@ -1773,8 +1839,10 @@ class _HomeScreenState extends State<HomeScreen>
                           builder: (context) => ServiceListScreen(
                             categoryId: category.id,
                             categoryName: category.getLocalizedName(
-                              Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
-                            ),
+                                Provider.of<LanguageProvider>(context,
+                                        listen: false)
+                                    .currentLocale
+                                    .languageCode),
                           ),
                         ),
                       );
@@ -1799,8 +1867,10 @@ class _HomeScreenState extends State<HomeScreen>
                           width: 80,
                           child: Text(
                             category.getLocalizedName(
-                              Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
-                            ),
+                                Provider.of<LanguageProvider>(context,
+                                        listen: false)
+                                    .currentLocale
+                                    .languageCode),
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -2357,7 +2427,8 @@ class _HomeScreenState extends State<HomeScreen>
       );
     }
 
-    final displayProjects = projects.length > limit ? projects.sublist(0, limit) : projects;
+    final displayProjects =
+        projects.length > limit ? projects.sublist(0, limit) : projects;
 
     return ListView.builder(
       shrinkWrap: true,
@@ -2372,7 +2443,8 @@ class _HomeScreenState extends State<HomeScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProjectDetailScreen(projectId: project.id),
+                  builder: (context) =>
+                      ProjectDetailScreen(projectId: project.id),
                 ),
               );
             },
@@ -2432,9 +2504,11 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   ),
                                   // Badge d'urgence - NOUVEAU
-                                  if (showUrgencyBadge && project.urgency == 'very_high')
+                                  if (showUrgencyBadge &&
+                                      project.urgency == 'very_high')
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: Colors.red,
                                         borderRadius: BorderRadius.circular(10),
@@ -2462,14 +2536,17 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: project.status == 'open'
                                 ? Colors.green.withOpacity(0.1)
                                 : Colors.grey.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: project.status == 'open' ? Colors.green : Colors.grey,
+                              color: project.status == 'open'
+                                  ? Colors.green
+                                  : Colors.grey,
                             ),
                           ),
                           child: Text(
@@ -2479,7 +2556,9 @@ class _HomeScreenState extends State<HomeScreen>
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: project.status == 'open' ? Colors.green : Colors.grey,
+                              color: project.status == 'open'
+                                  ? Colors.green
+                                  : Colors.grey,
                             ),
                           ),
                         ),
@@ -2498,7 +2577,8 @@ class _HomeScreenState extends State<HomeScreen>
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.location_on,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -2513,7 +2593,8 @@ class _HomeScreenState extends State<HomeScreen>
                         if (showDistanceBadge)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
@@ -2521,7 +2602,8 @@ class _HomeScreenState extends State<HomeScreen>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.near_me, size: 12, color: Colors.blue),
+                                Icon(Icons.near_me,
+                                    size: 12, color: Colors.blue),
                                 const SizedBox(width: 4),
                                 Text(
                                   _calculateDistance(project) ?? 'Proche',
@@ -2536,7 +2618,8 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF142FE2).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -2566,7 +2649,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildReviewsSection() {
     return Consumer<ReviewProvider>(
       builder: (context, reviewProvider, child) {
-        final reviews = reviewProvider.topReviews;
+        final reviews = _topReviews;
 
         if (reviewProvider.isLoading) {
           return const SizedBox(
@@ -2591,7 +2674,7 @@ class _HomeScreenState extends State<HomeScreen>
             itemCount: reviews.length,
             itemBuilder: (context, index) {
               final review = reviews[index];
-              
+
               return GestureDetector(
                 onTap: () {
                   if (review.serviceId != null && review.providerId != null) {
@@ -2607,7 +2690,8 @@ class _HomeScreenState extends State<HomeScreen>
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(AppLocalizations.of(context)!.serviceNotAvailable),
+                        content: Text(
+                            AppLocalizations.of(context)!.serviceNotAvailable),
                         duration: const Duration(seconds: 2),
                       ),
                     );
@@ -2615,7 +2699,8 @@ class _HomeScreenState extends State<HomeScreen>
                 },
                 child: Container(
                   width: 320,
-                  margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -2637,7 +2722,8 @@ class _HomeScreenState extends State<HomeScreen>
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+                              backgroundColor:
+                                  const Color(0xFF142FE2).withOpacity(0.1),
                               child: Text(
                                 review.clientName.isNotEmpty
                                     ? review.clientName[0].toUpperCase()
@@ -2655,8 +2741,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    review.clientName.isNotEmpty 
-                                        ? review.clientName 
+                                    review.clientName.isNotEmpty
+                                        ? review.clientName
                                         : 'Utilisateur anonyme',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
@@ -2680,7 +2766,8 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -2711,11 +2798,10 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ],
                         ),
-                        
                         const SizedBox(height: 12),
-                        
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFF142FE2).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -2744,12 +2830,10 @@ class _HomeScreenState extends State<HomeScreen>
                             ],
                           ),
                         ),
-                        
                         const SizedBox(height: 12),
-                        
                         Expanded(
                           child: Text(
-                            review.comment.isNotEmpty 
+                            review.comment.isNotEmpty
                                 ? review.comment
                                 : 'Excellent service, je recommande vivement !',
                             maxLines: 4,
@@ -2761,9 +2845,7 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
-                        
                         const SizedBox(height: 8),
-                        
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -2901,21 +2983,22 @@ class _HomeScreenState extends State<HomeScreen>
   // Méthode pour obtenir le nom de l'entreprise du CLIENT (celui qui écrit l'avis)
   String _getClientCompanyName(Review review) {
     final l10n = AppLocalizations.of(context)!;
-    
-    if (review.clientCompanyName != null && review.clientCompanyName!.isNotEmpty) {
+
+    if (review.clientCompanyName != null &&
+        review.clientCompanyName!.isNotEmpty) {
       return review.clientCompanyName!;
     }
-    
+
     return l10n.genericClientType;
   }
-  
+
   String _getReviewTitle(Review review) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (review.reviewTitle != null && review.reviewTitle!.isNotEmpty) {
       return review.reviewTitle!;
     }
-    
+
     return l10n.genericReviewTitle;
   }
 
@@ -2923,7 +3006,7 @@ class _HomeScreenState extends State<HomeScreen>
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(review.createdAt);
-    
+
     if (difference.inDays > 30) {
       final months = (difference.inDays / 30).floor();
       return l10n.monthsAgo(months);
@@ -2935,5 +3018,4 @@ class _HomeScreenState extends State<HomeScreen>
       return l10n.recently;
     }
   }
-
 }
