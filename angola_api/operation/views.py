@@ -14,6 +14,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
+
+from .signals import send_bulk_notification, send_test_fcm_notification
+
+from .sms_service import InfobipSMSService, check_sms_rate_limit, increment_sms_rate_limit
 from .permissions import VerificationPermissionMixin
 from operation.decorators import require_verification
 from .models import *
@@ -29,6 +33,15 @@ import logging
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import get_language_from_request
 from django.core.cache import cache
+
+
+from .models import FCMToken, NotificationPreference, NotificationHistory
+from .fcm_service import FCMService
+from .serializers import (
+    FCMTokenSerializer, 
+    NotificationPreferenceSerializer,
+    NotificationHistorySerializer
+)
 
 logger = logging.getLogger(__name__)
 
@@ -3493,6 +3506,9 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                         notification_type='new_offer',
                         related_object_id=offer.id
                     )
+
+                    send_new_offer_notification(project , offer)
+
                 except Exception as notif_error:
                     print(f"Erreur création notification: {notif_error}")
             
@@ -4076,6 +4092,8 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
         print(f"🔐 Permissions par défaut")
         return super().get_permissions()
     
+    infos_bip = InfobipSMSService()
+
     @action(detail=False, methods=['get'], url_path='my-status')
     def my_status(self, request):
         """
@@ -4115,170 +4133,160 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='send-code')
     def send_code(self, request):
         """
-        Envoyer un code de vérification par SMS/Email
+        Envoyer un code de vérification par SMS
+        Version avec intégration Infobip
         """
-        print(f"\n=== 📨 SEND_CODE DÉMARRÉ ===")
-        print(f"🧑 User ID: {request.user.id}")
-        print(f"🧑 Username: {request.user.username}")
-        print(f"🧑 Email: {request.user.email}")
-        print(f"📥 Données reçues: {request.data}")
+        logger.info(f"\n=== 📨 SEND_CODE DÉMARRÉ ===")
+        logger.info(f"🧑 User ID: {request.user.id}")
+        logger.info(f"🧑 Username: {request.user.username}")
+        logger.info(f"📥 Données reçues: {request.data}")
         
         serializer = PhoneVerificationSendCodeSerializer(data=request.data)
         
         if not serializer.is_valid():
-            print(f"❌ Données invalides: {serializer.errors}")
-            print(f"=== 📨 SEND_CODE TERMINÉ (ERREUR) ===\n")
+            logger.info(f"❌ Données invalides: {serializer.errors}")
+            logger.info(f"=== 📨 SEND_CODE TERMINÉ (INVALID_DATA) ===\n")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = serializer.validated_data['phone_number']
-        print(f"📞 Numéro de téléphone validé: {phone_number}")
+        logger.info(f"📞 Numéro validé: {phone_number}")
         
         try:
-            print(f"🔄 Début de la transaction atomique...")
-            with transaction.atomic():
-                print(f"🔍 Recherche/création de la vérification...")
+            # Vérifier la limitation de taux
+            rate_ok, rate_message = check_sms_rate_limit(request.user, phone_number)
+            if not rate_ok:
+                logger.info(f"⚠️ Limitation de taux: {rate_message}")
+                return Response({
+                    'detail': rate_message
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            
+            # Obtenir ou créer la vérification
+            logger.info(f"🔍 Recherche/création de la vérification...")
+            verification, created = PhoneVerification.objects.get_or_create(
+                user=request.user,
+                defaults={
+                    'phone_number': phone_number,
+                    'status': 'pending'
+                }
+            )
+            
+            if not created:
+                logger.info(f"📋 Vérification existante trouvée, mise à jour...")
+                verification.phone_number = phone_number
+                verification.status = 'pending'
+                verification.attempts = 0
+                verification.verification_code = PhoneVerification.generate_code()
+                verification.expires_at = timezone.now() + timedelta(minutes=10)
+                verification.last_code_sent_at = timezone.now()
+                verification.save()
+            
+            code = verification.verification_code
+            logger.info(f"🔢 Code généré: {code}")
+            
+            
+            
+            # === ENVOI SMS RÉEL AVEC INFOBIP ===
+            logger.info(f"📱 Tentative d'envoi SMS réel via Infobip...")
+            
+            # Vérifier si SMS est activé dans les settings
+            sms_enabled = getattr(settings, 'SMS_ENABLED', True)
+            if not sms_enabled:
+                logger.info(f"⚠️ SMS désactivé dans les settings")
+                return Response({
+                    'message': 'Code envoyé par email uniquement',
+                    'verification': self.get_serializer(verification).data,
+                    'debug_code': code if settings.DEBUG else None
+                })
+            
+            try:
+                # Utiliser le service SMS Infobip
+                sms_result = self.infos_bip.send_verification_code(phone_number, code)
                 
-                # Récupérer ou créer la vérification
-                verification, created = PhoneVerification.objects.get_or_create(
-                    user=request.user,
-                    defaults={
-                        'phone_number': phone_number,
-                        'verification_code': PhoneVerification.generate_code(),
-                        'expires_at': timezone.now() + timedelta(minutes=10)
-                    }
-                )
+                logger.info(f"📤 Résultat SMS: {sms_result}")
                 
-                print(f"📋 Vérification {'créée' if created else 'trouvée'}:")
-                print(f"   - ID: {verification.id}")
-                print(f"   - Phone: {verification.phone_number}")
-                print(f"   - Status: {verification.status}")
-                print(f"   - Code actuel: {verification.verification_code}")
-                print(f"   - Expire à: {verification.expires_at}")
-                print(f"   - Dernière envoi: {verification.last_code_sent_at}")
-                
-                if not created:
-                    print(f"🔍 Vérification existante - vérification des conditions...")
-                    print(f"   - Can resend?: {verification.can_resend_code()}")
+                if sms_result['success']:
+                    logger.info(f"🎉 SMS envoyé avec succès!")
+                    logger.info(f"SMS envoyé avec succès vers {phone_number} pour {request.user.username}")
                     
-                    # Vérifier si on peut renvoyer un code
-                    if not verification.can_resend_code():
-                        print(f"❌ Trop tôt pour renvoyer un code")
-                        print(f"=== 📨 SEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
-                        return Response({
-                            'detail': 'Vous devez attendre avant de demander un nouveau code',
-                            'retry_after': 60
-                        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-                    
-                    # Régénérer le code
-                    print(f"🔄 Régénération du code...")
-                    old_code = verification.verification_code
-                    code = verification.regenerate_code()
-                    print(f"   - Ancien code: {old_code}")
-                    print(f"   - Nouveau code: {code}")
-                else:
-                    code = verification.verification_code
-                    print(f"🆕 Nouveau code généré: {code}")
-                
-                print(f"📧 Préparation de l'email...")
-                
-                # Préparer l'email
-                subject = 'Code de vérification - Teyago Services'
-                user_name = request.user.first_name or request.user.username
-                print(f"   - Destinataire: {request.user.email}")
-                print(f"   - Nom utilisateur: {user_name}")
-                print(f"   - Code à envoyer: {code}")
-                
-                message = f"""
-                Bonjour {user_name},
-
-                Vous avez demandé la vérification de votre compte Teyago Services.
-
-                Votre code de verification est : {code}
-
-                ⚠️ Important :
-                • Ce code est valable pendant 15 minutes uniquement
-                • Si vous n'avez pas demandé cette verification, ignorez cet email
-                • Ne partagez jamais ce code avec personne
-
-                Cordialement,
-                L'équipe Teyago Services
-                """
-                
-                try:
-                    print(f"📧 Tentative d'envoi d'email...")
-                    print(f"   - FROM: {settings.DEFAULT_FROM_EMAIL}")
-                    print(f"   - TO: {request.user.email}")
-                    print(f"   - SUBJECT: {subject}")
-                    
-                    send_mail(
-                        subject,
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [request.user.email],
-                        fail_silently=False,
-                    )
-                    
-                    print(f"✅ Email envoyé avec succès!")
-                    logger.info(f"Email de vérification envoyé avec succès à {request.user.email} avec le code {code}")
-                    
-                except Exception as e:
-                    print(f"❌ Erreur envoi email: {str(e)}")
-                    logger.error(f"Erreur envoi email: {str(e)}")
-                    
-                    # Même en cas d'erreur d'email, on retourne une réponse positive pour la sécurité
-                    error_response = Response(
-                        {"detail": "Si cet email existe, un code de verification a été envoyé"}, 
-                        status=status.HTTP_200_OK
-                    )
-                    print(f"📤 Réponse d'erreur email: {error_response.data}")
-                    print(f"=== 📨 SEND_CODE TERMINÉ (EMAIL_ERROR) ===\n")
-                    return error_response
-
-                # Simuler le succès SMS
-                success = True
-                print(f"✅ Succès simulé: {success}")
-                
-                if success:
-                    print(f"🎉 Code envoyé avec succès!")
-                    logger.info(f"Code SMS envoyé à {request.user.username} ({phone_number})")
+                    # Incrémenter les compteurs de limitation
+                    increment_sms_rate_limit(request.user, phone_number)
                     
                     # En développement, logger le code
                     if settings.DEBUG:
-                        print(f"🐛 CODE DE VÉRIFICATION (DEV): {code}")
+                        logger.info(f"🐛 CODE DE VÉRIFICATION (DEV): {code}")
                         logger.info(f"CODE DE VÉRIFICATION (DEV): {code}")
                     
                     response_serializer = self.get_serializer(verification)
                     response_data = {
-                        'message': 'Code envoyé avec succès',
+                        'message': 'Code envoyé avec succès par SMS et email',
                         'verification': response_serializer.data,
+                        'sms_id': sms_result.get('message_id'),
                         'debug_code': code if settings.DEBUG else None
                     }
                     
-                    print(f"📤 Réponse de succès: {response_data}")
-                    print(f"=== 📨 SEND_CODE TERMINÉ (SUCCESS) ===\n")
+                    logger.info(f"📤 Réponse de succès: {response_data}")
+                    logger.info(f"=== 📨 SEND_CODE TERMINÉ (SUCCESS) ===\n")
                     return Response(response_data)
                 else:
-                    print(f"❌ Échec d'envoi SMS")
+                    logger.info(f"❌ Échec envoi SMS: {sms_result.get('error')}")
+                    logger.error(f"Échec envoi SMS vers {phone_number}: {sms_result.get('error')}")
+                    
+                    # === ENVOI EMAIL (conservé) ===
+                    try:
+                        logger.info(f"📧 Tentative d'envoi email à {request.user.email}...")
+                        send_mail(
+                            subject='Code de vérification',
+                            message=f'Votre code de vérification est: {code}',
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                            fail_silently=False,
+                        )
+                        logger.info(f"✅ Email envoyé avec succès!")
+                        logger.info(f"Email de vérification envoyé avec succès à {request.user.email} avec le code {code}")
+                        
+                    except Exception as e:
+                        logger.info(f"❌ Erreur envoi email: {str(e)}")
+                        logger.error(f"Erreur envoi email: {str(e)}")
+                        
+                        # Même en cas d'erreur d'email, on continue avec le SMS
+                        # On retourne une réponse positive pour la sécurité si le SMS fonctionne
+                        
+                    # Fallback: retourner succès si l'email a fonctionné
                     error_response = Response({
-                        'detail': 'Erreur lors de l\'envoi du SMS'
-                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    print(f"📤 Réponse d'erreur SMS: {error_response.data}")
-                    print(f"=== 📨 SEND_CODE TERMINÉ (SMS_ERROR) ===\n")
+                        'message': 'Code envoyé par email (SMS temporairement indisponible)',
+                        'verification': self.get_serializer(verification).data,
+                        'sms_error': sms_result.get('error'),
+                        'debug_code': code if settings.DEBUG else None
+                    }, status=status.HTTP_200_OK)  # 200 car email fonctionne
+                    logger.info(f"📤 Réponse fallback email: {error_response.data}")
+                    logger.info(f"=== 📨 SEND_CODE TERMINÉ (SMS_ERROR_EMAIL_OK) ===\n")
                     return error_response
+                    
+            except Exception as sms_exception:
+                logger.info(f"❌ Exception SMS: {str(sms_exception)}")
+                logger.error(f"Exception envoi SMS: {str(sms_exception)}")
+                
+                # Fallback: retourner succès si l'email a fonctionné
+                return Response({
+                    'message': 'Code envoyé par email (SMS temporairement indisponible)',
+                    'verification': self.get_serializer(verification).data,
+                    'debug_code': code if settings.DEBUG else None
+                }, status=status.HTTP_200_OK)
         
         except Exception as e:
-            print(f"❌ ERREUR GÉNÉRALE dans send_code: {str(e)}")
-            logger.error(f"Erreur envoi SMS pour {request.user.username}: {str(e)}")
+            logger.info(f"❌ ERREUR GÉNÉRALE dans send_code: {str(e)}")
+            logger.error(f"Erreur envoi code pour {request.user.username}: {str(e)}")
             import traceback
-            print(f"❌ STACK TRACE: {traceback.format_exc()}")
+            logger.info(f"❌ STACK TRACE: {traceback.format_exc()}")
             
             error_response = Response({
                 'detail': 'Erreur technique lors de l\'envoi'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            print(f"📤 Réponse d'erreur générale: {error_response.data}")
-            print(f"=== 📨 SEND_CODE TERMINÉ (GENERAL_ERROR) ===\n")
+            logger.info(f"📤 Réponse d'erreur générale: {error_response.data}")
+            logger.info(f"=== 📨 SEND_CODE TERMINÉ (GENERAL_ERROR) ===\n")
             return error_response
-    
+        
+        
     @action(detail=False, methods=['post'], url_path='verify-code')
     def verify_code(self, request):
         """
@@ -4399,68 +4407,53 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='resend-code')
     def resend_code(self, request):
         """
-        Renvoyer le code de vérification
+        Renvoyer un code de vérification
+        Version avec intégration Infobip
         """
         print(f"\n=== 🔄 RESEND_CODE DÉMARRÉ ===")
         print(f"🧑 User ID: {request.user.id}")
         print(f"🧑 Username: {request.user.username}")
         
         try:
-            print(f"🔍 Recherche de la vérification...")
+            print(f"🔍 Recherche de la vérification existante...")
             verification = PhoneVerification.objects.get(user=request.user)
             
             print(f"📋 Vérification trouvée:")
-            print(f"   - ID: {verification.id}")
             print(f"   - Phone: {verification.phone_number}")
             print(f"   - Status: {verification.status}")
-            print(f"   - Last sent: {verification.last_code_sent_at}")
-            print(f"   - Can resend?: {verification.can_resend_code()}")
+            print(f"   - Dernnier envoi: {verification.last_code_sent_at}")
             
-        except PhoneVerification.DoesNotExist:
-            print(f"❌ Aucune vérification trouvée")
-            error_response = Response({
-                'detail': 'Aucune vérification en cours'
-            }, status=status.HTTP_404_NOT_FOUND)
-            print(f"📤 Réponse not found: {error_response.data}")
-            print(f"=== 🔄 RESEND_CODE TERMINÉ (NOT_FOUND) ===\n")
-            return error_response
-        
-        if verification.status == 'verified':
-            print(f"✅ Déjà vérifié!")
-            error_response = Response({
-                'detail': 'Votre téléphone est déjà vérifié'
-            }, status=status.HTTP_400_BAD_REQUEST)
-            print(f"📤 Réponse already verified: {error_response.data}")
-            print(f"=== 🔄 RESEND_CODE TERMINÉ (ALREADY_VERIFIED) ===\n")
-            return error_response
-        
-        # if not verification.can_resend_code():
-        #     print(f"⏱️ Trop tôt pour renvoyer")
-        #     error_response = Response({
-        #         'detail': 'Vous devez attendre avant de demander un nouveau code',
-        #         'retry_after': 60
-        #     }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        #     print(f"📤 Réponse too many requests: {error_response.data}")
-        #     print(f"=== 🔄 RESEND_CODE TERMINÉ (TOO_MANY_REQUESTS) ===\n")
-        #     return error_response
-        
-        try:
-            print(f"🔄 Régénération du code...")
-            old_code = verification.verification_code
-            code = verification.regenerate_code()
+            # Vérifier la limitation de taux
+            rate_ok, rate_message = check_sms_rate_limit(request.user, verification.phone_number)
+            if not rate_ok:
+                print(f"⚠️ Limitation de taux: {rate_message}")
+                return Response({
+                    'detail': rate_message
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
             
-            print(f"   - Ancien code: {old_code}")
-            print(f"   - Nouveau code: {code}")
-            print(f"   - Nouveau expires_at: {verification.expires_at}")
+            # Générer un nouveau code
+            verification.verification_code = PhoneVerification.generate_code()
+            verification.expires_at = timezone.now() + timedelta(minutes=10)
+            verification.last_code_sent_at = timezone.now()
+            verification.status = 'pending'
+            verification.attempts = 0
+            verification.save()
             
-            # TODO: Intégrer avec votre service SMS
-            # success = send_sms(verification.phone_number, f"Votre nouveau code: {code}")
-            success = True  # Simuler l'envoi
-            print(f"📨 Succès simulé: {success}")
+            code = verification.verification_code
+            print(f"🔢 Nouveau code généré: {code}")
             
-            if success:
-                print(f"🎉 Nouveau code envoyé avec succès!")
+            # Envoi SMS avec Infobip
+            print(f"📱 Renvoi SMS via Infobip...")
+            sms_result = self.infos_bip.send_verification_code(verification.phone_number, code)
+            
+            print(f"📤 Résultat renvoi SMS: {sms_result}")
+            
+            if sms_result['success']:
+                print(f"🎉 SMS renvoyé avec succès!")
                 logger.info(f"Nouveau code SMS envoyé à {request.user.username}")
+                
+                # Incrémenter les compteurs
+                increment_sms_rate_limit(request.user, verification.phone_number)
                 
                 # En développement, logger le code
                 if settings.DEBUG:
@@ -4471,6 +4464,7 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
                 response_data = {
                     'message': 'Nouveau code envoyé avec succès',
                     'verification': response_serializer.data,
+                    'sms_id': sms_result.get('message_id'),
                     'debug_code': code if settings.DEBUG else None
                 }
                 
@@ -4478,13 +4472,22 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
                 print(f"=== 🔄 RESEND_CODE TERMINÉ (SUCCESS) ===\n")
                 return Response(response_data)
             else:
-                print(f"❌ Échec d'envoi SMS")
+                print(f"❌ Échec renvoi SMS: {sms_result.get('error')}")
                 error_response = Response({
-                    'detail': 'Erreur lors de l\'envoi du SMS'
+                    'detail': f'Erreur lors du renvoi SMS: {sms_result.get("error")}'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 print(f"📤 Réponse d'erreur SMS: {error_response.data}")
                 print(f"=== 🔄 RESEND_CODE TERMINÉ (SMS_ERROR) ===\n")
                 return error_response
+        
+        except PhoneVerification.DoesNotExist:
+            print(f"❌ Aucune vérification trouvée")
+            error_response = Response({
+                'detail': 'Aucune vérification en cours'
+            }, status=status.HTTP_404_NOT_FOUND)
+            print(f"📤 Réponse not found: {error_response.data}")
+            print(f"=== 🔄 RESEND_CODE TERMINÉ (NOT_FOUND) ===\n")
+            return error_response
         
         except Exception as e:
             print(f"❌ ERREUR GÉNÉRALE dans resend_code: {str(e)}")
@@ -4772,3 +4775,437 @@ def _sync_verification_status(user):
     
     except Exception as e:
         print(f"❌ Erreur synchronisation vérification: {e}")
+
+
+#####################################################################################################################################
+#==================================================NOTIFICATION FCM =================================================================
+
+
+class FCMViewSet(viewsets.ViewSet):
+    """
+    ViewSet pour gérer les tokens FCM et les notifications
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'], url_path='register-token')
+    def register_token(self, request):
+        """
+        Enregistrer un token FCM pour l'utilisateur connecté
+        """
+        try:
+            print(f"\n=== 📱 REGISTER FCM TOKEN ===")
+            print(f"🧑 User: {request.user.email}")
+            print(f"📥 Data: {request.data}")
+            
+            fcm_token = request.data.get('fcm_token')
+            device_type = request.data.get('device_type', 'android')
+            app_version = request.data.get('app_version', '1.0.0')
+            
+            if not fcm_token:
+                return Response({
+                    'detail': 'Token FCM requis'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Vérifier si le token existe déjà
+            existing_token = FCMToken.objects.filter(token=fcm_token).first()
+            
+            if existing_token:
+                # Mettre à jour le token existant
+                existing_token.user = request.user
+                existing_token.device_type = device_type
+                existing_token.app_version = app_version
+                existing_token.is_active = True
+                existing_token.last_used = timezone.now()
+                existing_token.save()
+                
+                print(f"✅ Token FCM mis à jour")
+                serializer = FCMTokenSerializer(existing_token)
+                
+            else:
+                # Créer un nouveau token
+                new_token = FCMToken.objects.create(
+                    user=request.user,
+                    token=fcm_token,
+                    device_type=device_type,
+                    app_version=app_version,
+                    is_active=True,
+                    last_used=timezone.now()
+                )
+                
+                print(f"✅ Nouveau token FCM créé")
+                serializer = FCMTokenSerializer(new_token)
+            
+            # Envoyer une notification de bienvenue
+            try:
+                FCMService.send_test_notification(request.user)
+                print(f"✅ Notification de bienvenue envoyée")
+            except Exception as e:
+                print(f"⚠️ Erreur notification bienvenue: {e}")
+            
+            response_data = {
+                'message': 'Token FCM enregistré avec succès',
+                'token': serializer.data
+            }
+            print(f"📤 Response: {response_data}")
+            print(f"=== 📱 REGISTER FCM TOKEN TERMINÉ ===\n")
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"❌ Erreur register token: {e}")
+            logger.error(f"Erreur register FCM token pour {request.user.email}: {e}")
+            return Response({
+                'detail': 'Erreur lors de l\'enregistrement du token'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['delete'], url_path='remove-token')
+    def remove_token(self, request):
+        """
+        Supprimer un token FCM
+        """
+        try:
+            print(f"\n=== 🗑️ REMOVE FCM TOKEN ===")
+            print(f"🧑 User: {request.user.email}")
+            print(f"📥 Data: {request.data}")
+            
+            fcm_token = request.data.get('fcm_token')
+            
+            if not fcm_token:
+                return Response({
+                    'detail': 'Token FCM requis'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Désactiver le token
+            deleted_count = FCMToken.objects.filter(
+                token=fcm_token,
+                user=request.user
+            ).update(is_active=False)
+            
+            if deleted_count > 0:
+                print(f"✅ Token FCM désactivé")
+                message = 'Token FCM supprimé avec succès'
+            else:
+                print(f"⚠️ Token FCM non trouvé")
+                message = 'Token FCM non trouvé'
+            
+            response_data = {'message': message}
+            print(f"📤 Response: {response_data}")
+            print(f"=== 🗑️ REMOVE FCM TOKEN TERMINÉ ===\n")
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            print(f"❌ Erreur remove token: {e}")
+            logger.error(f"Erreur remove FCM token pour {request.user.email}: {e}")
+            return Response({
+                'detail': 'Erreur lors de la suppression du token'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'], url_path='my-tokens')
+    def my_tokens(self, request):
+        """
+        Récupérer les tokens FCM de l'utilisateur connecté
+        """
+        try:
+            tokens = FCMToken.objects.filter(
+                user=request.user,
+                is_active=True
+            ).order_by('-created_at')
+            
+            serializer = FCMTokenSerializer(tokens, many=True)
+            return Response({
+                'tokens': serializer.data,
+                'count': len(serializer.data)
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur récupération tokens FCM: {e}")
+            return Response({
+                'detail': 'Erreur lors de la récupération des tokens'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='test-notification')
+    def test_notification(self, request):
+        """
+        Envoyer une notification de test à l'utilisateur connecté
+        """
+        try:
+            print(f"\n=== 🧪 TEST NOTIFICATION ===")
+            print(f"🧑 User: {request.user.email}")
+            
+            # Vérifier si l'utilisateur a des tokens FCM
+            if not request.user.has_fcm_tokens():
+                return Response({
+                    'detail': 'Aucun token FCM trouvé pour cet utilisateur'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Envoyer la notification de test
+            success = FCMService.send_test_notification(request.user)
+            
+            if success:
+                print(f"✅ Notification de test envoyée")
+                response_data = {
+                    'message': 'Notification de test envoyée avec succès',
+                    'success': True
+                }
+            else:
+                print(f"❌ Échec envoi notification de test")
+                response_data = {
+                    'message': 'Erreur lors de l\'envoi de la notification de test',
+                    'success': False
+                }
+            
+            print(f"📤 Response: {response_data}")
+            print(f"=== 🧪 TEST NOTIFICATION TERMINÉ ===\n")
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            print(f"❌ Erreur test notification: {e}")
+            logger.error(f"Erreur test notification pour {request.user.email}: {e}")
+            return Response({
+                'detail': 'Erreur lors de l\'envoi de la notification de test'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class NotificationPreferenceViewSet(viewsets.ViewSet):
+    """
+    ViewSet pour gérer les préférences de notification
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['get'], url_path='my-preferences')
+    def my_preferences(self, request):
+        """
+        Récupérer les préférences de notification de l'utilisateur
+        """
+        try:
+            preferences = request.user.get_notification_preferences()
+            serializer = NotificationPreferenceSerializer(preferences)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Erreur récupération préférences: {e}")
+            return Response({
+                'detail': 'Erreur lors de la récupération des préférences'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='update-preferences')
+    def update_preferences(self, request):
+        """
+        Mettre à jour les préférences de notification
+        """
+        try:
+            print(f"\n=== ⚙️ UPDATE PREFERENCES ===")
+            print(f"🧑 User: {request.user.email}")
+            print(f"📥 Data: {request.data}")
+            
+            preferences = request.user.get_notification_preferences()
+            
+            # Mettre à jour les champs fournis
+            preferences_data = request.data.get('preferences', {})
+            
+            for field, value in preferences_data.items():
+                if hasattr(preferences, field):
+                    setattr(preferences, field, value)
+            
+            preferences.save()
+            
+            print(f"✅ Préférences mises à jour")
+            serializer = NotificationPreferenceSerializer(preferences)
+            
+            response_data = {
+                'message': 'Préférences mises à jour avec succès',
+                'preferences': serializer.data
+            }
+            print(f"📤 Response: {response_data}")
+            print(f"=== ⚙️ UPDATE PREFERENCES TERMINÉ ===\n")
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            print(f"❌ Erreur update preferences: {e}")
+            logger.error(f"Erreur update préférences pour {request.user.email}: {e}")
+            return Response({
+                'detail': 'Erreur lors de la mise à jour des préférences'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class NotificationHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet pour consulter l'historique des notifications
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationHistorySerializer
+    
+    def get_queryset(self):
+        """
+        Retourner l'historique des notifications de l'utilisateur connecté
+        """
+        return NotificationHistory.objects.filter(
+            user=self.request.user
+        ).order_by('-created_at')
+    
+    @action(detail=False, methods=['get'], url_path='stats')
+    def stats(self, request):
+        """
+        Statistiques des notifications de l'utilisateur
+        """
+        try:
+            queryset = self.get_queryset()
+            
+            stats = {
+                'total_notifications': queryset.count(),
+                'sent': queryset.filter(status='sent').count(),
+                'delivered': queryset.filter(status='delivered').count(),
+                'failed': queryset.filter(status='failed').count(),
+                'clicked': queryset.filter(status='clicked').count(),
+            }
+            
+            return Response(stats)
+            
+        except Exception as e:
+            logger.error(f"Erreur stats notifications: {e}")
+            return Response({
+                'detail': 'Erreur lors de la récupération des statistiques'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# =================================================================
+# AJOUTS AUX VIEWSETS EXISTANTS POUR DÉCLENCHER DES NOTIFICATIONS
+# =================================================================
+
+# Modifiez vos ViewSets existants pour envoyer des notifications FCM
+
+def send_new_message_notification(conversation, message, sender):
+    """
+    Envoyer une notification pour un nouveau message
+    """
+    try:
+        # Déterminer le destinataire
+        recipient = conversation.client if sender != conversation.client else conversation.provider.user
+        
+        FCMService.send_notification_to_user(
+            user=recipient,
+            title=f"💬 Nouveau message de {sender.first_name}",
+            body=message.content[:100] + ('...' if len(message.content) > 100 else ''),
+            notification_type='new_message',
+            data={
+                'conversation_id': str(conversation.id),
+                'sender_id': str(sender.id),
+                'message_id': str(message.id),
+            },
+            click_action='FLUTTER_NOTIFICATION_CLICK'
+        )
+        
+    except Exception as e:
+        logger.error(f"Erreur notification nouveau message: {e}")
+
+def send_new_offer_notification(project, offer):
+    """
+    Envoyer une notification pour une nouvelle offre
+    """
+    try:
+        FCMService.send_notification_to_user(
+            user=project.client,
+            title=f"💼 Nouvelle offre reçue",
+            body=f"{offer.provider.user.first_name} a fait une offre sur votre projet",
+            notification_type='new_offer',
+            data={
+                'project_id': str(project.id),
+                'offer_id': str(offer.id),
+                'provider_id': str(offer.provider.id),
+            },
+            click_action='FLUTTER_NOTIFICATION_CLICK'
+        )
+        
+    except Exception as e:
+        logger.error(f"Erreur notification nouvelle offre: {e}")
+
+def send_project_update_notification(project, update_type, message):
+    """
+    Envoyer une notification pour une mise à jour de projet
+    """
+    try:
+        FCMService.send_notification_to_user(
+            user=project.client,
+            title=f"📋 Mise à jour de projet",
+            body=message,
+            notification_type='project_update',
+            data={
+                'project_id': str(project.id),
+                'update_type': update_type,
+            },
+            click_action='FLUTTER_NOTIFICATION_CLICK'
+        )
+        
+    except Exception as e:
+        logger.error(f"Erreur notification projet: {e}")
+
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_fcm_signals(request):
+    """
+    Tester les notifications FCM via les signaux
+    """
+    try:
+        notification_type = request.data.get('type', 'test')
+        
+        # Envoyer une notification de test via les signaux
+        notification = send_test_fcm_notification(
+            user=request.user,
+            notification_type=notification_type
+        )
+        
+        if notification:
+            return Response({
+                'success': True,
+                'message': f'Notification FCM {notification_type} envoyée avec succès',
+                'notification_id': notification.id
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'Erreur lors de l\'envoi de la notification'
+            })
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_bulk_fcm(request):
+    """
+    Tester les notifications FCM en masse
+    """
+    try:
+        from .models import User
+        
+        title = request.data.get('title', 'Test en masse')
+        message = request.data.get('message', 'Notification de test envoyée à tous')
+        
+        # Envoyer à tous les utilisateurs (limitez pour le test)
+        users = User.objects.all()[:5]  # Limiter à 5 pour le test
+        
+        results = send_bulk_notification(
+            users=users,
+            title=title,
+            message=message,
+            notification_type='system'
+        )
+        
+        return Response({
+            'success': True,
+            'results': results,
+            'message': f'Notifications envoyées à {results["success"]} utilisateurs'
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        })

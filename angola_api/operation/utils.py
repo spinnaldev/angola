@@ -16,3 +16,4 @@ def create_notification(user, title, message, notification_type, related_object_
     except Exception as e:
         print(f"❌ Erreur création notification: {e}")
         return None
+    

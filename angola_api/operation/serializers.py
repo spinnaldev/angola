@@ -1463,3 +1463,199 @@ class PhoneVerificationSendCodeSerializer(serializers.Serializer):
                 "Le numéro de téléphone doit contenir au moins 8 caractères"
             )
         return value
+    
+
+
+
+
+class FCMTokenSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour les tokens FCM
+    """
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = FCMToken
+        fields = [
+            'id',
+            'user_email',
+            'device_type',
+            'app_version',
+            'is_active',
+            'created_at',
+            'updated_at',
+            'last_used'
+        ]
+        read_only_fields = ['id', 'user_email', 'created_at', 'updated_at', 'last_used']
+
+class FCMTokenCreateSerializer(serializers.Serializer):
+    """
+    Serializer pour créer/enregistrer un token FCM
+    """
+    fcm_token = serializers.CharField(max_length=500, required=True)
+    device_type = serializers.ChoiceField(
+        choices=[('android', 'Android'), ('ios', 'iOS'), ('web', 'Web')],
+        default='android'
+    )
+    app_version = serializers.CharField(max_length=20, default='1.0.0')
+    
+    def validate_fcm_token(self, value):
+        """
+        Valider le format du token FCM
+        """
+        if len(value) < 10:
+            raise serializers.ValidationError("Token FCM invalide")
+        return value
+
+class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour les préférences de notification
+    """
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = NotificationPreference
+        fields = [
+            'id',
+            'user_email',
+            'messages_enabled',
+            'offers_enabled',
+            'projects_enabled',
+            'reviews_enabled',
+            'system_enabled',
+            'push_notifications',
+            'email_notifications',
+            'sms_notifications',
+            'quiet_hours_start',
+            'quiet_hours_end',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'user_email', 'created_at', 'updated_at']
+
+class NotificationPreferenceUpdateSerializer(serializers.Serializer):
+    """
+    Serializer pour mettre à jour les préférences
+    """
+    preferences = serializers.DictField(
+        child=serializers.BooleanField(),
+        required=True,
+        help_text="Dictionnaire des préférences à mettre à jour"
+    )
+    
+    def validate_preferences(self, value):
+        """
+        Valider les clés des préférences
+        """
+        valid_keys = {
+            'messages_enabled',
+            'offers_enabled', 
+            'projects_enabled',
+            'reviews_enabled',
+            'system_enabled',
+            'push_notifications',
+            'email_notifications',
+            'sms_notifications'
+        }
+        
+        invalid_keys = set(value.keys()) - valid_keys
+        if invalid_keys:
+            raise serializers.ValidationError(
+                f"Clés invalides: {', '.join(invalid_keys)}"
+            )
+        
+        return value
+
+class NotificationHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializer pour l'historique des notifications
+    """
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = NotificationHistory
+        fields = [
+            'id',
+            'user_email',
+            'title',
+            'body',
+            'notification_type',
+            'data',
+            'status',
+            'firebase_message_id',
+            'error_message',
+            'created_at',
+            'sent_at',
+            'delivered_at',
+            'clicked_at'
+        ]
+        read_only_fields = '__all__'
+
+class TestNotificationSerializer(serializers.Serializer):
+    """
+    Serializer pour envoyer une notification de test
+    """
+    title = serializers.CharField(max_length=255, default="🧪 Test Notification")
+    body = serializers.CharField(max_length=500, default="Ceci est une notification de test")
+    notification_type = serializers.CharField(max_length=50, default="test")
+    
+class BulkNotificationSerializer(serializers.Serializer):
+    """
+    Serializer pour envoyer des notifications en masse
+    """
+    user_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text="Liste des IDs utilisateurs (optionnel si topic fourni)"
+    )
+    topic = serializers.CharField(
+        max_length=100,
+        required=False,
+        help_text="Topic Firebase (optionnel si user_ids fourni)"
+    )
+    title = serializers.CharField(max_length=255, required=True)
+    body = serializers.CharField(max_length=500, required=True)
+    notification_type = serializers.CharField(max_length=50, default="general")
+    data = serializers.DictField(
+        child=serializers.CharField(),
+        required=False,
+        help_text="Données additionnelles (optionnel)"
+    )
+    
+    def validate(self, data):
+        """
+        Valider qu'au moins user_ids ou topic est fourni
+        """
+        if not data.get('user_ids') and not data.get('topic'):
+            raise serializers.ValidationError(
+                "Vous devez fournir soit 'user_ids' soit 'topic'"
+            )
+        return data
+
+class NotificationStatsSerializer(serializers.Serializer):
+    """
+    Serializer pour les statistiques de notifications
+    """
+    total_notifications = serializers.IntegerField(read_only=True)
+    sent = serializers.IntegerField(read_only=True)
+    delivered = serializers.IntegerField(read_only=True)
+    failed = serializers.IntegerField(read_only=True)
+    clicked = serializers.IntegerField(read_only=True)
+    success_rate = serializers.SerializerMethodField()
+    click_rate = serializers.SerializerMethodField()
+    
+    def get_success_rate(self, obj):
+        """
+        Calculer le taux de succès
+        """
+        total = obj.get('total_notifications', 0)
+        sent = obj.get('sent', 0)
+        return round((sent / total * 100), 2) if total > 0 else 0
+    
+    def get_click_rate(self, obj):
+        """
+        Calculer le taux de clic
+        """
+        sent = obj.get('sent', 0)
+        clicked = obj.get('clicked', 0)
+        return round((clicked / sent * 100), 2) if sent > 0 else 0

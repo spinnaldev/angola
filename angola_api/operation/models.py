@@ -43,6 +43,18 @@ class User(AbstractUser, TimeStampMixin):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
     
+    def get_active_fcm_tokens(self):
+        """Obtenir tous les tokens FCM actifs de l'utilisateur"""
+        return self.fcm_tokens.filter(is_active=True)
+
+    def has_fcm_tokens(self):
+        """Vérifier si l'utilisateur a des tokens FCM actifs"""
+        return self.fcm_tokens.filter(is_active=True).exists()
+
+    def get_notification_preferences(self):
+        """Obtenir les préférences de notification de l'utilisateur"""
+        return NotificationPreference.get_or_create_for_user(self)
+
 class ResetPasswordCode(models.Model):
     """
     Modèle pour stocker les codes de réinitialisation de mot de passe
@@ -1182,3 +1194,132 @@ class PhoneVerification(TimeStampMixin):
             self.status = 'expired'
         
         super().save(*args, **kwargs)
+
+
+class FCMToken(models.Model):
+    """
+    Modèle pour stocker les tokens FCM des utilisateurs
+    """
+    DEVICE_TYPES = (
+        ('android', 'Android'),
+        ('ios', 'iOS'),
+        ('web', 'Web'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fcm_tokens')
+    token = models.TextField(unique=True)
+    device_type = models.CharField(max_length=10, choices=DEVICE_TYPES)
+    app_version = models.CharField(max_length=20, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_used = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Token FCM"
+        verbose_name_plural = "Tokens FCM"
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['token']),
+        ]
+    
+    def __str__(self):
+        return f"Token {self.device_type} pour {self.user.email}"
+    
+class NotificationPreference(models.Model):
+    """
+    Modèle pour les préférences de notification des utilisateurs
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notification_preferences')
+    
+    # Types de notifications
+    messages_enabled = models.BooleanField(default=True)
+    offers_enabled = models.BooleanField(default=True)
+    projects_enabled = models.BooleanField(default=True)
+    reviews_enabled = models.BooleanField(default=True)
+    system_enabled = models.BooleanField(default=True)
+    
+    # Canaux de notification
+    push_notifications = models.BooleanField(default=True)
+    email_notifications = models.BooleanField(default=True)
+    sms_notifications = models.BooleanField(default=False)
+    
+    # Horaires de notification (optionnel)
+    quiet_hours_start = models.TimeField(null=True, blank=True, help_text="Début des heures silencieuses")
+    quiet_hours_end = models.TimeField(null=True, blank=True, help_text="Fin des heures silencieuses")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Préférence de notification"
+        verbose_name_plural = "Préférences de notification"
+    
+    def __str__(self):
+        return f"Préférences de {self.user.email}"
+    
+    @classmethod
+    def get_or_create_for_user(cls, user):
+        """Obtenir ou créer les préférences pour un utilisateur"""
+        preferences, created = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                'messages_enabled': True,
+                'offers_enabled': True,
+                'projects_enabled': True,
+                'reviews_enabled': True,
+                'system_enabled': True,
+                'push_notifications': True,
+                'email_notifications': True,
+                'sms_notifications': False,
+            }
+        )
+        return preferences
+
+# NOUVEAU MODÈLE : Historique des notifications
+class NotificationHistory(models.Model):
+    """
+    Modèle pour l'historique des notifications envoyées
+    """
+    STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('sent', 'Envoyée'),
+        ('delivered', 'Livrée'),
+        ('failed', 'Échouée'),
+        ('clicked', 'Cliquée'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notification_history')
+    fcm_token = models.ForeignKey(FCMToken, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Contenu de la notification
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    notification_type = models.CharField(max_length=50)
+    
+    # Données additionnelles (JSON)
+    data = models.JSONField(default=dict, blank=True)
+    
+    # Statut et métadonnées
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    firebase_message_id = models.CharField(max_length=255, blank=True)
+    error_message = models.TextField(blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    clicked_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "Historique de notification"
+        verbose_name_plural = "Historiques de notification"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['notification_type']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.email} ({self.status})"

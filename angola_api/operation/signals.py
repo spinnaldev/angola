@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-
+from .fcm_service import FCMService
 from operation.models import (
     AdminAction, ClientProject, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
 )
@@ -65,10 +65,87 @@ def send_message_notification(user_id, message_data):
             }
         )
 
+
+def get_fcm_notification_config(notification_type, title, message, related_object_id=None):
+    """
+    Configurer le titre, message et données pour FCM selon le type de notification
+    """
+    # Configuration de base
+    config = {
+        'title': title,
+        'body': message,
+        'notification_type': notification_type,
+        'data': {
+            'type': notification_type,
+            'timestamp': str(timezone.now().timestamp()),
+        }
+    }
+    
+    # Ajouter related_object_id si disponible
+    if related_object_id:
+        config['data']['related_object_id'] = str(related_object_id)
+    
+    # Configuration spécifique par type
+    if notification_type == 'new_message':
+        config['title'] = '💬 ' + title
+        config['data']['click_action'] = 'OPEN_CONVERSATION'
+        if related_object_id:
+            config['data']['conversation_id'] = str(related_object_id)
+            
+    elif notification_type == 'new_offer':
+        config['title'] = '💼 ' + title
+        config['data']['click_action'] = 'OPEN_PROJECT'
+        if related_object_id:
+            config['data']['offer_id'] = str(related_object_id)
+            
+    elif notification_type == 'offer_accepted':
+        config['title'] = '✅ ' + title
+        config['data']['click_action'] = 'OPEN_PROJECT'
+        
+    elif notification_type == 'offer_rejected':
+        config['title'] = '❌ ' + title
+        config['data']['click_action'] = 'OPEN_PROJECT'
+        
+    elif notification_type == 'quote_request':
+        config['title'] = '📋 ' + title
+        config['data']['click_action'] = 'OPEN_QUOTE'
+        if related_object_id:
+            config['data']['quote_id'] = str(related_object_id)
+            
+    elif notification_type == 'quote_accepted':
+        config['title'] = '✅ ' + title
+        config['data']['click_action'] = 'OPEN_QUOTE'
+        
+    elif notification_type == 'quote_rejected':
+        config['title'] = '❌ ' + title
+        config['data']['click_action'] = 'OPEN_QUOTE'
+        
+    elif notification_type == 'quote_completed':
+        config['title'] = '🎉 ' + title
+        config['data']['click_action'] = 'OPEN_QUOTE'
+        
+    elif notification_type == 'dispute':
+        config['title'] = '⚖️ ' + title
+        config['data']['click_action'] = 'OPEN_DISPUTE'
+        
+    elif notification_type == 'profile_verified':
+        config['title'] = '✅ ' + title
+        config['data']['click_action'] = 'OPEN_PROFILE'
+        
+    elif notification_type == 'profile_rejected':
+        config['title'] = '❌ ' + title
+        config['data']['click_action'] = 'OPEN_VERIFICATION'
+        
+    elif notification_type == 'phone_verified':
+        config['title'] = '📱 ' + title
+        config['data']['click_action'] = 'OPEN_PROFILE'
+        
+    return config
+
 # ✅ FONCTION UTILITAIRE ROBUSTE - Ne lève jamais d'exception
 def create_and_send_notification(user, title, message, notification_type, related_object_id=None):
     """
-    Fonction utilitaire pour créer une notification et l'envoyer via WebSocket
+    Fonction utilitaire pour créer une notification et l'envoyer via WebSocket + FCM
     ROBUSTE : Ne lève jamais d'exception, continue toujours
     """
     try:
@@ -81,7 +158,7 @@ def create_and_send_notification(user, title, message, notification_type, relate
             related_object_id=related_object_id
         )
         
-        print(f"✅ Notification créée: {notification.id} pour user {user.id}")
+        print(f"✅ Notification créée: {notification.id} pour user {user.id} (type: {notification_type})")
         
         # Préparer les données pour WebSocket
         notification_data = {
@@ -94,9 +171,40 @@ def create_and_send_notification(user, title, message, notification_type, relate
             'created_at': notification.created_at.isoformat(),
         }
         
+        # ✅ NOUVEAU : Envoyer via FCM
+        try:
+            print(f"🔔 Envoi notification FCM pour user {user.id}...")
+            
+            # Obtenir la configuration FCM pour ce type de notification
+            fcm_config = get_fcm_notification_config(
+                notification_type=notification_type,
+                title=title,
+                message=message,
+                related_object_id=related_object_id
+            )
+            
+            # Envoyer la notification FCM
+            fcm_success = FCMService.send_notification_to_user(
+                user=user,
+                title=fcm_config['title'],
+                body=fcm_config['body'],
+                notification_type=fcm_config['notification_type'],
+                data=fcm_config['data'],
+                click_action=fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
+            )
+            
+            if fcm_success:
+                print(f"✅ Notification FCM envoyée avec succès pour user {user.id}")
+            else:
+                print(f"⚠️ Notification FCM non envoyée pour user {user.id} (pas de tokens ou préférences)")
+                
+        except Exception as fcm_error:
+            print(f"⚠️ Erreur FCM notification pour user {user.id} (continue quand même): {fcm_error}")
+        
         # Envoyer via WebSocket (avec gestion d'erreur)
         try:
             send_notification_to_user(user.id, notification_data)
+            print(f"✅ Notification WebSocket envoyée pour user {user.id}")
         except Exception as ws_error:
             print(f"⚠️ Erreur WebSocket notification (continue quand même): {ws_error}")
         
@@ -104,10 +212,11 @@ def create_and_send_notification(user, title, message, notification_type, relate
         try:
             unread_count = Notification.objects.filter(user=user, is_read=False).count()
             send_unread_count_update(user.id, unread_count)
+            print(f"✅ Compteur mis à jour pour user {user.id}: {unread_count}")
         except Exception as count_error:
             print(f"⚠️ Erreur compteur notifications (continue quand même): {count_error}")
         
-        print(f"✅ Notification envoyée avec succès: {notification.id}")
+        print(f"✅ Notification complète envoyée avec succès: {notification.id}")
         return notification
         
     except Exception as e:
@@ -164,7 +273,7 @@ def quote_request_status_changed(sender, instance, created, **kwargs):
                 notification_type='quote_accepted',
                 related_object_id=instance.id
             )
-            
+
         elif instance.status == 'rejected':
             # ✅ REFACTORISÉ : Devis rejeté
             create_and_send_notification(
@@ -319,6 +428,79 @@ def phone_verification_status_changed(sender, instance, created, **kwargs):
             notification_type='phone_verified',
             related_object_id=instance.id
         )
+
+
+
+# ================================================================
+# ✅ FONCTIONS UTILITAIRES POUR TESTER FCM (OPTIONNEL)
+# ================================================================
+
+def send_test_fcm_notification(user, notification_type='test'):
+    """
+    Fonction utilitaire pour envoyer une notification FCM de test
+    Utile pour débugger ou tester les notifications
+    """
+    try:
+        test_messages = {
+            'test': {
+                'title': 'Test FCM',
+                'message': 'Ceci est une notification de test FCM depuis les signaux'
+            },
+            'new_message': {
+                'title': 'Test nouveau message',
+                'message': 'Test d\'un nouveau message via FCM'
+            },
+            'new_offer': {
+                'title': 'Test nouvelle offre',
+                'message': 'Test d\'une nouvelle offre via FCM'
+            }
+        }
+        
+        config = test_messages.get(notification_type, test_messages['test'])
+        
+        return create_and_send_notification(
+            user=user,
+            title=config['title'],
+            message=config['message'],
+            notification_type=notification_type
+        )
+        
+    except Exception as e:
+        print(f"❌ Erreur test FCM: {e}")
+        return None
+    
+
+
+# ================================================================
+# ✅ FONCTION POUR ENVOYER DES NOTIFICATIONS EN MASSE (OPTIONNEL)
+# ================================================================
+
+def send_bulk_notification(users, title, message, notification_type='general'):
+    """
+    Envoyer une notification à plusieurs utilisateurs
+    Utile pour les annonces système
+    """
+    success_count = 0
+    error_count = 0
+    
+    for user in users:
+        try:
+            notification = create_and_send_notification(
+                user=user,
+                title=title,
+                message=message,
+                notification_type=notification_type
+            )
+            if notification:
+                success_count += 1
+            else:
+                error_count += 1
+        except Exception as e:
+            print(f"❌ Erreur notification bulk pour user {user.id}: {e}")
+            error_count += 1
+    
+    print(f"📊 Notifications en masse: {success_count} succès, {error_count} erreurs")
+    return {'success': success_count, 'errors': error_count}
 # ================================================================
 # SIGNAUX POUR LES VÉRIFICATIONS (commentés mais prêts)
 # ================================================================

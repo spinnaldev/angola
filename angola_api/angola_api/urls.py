@@ -29,6 +29,12 @@ from operation.admin_views import (
     AdminProjectViewSet, AdminDisputeViewSet,
     admin_dashboard_stats, admin_recent_activity
 )
+from operation.views import (
+    FCMViewSet, 
+    NotificationPreferenceViewSet,
+    NotificationHistoryViewSet
+)
+
 from operation.admin_auth_views import *
 
 router = DefaultRouter()
@@ -74,6 +80,10 @@ router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='
 router.register(r'api/admin/provider-verification', AdminProviderVerificationViewSet, basename='admin-provider-verification')
 
 router.register(r'api/admin/phone-verification', AdminPhoneVerificationViewSet, basename='admin-phone-verification')
+
+router.register(r'api/fcm', FCMViewSet, basename='fcm')
+router.register(r'api/notification-preferences', NotificationPreferenceViewSet, basename='notification-preferences')
+router.register(r'api/notification-history', NotificationHistoryViewSet, basename='notification-history')
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
@@ -138,6 +148,10 @@ urlpatterns = [
     
     # Export des données
     path('api/export/', export_verifications, name='admin-export-verifications'),
+
+    path('api/test/fcm-signals/', views.test_fcm_signals, name='test_fcm_signals'),
+    path('api/test/bulk-fcm/', views.test_bulk_fcm, name='test_bulk_fcm'),
+
     path('', include(router.urls)),
 ]
 if settings.DEBUG:

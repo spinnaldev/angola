@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "484907363203",
+    "project_id": "teyago-services",
+    "storage_bucket": "teyago-services.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:484907363203:android:870177c64510bad25764b6",
+        "android_client_info": {
+          "package_name": "com.teyago.services"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIEjWXGNZv8HTDtVNC52CUuVpeyk8MYw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

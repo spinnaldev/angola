@@ -296,6 +296,7 @@ EMAIL_HOST_USER = 'spinnaldev@gmail.com'
 EMAIL_HOST_PASSWORD = 'zvzi foix bgnb juxn' 
 DEFAULT_FROM_EMAIL = 'TEYAGO APP <spinnaldev@gmail.com>'
 
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -429,6 +430,126 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_CHARSET = 'utf-8'
 
 
+
+
+# ================================================================
+# CONFIGURATION SMS INFOBIP
+# ================================================================
+
+# Configuration Infobip pour l'envoi de SMS
+INFOBIP_API_HOST = '1g43wn.api.infobip.com'
+INFOBIP_API_KEY = '6d103673e9a23dd7be35028b2ab9ecdd-2aca7710-5556-446b-9464-9d370ec2561a'
+INFOBIP_FROM_NUMBER = '41798070047'
+# INFOBIP_API_HOST = '38pn4m.api.infobip.com'
+# INFOBIP_API_KEY ='f2adee4ef14e04dd2892ddb67aa9f2b9-aad5d0f1-4772-4dc8-a278-9c1242b6cfba'
+# INFOBIP_FROM_NUMBER = '447491163443'
+
+# Paramètres SMS généraux
+SMS_ENABLED = True  # Activer/désactiver l'envoi de SMS
+SMS_CODE_LENGTH = 6  # Longueur du code de vérification
+SMS_CODE_EXPIRY_MINUTES = 10  # Expiration du code en minutes
+SMS_MAX_ATTEMPTS = 3  # Nombre maximum de tentatives
+
+# Configuration de logging pour SMS
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'sms.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'operation.services.sms_service': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# ================================================================
+# CONFIGURATION SÉCURITÉ SMS (OPTIONNEL)
+# ================================================================
+
+# Limitations par utilisateur (anti-spam)
+SMS_RATE_LIMIT_PER_USER_PER_HOUR = 5  # Max 5 SMS par utilisateur par heure
+SMS_RATE_LIMIT_PER_USER_PER_DAY = 20   # Max 20 SMS par utilisateur par jour
+
+# Pays autorisés pour l'envoi de SMS (codes pays)
+SMS_ALLOWED_COUNTRIES = [
+    '+1',    # USA/Canada
+    '+33',   # France
+    '+41',   # Suisse
+    '+32',   # Belgique
+    '+244',  # Angola
+    '+237',  # Cameroun
+    '+221',  # Sénégal
+    '+225',  # Côte d'Ivoire
+    '+223',  # Mali
+    '+226',  # Burkina Faso
+    '+227',  # Niger
+    '+229',  # Bénin
+    '+230',  # Maurice
+    '+231',  # Liberia
+    '+232',  # Sierra Leone
+    '+233',  # Ghana
+    '+234',  # Nigeria
+    '+235',  # Tchad
+    '+236',  # République Centrafricaine
+    '+238',  # Cap-Vert
+    '+239',  # Sao Tomé-et-Principe
+    '+240',  # Guinée Équatoriale
+    '+241',  # Gabon
+    '+242',  # République du Congo
+    '+243',  # République Démocratique du Congo
+    '+245',  # Guinée-Bissau
+    '+246',  # Diego Garcia
+    '+248',  # Seychelles
+    '+249',  # Soudan
+    '+250',  # Rwanda
+    '+251',  # Éthiopie
+    '+252',  # Somalie
+    '+253',  # Djibouti
+    '+254',  # Kenya
+    '+255',  # Tanzanie
+    '+256',  # Ouganda
+    '+257',  # Burundi
+    '+258',  # Mozambique
+    '+260',  # Zambie
+    '+261',  # Madagascar
+    '+262',  # Réunion/Mayotte
+    '+263',  # Zimbabwe
+    '+264',  # Namibie
+    '+265',  # Malawi
+    '+266',  # Lesotho
+    '+267',  # Botswana
+    '+268',  # Eswatini
+    '+269',  # Comores
+    '+290',  # Sainte-Hélène
+    '+291',  # Érythrée
+    '+297',  # Aruba
+    '+298',  # Îles Féroé
+    '+299',  # Groenland
+]
 # {
 #     "KEY": "django-insecure--jl61o0a8m3!+$+d$d2ql0^twj2e@0l^0e*)w4q(_b=@4517_z",
 #     "NAME": "angola_db_fzta",
@@ -437,3 +558,81 @@ DEFAULT_CHARSET = 'utf-8'
 #     "PORT": "5432",
 #     "PASS": "4qwsXj8nrYPbWCpT9sFnT3M14WcLTwpy"
 # }
+
+# ================================================
+# NOUVELLE SECTION : CONFIGURATION FIREBASE FCM
+# ================================================
+# Chemin vers le fichier de credentials Firebase
+# Téléchargez le fichier depuis Firebase Console > Project Settings > Service accounts
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'angola_api/firebase-credentials.json')
+
+
+# Configuration FCM
+FCM_SETTINGS = {
+    'FCM_SERVER_KEY': os.getenv('FCM_SERVER_KEY'),  # Legacy server key (optionnel)
+    'FCM_SENDER_ID': os.getenv('FCM_SENDER_ID'),
+    'DEFAULT_NOTIFICATION_ICON': 'ic_notification',
+    'DEFAULT_NOTIFICATION_COLOR': '#142FE2',
+    'HIGH_PRIORITY_TOPICS': [
+        'emergency_notifications',
+        'system_maintenance',
+    ],
+    'QUIET_HOURS_DEFAULT': {
+        'start': '22:00',
+        'end': '08:00',
+    }
+}
+
+# # ================================================
+# # LOGGING POUR FCM
+# # ================================================
+
+# # Ajouter à votre configuration LOGGING existante
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+#             'style': '{',
+#         },
+#         'simple': {
+#             'format': '{levelname} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+#             'formatter': 'verbose',
+#         },
+#         'fcm_file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'fcm.log'),
+#             'formatter': 'verbose',
+#         },
+#         'console': {
+#             'level': 'INFO',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'simple',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file', 'console'],
+#             'level': 'INFO',
+#             'propagate': True,
+#         },
+#         'operation.fcm_service': {
+#             'handlers': ['fcm_file', 'console'],
+#             'level': 'INFO',
+#             'propagate': False,
+#         },
+#     },
+# }
+
+# Créer le dossier logs s'il n'existe pas
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)

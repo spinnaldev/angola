@@ -1,0 +1,9 @@
+<resources>
+    <!-- Couleur pour les notifications -->
+    <color name="notification_color">#FF142FE2</color>
+    
+    <!-- Autres couleurs nécessaires -->
+    <color name="colorPrimary">#FF142FE2</color>
+    <color name="colorPrimaryDark">#FF0F23B3</color>
+    <color name="colorAccent">#FF03DAC5</color>
+</resources>
