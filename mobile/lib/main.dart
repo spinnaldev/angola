@@ -11,6 +11,7 @@ import 'package:teyago/core/services/notification_service.dart';
 import 'package:teyago/core/services/phone_verification_service.dart';
 import 'package:teyago/core/services/provider_verification_service.dart';
 import 'package:teyago/core/services/websocket_service.dart';
+import 'package:teyago/providers/cm_provider.dart';
 import 'package:teyago/providers/realtime_messaging_provider.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
 import 'package:teyago/ui/screens/app_entry_screen.dart';
@@ -46,10 +47,35 @@ import 'core/services/improved_location_service.dart';
 import 'providers/improved_nearby_provider.dart';
 import 'providers/provider_verification_provider.dart';
 import 'providers/phone_verification_provider.dart';
+import 'core/services/fcm_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+// Gestionnaire de messages en arrière-plan FCM (OBLIGATOIRE au niveau top-level)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialiser Firebase si nécessaire
+  await Firebase.initializeApp();
+  print('📨 Message FCM en arrière-plan: ${message.notification?.title}');
+}
 
 void main() async {
   // Assurer que les liaisons Flutter sont initialisées
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+
+    print('🔥 Initialisation Firebase...');
+    await Firebase.initializeApp();
+    print('✅ Firebase initialisé');
+    
+    // Configurer le gestionnaire de messages en arrière-plan
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    print('✅ Gestionnaire FCM arrière-plan configuré');
+    
+  } catch (e) {
+    print('❌ Erreur initialisation Firebase: $e');
+  }
 
   // Supprimer les debug elements
   if (kDebugMode) {
@@ -106,6 +132,8 @@ class MyApp extends StatelessWidget {
     final reviewService = ReviewService(apiService);
     final webSocketService = WebSocketService.instance;
     final notificationService = NotificationService(apiService);
+    final _fcmService = FCMService();
+
     return MultiProvider(
       providers: [
         // Fournisseurs de données
@@ -162,6 +190,9 @@ class MyApp extends StatelessWidget {
             context.read<NotificationProvider>(),
             webSocketService,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FCMProvider(_fcmService, apiService),
         ),
         ChangeNotifierProvider<RealtimeMessagingProvider>(
           create: (context) => RealtimeMessagingProvider(

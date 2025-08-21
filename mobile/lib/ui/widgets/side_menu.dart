@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/config/routes.dart';
 import 'package:teyago/providers/language_provider.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
 import 'package:teyago/ui/screens/help_faq_screen.dart';
@@ -20,7 +21,7 @@ import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
 import 'package:teyago/ui/screens/auth/profile_selector_screen.dart';
 import '../../providers/notification_provider.dart';
-
+import '../screens/about_screen.dart'; 
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -477,6 +478,9 @@ class SideMenu extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+
+      
+
         _buildMenuItem(
           context,
           icon: Icons.settings_outlined,
@@ -491,6 +495,17 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
+
+        _buildMenuItem(
+          context,
+          icon: Icons.info_outline,
+          text: l10n.aboutTeyaGo,
+          onTap: () {
+            onClose();
+            Navigator.pushNamed(context, AppRoutes.about);
+          },
+        ),
+
         _buildMenuItem(
           context,
           icon: Icons.help_outline,
@@ -562,6 +577,7 @@ class SideMenu extends StatelessWidget {
                       Navigator.pushNamed(context, '/explore');
                     },
                   ),
+
                   Consumer<LanguageProvider>(
                     builder: (context, languageProvider, child) {
                       return _buildMenuItem(
@@ -583,11 +599,33 @@ class SideMenu extends StatelessWidget {
             ),
           ),
 
+          const Divider(height: 32),
+                
+          
+
+          // const Divider(height: 16),
+          
           // Boutons de connexion/inscription
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(l10n.aboutTeyaGo),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

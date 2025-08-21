@@ -51,5 +51,40 @@
 		<string>Cette application utilise votre localisation pour trouver les prestataires à proximité.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>Cette application utilise votre localisation pour trouver les prestataires à proximité.</string>
+
+		<!-- Support des notifications en arrière-plan -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+			<string>background-fetch</string>
+		</array>
+		
+		<!-- Autorisation d'utiliser les notifications push -->
+		<key>UIUserNotificationSettings</key>
+		<dict>
+			<key>UIUserNotificationTypeBadge</key>
+			<true/>
+			<key>UIUserNotificationTypeSound</key>
+			<true/>
+			<key>UIUserNotificationTypeAlert</key>
+			<true/>
+		</dict>
+		
+		<!-- Configuration Firebase -->
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<false/>
+		
+		<!-- Configuration pour les deep links depuis les notifications -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>com.teyago.services.notification</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>teyago</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

@@ -1520,7 +1520,18 @@
   "verificationRequiredMessage": "Vous devez vérifier votre profil pour ajouter des services",
   "verify": "Vérifier",
   "verificationRequiredToSendOffer": "Vous devez vérifier votre profil pour envoyer une offre",
-  "completeVerificationFirst": "Veuillez compléter la vérification de votre profil avant de pouvoir envoyer des offres."
+  "completeVerificationFirst": "Veuillez compléter la vérification de votre profil avant de pouvoir envoyer des offres.",
   
+  "aboutTeyaGo": "À propos de TeyaGo",
+  "yourTrustedServicesGuide": "✨ TeyaGo — votre guide des services de confiance",
+  "keyFeatures": "Fonctionnalités principales",
+  "exploreServices": "Explorer les services",
+  "exploreServicesDescription": "Découvrez une large gamme de prestataires dans de nombreux domaines",
+  "compareProviders": "Comparer les prestataires", 
+  "compareProvidersDescription": "Analysez les profils, notes et avis pour faire le bon choix",
+  "requestQuotes": "Demander des devis",
+  "requestQuotesDescription": "Obtenez facilement des devis personnalisés de plusieurs prestataires",
+  "shareExperience": "Partager votre expérience",
+  "shareExperienceDescription": "Aidez la communauté en partageant vos avis et recommandations"
   
 }

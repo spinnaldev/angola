@@ -4585,4 +4585,115 @@ class ApiService {
     print('Base URL: $baseUrl');
     print('========================');
   }
+
+  /// Enregistrer le token FCM de l'utilisateur
+  Future<bool> updateFCMToken(String fcmToken) async {
+    try {
+      print('📤 Envoi du token FCM au backend...');
+
+      final userId = await getCurrentUserId();
+      final data = await _apiClient.post(
+        'notifications/fcm-token/',
+        data: {
+          'user_id': userId,
+          'fcm_token': fcmToken,
+          'device_type': Platform.isAndroid ? 'android' : 'ios',
+          'app_version': '1.0.0', // Récupérer dynamiquement si nécessaire
+        },
+        requireAuth: true,
+      );
+
+      print('✅ Token FCM enregistré avec succès');
+      return true;
+    } catch (e) {
+      print('❌ Erreur envoi token FCM: $e');
+      return false;
+    }
+  }
+
+  /// Supprimer le token FCM (lors de la déconnexion)
+  Future<bool> removeFCMToken(String fcmToken) async {
+    try {
+      print('🗑️ Suppression du token FCM...');
+
+      final userId = await getCurrentUserId();
+      final data = {'user_id': userId, 'fcm_token': fcmToken};
+      await _apiClient.delete(
+        'notifications/fcm-token/',
+        // data,
+        requireAuth: true,
+      );
+
+      print('✅ Token FCM supprimé');
+      return true;
+    } catch (e) {
+      print('❌ Erreur suppression token FCM: $e');
+      return false;
+    }
+  }
+
+  /// Mettre à jour les préférences de notification
+  Future<bool> updateNotificationPreferences(Map<String, bool> preferences) async {
+    try {
+      print('⚙️ Mise à jour des préférences de notification...');
+      
+      final userId = await getCurrentUserId();
+      await _apiClient.post(
+        'notifications/preferences/',
+        data: {
+          'user_id': userId,
+          'preferences': preferences,
+        },
+        requireAuth: true,
+      );
+      
+      print('✅ Préférences de notification mises à jour');
+      return true;
+      
+    } catch (e) {
+      print('❌ Erreur mise à jour préférences: $e');
+      return false;
+    }
+  }
+
+  /// Marquer une notification comme lue
+  // Future<bool> markNotificationAsRead(int notificationId) async {
+  //   try {
+  //     print('✅ Marquage notification comme lue...');
+      
+  //     await _apiClient.patch(
+  //       'notifications/$notificationId/mark-read/',
+  //       data: {'is_read': true},
+  //       requireAuth: true,
+  //     );
+      
+  //     print('✅ Notification marquée comme lue');
+  //     return true;
+      
+  //   } catch (e) {
+  //     print('❌ Erreur marquage notification: $e');
+  //     return false;
+  //   }
+  // }
+
+  /// Envoyer une notification de test
+  Future<bool> sendTestNotification() async {
+    try {
+      print('🧪 Envoi notification de test...');
+      
+      final userId = await getCurrentUserId();
+      await _apiClient.post(
+        'notifications/test/',
+        data: {'user_id': userId},
+        requireAuth: true,
+      );
+      
+      print('✅ Notification de test envoyée');
+      return true;
+      
+    } catch (e) {
+      print('❌ Erreur envoi notification test: $e');
+      return false;
+    }
+  }
 }
