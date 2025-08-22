@@ -32,10 +32,17 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            // ✅ SOLUTION : Utiliser la signature debug pour tester
+            signingConfig signingConfigs.debug
+            
+            // ✅ CORRECTION : Désactiver complètement toute optimisation
             minifyEnabled false
             shrinkResources false
             debuggable false
+            
+            // ✅ AJOUT : Configuration spécifique pour éviter l'erreur zip
+            zipAlignEnabled false
+            crunchPngs false
         }
         debug {
             minifyEnabled false

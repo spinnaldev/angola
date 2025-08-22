@@ -1,3 +1,4 @@
+# angola_api/operation/signals.py - VERSION MISE À JOUR AVEC EXTRADATA
 
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -64,7 +65,6 @@ def send_message_notification(user_id, message_data):
                 'message': message_data
             }
         )
-
 
 def get_fcm_notification_config(notification_type, title, message, related_object_id=None):
     """
@@ -142,20 +142,22 @@ def get_fcm_notification_config(notification_type, title, message, related_objec
         
     return config
 
-# ✅ FONCTION UTILITAIRE ROBUSTE - Ne lève jamais d'exception
-def create_and_send_notification(user, title, message, notification_type, related_object_id=None):
+# ✅ FONCTION UTILITAIRE MISE À JOUR AVEC SUPPORT DES EXTRA_DATA
+def create_and_send_notification(user, title, message, notification_type, related_object_id=None, extra_data=None):
     """
     Fonction utilitaire pour créer une notification et l'envoyer via WebSocket + FCM
     ROBUSTE : Ne lève jamais d'exception, continue toujours
+    NOUVEAU : Support des extra_data pour la navigation précise
     """
     try:
-        # Créer la notification en base
+        # Créer la notification en base avec extra_data
         notification = Notification.objects.create(
             user=user,
             title=title,
             message=message,
             notification_type=notification_type,
-            related_object_id=related_object_id
+            related_object_id=related_object_id,
+            extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
         )
         
         print(f"✅ Notification créée: {notification.id} pour user {user.id} (type: {notification_type})")
@@ -168,10 +170,11 @@ def create_and_send_notification(user, title, message, notification_type, relate
             'notification_type': notification.notification_type,
             'related_object_id': notification.related_object_id,
             'is_read': notification.is_read,
+            'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
             'created_at': notification.created_at.isoformat(),
         }
         
-        # ✅ NOUVEAU : Envoyer via FCM
+        # ✅ ENVOYER VIA FCM (code existant conservé)
         try:
             print(f"🔔 Envoi notification FCM pour user {user.id}...")
             
@@ -182,6 +185,12 @@ def create_and_send_notification(user, title, message, notification_type, relate
                 message=message,
                 related_object_id=related_object_id
             )
+            
+            # ✅ NOUVEAU : Ajouter les extra_data aux données FCM si disponibles
+            if extra_data:
+                fcm_config['data'].update({
+                    'extra_data': str(extra_data)  # FCM ne supporte que les strings
+                })
             
             # Envoyer la notification FCM
             fcm_success = FCMService.send_notification_to_user(
@@ -221,150 +230,230 @@ def create_and_send_notification(user, title, message, notification_type, relate
         
     except Exception as e:
         print(f"❌ Erreur création notification (continue quand même): {e}")
-        return None  # ✅ TOUJOURS retourner None en cas d'erreur
+        return None
 
 # ================================================================
-# SIGNAUX REFACTORISÉS AVEC LA FONCTION UTILITAIRE
+# ✅ NOUVELLES FONCTIONS SPÉCIALISÉES POUR CRÉER LES EXTRADATA
 # ================================================================
 
-@receiver(post_save, sender=Dispute)
-def dispute_status_changed(sender, instance, created, **kwargs):
-    """Signal quand le statut d'un litige change"""
-    if not created and instance.status == 'resolved':
-        # ✅ REFACTORISÉ : Utiliser la fonction utilitaire
+def create_message_notification_with_extradata(message, conversation):
+    """Créer une notification de message avec les bonnes extraData"""
+    
+    # Déterminer qui est l'expéditeur et le destinataire
+    if message.sender == conversation.client:
+        # Message de client vers prestataire
+        recipient = conversation.provider.user
+        sender = conversation.client
+        sender_company_name = None
+    else:
+        # Message de prestataire vers client
+        recipient = conversation.client
+        sender = message.sender
+        sender_company_name = getattr(conversation.provider, 'company_name', None)
+    
+    # Créer les extraData adaptées à votre classe Person
+    extra_data = {
+        'conversation_id': conversation.id,
+        'sender_id': sender.id,
+        'sender_username': sender.username,
+        'sender_first_name': sender.first_name,
+        'sender_last_name': sender.last_name,
+        'sender_avatar': sender.profile_picture.url if sender.profile_picture else None,
+        'sender_company_name': sender_company_name,
+    }
+    
+    # Déterminer le nom d'affichage
+    if sender_company_name:
+        sender_display = sender_company_name
+    else:
+        sender_display = sender.get_full_name() or sender.username
+    
+    # Créer la notification avec extraData
+    create_and_send_notification(
+        user=recipient,
+        title="Nouveau message",
+        message=f"Vous avez reçu un nouveau message de {sender_display}",
+        notification_type='new_message',
+        related_object_id=conversation.id,
+        extra_data=extra_data  # ✅ NOUVEAU
+    )
+
+def create_project_offer_notification_with_extradata(offer, project):
+    """Créer une notification d'offre de projet avec les bonnes extraData"""
+    
+    provider_user = offer.provider.user
+    
+    # Créer les extraData pour la navigation
+    extra_data = {
+        'project_id': project.id,
+        'offer_id': offer.id,
+        'provider_id': offer.provider.id,
+        'provider_username': provider_user.username,
+        'provider_first_name': provider_user.first_name,
+        'provider_last_name': provider_user.last_name,
+        'provider_avatar': provider_user.profile_picture.url if provider_user.profile_picture else None,
+        'provider_company_name': getattr(offer.provider, 'company_name', None),
+        'offer_price': str(offer.price),
+        'offer_delivery_time': offer.delivery_time,
+    }
+    
+    # Déterminer le nom d'affichage du prestataire
+    company_name = getattr(offer.provider, 'company_name', None)
+    provider_display = company_name if company_name else (provider_user.get_full_name() or provider_user.username)
+    
+    # Créer la notification avec extraData
+    create_and_send_notification(
+        user=project.client,
+        title="Nouvelle offre reçue",
+        message=f"Vous avez reçu une nouvelle offre de {provider_display} pour votre projet '{project.title}'.",
+        notification_type='new_offer',
+        related_object_id=offer.id,
+        extra_data=extra_data  # ✅ NOUVEAU
+    )
+
+def create_quote_request_notification_with_extradata(quote_request):
+    """Créer une notification de demande de devis avec les bonnes extraData"""
+    
+    client = quote_request.client
+    
+    # Créer les extraData pour la navigation
+    extra_data = {
+        'quote_id': quote_request.id,
+        'client_id': client.id,
+        'client_username': client.username,
+        'client_first_name': client.first_name,
+        'client_last_name': client.last_name,
+        'client_avatar': client.profile_picture.url if client.profile_picture else None,
+        'service_id': quote_request.service.id if quote_request.service else None,
+        'budget': str(quote_request.budget) if quote_request.budget else None,
+    }
+    
+    client_display = client.get_full_name() or client.username
+    
+    # Créer la notification avec extraData
+    create_and_send_notification(
+        user=quote_request.provider.user,
+        title="Nouvelle demande de devis",
+        message=f"Vous avez reçu une nouvelle demande de devis pour '{quote_request.subject}' de la part de {client_display}.",
+        notification_type='quote_request',
+        related_object_id=quote_request.id,
+        extra_data=extra_data  # ✅ NOUVEAU
+    )
+
+def create_quote_status_notification_with_extradata(quote_request, status):
+    """Créer une notification de changement de statut de devis avec extraData"""
+    
+    provider_user = quote_request.provider.user
+    
+    # Créer les extraData pour la navigation
+    extra_data = {
+        'quote_id': quote_request.id,
+        'provider_id': quote_request.provider.id,
+        'provider_username': provider_user.username,
+        'provider_first_name': provider_user.first_name,
+        'provider_last_name': provider_user.last_name,
+        'provider_avatar': provider_user.profile_picture.url if provider_user.profile_picture else None,
+        'provider_company_name': getattr(quote_request.provider, 'company_name', None),
+        'service_id': quote_request.service.id if quote_request.service else None,
+    }
+    
+    company_name = getattr(quote_request.provider, 'company_name', None)
+    provider_display = company_name if company_name else (provider_user.get_full_name() or provider_user.username)
+    
+    if status == 'accepted':
         create_and_send_notification(
-            user=instance.client,
-            title="Litige résolu",
-            message=f"Votre litige '{instance.title}' a été résolu.",
-            notification_type='dispute'
+            user=quote_request.client,
+            title="Devis accepté",
+            message=f"Votre demande de devis '{quote_request.subject}' a été acceptée par {provider_display}. Vous pouvez maintenant contacter le prestataire.",
+            notification_type='quote_accepted',
+            related_object_id=quote_request.id,
+            extra_data=extra_data  # ✅ NOUVEAU
         )
-
-@receiver(post_save, sender=ClientProject)
-def project_status_changed(sender, instance, created, **kwargs):
-    """Signal quand le statut d'un projet change"""
-    if not created and instance.status == 'cancelled':
-        # Rejeter toutes les offres en attente
-        ProjectOffer.objects.filter(
-            project=instance,
-            status='pending'
-        ).update(status='rejected')
-
-@receiver(post_save, sender=QuoteRequest)
-def quote_request_status_changed(sender, instance, created, **kwargs):
-    """Signal pour les changements de statut des demandes de devis"""
-    if created:
-        # ✅ REFACTORISÉ : Nouvelle demande de devis
+    elif status == 'rejected':
         create_and_send_notification(
-            user=instance.provider.user,
-            title="Nouvelle demande de devis",
-            message=f"Vous avez reçu une nouvelle demande de devis pour '{instance.subject}' de la part de {instance.client.get_full_name() or instance.client.username}.",
-            notification_type='quote_request',
-            related_object_id=instance.id
+            user=quote_request.client,
+            title="Devis rejeté",
+            message=f"Votre demande de devis '{quote_request.subject}' a été rejetée par {provider_display}.",
+            notification_type='quote_rejected',
+            related_object_id=quote_request.id,
+            extra_data=extra_data  # ✅ NOUVEAU
+        )
+    elif status == 'completed':
+        # Notification pour le client
+        create_and_send_notification(
+            user=quote_request.client,
+            title="Prestation terminée",
+            message=f"La prestation '{quote_request.subject}' a été marquée comme terminée. N'oubliez pas de laisser un avis !",
+            notification_type='quote_completed',
+            related_object_id=quote_request.id,
+            extra_data=extra_data  # ✅ NOUVEAU
         )
         
-    else:
-        # Notifications pour les changements de statut
-        if instance.status == 'accepted':
-            # ✅ REFACTORISÉ : Devis accepté
-            create_and_send_notification(
-                user=instance.client,
-                title="Devis accepté",
-                message=f"Votre demande de devis '{instance.subject}' a été acceptée par {instance.provider.user.get_full_name() or instance.provider.user.username}. Vous pouvez maintenant contacter le prestataire.",
-                notification_type='quote_accepted',
-                related_object_id=instance.id
-            )
-
-        elif instance.status == 'rejected':
-            # ✅ REFACTORISÉ : Devis rejeté
-            create_and_send_notification(
-                user=instance.client,
-                title="Devis rejeté",
-                message=f"Votre demande de devis '{instance.subject}' a été rejetée par {instance.provider.user.get_full_name() or instance.provider.user.username}.",
-                notification_type='quote_rejected',
-                related_object_id=instance.id
-            )
-            
-        elif instance.status == 'completed':
-            # ✅ REFACTORISÉ : Prestation terminée - deux notifications
-            # Notification pour le client
-            create_and_send_notification(
-                user=instance.client,
-                title="Prestation terminée",
-                message=f"La prestation '{instance.subject}' a été marquée comme terminée. N'oubliez pas de laisser un avis !",
-                notification_type='quote_completed',
-                related_object_id=instance.id
-            )
-            
-            # Notification pour le prestataire
-            create_and_send_notification(
-                user=instance.provider.user,
-                title="Prestation terminée",
-                message=f"Vous avez marqué la prestation '{instance.subject}' comme terminée.",
-                notification_type='quote_completed',
-                related_object_id=instance.id
-            )
-
-@receiver(post_save, sender=ProjectOffer)
-def project_offer_status_changed(sender, instance, created, **kwargs):
-    """Signal pour les changements de statut des offres sur les projets"""
-    if created:
-        # ✅ REFACTORISÉ : Nouvelle offre reçue
+        # Notification pour le prestataire
         create_and_send_notification(
-            user=instance.project.client,
-            title="Nouvelle offre reçue",
-            message=f"Vous avez reçu une nouvelle offre de {instance.provider.user.get_full_name() or instance.provider.user.username} pour votre projet '{instance.project.title}'.",
-            notification_type='new_offer',
-            related_object_id=instance.id
+            user=provider_user,
+            title="Prestation terminée",
+            message=f"Vous avez marqué la prestation '{quote_request.subject}' comme terminée.",
+            notification_type='quote_completed',
+            related_object_id=quote_request.id,
+            extra_data=extra_data  # ✅ NOUVEAU
         )
-        
-    else:
-        # Notifications pour les changements de statut d'offre
-        if instance.status == 'accepted':
-            # ✅ REFACTORISÉ : Offre acceptée
-            create_and_send_notification(
-                user=instance.provider.user,
-                title="Offre acceptée",
-                message=f"Votre offre pour le projet '{instance.project.title}' a été acceptée ! Le client va vous contacter.",
-                notification_type='offer_accepted',
-                related_object_id=instance.id
-            )
-            
-        elif instance.status == 'rejected':
-            # ✅ REFACTORISÉ : Offre rejetée
-            create_and_send_notification(
-                user=instance.provider.user,
-                title="Offre rejetée",
-                message=f"Votre offre pour le projet '{instance.project.title}' a été rejetée.",
-                notification_type='offer_rejected',
-                related_object_id=instance.id
-            )
+
+def create_offer_status_notification_with_extradata(offer, status):
+    """Créer une notification de changement de statut d'offre avec extraData"""
+    
+    # Créer les extraData pour la navigation
+    extra_data = {
+        'project_id': offer.project.id,
+        'offer_id': offer.id,
+        'client_id': offer.project.client.id,
+        'client_username': offer.project.client.username,
+        'client_first_name': offer.project.client.first_name,
+        'client_last_name': offer.project.client.last_name,
+        'client_avatar': offer.project.client.profile_picture.url if offer.project.client.profile_picture else None,
+    }
+    
+    if status == 'accepted':
+        create_and_send_notification(
+            user=offer.provider.user,
+            title="Offre acceptée",
+            message=f"Votre offre pour le projet '{offer.project.title}' a été acceptée ! Le client va vous contacter.",
+            notification_type='offer_accepted',
+            related_object_id=offer.id,
+            extra_data=extra_data  # ✅ NOUVEAU
+        )
+    elif status == 'rejected':
+        create_and_send_notification(
+            user=offer.provider.user,
+            title="Offre rejetée",
+            message=f"Votre offre pour le projet '{offer.project.title}' a été rejetée.",
+            notification_type='offer_rejected',
+            related_object_id=offer.id,
+            extra_data=extra_data  # ✅ NOUVEAU
+        )
+
+# ================================================================
+# ✅ SIGNAUX MODIFIÉS POUR UTILISER LES NOUVELLES FONCTIONS EXTRADATA
+# ================================================================
 
 @receiver(post_save, sender=Message)
 def message_created(sender, instance, created, **kwargs):
-    """Signal pour les nouveaux messages"""
+    """Signal pour les nouveaux messages - MISE À JOUR AVEC EXTRADATA"""
     if created:
         conversation = instance.conversation
         
-        # Déterminer qui doit recevoir la notification
+        # ✅ NOUVEAU : Utiliser la fonction avec extraData
+        create_message_notification_with_extradata(instance, conversation)
+        
+        # Déterminer qui doit recevoir la notification pour les WebSockets classiques
         if instance.sender == conversation.client:
-            # Message envoyé par le client → notifier le prestataire
             recipient = conversation.provider.user
             sender_name = conversation.client.get_full_name() or conversation.client.username
         else:
-            # Message envoyé par le prestataire → notifier le client
             recipient = conversation.client
             sender_name = conversation.provider.user.get_full_name() or conversation.provider.user.username
         
-        # ✅ REFACTORISÉ : Créer notification avec fonction utilitaire
-        create_and_send_notification(
-            user=recipient,
-            title="Nouveau message",
-            message=f"Vous avez reçu un nouveau message de {sender_name}",
-            notification_type='new_message',
-            related_object_id=conversation.id
-        )
-        
-        # 📱 ENVOYER AUSSI LA NOTIFICATION DE MESSAGE (WebSocket existant)
+        # 📱 ENVOYER AUSSI LA NOTIFICATION DE MESSAGE (WebSocket existant - conservé)
         message_data = {
             'id': instance.id,
             'conversation_id': conversation.id,
@@ -375,13 +464,13 @@ def message_created(sender, instance, created, **kwargs):
             'is_read': instance.is_read
         }
         
-        # ✅ ENVOYER AVEC GESTION D'ERREUR
+        # ✅ ENVOYER AVEC GESTION D'ERREUR (code existant conservé)
         try:
             send_message_notification(recipient.id, message_data)
         except Exception as e:
             print(f"⚠️ Erreur envoi message WebSocket (continue quand même): {e}")
         
-        # Envoyer aussi dans le groupe de la conversation
+        # Envoyer aussi dans le groupe de la conversation (code existant conservé)
         try:
             if channel_layer:
                 async_to_sync(channel_layer.group_send)(
@@ -394,6 +483,64 @@ def message_created(sender, instance, created, **kwargs):
         except Exception as e:
             print(f"⚠️ Erreur chat WebSocket (continue quand même): {e}")
 
+@receiver(post_save, sender=QuoteRequest)
+def quote_request_status_changed(sender, instance, created, **kwargs):
+    """Signal pour les changements de statut des demandes de devis - MISE À JOUR AVEC EXTRADATA"""
+    if created:
+        # ✅ NOUVEAU : Utiliser la fonction avec extraData
+        create_quote_request_notification_with_extradata(instance)
+    else:
+        # Notifications pour les changements de statut
+        if instance.status in ['accepted', 'rejected', 'completed']:
+            # ✅ NOUVEAU : Utiliser la fonction avec extraData
+            create_quote_status_notification_with_extradata(instance, instance.status)
+
+@receiver(post_save, sender=ProjectOffer)
+def project_offer_status_changed(sender, instance, created, **kwargs):
+    """Signal pour les changements de statut des offres sur les projets - MISE À JOUR AVEC EXTRADATA"""
+    if created:
+        # ✅ NOUVEAU : Utiliser la fonction avec extraData
+        create_project_offer_notification_with_extradata(instance, instance.project)
+    else:
+        # Notifications pour les changements de statut d'offre
+        if instance.status in ['accepted', 'rejected']:
+            # ✅ NOUVEAU : Utiliser la fonction avec extraData
+            create_offer_status_notification_with_extradata(instance, instance.status)
+
+# ================================================================
+# SIGNAUX EXISTANTS CONSERVÉS (PAS DE CHANGEMENT)
+# ================================================================
+
+@receiver(post_save, sender=Dispute)
+def dispute_status_changed(sender, instance, created, **kwargs):
+    """Signal quand le statut d'un litige change"""
+    if not created and instance.status == 'resolved':
+        # ✅ NOUVEAU : Ajouter des extraData pour les litiges
+        extra_data = {
+            'dispute_id': instance.id,
+            'dispute_title': instance.title,
+            'related_type': 'quote_request' if hasattr(instance, 'quote_request') else 'project',
+            'related_id': getattr(instance, 'quote_request_id', None) or getattr(instance, 'project_id', None),
+        }
+        
+        create_and_send_notification(
+            user=instance.client,
+            title="Litige résolu",
+            message=f"Votre litige '{instance.title}' a été résolu.",
+            notification_type='dispute',
+            related_object_id=instance.id,
+            extra_data=extra_data  # ✅ NOUVEAU
+        )
+
+@receiver(post_save, sender=ClientProject)
+def project_status_changed(sender, instance, created, **kwargs):
+    """Signal quand le statut d'un projet change"""
+    if not created and instance.status == 'cancelled':
+        # Rejeter toutes les offres en attente
+        ProjectOffer.objects.filter(
+            project=instance,
+            status='pending'
+        ).update(status='rejected')
 
 @receiver(post_save, sender=ProviderVerification)
 def provider_verification_status_changed(sender, instance, created, **kwargs):
@@ -429,10 +576,8 @@ def phone_verification_status_changed(sender, instance, created, **kwargs):
             related_object_id=instance.id
         )
 
-
-
 # ================================================================
-# ✅ FONCTIONS UTILITAIRES POUR TESTER FCM (OPTIONNEL)
+# ✅ FONCTIONS UTILITAIRES CONSERVÉES (code existant)
 # ================================================================
 
 def send_test_fcm_notification(user, notification_type='test'):
@@ -468,12 +613,6 @@ def send_test_fcm_notification(user, notification_type='test'):
     except Exception as e:
         print(f"❌ Erreur test FCM: {e}")
         return None
-    
-
-
-# ================================================================
-# ✅ FONCTION POUR ENVOYER DES NOTIFICATIONS EN MASSE (OPTIONNEL)
-# ================================================================
 
 def send_bulk_notification(users, title, message, notification_type='general'):
     """
@@ -501,83 +640,3 @@ def send_bulk_notification(users, title, message, notification_type='general'):
     
     print(f"📊 Notifications en masse: {success_count} succès, {error_count} erreurs")
     return {'success': success_count, 'errors': error_count}
-# ================================================================
-# SIGNAUX POUR LES VÉRIFICATIONS (commentés mais prêts)
-# ================================================================
-
-# @receiver(post_save, sender=ProviderVerification)
-# def provider_verification_status_changed(sender, instance, created, **kwargs):
-#     """Signal pour les changements de vérification prestataire"""
-#     if not created:
-#         if instance.verification_status == 'verified':
-#             create_and_send_notification(
-#                 user=instance.provider.user,
-#                 title="Profil vérifié",
-#                 message="Félicitations ! Votre profil a été vérifié. Vous pouvez maintenant proposer vos services.",
-#                 notification_type='profile_verified'
-#             )
-#         elif instance.verification_status == 'rejected':
-#             create_and_send_notification(
-#                 user=instance.provider.user,
-#                 title="Vérification rejetée",
-#                 message=f"Votre demande de vérification a été rejetée. Raison: {instance.rejection_reason or 'Non spécifiée'}",
-#                 notification_type='profile_rejected'
-#             )
-
-# @receiver(post_save, sender=PhoneVerification)
-# def phone_verification_status_changed(sender, instance, created, **kwargs):
-#     """Signal pour les changements de vérification téléphone"""
-#     if not created and instance.status == 'verified':
-#         create_and_send_notification(
-#             user=instance.user,
-#             title="Téléphone vérifié",
-#             message="Votre numéro de téléphone a été vérifié avec succès !",
-#             notification_type='phone_verified'
-#         )
-#         return None
-    
-# from django.db.models.signals import post_save, pre_save
-# from django.dispatch import receiver
-
-# # @receiver(post_save, sender=ProviderVerification)
-# # def log_provider_verification_change(sender, instance, created, **kwargs):
-# #     """Log automatique des changements de vérification prestataire"""
-# #     if created:
-# #         # Log de création
-# #         AdminAction.objects.create(
-# #             admin_user=instance.verified_by if instance.verified_by else None,
-# #             action_type='provider_verification_create',
-# #             target_model='ProviderVerification',
-# #             target_id=instance.id,
-# #             description=f"Nouvelle demande de vérification pour {instance.provider.user.username}"
-# #         )
-# #     else:
-# #         # Log des changements de statut
-# #         if instance.verification_status == 'verified':
-# #             AdminAction.objects.create(
-# #                 admin_user=instance.verified_by,
-# #                 action_type='provider_verification_approve',
-# #                 target_model='ProviderVerification',
-# #                 target_id=instance.id,
-# #                 description=f"Vérification approuvée pour {instance.provider.user.username}"
-# #             )
-# #         elif instance.verification_status == 'rejected':
-# #             AdminAction.objects.create(
-# #                 admin_user=instance.verified_by if instance.verified_by else None,
-# #                 action_type='provider_verification_reject',
-# #                 target_model='ProviderVerification',
-# #                 target_id=instance.id,
-# #                 description=f"Vérification rejetée pour {instance.provider.user.username}: {instance.rejection_reason}"
-# #             )
-
-# @receiver(post_save, sender=PhoneVerification)
-# def log_phone_verification_change(sender, instance, created, **kwargs):
-#     """Log automatique des changements de vérification téléphone"""
-#     if instance.status == 'verified' and instance.verified_at:
-#         AdminAction.objects.create( 
-#             admin_user=None,  # Action automatique
-#             action_type='phone_verification_success',
-#             target_model='PhoneVerification',
-#             target_id=instance.id,
-#             description=f"Vérification téléphone réussie pour {instance.user.username} ({instance.phone_number})"
-#         )

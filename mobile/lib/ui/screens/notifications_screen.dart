@@ -5,6 +5,7 @@ import 'package:teyago/providers/realtime_notification_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../core/models/notification_model.dart'; // ✅ Correct import
 import '../screens/base_screen.dart';
+import '../../core/services/notification_navigation_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class NotificationsScreen extends StatefulWidget {
   _NotificationsScreenState createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> 
+class _NotificationsScreenState extends State<NotificationsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -21,7 +22,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Charger les notifications au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -40,7 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.notifications),
@@ -89,7 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           if (provider.isLoading && provider.notifications.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (provider.errorMessage != null) {
             return Center(
               child: Padding(
@@ -110,7 +111,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => provider.loadNotifications(forceRefresh: true),
+                      onPressed: () =>
+                          provider.loadNotifications(forceRefresh: true),
                       child: Text(l10n.retry),
                     ),
                   ],
@@ -118,7 +120,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
             );
           }
-          
+
           return TabBarView(
             controller: _tabController,
             children: [
@@ -192,8 +194,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: notification.isRead 
-              ? Colors.grey[300] 
+          backgroundColor: notification.isRead
+              ? Colors.grey[300]
               : Theme.of(context).primaryColor,
           radius: 24,
           child: Icon(
@@ -205,7 +207,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         title: Text(
           notification.title,
           style: TextStyle(
-            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+            fontWeight:
+                notification.isRead ? FontWeight.normal : FontWeight.w600,
             fontSize: 16,
           ),
         ),
@@ -284,13 +287,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return Icons.assignment;
       case 'assignment_turned_in':
         return Icons.assignment_turned_in;
-      case 'message': 
+      case 'message':
         return Icons.message;
-      case 'receipt': 
+      case 'receipt':
         return Icons.receipt;
-      case 'favorite': 
+      case 'favorite':
         return Icons.favorite;
-      default: 
+      default:
         return Icons.notifications;
     }
   }
@@ -299,7 +302,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inMinutes < 1) {
       return l10n.just_now;
     } else if (difference.inMinutes < 60) {
@@ -308,41 +311,56 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       return l10n.hours_ago(difference.inHours);
     } else if (difference.inDays < 7) {
       final plural = difference.inDays > 1 ? 's' : '';
-      return l10n.days_ago(difference.inDays.toString() , plural);
+      return l10n.days_ago(difference.inDays.toString(), plural);
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
-
   Future<void> _handleNotificationTap(NotificationModel notification) async {
-    // Marquer comme lue si ce n'est pas déjà fait
-    if (!notification.isRead) {
-      await Provider.of<NotificationProvider>(context, listen: false)
-          .markAsRead(notification.id);
-    }
-    
-    // Naviguer vers l'écran approprié selon le type de notification
-    switch (notification.notificationType) {
-      case 'quote_request':
-      case 'quote_accepted':
-      case 'quote_rejected':
-      case 'quote_completed':
-        // Naviguer vers l'écran des demandes de devis
-        Navigator.pushNamed(context, '/quote-requests');
-        break;
-      case 'new_offer':
-      case 'offer_accepted':
-      case 'offer_rejected':
-        // Naviguer vers l'écran des projets
-        Navigator.pushNamed(context, '/projects');
-        break;
-      case 'message':
-        // Naviguer vers les conversations
-        Navigator.pushNamed(context, '/messages');
-        break;
-      default:
-        // Pour les autres types, rester sur l'écran actuel
-        break;
-    }
+  // Marquer comme lue si ce n'est pas déjà fait
+  if (!notification.isRead) {
+    await Provider.of<NotificationProvider>(context, listen: false)
+        .markAsRead(notification.id);
   }
+  
+  // Utiliser le nouveau service de navigation
+  await NotificationNavigationService.navigateToNotificationTarget(
+    context, 
+    notification
+  );
+}
+  // Future<void> _handleNotificationTap(NotificationModel notification) async {
+  //   // Marquer comme lue si ce n'est pas déjà fait
+  //   if (!notification.isRead) {
+  //     await Provider.of<NotificationProvider>(context, listen: false)
+  //         .markAsRead(notification.id);
+  //   }
+
+  //   // Naviguer vers l'écran approprié selon le type de notification
+  //   await NotificationNavigationService.navigateToNotificationTarget(
+  //       context, notification);
+
+  //   // switch (notification.notificationType) {
+  //   //   case 'quote_request':
+  //   //   case 'quote_accepted':
+  //   //   case 'quote_rejected':
+  //   //   case 'quote_completed':
+  //   //     // Naviguer vers l'écran des demandes de devis
+  //   //     Navigator.pushNamed(context, '/quote-requests');
+  //   //     break;
+  //   //   case 'new_offer':
+  //   //   case 'offer_accepted':
+  //   //   case 'offer_rejected':
+  //   //     // Naviguer vers l'écran des projets
+  //   //     Navigator.pushNamed(context, '/projects');
+  //   //     break;
+  //   //   case 'message':
+  //   //     // Naviguer vers les conversations
+  //   //     Navigator.pushNamed(context, '/messages');
+  //   //     break;
+  //   //   default:
+  //   //     // Pour les autres types, rester sur l'écran actuel
+  //   //     break;
+  //   // }
+  // }
 }

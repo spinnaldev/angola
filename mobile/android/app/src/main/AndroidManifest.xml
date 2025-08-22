@@ -17,7 +17,7 @@
 
     <application
         android:label="Teyago"
-        android:name="io.flutter.app.FlutterMultiDexApplication"
+        android:name="androidx.multidex.MultiDexApplication"
         android:icon="@mipmap/ic_launcher">
 
         <!-- Clé API Google Maps -->

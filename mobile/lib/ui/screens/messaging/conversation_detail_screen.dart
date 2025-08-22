@@ -11,11 +11,12 @@ import '../../../core/models/message.dart';
 class ConversationDetailScreen extends StatefulWidget {
   final int conversationId;
   final Person otherPerson;
-
+  final int? highlightMessageId;
   const ConversationDetailScreen({
     Key? key,
     required this.conversationId,
     required this.otherPerson,
+    this.highlightMessageId,
   }) : super(key: key);
 
   @override
