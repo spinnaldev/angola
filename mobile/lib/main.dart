@@ -63,15 +63,38 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-
     print('🔥 Initialisation Firebase...');
     await Firebase.initializeApp();
     print('✅ Firebase initialisé');
     
     // Configurer le gestionnaire de messages en arrière-plan
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    
     print('✅ Gestionnaire FCM arrière-plan configuré');
+    
+    // *** AJOUTEZ CE CODE DE DEBUG ***
+    print('🔍 === DEBUG FCM INITIAL ===');
+    
+    // Vérifier que Firebase est bien initialisé
+    try {
+      final messaging = FirebaseMessaging.instance;
+      print('✅ Instance FirebaseMessaging obtenue');
+      
+      // Essayer d'obtenir le token immédiatement pour voir s'il y a des erreurs
+      final token = await messaging.getToken();
+      print('🔑 Token FCM initial: ${token?.substring(0, 20)}...');
+      
+      // Vérifier les permissions avant l'initialisation
+      final settings = await messaging.getNotificationSettings();
+      print('📝 Status permissions: ${settings.authorizationStatus}');
+      print('📱 Alert autorisé: ${settings.alert}');
+      print('🔔 Sound autorisé: ${settings.sound}');
+      print('🔢 Badge autorisé: ${settings.badge}');
+      
+    } catch (e) {
+      print('❌ Erreur lors du debug FCM initial: $e');
+    }
+    
+    print('🔍 === FIN DEBUG FCM INITIAL ===');
     
   } catch (e) {
     print('❌ Erreur initialisation Firebase: $e');

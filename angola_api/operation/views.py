@@ -1309,14 +1309,14 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         if subcategory_id:
             queryset = queryset.filter(subcategory_id=subcategory_id)
         
-        print(queryset)
+        logger.infos(queryset)
         return queryset
     
     def perform_create(self, serializer):
         """
         Sets the provider to the current user when creating a service.
         """
-        print(self.request.user)
+        logger.infos(self.request.user)
         serializer.save(provider=self.request.user.provider_profile)
     
     #@require_verification("créer un service")
@@ -4793,9 +4793,9 @@ class FCMViewSet(viewsets.ViewSet):
         Enregistrer un token FCM pour l'utilisateur connecté
         """
         try:
-            print(f"\n=== 📱 REGISTER FCM TOKEN ===")
-            print(f"🧑 User: {request.user.email}")
-            print(f"📥 Data: {request.data}")
+            logger.infos(f"\n=== 📱 REGISTER FCM TOKEN ===")
+            logger.infos(f"🧑 User: {request.user.email}")
+            logger.infos(f"📥 Data: {request.data}")
             
             fcm_token = request.data.get('fcm_token')
             device_type = request.data.get('device_type', 'android')
@@ -4818,7 +4818,7 @@ class FCMViewSet(viewsets.ViewSet):
                 existing_token.last_used = timezone.now()
                 existing_token.save()
                 
-                print(f"✅ Token FCM mis à jour")
+                logger.infos(f"✅ Token FCM mis à jour")
                 serializer = FCMTokenSerializer(existing_token)
                 
             else:
@@ -4832,27 +4832,27 @@ class FCMViewSet(viewsets.ViewSet):
                     last_used=timezone.now()
                 )
                 
-                print(f"✅ Nouveau token FCM créé")
+                logger.infos(f"✅ Nouveau token FCM créé")
                 serializer = FCMTokenSerializer(new_token)
             
             # Envoyer une notification de bienvenue
             try:
                 FCMService.send_test_notification(request.user)
-                print(f"✅ Notification de bienvenue envoyée")
+                logger.infos(f"✅ Notification de bienvenue envoyée")
             except Exception as e:
-                print(f"⚠️ Erreur notification bienvenue: {e}")
+                logger.infos(f"⚠️ Erreur notification bienvenue: {e}")
             
             response_data = {
                 'message': 'Token FCM enregistré avec succès',
                 'token': serializer.data
             }
-            print(f"📤 Response: {response_data}")
-            print(f"=== 📱 REGISTER FCM TOKEN TERMINÉ ===\n")
+            logger.infos(f"📤 Response: {response_data}")
+            logger.infos(f"=== 📱 REGISTER FCM TOKEN TERMINÉ ===\n")
             
             return Response(response_data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            print(f"❌ Erreur register token: {e}")
+            logger.infos(f"❌ Erreur register token: {e}")
             logger.error(f"Erreur register FCM token pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de l\'enregistrement du token'
@@ -4864,9 +4864,9 @@ class FCMViewSet(viewsets.ViewSet):
         Supprimer un token FCM
         """
         try:
-            print(f"\n=== 🗑️ REMOVE FCM TOKEN ===")
-            print(f"🧑 User: {request.user.email}")
-            print(f"📥 Data: {request.data}")
+            logger.infos(f"\n=== 🗑️ REMOVE FCM TOKEN ===")
+            logger.infos(f"🧑 User: {request.user.email}")
+            logger.infos(f"📥 Data: {request.data}")
             
             fcm_token = request.data.get('fcm_token')
             
@@ -4882,20 +4882,20 @@ class FCMViewSet(viewsets.ViewSet):
             ).update(is_active=False)
             
             if deleted_count > 0:
-                print(f"✅ Token FCM désactivé")
+                logger.infos(f"✅ Token FCM désactivé")
                 message = 'Token FCM supprimé avec succès'
             else:
-                print(f"⚠️ Token FCM non trouvé")
+                logger.infos(f"⚠️ Token FCM non trouvé")
                 message = 'Token FCM non trouvé'
             
             response_data = {'message': message}
-            print(f"📤 Response: {response_data}")
-            print(f"=== 🗑️ REMOVE FCM TOKEN TERMINÉ ===\n")
+            logger.infos(f"📤 Response: {response_data}")
+            logger.infos(f"=== 🗑️ REMOVE FCM TOKEN TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            print(f"❌ Erreur remove token: {e}")
+            logger.infos(f"❌ Erreur remove token: {e}")
             logger.error(f"Erreur remove FCM token pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de la suppression du token'
@@ -4930,8 +4930,8 @@ class FCMViewSet(viewsets.ViewSet):
         Envoyer une notification de test à l'utilisateur connecté
         """
         try:
-            print(f"\n=== 🧪 TEST NOTIFICATION ===")
-            print(f"🧑 User: {request.user.email}")
+            logger.infos(f"\n=== 🧪 TEST NOTIFICATION ===")
+            logger.infos(f"🧑 User: {request.user.email}")
             
             # Vérifier si l'utilisateur a des tokens FCM
             if not request.user.has_fcm_tokens():
@@ -4943,25 +4943,25 @@ class FCMViewSet(viewsets.ViewSet):
             success = FCMService.send_test_notification(request.user)
             
             if success:
-                print(f"✅ Notification de test envoyée")
+                logger.infos(f"✅ Notification de test envoyée")
                 response_data = {
                     'message': 'Notification de test envoyée avec succès',
                     'success': True
                 }
             else:
-                print(f"❌ Échec envoi notification de test")
+                logger.infos(f"❌ Échec envoi notification de test")
                 response_data = {
                     'message': 'Erreur lors de l\'envoi de la notification de test',
                     'success': False
                 }
             
-            print(f"📤 Response: {response_data}")
-            print(f"=== 🧪 TEST NOTIFICATION TERMINÉ ===\n")
+            logger.infos(f"📤 Response: {response_data}")
+            logger.infos(f"=== 🧪 TEST NOTIFICATION TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            print(f"❌ Erreur test notification: {e}")
+            logger.infos(f"❌ Erreur test notification: {e}")
             logger.error(f"Erreur test notification pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de l\'envoi de la notification de test'
@@ -4995,9 +4995,9 @@ class NotificationPreferenceViewSet(viewsets.ViewSet):
         Mettre à jour les préférences de notification
         """
         try:
-            print(f"\n=== ⚙️ UPDATE PREFERENCES ===")
-            print(f"🧑 User: {request.user.email}")
-            print(f"📥 Data: {request.data}")
+            logger.infos(f"\n=== ⚙️ UPDATE PREFERENCES ===")
+            logger.infos(f"🧑 User: {request.user.email}")
+            logger.infos(f"📥 Data: {request.data}")
             
             preferences = request.user.get_notification_preferences()
             
@@ -5010,20 +5010,20 @@ class NotificationPreferenceViewSet(viewsets.ViewSet):
             
             preferences.save()
             
-            print(f"✅ Préférences mises à jour")
+            logger.infos(f"✅ Préférences mises à jour")
             serializer = NotificationPreferenceSerializer(preferences)
             
             response_data = {
                 'message': 'Préférences mises à jour avec succès',
                 'preferences': serializer.data
             }
-            print(f"📤 Response: {response_data}")
-            print(f"=== ⚙️ UPDATE PREFERENCES TERMINÉ ===\n")
+            logger.infos(f"📤 Response: {response_data}")
+            logger.infos(f"=== ⚙️ UPDATE PREFERENCES TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            print(f"❌ Erreur update preferences: {e}")
+            logger.infos(f"❌ Erreur update preferences: {e}")
             logger.error(f"Erreur update préférences pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de la mise à jour des préférences'
