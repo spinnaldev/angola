@@ -1,8 +1,10 @@
 // lib/main.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -72,7 +74,7 @@ void main() async {
     print('✅ Gestionnaire FCM arrière-plan configuré');
     
     // *** AJOUTEZ CE CODE DE DEBUG ***
-    print('🔍 === DEBUG FCM INITIAL ===');
+    print('🔍 === DEBUG FCM DETAILLÉ ===');
     
     // Vérifier que Firebase est bien initialisé
     try {
@@ -84,17 +86,28 @@ void main() async {
       print('🔑 Token FCM initial: ${token?.substring(0, 20)}...');
       
       // Vérifier les permissions avant l'initialisation
-      final settings = await messaging.getNotificationSettings();
-      print('📝 Status permissions: ${settings.authorizationStatus}');
-      print('📱 Alert autorisé: ${settings.alert}');
-      print('🔔 Sound autorisé: ${settings.sound}');
-      print('🔢 Badge autorisé: ${settings.badge}');
+      final settings = await messaging.requestPermission();
+      print('📝 Authorization: ${settings.authorizationStatus}');
+      print('📱 Alert: ${settings.alert}');
+      print('🔔 Sound: ${settings.sound}');
+      print('🔢 Badge: ${settings.badge}');
+
+      // Test permission système Android
+      if (Platform.isAndroid) {
+        final systemPerm = await Permission.notification.status;
+        print('📱 Permission système: $systemPerm');
+      }
+      // final settings = await messaging.getNotificationSettings();
+      // print('📝 Status permissions: ${settings.authorizationStatus}');
+      // print('📱 Alert autorisé: ${settings.alert}');
+      // print('🔔 Sound autorisé: ${settings.sound}');
+      // print('🔢 Badge autorisé: ${settings.badge}');
       
     } catch (e) {
       print('❌ Erreur lors du debug FCM initial: $e');
     }
     
-    print('🔍 === FIN DEBUG FCM INITIAL ===');
+    print('🔍 === FIN DEBUG DETAILLÉ ===');
     
   } catch (e) {
     print('❌ Erreur initialisation Firebase: $e');

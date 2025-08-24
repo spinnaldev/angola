@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/config/routes.dart';
+import 'package:teyago/core/services/fcm_service.dart';
 import 'package:teyago/providers/language_provider.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
 import 'package:teyago/ui/screens/help_faq_screen.dart';
@@ -365,6 +366,13 @@ class SideMenu extends StatelessWidget {
               ),
             );
           },
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final fcmService = FCMService();
+            await fcmService.testLocalNotification();
+          },
+          child: Text('Test Notification Locale'),
         ),
         _buildNotificationMenuItem(context, l10n),
         // _buildMenuItem(
