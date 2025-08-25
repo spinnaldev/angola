@@ -16,12 +16,23 @@ from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 from django.forms import ValidationError
 
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 # Ensuite utiliser
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
 
+import stat
+try:
+    test_log_path = os.path.join(LOGS_DIR, 'debug.log')
+    with open(test_log_path, 'a', encoding='utf-8') as f:  # ✅ FORCER UTF-8
+        from datetime import datetime
+        f.write(f"{datetime.now()} SETTINGS TEST: Django started successfully\n")  # ✅ SANS ACCENTS
+    print(f"✅ Test log ecrit dans: {test_log_path}")  # ✅ SANS ACCENTS
+except Exception as e:
+    print(f"❌ Erreur test log: {e}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 with open(BASE_DIR.joinpath('angola_api/proprieties.json')) as f:
@@ -379,52 +390,132 @@ def validate_image(image):
 # Configuration des logs
 
 # Configuration des logs
-LOGS_DIR = os.path.join(BASE_DIR, 'logs')
-os.makedirs(LOGS_DIR, exist_ok=True)
+# LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+# os.makedirs(LOGS_DIR, exist_ok=True)
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '{asctime} {levelname} {name} {message}',
             'style': '{',
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGS_DIR, 'django.log'),
-            'formatter': 'verbose',
-        },
-        'console': {
+        'debug_file': {
             'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'debug.log'),
             'formatter': 'simple',
+            'mode': 'a',
+            'encoding': 'utf-8',  # ✅ FORCER UTF-8
         },
-    },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
     },
     'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
+        'operation.views': {
+            'handlers': ['debug_file'],
+            'level': 'DEBUG',
             'propagate': False,
         },
-        'operation': {  # Changé de 'myapp' à 'operation' selon votre app
-            'handlers': ['file', 'console'],
+        'operation.signals': {
+            'handlers': ['debug_file'],
             'level': 'DEBUG',
             'propagate': False,
         },
     },
 }
+
+# ✅ TEST IMMÉDIAT : Écrire dans le log au démarrage
+try:
+    test_log_path = os.path.join(LOGS_DIR, 'debug.log')
+    with open(test_log_path, 'a') as f:
+        from datetime import datetime
+        f.write(f"{datetime.now()} SETTINGS TEST: Django démarré avec succès\n")
+    print(f"✅ Test log écrit dans: {test_log_path}")
+except Exception as e:
+    print(f"❌ Erreur test log: {e}")
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+#             'style': '{',
+#         },
+#         'simple': {
+#             'format': '{asctime} {levelname} {name} {message}',
+#             'style': '{',
+#         },
+#         'debug': {
+#             'format': '{asctime} {levelname} {name} {funcName} {lineno} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(LOGS_DIR, 'django.log'),
+#             'formatter': 'debug',
+#         },
+#         'sms_file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(LOGS_DIR, 'sms.log'),
+#             'formatter': 'verbose',
+#         },
+#         'fcm_file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(LOGS_DIR, 'fcm.log'),
+#             'formatter': 'verbose',
+#         },
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'simple',
+#         },
+#     },
+#     'loggers': {
+#         'operation.signals': {
+#             'handlers': ['file', 'console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         'operation.fcm_service': {
+#             'handlers': ['fcm_file', 'console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         'operation.views': {
+#             'handlers': ['file', 'console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         'operation.sms_service': {
+#             'handlers': ['sms_file', 'console'],
+#             'level': 'INFO',
+#             'propagate': False,
+#         },
+#         'django.request': {  # ✅ MAINTENANT ON L'AJOUTE PROPREMENT
+#             'handlers': ['file', 'console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'INFO',
+#             'propagate': True,
+#         },
+#         'root': {
+#             'handlers': ['console'],
+#             'level': 'WARNING',
+#         },
+#     },
+# }
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_CHARSET = 'utf-8'
@@ -449,42 +540,6 @@ SMS_ENABLED = True  # Activer/désactiver l'envoi de SMS
 SMS_CODE_LENGTH = 6  # Longueur du code de vérification
 SMS_CODE_EXPIRY_MINUTES = 10  # Expiration du code en minutes
 SMS_MAX_ATTEMPTS = 3  # Nombre maximum de tentatives
-
-# Configuration de logging pour SMS
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'sms.log',
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-    },
-    'loggers': {
-        'operation.services.sms_service': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
 
 # ================================================================
 # CONFIGURATION SÉCURITÉ SMS (OPTIONNEL)

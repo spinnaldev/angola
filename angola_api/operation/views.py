@@ -169,7 +169,7 @@ class PasswordResetRequestView(APIView):
             logger.debug("Début de la demande de réinitialisation de mot de passe")
             
             email = request.data.get('email')
-            logger.debug(f"Email reçu: {email}")
+            logger.info(f"Email reçu: {email}")
             
             if not email:
                 return Response(
@@ -1309,14 +1309,14 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         if subcategory_id:
             queryset = queryset.filter(subcategory_id=subcategory_id)
         
-        logger.infos(queryset)
+        logger.info(queryset)
         return queryset
     
     def perform_create(self, serializer):
         """
         Sets the provider to the current user when creating a service.
         """
-        logger.infos(self.request.user)
+        logger.info(self.request.user)
         serializer.save(provider=self.request.user.provider_profile)
     
     #@require_verification("créer un service")
@@ -1816,16 +1816,15 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def send_message(self, request, pk=None):
         """Envoyer un message dans une conversation"""
         try:
             # ✅ CORRECTION : Utiliser l'utilisateur authentifié au lieu de user_id
             content = request.data.get('content', '').strip()
             
-            print(f"📤 Tentative d'envoi message: conversation_id={pk}")
-            print(f"👤 Utilisateur: {request.user.username} (ID: {request.user.id})")
-            print(f"📝 Contenu: {content[:50]}...")
+            logger.info(f"📤 Tentative d'envoi message: conversation_id={pk}")
+            logger.info(f"👤 Utilisateur: {request.user.username} (ID: {request.user.id})")
+            logger.info(f"📝 Contenu: {content[:50]}...")
             
             if not content:
                 return Response(
@@ -1836,9 +1835,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
             # Récupérer la conversation
             try:
                 conversation = self.get_object()
-                print(f"✅ Conversation trouvée: {conversation.id}")
+                logger.info(f"✅ Conversation trouvée: {conversation.id}")
             except Exception as e:
-                print(f"❌ Conversation non trouvée: {e}")
+                logger.info(f"❌ Conversation non trouvée: {e}")
                 return Response(
                     {"detail": "Conversation non trouvée"}, 
                     status=status.HTTP_404_NOT_FOUND
@@ -1850,14 +1849,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
                         conversation.provider == request.user.provider_profile)
             
             if not (is_client or is_provider):
-                print(f"❌ Accès refusé pour user {request.user.id}")
-                print(f"Client: {conversation.client.id}, Provider: {conversation.provider.id}")
+                logger.info(f"❌ Accès refusé pour user {request.user.id}")
+                logger.info(f"Client: {conversation.client.id}, Provider: {conversation.provider.id}")
                 return Response(
                     {"detail": "Accès non autorisé à cette conversation"}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
-            print(f"✅ Permissions validées: client={is_client}, provider={is_provider}")
+            logger.info(f"✅ Permissions validées: client={is_client}, provider={is_provider}")
             
             # Créer le message
             message = Message.objects.create(
@@ -1870,14 +1869,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
             conversation.updated_at = timezone.now()
             conversation.save()
             
-            print(f"✅ Message créé: {message.id}")
+            logger.info(f"✅ Message créé: {message.id}")
             
             # Sérialiser et retourner (utiliser l'ID de l'utilisateur actuel)
             serializer = MessageSerializer(message, context={'user_id': request.user.id})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            print(f"❌ Erreur dans send_message: {e}")
+            logger.info(f"❌ Erreur dans send_message: {e}")
             import traceback
             traceback.print_exc()
             return Response(
@@ -3400,16 +3399,36 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
         
     @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
     def offers(self, request, pk=None):
-        """Gérer les offres d'un projet"""
-        project = self.get_object()
+        """Gérer les offres d'un projet - AVEC LOGS DEBUG"""
         
-        if request.method == 'GET':
-            # 📋 RÉCUPÉRER LES OFFRES DU PROJET
-            return self._get_project_offers(request, project)
+        logger.info(f"🎯 === OFFERS ENDPOINT ===")
+        logger.info(f"👤 User: {request.user.email}")
+        logger.info(f"📋 Project PK: {pk}")
+        logger.info(f"🔄 Method: {request.method}")
+        logger.info(f"📥 Request data: {request.data}")
         
-        elif request.method == 'POST':
-            # ✨ CRÉER UNE NOUVELLE OFFRE
-            return self._create_project_offer(request, project)
+        try:
+            project = self.get_object()
+            logger.info(f"✅ Project found: {project.id} - {project.title}")
+            logger.info(f"👥 Project client: {project.client.email}")
+            logger.info(f"📊 Project status: {project.status}")
+            
+            if request.method == 'GET':
+                logger.info(f"📋 GET: Récupération des offres")
+                return self._get_project_offers(request, project)
+            
+            elif request.method == 'POST':
+                logger.info(f"✨ POST: Création nouvelle offre")
+                return self._create_project_offer(request, project)
+                
+        except Exception as e:
+            logger.error(f"❌ OFFERS ENDPOINT ERROR: {str(e)}")
+            import traceback
+            logger.error(f"📋 Offers traceback: {traceback.format_exc()}")
+            return Response(
+                {'error': f'Erreur dans offers endpoint: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def _get_project_offers(self, request, project):
         """Récupérer les offres d'un projet"""
@@ -3442,89 +3461,180 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
             )
     #@require_verification
     def _create_project_offer(self, request, project):
-        """Créer une nouvelle offre sur un projet"""
+        """Créer une nouvelle offre sur un projet - AVEC LOGS DEBUG"""
+        
+        logger.info(f"🚀 === CREATION OFFRE DEBUT ===")
+        logger.info(f"👤 User: {request.user.email}")
+        logger.info(f"📋 Project ID: {project.id}")
+        logger.info(f"📋 Project Title: {project.title}")
+        logger.info(f"📋 Project Status: {project.status}")
+        logger.info(f"📋 Project Client: {project.client.email}")
+        logger.info(f"📥 Request Data: {request.data}")
+        
         try:
             # Vérifier que l'utilisateur est un prestataire
+            logger.info(f"🔍 VERIFICATION 1: Prestataire check...")
             if not hasattr(request.user, 'provider_profile'):
+                logger.error(f"❌ User n'est pas un prestataire")
                 return Response(
                     {'error': 'Seuls les prestataires peuvent faire des offres'},
                     status=status.HTTP_403_FORBIDDEN
                 )
             
             provider = request.user.provider_profile
+            logger.info(f"✅ Provider trouvé: {provider.id}")
+            logger.info(f"👥 Provider User: {provider.user.email}")
+            logger.info(f"🏢 Provider Company: {getattr(provider, 'company_name', 'N/A')}")
             
             # Vérifier que le projet est ouvert
+            logger.info(f"🔍 VERIFICATION 2: Project status...")
             if project.status != 'open':
+                logger.error(f"❌ Project status is '{project.status}', not 'open'")
                 return Response(
                     {'error': 'Ce projet n\'accepte plus d\'offres'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            logger.info(f"✅ Project is open")
             
             # Vérifier que le prestataire n'a pas déjà fait d'offre
-            if ProjectOffer.objects.filter(project=project, provider=provider).exists():
+            logger.info(f"🔍 VERIFICATION 3: Existing offer check...")
+            existing_offer = ProjectOffer.objects.filter(project=project, provider=provider).first()
+            if existing_offer:
+                logger.error(f"❌ Existing offer found: {existing_offer.id}")
                 return Response(
                     {'error': 'Vous avez déjà fait une offre sur ce projet'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            logger.info(f"✅ No existing offer")
             
             # Vérifier que le prestataire ne fait pas une offre sur son propre projet
+            logger.info(f"🔍 VERIFICATION 4: Own project check...")
             if project.client == request.user:
+                logger.error(f"❌ User trying to bid on own project")
                 return Response(
                     {'error': 'Vous ne pouvez pas faire une offre sur votre propre projet'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            logger.info(f"✅ Not own project")
             
             # Valider les données
+            logger.info(f"🔍 VERIFICATION 5: Data validation...")
             required_fields = ['proposed_price', 'delivery_time', 'message']
             for field in required_fields:
                 if field not in request.data:
+                    logger.error(f"❌ Missing required field: {field}")
                     return Response(
                         {'error': f'Le champ {field} est requis'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
+                logger.info(f"✅ Field {field}: {request.data[field]}")
+            
+            # Validation des types de données
+            logger.info(f"🔍 VERIFICATION 6: Data types validation...")
+            try:
+                proposed_price = float(request.data['proposed_price'])
+                logger.info(f"✅ Proposed price: {proposed_price}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"❌ Invalid proposed_price: {e}")
+                return Response(
+                    {'error': 'Le prix proposé doit être un nombre valide'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                delivery_time = int(request.data['delivery_time'])
+                logger.info(f"✅ Delivery time: {delivery_time} jours")
+            except (ValueError, TypeError) as e:
+                logger.error(f"❌ Invalid delivery_time: {e}")
+                return Response(
+                    {'error': 'Le délai de livraison doit être un nombre entier'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
             # Créer l'offre
+            logger.info(f"💾 CREATION 1: Creating ProjectOffer...")
             with transaction.atomic():
-                offer = ProjectOffer.objects.create(
-                    project=project,
-                    provider=provider,
-                    proposed_price=request.data['proposed_price'],
-                    delivery_time=request.data['delivery_time'],
-                    message=request.data['message'],
-                    includes_materials=request.data.get('includes_materials', False),
-                    warranty_period=request.data.get('warranty_period'),
-                    travel_costs_included=request.data.get('travel_costs_included', True),
-                )
-                
-                # Créer une notification pour le client
                 try:
-                    from .models import Notification  # Ajustez l'import
-                    Notification.objects.create(
-                        user=project.client,
-                        title="Nouvelle offre reçue",
-                        message=f"Vous avez reçu une nouvelle offre de {provider.user.get_full_name()} pour votre projet '{project.title}'.",
-                        notification_type='new_offer',
-                        related_object_id=offer.id
-                    )
+                    offer_data = {
+                        'project': project,
+                        'provider': provider,
+                        'proposed_price': proposed_price,
+                        'delivery_time': delivery_time,
+                        'message': request.data['message'],
+                        'includes_materials': request.data.get('includes_materials', False),
+                        'warranty_period': request.data.get('warranty_period'),
+                        'travel_costs_included': request.data.get('travel_costs_included', True),
+                    }
+                    logger.info(f"📋 Offer data: {offer_data}")
+                    
+                    offer = ProjectOffer.objects.create(**offer_data)
+                    logger.info(f"✅ ProjectOffer created: ID={offer.id}")
+                    
+                    # Créer une notification pour le client
+                    logger.info(f"🔔 NOTIFICATION 1: Creating notification...")
+                    try:
+                        notification_data = {
+                            'user': project.client,
+                            'title': "Nouvelle offre reçue",
+                            'message': f"Vous avez reçu une nouvelle offre de {provider.user.get_full_name()} pour votre projet '{project.title}'.",
+                            'notification_type': 'new_offer',
+                            'related_object_id': offer.id
+                        }
+                        logger.info(f"📋 Notification data: {notification_data}")
+                        
+                        notification = Notification.objects.create(**notification_data)
+                        logger.info(f"✅ Notification created: ID={notification.id}")
 
-                    send_new_offer_notification(project , offer)
+                    except Exception as notif_error:
+                        logger.error(f"❌ Erreur création notification: {notif_error}")
+                        import traceback
+                        logger.error(f"📋 Notification traceback: {traceback.format_exc()}")
 
-                except Exception as notif_error:
-                    print(f"Erreur création notification: {notif_error}")
+                    # Envoyer notification FCM
+                    logger.info(f"🚁 FCM 1: Sending FCM notification...")
+                    try:
+                        send_new_offer_notification(project, offer)
+                        logger.info(f"✅ FCM notification sent")
+                    except Exception as fcm_error:
+                        logger.error(f"❌ Erreur FCM notification: {fcm_error}")
+                        import traceback
+                        logger.error(f"📋 FCM traceback: {traceback.format_exc()}")
+                    
+                except Exception as creation_error:
+                    logger.error(f"❌ Erreur lors de la création de l'offre: {creation_error}")
+                    import traceback
+                    logger.error(f"📋 Creation traceback: {traceback.format_exc()}")
+                    raise
             
             # Sérialiser et retourner l'offre créée
-            from .serializers import ProjectOfferSerializer
-            serializer = ProjectOfferSerializer(offer, context={'request': request})
-            
-            return Response(
-                {
+            logger.info(f"📤 RESPONSE 1: Serializing offer...")
+            try:
+                from .serializers import ProjectOfferSerializer
+                serializer = ProjectOfferSerializer(offer, context={'request': request})
+                logger.info(f"✅ Offer serialized successfully")
+                
+                response_data = {
                     'message': 'Offre créée avec succès',
                     'offer': serializer.data
-                },
-                status=status.HTTP_201_CREATED
-            )
-            
+                }
+                logger.info(f"📤 Response data keys: {response_data.keys()}")
+                logger.info(f"🎉 === CREATION OFFRE SUCCESS ===")
+                
+                return Response(response_data, status=status.HTTP_201_CREATED)
+                
+            except Exception as serializer_error:
+                logger.error(f"❌ Erreur serializer: {serializer_error}")
+                import traceback
+                logger.error(f"📋 Serializer traceback: {traceback.format_exc()}")
+                raise
+                
         except Exception as e:
+            logger.error(f"💥 === CREATION OFFRE ERROR ===")
+            logger.error(f"❌ Exception: {str(e)}")
+            logger.error(f"❌ Exception type: {type(e).__name__}")
+            import traceback
+            logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+            
             return Response(
                 {'error': f'Erreur lors de la création de l\'offre: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -4793,9 +4903,9 @@ class FCMViewSet(viewsets.ViewSet):
         Enregistrer un token FCM pour l'utilisateur connecté
         """
         try:
-            logger.infos(f"\n=== 📱 REGISTER FCM TOKEN ===")
-            logger.infos(f"🧑 User: {request.user.email}")
-            logger.infos(f"📥 Data: {request.data}")
+            logger.info(f"\n=== 📱 REGISTER FCM TOKEN ===")
+            logger.info(f"🧑 User: {request.user.email}")
+            logger.info(f"📥 Data: {request.data}")
             
             fcm_token = request.data.get('fcm_token')
             device_type = request.data.get('device_type', 'android')
@@ -4818,7 +4928,7 @@ class FCMViewSet(viewsets.ViewSet):
                 existing_token.last_used = timezone.now()
                 existing_token.save()
                 
-                logger.infos(f"✅ Token FCM mis à jour")
+                logger.info(f"✅ Token FCM mis à jour")
                 serializer = FCMTokenSerializer(existing_token)
                 
             else:
@@ -4832,27 +4942,27 @@ class FCMViewSet(viewsets.ViewSet):
                     last_used=timezone.now()
                 )
                 
-                logger.infos(f"✅ Nouveau token FCM créé")
+                logger.info(f"✅ Nouveau token FCM créé")
                 serializer = FCMTokenSerializer(new_token)
             
             # Envoyer une notification de bienvenue
             try:
                 FCMService.send_test_notification(request.user)
-                logger.infos(f"✅ Notification de bienvenue envoyée")
+                logger.info(f"✅ Notification de bienvenue envoyée")
             except Exception as e:
-                logger.infos(f"⚠️ Erreur notification bienvenue: {e}")
+                logger.info(f"⚠️ Erreur notification bienvenue: {e}")
             
             response_data = {
                 'message': 'Token FCM enregistré avec succès',
                 'token': serializer.data
             }
-            logger.infos(f"📤 Response: {response_data}")
-            logger.infos(f"=== 📱 REGISTER FCM TOKEN TERMINÉ ===\n")
+            logger.info(f"📤 Response: {response_data}")
+            logger.info(f"=== 📱 REGISTER FCM TOKEN TERMINÉ ===\n")
             
             return Response(response_data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            logger.infos(f"❌ Erreur register token: {e}")
+            logger.info(f"❌ Erreur register token: {e}")
             logger.error(f"Erreur register FCM token pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de l\'enregistrement du token'
@@ -4864,9 +4974,9 @@ class FCMViewSet(viewsets.ViewSet):
         Supprimer un token FCM
         """
         try:
-            logger.infos(f"\n=== 🗑️ REMOVE FCM TOKEN ===")
-            logger.infos(f"🧑 User: {request.user.email}")
-            logger.infos(f"📥 Data: {request.data}")
+            logger.info(f"\n=== 🗑️ REMOVE FCM TOKEN ===")
+            logger.info(f"🧑 User: {request.user.email}")
+            logger.info(f"📥 Data: {request.data}")
             
             fcm_token = request.data.get('fcm_token')
             
@@ -4882,20 +4992,20 @@ class FCMViewSet(viewsets.ViewSet):
             ).update(is_active=False)
             
             if deleted_count > 0:
-                logger.infos(f"✅ Token FCM désactivé")
+                logger.info(f"✅ Token FCM désactivé")
                 message = 'Token FCM supprimé avec succès'
             else:
-                logger.infos(f"⚠️ Token FCM non trouvé")
+                logger.info(f"⚠️ Token FCM non trouvé")
                 message = 'Token FCM non trouvé'
             
             response_data = {'message': message}
-            logger.infos(f"📤 Response: {response_data}")
-            logger.infos(f"=== 🗑️ REMOVE FCM TOKEN TERMINÉ ===\n")
+            logger.info(f"📤 Response: {response_data}")
+            logger.info(f"=== 🗑️ REMOVE FCM TOKEN TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            logger.infos(f"❌ Erreur remove token: {e}")
+            logger.info(f"❌ Erreur remove token: {e}")
             logger.error(f"Erreur remove FCM token pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de la suppression du token'
@@ -4930,8 +5040,8 @@ class FCMViewSet(viewsets.ViewSet):
         Envoyer une notification de test à l'utilisateur connecté
         """
         try:
-            logger.infos(f"\n=== 🧪 TEST NOTIFICATION ===")
-            logger.infos(f"🧑 User: {request.user.email}")
+            logger.info(f"\n=== 🧪 TEST NOTIFICATION ===")
+            logger.info(f"🧑 User: {request.user.email}")
             
             # Vérifier si l'utilisateur a des tokens FCM
             if not request.user.has_fcm_tokens():
@@ -4943,25 +5053,25 @@ class FCMViewSet(viewsets.ViewSet):
             success = FCMService.send_test_notification(request.user)
             
             if success:
-                logger.infos(f"✅ Notification de test envoyée")
+                logger.info(f"✅ Notification de test envoyée")
                 response_data = {
                     'message': 'Notification de test envoyée avec succès',
                     'success': True
                 }
             else:
-                logger.infos(f"❌ Échec envoi notification de test")
+                logger.info(f"❌ Échec envoi notification de test")
                 response_data = {
                     'message': 'Erreur lors de l\'envoi de la notification de test',
                     'success': False
                 }
             
-            logger.infos(f"📤 Response: {response_data}")
-            logger.infos(f"=== 🧪 TEST NOTIFICATION TERMINÉ ===\n")
+            logger.info(f"📤 Response: {response_data}")
+            logger.info(f"=== 🧪 TEST NOTIFICATION TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            logger.infos(f"❌ Erreur test notification: {e}")
+            logger.info(f"❌ Erreur test notification: {e}")
             logger.error(f"Erreur test notification pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de l\'envoi de la notification de test'
@@ -4995,9 +5105,9 @@ class NotificationPreferenceViewSet(viewsets.ViewSet):
         Mettre à jour les préférences de notification
         """
         try:
-            logger.infos(f"\n=== ⚙️ UPDATE PREFERENCES ===")
-            logger.infos(f"🧑 User: {request.user.email}")
-            logger.infos(f"📥 Data: {request.data}")
+            logger.info(f"\n=== ⚙️ UPDATE PREFERENCES ===")
+            logger.info(f"🧑 User: {request.user.email}")
+            logger.info(f"📥 Data: {request.data}")
             
             preferences = request.user.get_notification_preferences()
             
@@ -5010,20 +5120,20 @@ class NotificationPreferenceViewSet(viewsets.ViewSet):
             
             preferences.save()
             
-            logger.infos(f"✅ Préférences mises à jour")
+            logger.info(f"✅ Préférences mises à jour")
             serializer = NotificationPreferenceSerializer(preferences)
             
             response_data = {
                 'message': 'Préférences mises à jour avec succès',
                 'preferences': serializer.data
             }
-            logger.infos(f"📤 Response: {response_data}")
-            logger.infos(f"=== ⚙️ UPDATE PREFERENCES TERMINÉ ===\n")
+            logger.info(f"📤 Response: {response_data}")
+            logger.info(f"=== ⚙️ UPDATE PREFERENCES TERMINÉ ===\n")
             
             return Response(response_data)
             
         except Exception as e:
-            logger.infos(f"❌ Erreur update preferences: {e}")
+            logger.info(f"❌ Erreur update preferences: {e}")
             logger.error(f"Erreur update préférences pour {request.user.email}: {e}")
             return Response({
                 'detail': 'Erreur lors de la mise à jour des préférences'

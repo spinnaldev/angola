@@ -9,9 +9,12 @@ from .fcm_service import FCMService
 from operation.models import (
     AdminAction, ClientProject, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
 )
+import logging
+
 
 # Obtenir la couche de canal pour WebSocket
 channel_layer = get_channel_layer()
+logger = logging.getLogger(__name__)
 
 def send_notification_to_user(user_id, notification_data):
     """Helper pour envoyer une notification via WebSocket"""
@@ -149,6 +152,14 @@ def create_and_send_notification(user, title, message, notification_type, relate
     ROBUSTE : Ne lève jamais d'exception, continue toujours
     NOUVEAU : Support des extra_data pour la navigation précise
     """
+
+    logger.info(f"🔔 NOTIFICATION: user={user.email}, type={notification_type}, title={title[:30]}...")
+    logger.info(f"🔔 user {user}")
+    logger.info(f"🔔 title {title} ")
+    logger.info(f"🔔 related_object_id {related_object_id}")
+    logger.info(f"🔔 extra_data {extra_data} ")
+    logger.info(f"🔔 notification_type {notification_type}")
+    
     try:
         # Créer la notification en base avec extra_data
         notification = Notification.objects.create(
@@ -157,10 +168,10 @@ def create_and_send_notification(user, title, message, notification_type, relate
             message=message,
             notification_type=notification_type,
             related_object_id=related_object_id,
-            extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
+            # extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
         )
         
-        print(f"✅ Notification créée: {notification.id} pour user {user.id} (type: {notification_type})")
+        logger.info(f"✅ DB NOTIFICATION: id={notification.id}")
         
         # Préparer les données pour WebSocket
         notification_data = {
@@ -170,15 +181,23 @@ def create_and_send_notification(user, title, message, notification_type, relate
             'notification_type': notification.notification_type,
             'related_object_id': notification.related_object_id,
             'is_read': notification.is_read,
-            'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
+            # 'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
             'created_at': notification.created_at.isoformat(),
         }
         
         # ✅ ENVOYER VIA FCM (code existant conservé)
         try:
-            print(f"🔔 Envoi notification FCM pour user {user.id}...")
+            logger.info(f"🚀 FCM START pour user {user.email}")
             
-            # Obtenir la configuration FCM pour ce type de notification
+            # Vérifier tokens FCM
+            fcm_tokens = user.fcm_tokens.filter(is_active=True)
+            logger.info(f"🔑 FCM TOKENS: {fcm_tokens.count()} actifs")
+            
+            if not fcm_tokens.exists():
+                logger.warning(f"⚠️ AUCUN TOKEN FCM pour {user.email}")
+                return notification
+            
+            # Config FCM
             fcm_config = get_fcm_notification_config(
                 notification_type=notification_type,
                 title=title,
@@ -186,13 +205,16 @@ def create_and_send_notification(user, title, message, notification_type, relate
                 related_object_id=related_object_id
             )
             
-            # ✅ NOUVEAU : Ajouter les extra_data aux données FCM si disponibles
-            if extra_data:
-                fcm_config['data'].update({
-                    'extra_data': str(extra_data)  # FCM ne supporte que les strings
-                })
+            # Ajouter extra_data si disponible
+            # if extra_data:
+            #     fcm_config['data'].update({'extra_data': str(extra_data)})
             
-            # Envoyer la notification FCM
+            # Envoi FCM
+            logger.info(f"🔑 FCM TOKENS:{fcm_config['title']}")
+            logger.info(f"🔑 FCM TOKENS: {fcm_config['body']}")
+            logger.info(f"🔑 FCM TOKENS: {fcm_config['notification_type']}")
+            logger.info(f"🔑 FCM TOKENS: {fcm_config['data']}")
+            logger.info(f"🔑 FCM TOKENS: {fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')}")
             fcm_success = FCMService.send_notification_to_user(
                 user=user,
                 title=fcm_config['title'],
@@ -202,13 +224,12 @@ def create_and_send_notification(user, title, message, notification_type, relate
                 click_action=fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
             )
             
-            if fcm_success:
-                print(f"✅ Notification FCM envoyée avec succès pour user {user.id}")
-            else:
-                print(f"⚠️ Notification FCM non envoyée pour user {user.id} (pas de tokens ou préférences)")
-                
+            logger.info(f"🎯 FCM RESULT: {fcm_success}")
+            
         except Exception as fcm_error:
-            print(f"⚠️ Erreur FCM notification pour user {user.id} (continue quand même): {fcm_error}")
+            logger.error(f"❌ FCM ERROR pour {user.email}: {fcm_error}")
+        
+        return notification
         
         # Envoyer via WebSocket (avec gestion d'erreur)
         try:
@@ -293,7 +314,7 @@ def create_project_offer_notification_with_extradata(offer, project):
         'provider_last_name': provider_user.last_name,
         'provider_avatar': provider_user.profile_picture.url if provider_user.profile_picture else None,
         'provider_company_name': getattr(offer.provider, 'company_name', None),
-        'offer_price': str(offer.price),
+        'offer_price': str(offer.proposed_price),
         'offer_delivery_time': offer.delivery_time,
     }
     
@@ -439,11 +460,21 @@ def create_offer_status_notification_with_extradata(offer, status):
 @receiver(post_save, sender=Message)
 def message_created(sender, instance, created, **kwargs):
     """Signal pour les nouveaux messages - MISE À JOUR AVEC EXTRADATA"""
+
+    logger.info(f"📨 SIGNAL MESSAGE: created={created}, id={instance.id}, sender={instance.sender.email}")
+
     if created:
         conversation = instance.conversation
         
+        logger.info(f"💬 CONVERSATION: id={conversation.id}, client={conversation.client.email}, provider={conversation.provider.user.email}")
+        
         # ✅ NOUVEAU : Utiliser la fonction avec extraData
-        create_message_notification_with_extradata(instance, conversation)
+        try:
+            # ✅ Appel fonction notification
+            create_message_notification_with_extradata(instance, conversation)
+            logger.info(f"✅ NOTIFICATION CRÉÉE pour message {instance.id}")
+        except Exception as e:
+            logger.error(f"❌ ERREUR NOTIFICATION message {instance.id}: {e}")
         
         # Déterminer qui doit recevoir la notification pour les WebSockets classiques
         if instance.sender == conversation.client:

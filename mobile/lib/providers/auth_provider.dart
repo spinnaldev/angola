@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:teyago/core/models/verification_result.dart';
 import 'package:teyago/core/services/api_service.dart';
+import 'package:teyago/core/services/fcm_service.dart';
 import 'package:teyago/core/services/phone_verification_service.dart';
 import 'package:teyago/core/services/provider_verification_service.dart';
 import '../core/services/auth_service.dart';
@@ -261,6 +262,22 @@ class AuthProvider with ChangeNotifier {
         _currentUser = user;
         _status = AuthStatus.authenticated;
         
+
+        // Initialiser FCM après login
+        try {
+          final fcmService = FCMService();
+          await fcmService.initialize();
+
+          final token = fcmService.currentToken;
+
+          if (token != null) {
+            print('📲 FCM Token récupéré après login: $token');
+            await apiService.updateFCMToken(token); 
+          }
+        } catch (e) {
+          print('⚠️ Erreur lors de l’initialisation FCM après login: $e');
+        }
+
         // AJOUT: Synchroniser le ProfileManager avec le rôle utilisateur
         ProfileManager.setAuthProvider(this);
         await ProfileManager.forceSync();

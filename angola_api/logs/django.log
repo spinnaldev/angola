@@ -1320,3 +1320,7 @@ INFO 2025-08-12 08:18:30,204 basehttp 24864 26324 "GET /static/rest_framework/js
 INFO 2025-08-12 08:18:30,817 basehttp 24864 26324 "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458
 WARNING 2025-08-12 08:18:30,960 log 24864 26324 Not Found: /favicon.ico
 WARNING 2025-08-12 08:18:30,963 basehttp 24864 26324 "GET /favicon.ico HTTP/1.1" 404 95915
+INFO 2025-08-24 15:52:52,471 autoreload 25384 17272 Watching for file changes with StatReloader
+INFO 2025-08-24 19:43:44,527 autoreload 25384 17272 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.
+INFO 2025-08-24 19:43:49,777 autoreload 4548 29516 Watching for file changes with StatReloader
+INFO 2025-08-24 19:43:53,538 autoreload 4548 29516 C:\Users\AGL\Documents\SPINALZ\PROJET\angola\angola_api\angola_api\settings.py changed, reloading.

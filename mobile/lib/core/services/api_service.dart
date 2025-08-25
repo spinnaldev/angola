@@ -4593,7 +4593,7 @@ class ApiService {
 
       final userId = await getCurrentUserId();
       final data = await _apiClient.post(
-        'notifications/fcm-token/',
+        'fcm/register-token/',
         data: {
           'user_id': userId,
           'fcm_token': fcmToken,
@@ -4619,7 +4619,7 @@ class ApiService {
       final userId = await getCurrentUserId();
       final data = {'user_id': userId, 'fcm_token': fcmToken};
       await _apiClient.delete(
-        'notifications/fcm-token/',
+        'fcm/remove-token',
         // data,
         requireAuth: true,
       );
