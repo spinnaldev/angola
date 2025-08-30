@@ -367,13 +367,13 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
-        ElevatedButton(
-          onPressed: () async {
-            final fcmService = FCMService();
-            await fcmService.testLocalNotification();
-          },
-          child: Text('Test Notification Locale'),
-        ),
+        // ElevatedButton(
+        //   onPressed: () async {
+        //     final fcmService = FCMService();
+        //     await fcmService.testLocalNotification();
+        //   },
+        //   child: Text('Test Notification Locale'),
+        // ),
         _buildNotificationMenuItem(context, l10n),
         // _buildMenuItem(
         //   context,
@@ -383,7 +383,7 @@ class SideMenu extends StatelessWidget {
         //     onClose();
         //     ScaffoldMessenger.of(context).showSnackBar(
         //       SnackBar(content: Text(l10n.notificationsComingSoon)),
-        //     );
+        //     ); 
         //   },
         // ),
       ],

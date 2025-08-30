@@ -215,21 +215,38 @@ def create_and_send_notification(user, title, message, notification_type, relate
             logger.info(f"🔑 FCM TOKENS: {fcm_config['notification_type']}")
             logger.info(f"🔑 FCM TOKENS: {fcm_config['data']}")
             logger.info(f"🔑 FCM TOKENS: {fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')}")
-            fcm_success = FCMService.send_notification_to_user(
-                user=user,
-                title=fcm_config['title'],
-                body=fcm_config['body'],
-                notification_type=fcm_config['notification_type'],
-                data=fcm_config['data'],
-                click_action=fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
-            )
-            
+            logger.info(f"🔑 USER {user.id}")
+
+            # 🆕 AJOUT DE DEBUG AVANT L'APPEL
+            logger.info(f"🚀 AVANT APPEL FCMService.send_notification_to_user")
+            logger.info(f"🚀 Type FCMService: {type(FCMService)}")
+            logger.info(f"🚀 Méthode existe?: {hasattr(FCMService, 'send_notification_to_user')}")
+
+            # 🆕 TEST AVEC TRY/EXCEPT DÉTAILLÉ
+            try:
+                logger.info(f"🚀 APPEL EN COURS...")
+                fcm_success = FCMService.send_notification_to_user(
+                    user.id,
+                    fcm_config['title'],
+                    fcm_config['body'],
+                    fcm_config['notification_type'],
+                    fcm_config['data'],
+                    fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
+                )
+                logger.info(f"🚀 APPEL TERMINÉ - Résultat: {fcm_success}")
+            except Exception as call_error:
+                logger.error(f"🚀 EXCEPTION LORS DE L'APPEL: {call_error}")
+                logger.error(f"🚀 Type erreur: {type(call_error)}")
+                import traceback
+                logger.error(f"🚀 Traceback: {traceback.format_exc()}")
+                fcm_success = False
+
             logger.info(f"🎯 FCM RESULT: {fcm_success}")
             
         except Exception as fcm_error:
             logger.error(f"❌ FCM ERROR pour {user.email}: {fcm_error}")
         
-        return notification
+            # return notification
         
         # Envoyer via WebSocket (avec gestion d'erreur)
         try:

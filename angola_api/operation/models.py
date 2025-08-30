@@ -1302,7 +1302,7 @@ class NotificationHistory(models.Model):
     
     # Statut et métadonnées
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    firebase_message_id = models.CharField(max_length=255, blank=True)
+    firebase_message_id = models.CharField(max_length=255, blank=True , null=True)
     error_message = models.TextField(blank=True)
     
     # Timestamps
