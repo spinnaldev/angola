@@ -4,6 +4,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from asgiref.sync import async_to_sync
+from .fcm import notify_user_by_fcm
 from channels.layers import get_channel_layer
 from .fcm_service import FCMService
 from operation.models import (
@@ -168,7 +169,7 @@ def create_and_send_notification(user, title, message, notification_type, relate
             message=message,
             notification_type=notification_type,
             related_object_id=related_object_id,
-            # extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
+            extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
         )
         
         logger.info(f"✅ DB NOTIFICATION: id={notification.id}")
@@ -181,7 +182,7 @@ def create_and_send_notification(user, title, message, notification_type, relate
             'notification_type': notification.notification_type,
             'related_object_id': notification.related_object_id,
             'is_read': notification.is_read,
-            # 'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
+            'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
             'created_at': notification.created_at.isoformat(),
         }
         
@@ -206,8 +207,8 @@ def create_and_send_notification(user, title, message, notification_type, relate
             )
             
             # Ajouter extra_data si disponible
-            # if extra_data:
-            #     fcm_config['data'].update({'extra_data': str(extra_data)})
+            if extra_data:
+                fcm_config['data'].update({'extra_data': str(extra_data)})
             
             # Envoi FCM
             logger.info(f"🔑 FCM TOKENS:{fcm_config['title']}")
@@ -246,8 +247,7 @@ def create_and_send_notification(user, title, message, notification_type, relate
         except Exception as fcm_error:
             logger.error(f"❌ FCM ERROR pour {user.email}: {fcm_error}")
         
-            # return notification
-        
+
         # Envoyer via WebSocket (avec gestion d'erreur)
         try:
             send_notification_to_user(user.id, notification_data)
@@ -270,6 +270,162 @@ def create_and_send_notification(user, title, message, notification_type, relate
         print(f"❌ Erreur création notification (continue quand même): {e}")
         return None
 
+
+
+# def create_and_send_notification(user, title, message, notification_type, related_object_id=None, extra_data=None):
+#     """
+#     Fonction utilitaire pour créer une notification et l'envoyer via WebSocket + FCM
+#     ROBUSTE : Ne lève jamais d'exception, continue toujours
+#     NOUVEAU : Support des extra_data pour la navigation précise
+#     """
+
+#     logger.info(f"🔔 NOTIFICATION: user={user.email}, type={notification_type}, title={title[:30]}...")
+#     logger.info(f"🔔 user {user}")
+#     logger.info(f"🔔 title {title} ")
+#     logger.info(f"🔔 related_object_id {related_object_id}")
+#     logger.info(f"🔔 extra_data {extra_data} ")
+#     logger.info(f"🔔 notification_type {notification_type}")
+    
+#     try:
+#         # Créer la notification en base avec extra_data
+#         notification = Notification.objects.create(
+#             user=user,
+#             title=title,
+#             message=message,
+#             notification_type=notification_type,
+#             related_object_id=related_object_id,
+#             # extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
+#         )
+        
+#         logger.info(f"✅ DB NOTIFICATION: id={notification.id}")
+        
+#         # Préparer les données pour WebSocket
+#         notification_data = {
+#             'id': notification.id,
+#             'title': notification.title,
+#             'message': notification.message,
+#             'notification_type': notification.notification_type,
+#             'related_object_id': notification.related_object_id,
+#             'is_read': notification.is_read,
+#             # 'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
+#             'created_at': notification.created_at.isoformat(),
+#         }
+        
+
+        
+#         # ESSAYER UN NOUVEL ENVOI DE NOTIFICATION FCM
+#         logger.info(f"🗑️ On tente le second envoi")
+#         data= {
+#                 "type": notification_type,
+#                 "notification_id": str(notification.id),
+#                 **notification_data
+#             }
+#         logger.info(f"🔔 user {user}")
+#         logger.info(f"🔔 title {title} ")
+#         logger.info(f"🔔 body {notification.message[:100] + "..." if len(notification.message) > 100 else notification.message,}")
+#         logger.info(f"🔔 data {data} ")
+#         logger.info(f"🔔 notification_type {notification_type}")
+
+#         try:
+#             fcm_result= notify_user_by_fcm(
+#                 user,
+#                 notification.title,
+#                 notification.message[:100] + "..." if len(notification.message) > 100 else notification.message,
+#                 data
+#             )
+#             logger.info(f"Seconde tentative terminée")
+#             if fcm_result:
+#                 logger.info(f"✅ [NOTIF] FCM envoyé avec succès pour notification {notification.id}")
+#             else:
+#                 logger.warning(f"⚠️ [NOTIF] Échec de l'envoi FCM pour notification {notification.id}")
+#                 # return notification
+#         except Exception as fcm_error:
+#             logger.error(f"❌ FCM secondaire ERROR: {fcm_error}")
+       
+
+#         # ✅ ENVOYER VIA FCM (code existant conservé)
+#         try:
+#             logger.info(f"🚀 FCM START pour user {user.email}")
+            
+#             # Vérifier tokens FCM
+#             fcm_tokens = user.fcm_tokens.filter(is_active=True)
+#             logger.info(f"🔑 FCM TOKENS: {fcm_tokens.count()} actifs")
+            
+#             if not fcm_tokens.exists():
+#                 logger.warning(f"⚠️ AUCUN TOKEN FCM pour {user.email}")
+#                 return notification
+            
+#             # Config FCM
+#             fcm_config = get_fcm_notification_config(
+#                 notification_type=notification_type,
+#                 title=title,
+#                 message=message,
+#                 related_object_id=related_object_id
+#             )
+            
+#             # Ajouter extra_data si disponible
+#             # if extra_data:
+#             #     fcm_config['data'].update({'extra_data': str(extra_data)})
+            
+#             # Envoi FCM
+#             logger.info(f"🔑 FCM TOKENS:{fcm_config['title']}")
+#             logger.info(f"🔑 FCM TOKENS: {fcm_config['body']}")
+#             logger.info(f"🔑 FCM TOKENS: {fcm_config['notification_type']}")
+#             logger.info(f"🔑 FCM TOKENS: {fcm_config['data']}")
+#             logger.info(f"🔑 FCM TOKENS: {fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')}")
+#             logger.info(f"🔑 USER {user.id}")
+
+#             # 🆕 AJOUT DE DEBUG AVANT L'APPEL
+#             logger.info(f"🚀 AVANT APPEL FCMService.send_notification_to_user")
+#             logger.info(f"🚀 Type FCMService: {type(FCMService)}")
+#             logger.info(f"🚀 Méthode existe?: {hasattr(FCMService, 'send_notification_to_user')}")
+
+#             # 🆕 TEST AVEC TRY/EXCEPT DÉTAILLÉ
+#             try:
+#                 logger.info(f"🚀 APPEL EN COURS...")
+#                 fcm_success = FCMService.send_notification_to_user(
+#                     user.id,
+#                     fcm_config['title'],
+#                     fcm_config['body'],
+#                     fcm_config['notification_type'],
+#                     fcm_config['data'],
+#                     fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
+#                 )
+#                 logger.info(f"🚀 APPEL TERMINÉ - Résultat: {fcm_success}")
+#             except Exception as call_error:
+#                 logger.error(f"🚀 EXCEPTION LORS DE L'APPEL: {call_error}")
+#                 logger.error(f"🚀 Type erreur: {type(call_error)}")
+#                 import traceback
+#                 logger.error(f"🚀 Traceback: {traceback.format_exc()}")
+#                 fcm_success = False
+
+#             logger.info(f"🎯 FCM RESULT: {fcm_success}")
+            
+#         except Exception as fcm_error:
+#             logger.error(f"❌ FCM ERROR pour {user.email}: {fcm_error}")
+        
+
+#         # Envoyer via WebSocket (avec gestion d'erreur)
+#         try:
+#             send_notification_to_user(user.id, notification_data)
+#             print(f"✅ Notification WebSocket envoyée pour user {user.id}")
+#         except Exception as ws_error:
+#             print(f"⚠️ Erreur WebSocket notification (continue quand même): {ws_error}")
+        
+#         # Mettre à jour le compteur (avec gestion d'erreur)
+#         try:
+#             unread_count = Notification.objects.filter(user=user, is_read=False).count()
+#             send_unread_count_update(user.id, unread_count)
+#             print(f"✅ Compteur mis à jour pour user {user.id}: {unread_count}")
+#         except Exception as count_error:
+#             print(f"⚠️ Erreur compteur notifications (continue quand même): {count_error}")
+        
+#         print(f"✅ Notification complète envoyée avec succès: {notification.id}")
+#         return notification
+        
+#     except Exception as e:
+#         print(f"❌ Erreur création notification (continue quand même): {e}")
+#         return None
 # ================================================================
 # ✅ NOUVELLES FONCTIONS SPÉCIALISÉES POUR CRÉER LES EXTRADATA
 # ================================================================

@@ -15,7 +15,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 
-from .signals import send_bulk_notification, send_test_fcm_notification
+from .signals import send_bulk_notification, send_test_fcm_notification ,create_offer_status_notification_with_extradata
 
 from .sms_service import InfobipSMSService, check_sms_rate_limit, increment_sms_rate_limit
 from .permissions import VerificationPermissionMixin
@@ -3783,11 +3783,11 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['put'])
     def update_status(self, request, pk=None):
         """Mettre à jour le statut d'une offre (accepter/rejeter)"""
         offer = self.get_object()
-        
+        logger.info("ON modifie le satut")
         # Seul le client propriétaire du projet peut modifier le statut
         if offer.project.client != request.user:
             return Response(
@@ -3805,17 +3805,34 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             # Si l'offre est acceptée, rejeter toutes les autres offres du projet
             if new_status == 'accepted':
-                ProjectOffer.objects.filter(
+                other_offers = ProjectOffer.objects.filter(
                     project=offer.project
-                ).exclude(id=offer.id).update(status='rejected')
+                ).exclude(id=offer.id)
+                
+                # Rejeter les autres offres et envoyer notifications
+                for other_offer in other_offers:
+                    if other_offer.status == 'pending':
+                        other_offer.status = 'rejected'
+                        other_offer.save()
+                        
+                        # ✅ NOTIFICATION de rejet pour les autres prestataires
+                        
+                        create_offer_status_notification_with_extradata(other_offer, 'rejected')
                 
                 # Mettre le projet en cours
                 offer.project.status = 'in_progress'
                 offer.project.save()
         
+            # Mettre à jour l'offre principale
             offer.status = new_status
             offer.client_notes = request.data.get('notes', '')
             offer.save()
+            
+            logger.info("ON a modifie")
+
+            logger.info("NOTIFICATION pour le prestataire de l'offre modifiée")
+            # ✅ NOTIFICATION pour le prestataire de l'offre modifiée
+            create_offer_status_notification_with_extradata(offer, new_status)
         
         serializer = self.get_serializer(offer)
         return Response(serializer.data)

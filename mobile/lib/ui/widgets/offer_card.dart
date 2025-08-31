@@ -1,26 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../screens/messaging/conversation_detail_screen.dart';
 import '../../providers/messaging_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/offers_provider.dart';
 import '../../core/models/conversation.dart';
 
-class OfferCard extends StatelessWidget {
+class OfferCard extends StatefulWidget {
   final dynamic offer;
-  final Function(dynamic) onAccept;
-  final Function(dynamic) onReject;
-  final Function(dynamic)? onContact; // Nouveau callback optionnel
-
+  // final Function(dynamic)? onOfferUpdated; // Callback pour rafraîchir la liste
+  final VoidCallback? onOfferUpdated;
   const OfferCard({
     Key? key,
     required this.offer,
-    required this.onAccept,
-    required this.onReject,
-    this.onContact,
+    this.onOfferUpdated,
   }) : super(key: key);
 
   @override
+  State<OfferCard> createState() => _OfferCardState();
+}
+
+class _OfferCardState extends State<OfferCard> {
+  bool _isUpdating = false;
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = Provider.of<AuthProvider>(context).currentUser;
     final isClient = user?.role == 'client';
 
@@ -36,31 +42,31 @@ class OfferCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProviderHeader(),
+            _buildProviderHeader(l10n),
             const SizedBox(height: 12),
-            _buildOfferDetails(),
+            _buildOfferDetails(l10n),
             const SizedBox(height: 16),
-            _buildMessage(),
+            _buildMessage(l10n),
             const SizedBox(height: 16),
-            if (isClient) _buildActionButtons(context),
+            if (isClient) _buildActionButtons(context, l10n),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProviderHeader() {
+  Widget _buildProviderHeader(AppLocalizations l10n) {
     return Row(
       children: [
         CircleAvatar(
           radius: 24,
           backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
-          backgroundImage: offer['provider_avatar'] != null
-              ? NetworkImage(offer['provider_avatar'])
+          backgroundImage: widget.offer['provider_avatar'] != null
+              ? NetworkImage(widget.offer['provider_avatar'])
               : null,
-          child: offer['provider_avatar'] == null
+          child: widget.offer['provider_avatar'] == null
               ? Text(
-                  _getInitials(offer['provider_name'] ?? 'Prestataire'),
+                  _getInitials(widget.offer['provider_name'] ?? l10n.provider),
                   style: const TextStyle(
                     color: Color(0xFF6366F1),
                     fontWeight: FontWeight.bold,
@@ -74,7 +80,7 @@ class OfferCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                offer['provider_name'] ?? 'Prestataire',
+                widget.offer['provider_name'] ?? l10n.provider,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -91,13 +97,13 @@ class OfferCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${_parseRating(offer['provider_rating']).toStringAsFixed(1)} (${offer['provider_reviews_count'] ?? 0} avis)',
+                    '${_parseRating(widget.offer['provider_rating']).toStringAsFixed(1)} (${widget.offer['provider_reviews_count'] ?? 0} ${l10n.reviews})',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
                   ),
-                  if (offer['provider_verified'] == true) ...[
+                  if (widget.offer['provider_verified'] == true) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -106,9 +112,9 @@ class OfferCard extends StatelessWidget {
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Vérifié',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.verified,
+                        style: const TextStyle(
                           fontSize: 10,
                           color: Colors.green,
                           fontWeight: FontWeight.w600,
@@ -121,13 +127,12 @@ class OfferCard extends StatelessWidget {
             ],
           ),
         ),
-        // Badge de statut de l'offre
-        _buildStatusBadge(),
+        _buildStatusBadge(l10n),
       ],
     );
   }
 
-  Widget _buildOfferDetails() {
+  Widget _buildOfferDetails(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -141,9 +146,9 @@ class OfferCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Prix proposé',
-                  style: TextStyle(
+                Text(
+                  l10n.proposedPrice,
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                     fontWeight: FontWeight.w500,
@@ -151,7 +156,7 @@ class OfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_parsePrice(offer['proposed_price'])}AOA',
+                  '${_parsePrice(widget.offer['proposed_price'])} AOA',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -171,9 +176,9 @@ class OfferCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Délai de livraison',
-                  style: TextStyle(
+                Text(
+                  l10n.deliveryTime,
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                     fontWeight: FontWeight.w500,
@@ -181,7 +186,7 @@ class OfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${offer['delivery_time'] ?? 30} jours',
+                  '${widget.offer['delivery_time'] ?? 30} ${l10n.days}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -196,8 +201,8 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMessage() {
-    final message = offer['message'] ?? '';
+  Widget _buildMessage(AppLocalizations l10n) {
+    final message = widget.offer['message'] ?? '';
     if (message.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -210,9 +215,9 @@ class OfferCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Message du prestataire',
-            style: TextStyle(
+          Text(
+            l10n.messageForClient,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: Colors.grey,
@@ -232,56 +237,78 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    final status = offer['status']?.toString().toLowerCase() ?? 'pending';
+  Widget _buildActionButtons(BuildContext context, AppLocalizations l10n) {
+    final status = widget.offer['status']?.toString().toLowerCase() ?? 'pending';
 
+    switch (status) {
+      case 'pending':
+        return _buildPendingState(context, l10n);
+      case 'accepted':
+        return _buildAcceptedState(context, l10n);
+      case 'rejected':
+        return _buildRejectedState(l10n);
+      default:
+        return _buildPendingState(context, l10n);
+    }
+  }
+
+  Widget _buildPendingState(BuildContext context, AppLocalizations l10n) {
     return Column(
       children: [
-        if (status == 'pending') ...[
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => onReject(offer),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _isUpdating ? null : () => _handleOfferAction(context, 'rejected', l10n),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('Rejeter'),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
+                child: _isUpdating 
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16, 
+                      child: CircularProgressIndicator(strokeWidth: 2)
+                    )
+                  : Text(l10n.reject),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => onAccept(offer),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF142FE2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _isUpdating ? null : () => _handleOfferAction(context, 'accepted', l10n),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF142FE2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('Accepter'),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
+                child: _isUpdating 
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      )
+                    )
+                  : Text(l10n.accept),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-
-        // Bouton Contact prestataire (toujours visible)
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
-              print('🚀 Tentative de contact prestataire');
-              print('📋 Données de l\'offre: $offer');
-              _contactProvider(context);
-            },
+            onPressed: () => _contactProvider(context, l10n),
             icon: const Icon(Icons.message),
-            label: const Text('Contacter le prestataire'),
+            label: Text(l10n.contactProvider),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF142FE2),
               side: const BorderSide(color: Color(0xFF142FE2)),
@@ -295,7 +322,7 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAcceptedState(BuildContext context) {
+  Widget _buildAcceptedState(BuildContext context, AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -306,13 +333,13 @@ class OfferCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.green.withOpacity(0.3)),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Offre acceptée',
-                style: TextStyle(
+                l10n.acceptedOffers,
+                style: const TextStyle(
                   color: Colors.green,
                   fontWeight: FontWeight.w600,
                 ),
@@ -324,9 +351,9 @@ class OfferCard extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => _contactProvider(context),
+            onPressed: () => _contactProvider(context, l10n),
             icon: const Icon(Icons.message, size: 18),
-            label: const Text('Contacter le prestataire'),
+            label: Text(l10n.contactProvider),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
               foregroundColor: Colors.white,
@@ -341,7 +368,7 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRejectedState() {
+  Widget _buildRejectedState(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -350,13 +377,13 @@ class OfferCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.red.withOpacity(0.3)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.cancel, color: Colors.red, size: 20),
-          SizedBox(width: 8),
+          const Icon(Icons.cancel, color: Colors.red, size: 20),
+          const SizedBox(width: 8),
           Text(
-            'Offre rejetée',
-            style: TextStyle(
+            l10n.rejectedOffers,
+            style: const TextStyle(
               color: Colors.red,
               fontWeight: FontWeight.w600,
             ),
@@ -366,23 +393,23 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge() {
-    final status = offer['status'] ?? 'pending';
+  Widget _buildStatusBadge(AppLocalizations l10n) {
+    final status = widget.offer['status'] ?? 'pending';
     Color color;
     String text;
 
     switch (status) {
       case 'accepted':
         color = Colors.green;
-        text = 'Acceptée';
+        text = l10n.accepted;
         break;
       case 'rejected':
         color = Colors.red;
-        text = 'Rejetée';
+        text = l10n.rejected;
         break;
       default:
         color = Colors.orange;
-        text = 'En attente';
+        text = l10n.pending;
     }
 
     return Container(
@@ -402,23 +429,108 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  // NOUVELLE MÉTHODE : Contact du prestataire
-  Future<void> _contactProvider(BuildContext context) async {
+  // Méthode pour gérer accepter/rejeter
+  Future<void> _handleOfferAction(BuildContext context, String action, AppLocalizations l10n) async {
+    // Confirmation avant action
+    final bool? confirm = await _showConfirmationDialog(context, action, l10n);
+    if (confirm != true) return;
+    
+    setState(() {
+      _isUpdating = true;
+    });
+    
     try {
-      final messagingProvider =
-          Provider.of<MessagingProvider>(context, listen: false);
+      final offersProvider = Provider.of<OffersProvider>(context, listen: false);
+      final success = await offersProvider.updateOfferStatus(
+        widget.offer['id'] as int, 
+        action,
+      );
+      
+      if (success) {
+        setState(() {
+          widget.offer['status'] = action;
+          _isUpdating = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              action == 'accepted' 
+                ? l10n.offerAcceptedSuccessfully
+                : l10n.offerRejectedSuccessfully
+            ),
+            backgroundColor: action == 'accepted' ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        if (widget.onOfferUpdated != null) {
+          widget.onOfferUpdated!();
+        }
+        
+      } else {
+        throw Exception(l10n.updateFailed);
+      }
+      
+    } catch (e) {
+      setState(() {
+        _isUpdating = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Dialog de confirmation
+  Future<bool?> _showConfirmationDialog(BuildContext context, String action, AppLocalizations l10n) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(action == 'accepted' ? l10n.acceptOfferTitle : l10n.rejectOfferTitle),
+          content: Text(
+            action == 'accepted' 
+              ? l10n.acceptOfferConfirmation
+              : l10n.rejectOfferConfirmation
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: action == 'accepted' ? Colors.green : Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(action == 'accepted' ? l10n.accept : l10n.reject),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Contact du prestataire
+  Future<void> _contactProvider(BuildContext context, AppLocalizations l10n) async {
+    try {
+      final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       if (authProvider.currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Vous devez être connecté pour contacter un prestataire')),
+          SnackBar(content: Text(l10n.mustBeLoggedInToContact)),
         );
         return;
       }
 
-      // Afficher un loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -427,63 +539,21 @@ class OfferCard extends StatelessWidget {
         ),
       );
 
-      // ✅ CORRECTION PRINCIPALE : Gestion correcte de l'ID du prestataire
-      int? providerId;
-
-      // Essayer différentes façons d'obtenir l'ID du prestataire
-      if (offer['provider_id'] != null) {
-        // Si provider_id existe directement
-        providerId = _parseId(offer['provider_id']);
-      } else if (offer['provider'] != null) {
-        // Si provider est un objet avec un id
-        if (offer['provider'] is Map<String, dynamic>) {
-          providerId = _parseId(offer['provider']['id']);
-        } else {
-          // Si provider est directement l'ID
-          providerId = _parseId(offer['provider']);
-        }
-      } else if (offer['providerId'] != null) {
-        // Autre variante possible
-        providerId = _parseId(offer['providerId']);
-      }
-
-      print('🔍 Provider ID trouvé: $providerId');
-      print('🔍 Structure de l\'offre: ${offer.keys.toList()}');
+      int? providerId = _parseId(widget.offer['provider_id']);
 
       if (providerId == null) {
-        Navigator.pop(context); // Fermer le loading
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Impossible d\'identifier le prestataire')),
+          SnackBar(content: Text(l10n.cannotIdentifyProvider)),
         );
         return;
       }
 
-      // Créer le message initial avec contexte de l'offre
-      String projectTitle = 'votre projet';
+      final conversation = await messagingProvider.startConversation(providerId, null);
 
-      // Essayer d'obtenir le titre du projet
-      if (offer['project_title'] != null) {
-        projectTitle = offer['project_title'].toString();
-      } else if (offer['project'] != null &&
-          offer['project'] is Map<String, dynamic>) {
-        projectTitle = offer['project']['title']?.toString() ?? projectTitle;
-      }
-
-      final initialMessage =
-          'Bonjour, je suis intéressé(e) par votre offre pour le projet "$projectTitle". Pouvons-nous discuter des détails ?';
-
-      // Démarrer ou récupérer la conversation
-      final conversation = await messagingProvider.startConversation(
-        providerId,
-        null
-        // initialMessage
-      );
-
-      Navigator.pop(context); // Fermer le loading
+      Navigator.pop(context);
 
       if (conversation != null) {
-        // Naviguer vers l'écran de conversation
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -495,35 +565,25 @@ class OfferCard extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Erreur lors de l\'ouverture de la conversation')),
+          SnackBar(content: Text(l10n.conversationOpenError)),
         );
       }
     } catch (e) {
-      Navigator.pop(context); // Fermer le loading en cas d'erreur
-      print('Erreur contact prestataire: $e');
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du contact: $e')),
+        SnackBar(content: Text('${l10n.contactError}: $e')),
       );
     }
   }
 
   int? _parseId(dynamic value) {
     if (value == null) return null;
-
     try {
-      if (value is int) {
-        return value;
-      } else if (value is String) {
-        return int.parse(value);
-      } else if (value is double) {
-        return value.toInt();
-      } else {
-        print('⚠️ Type inattendu pour ID: ${value.runtimeType} - $value');
-        return int.tryParse(value.toString());
-      }
+      if (value is int) return value;
+      if (value is String) return int.parse(value);
+      if (value is double) return value.toInt();
+      return int.tryParse(value.toString());
     } catch (e) {
-      print('❌ Erreur parsing ID: $e pour valeur: $value');
       return null;
     }
   }
@@ -540,40 +600,24 @@ class OfferCard extends StatelessWidget {
 
   int _parsePrice(dynamic price) {
     if (price == null) return 0;
-
     try {
-      if (price is int) {
-        return price;
-      } else if (price is double) {
-        return price.toInt();
-      } else if (price is String) {
-        if (price.isEmpty) return 0;
-        return double.parse(price).toInt();
-      } else {
-        return int.tryParse(price.toString()) ?? 0;
-      }
+      if (price is int) return price;
+      if (price is double) return price.toInt();
+      if (price is String) return double.parse(price).toInt();
+      return int.tryParse(price.toString()) ?? 0;
     } catch (e) {
-      print('❌ Erreur parsing prix: $e pour valeur: $price');
       return 0;
     }
   }
 
   double _parseRating(dynamic rating) {
     if (rating == null) return 5.0;
-
     try {
-      if (rating is double) {
-        return rating;
-      } else if (rating is int) {
-        return rating.toDouble();
-      } else if (rating is String) {
-        if (rating.isEmpty) return 5.0;
-        return double.parse(rating);
-      } else {
-        return double.tryParse(rating.toString()) ?? 5.0;
-      }
+      if (rating is double) return rating;
+      if (rating is int) return rating.toDouble();
+      if (rating is String) return double.parse(rating);
+      return double.tryParse(rating.toString()) ?? 5.0;
     } catch (e) {
-      print('❌ Erreur parsing rating: $e pour valeur: $rating');
       return 5.0;
     }
   }

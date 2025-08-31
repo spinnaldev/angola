@@ -649,6 +649,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             'notification_type', 
             'related_object_id', 
             'is_read', 
+            'extra_data', 
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']

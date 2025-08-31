@@ -46,6 +46,34 @@ class OffersProvider with ChangeNotifier {
     }
   }
 
+
+  
+  Future<bool> updateOfferStatus(int offerId, String status) async {
+    try {
+      _clearError();
+      
+      print('🔄 Updating offer $offerId to status: $status');
+      
+      // Appel API pour mettre à jour le statut
+      await _apiService.updateOfferStatus(offerId, status);
+      
+      // Mettre à jour localement l'offre dans la liste
+      final offerIndex = _offers.indexWhere((offer) => offer.id == offerId);
+      if (offerIndex != -1) {
+        _offers[offerIndex] = _offers[offerIndex].copyWith(status: status);
+        notifyListeners();
+      }
+      
+      print('✅ Offer status updated successfully');
+      return true;
+      
+    } catch (e) {
+      print('❌ Error updating offer status: $e');
+      _setError(e.toString());
+      return false;
+    }
+  }
+
   /// ✅ CORRECTION: Retirer une offre avec la bonne méthode HTTP
   Future<bool> withdrawOffer(int offerId) async {
     try {
@@ -99,9 +127,9 @@ class OffersProvider with ChangeNotifier {
   }
 
   /// Mettre à jour le statut d'une offre localement
-  void updateOfferStatus(int offerId, String newStatus) {
-    _updateOfferStatusLocally(offerId, newStatus);
-  }
+  // void updateOfferStatus(int offerId, String newStatus) {
+  //   _updateOfferStatusLocally(offerId, newStatus);
+  // }
 
   void _updateOfferStatusLocally(int offerId, String newStatus) {
     final offerIndex = _offers.indexWhere((offer) => offer.id == offerId);

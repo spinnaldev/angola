@@ -355,6 +355,11 @@ class Notification(TimeStampMixin):
         ('profile_rejected', 'Vérification rejetée'),
         ('profile_verified', 'Profil vérifié'),
         ('phone_verified', 'Téléphone vérifié'),
+
+        ('new_message', 'Nouveau message'),  # ✅ AJOUTÉ pour cohérence
+        ('project_created', 'Projet créé'),  # ✅ AJOUTÉ
+        ('project_completed', 'Projet terminé'),  # ✅ AJOUTÉ
+        ('project_update', 'Mise à jour projet')
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -364,12 +369,25 @@ class Notification(TimeStampMixin):
     related_object_id = models.IntegerField(null=True, blank=True)
     is_read = models.BooleanField(default=False)
     
+    extra_data = models.JSONField(null=True, blank=True, help_text="Données supplémentaires pour navigation précise")
+    
     class Meta:
         ordering = ['-created_at']
     
     def __str__(self):
         return f"{self.title} - {self.user.username}"
 
+    def get_extra_data_dict(self):
+        """Retourner extra_data sous forme de dictionnaire"""
+        if self.extra_data:
+            if isinstance(self.extra_data, str):
+                import json
+                try:
+                    return json.loads(self.extra_data)
+                except json.JSONDecodeError:
+                    return {}
+            return self.extra_data
+        return {}
 class Report(TimeStampMixin):
     STATUS_CHOICES = (
         ('pending', 'En attente'),
@@ -1303,7 +1321,7 @@ class NotificationHistory(models.Model):
     # Statut et métadonnées
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     firebase_message_id = models.CharField(max_length=255, blank=True , null=True)
-    error_message = models.TextField(blank=True)
+    error_message = models.TextField(blank=True , null=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

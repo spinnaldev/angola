@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:teyago/providers/offers_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/project_provider.dart';
@@ -168,6 +169,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   void _handleLoadingError(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    
     setState(() {
       _isLoadingProject = false;
     });
@@ -176,6 +179,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+        action: SnackBarAction(
+          label: l10n.dismiss,
+          textColor: Colors.white,
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
     
@@ -282,13 +290,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   String _getErrorMessage(String error, AppLocalizations l10n) {
-    if (error.contains('déjà fait une offre')) {
+    if (error.contains('déjà fait une offre') || error.contains('already made offer')) {
       return l10n.alreadyMadeOfferProject;
-    } else if (error.contains('n\'accepte plus d\'offres')) {
+    } else if (error.contains('n\'accepte plus d\'offres') || error.contains('no longer accepts')) {
       return l10n.projectNoLongerAcceptsOffers;
+    } else if (error.contains('not verified') || error.contains('vérification')) {
+      return l10n.verificationRequiredToSendOffer;
+    } else if (error.contains('permission') || error.contains('unauthorized')) {
+      return l10n.permissionDenied;
     }
     return l10n.offerSendingError;
   }
+
 
   void _clearOfferForm() {
     _offerMessageController.clear();
@@ -319,6 +332,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   }
 
   void _showErrorSnackBar(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -334,11 +349,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           borderRadius: BorderRadius.circular(8),
         ),
         duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: l10n.dismiss,
+          textColor: Colors.white,
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
   }
 
   void _showSuccessSnackBar(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -354,6 +376,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           borderRadius: BorderRadius.circular(8),
         ),
         duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: l10n.dismiss,
+          textColor: Colors.white,
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
   }
@@ -733,28 +760,37 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
     return null;
   }
+  
   Future<void> _handleOfferAction(dynamic offer, String action) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
+      // Utiliser le provider OffersProvider au lieu de l'API directement
+      final offersProvider = Provider.of<OffersProvider>(context, listen: false);
+      final success = await offersProvider.updateOfferStatus(
+        offer['id'] as int, 
+        action,
+      );
 
-      if (mounted) {
+      if (mounted && success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(action == 'accepted'
-                ? 'Offre acceptée avec succès'
-                : 'Offre rejetée'),
+                ? l10n.offerAcceptedSuccessfully
+                : l10n.offerRejectedSuccessfully),
             backgroundColor:
                 action == 'accepted' ? Colors.green : Colors.orange,
           ),
         );
 
-        _loadOffers();
+        // Recharger les offres pour refléter les changements
+        await _loadOffers();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1319,8 +1355,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           padding: const EdgeInsets.only(bottom: 16),
           child: OfferCard(
             offer: _offers[index],
-            onAccept: (offer) => _handleOfferAction(offer, 'accepted'),
-            onReject: (offer) => _handleOfferAction(offer, 'rejected'),
+            onOfferUpdated: () => _loadOffers(), // Callback pour rafraîchir
           ),
         );
       },

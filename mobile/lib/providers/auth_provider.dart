@@ -643,8 +643,8 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
 
       // Vérifier si un token est stocké
-      final token = await _secureStorage.read(key: 'auth_token');
-      
+      // final token = await _secureStorage.read(key: 'auth_token');
+      final token = await _secureStorage.read(key: 'access_token');
       if (token == null || token.isEmpty) {
         print('❌ Aucun token trouvé');
         _status = AuthStatus.unauthenticated;

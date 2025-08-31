@@ -375,7 +375,10 @@
     void initState() {
       super.initState();
       WidgetsBinding.instance.addObserver(this);
-      _initializeApp();
+      // ✅ SOLUTION : Attendre que le build soit terminé
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeApp();
+      });
     }
 
     @override

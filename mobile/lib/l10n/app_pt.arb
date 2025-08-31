@@ -1579,5 +1579,19 @@
   "requestQuotes": "Pedir orçamentos",
   "requestQuotesDescription": "Obtenha facilmente orçamentos personalizados de vários prestadores",
   "shareExperience": "Partilhar a sua experiência",
-  "shareExperienceDescription": "Ajude a comunidade partilhando as suas avaliações e recomendações"
+  "shareExperienceDescription": "Ajude a comunidade partilhando as suas avaliações e recomendações",
+
+  "acceptOfferTitle": "Aceitar esta oferta?",
+  "rejectOfferTitle": "Rejeitar esta oferta?",
+  "acceptOfferConfirmation": "Ao aceitar esta oferta, todas as outras ofertas para este projeto serão automaticamente rejeitadas.",
+  "rejectOfferConfirmation": "Esta ação é irreversível. Tem a certeza que quer rejeitar esta oferta?",
+  "offerAcceptedSuccessfully": "Oferta aceite com sucesso. Todas as outras ofertas foram automaticamente rejeitadas.",
+  "offerRejectedSuccessfully": "Oferta rejeitada com sucesso",
+  "updateFailed": "Falha na atualização",
+  "mustBeLoggedInToContact": "Deve estar logado para contactar um prestador",
+  "cannotIdentifyProvider": "Não é possível identificar o prestador",
+  "conversationOpenError": "Erro ao abrir conversa",
+  "contactError": "Erro de contacto",
+  "permissionDenied": "Permissão negada",
+  "dismiss": "Dispensar"
 }

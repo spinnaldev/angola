@@ -1532,6 +1532,20 @@
   "requestQuotes": "Demander des devis",
   "requestQuotesDescription": "Obtenez facilement des devis personnalisés de plusieurs prestataires",
   "shareExperience": "Partager votre expérience",
-  "shareExperienceDescription": "Aidez la communauté en partageant vos avis et recommandations"
-  
+  "shareExperienceDescription": "Aidez la communauté en partageant vos avis et recommandations",
+
+ 
+  "acceptOfferTitle": "Accepter cette offre ?",
+  "rejectOfferTitle": "Rejeter cette offre ?",
+  "acceptOfferConfirmation": "En acceptant cette offre, toutes les autres offres pour ce projet seront automatiquement refusées.",
+  "rejectOfferConfirmation": "Cette action est irréversible. Voulez-vous vraiment rejeter cette offre ?",
+  "offerAcceptedSuccessfully": "Offre acceptée avec succès. Toutes les autres offres ont été refusées automatiquement.",
+  "offerRejectedSuccessfully": "Offre rejetée avec succès",
+  "updateFailed": "Échec de la mise à jour",
+  "mustBeLoggedInToContact": "Vous devez être connecté pour contacter un prestataire",
+  "cannotIdentifyProvider": "Impossible d'identifier le prestataire",
+  "conversationOpenError": "Erreur lors de l'ouverture de la conversation",
+  "contactError": "Erreur lors du contact",
+  "permissionDenied": "Permission refusée",
+  "dismiss": "Fermer"
 }

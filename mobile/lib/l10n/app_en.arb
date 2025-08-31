@@ -1510,7 +1510,21 @@
   "requestQuotes": "Request quotes",
   "requestQuotesDescription": "Easily get personalized quotes from multiple providers",
   "shareExperience": "Share your experience",
-  "shareExperienceDescription": "Help the community by sharing your reviews and recommendations"
+  "shareExperienceDescription": "Help the community by sharing your reviews and recommendations",
+
+  "acceptOfferTitle": "Accept this offer?",
+  "rejectOfferTitle": "Reject this offer?",
+  "acceptOfferConfirmation": "By accepting this offer, all other offers for this project will be automatically rejected.",
+  "rejectOfferConfirmation": "This action is irreversible. Do you really want to reject this offer?",
+  "offerAcceptedSuccessfully": "Offer accepted successfully. All other offers have been automatically rejected.",
+  "offerRejectedSuccessfully": "Offer rejected successfully",
+  "updateFailed": "Update failed",
+  "mustBeLoggedInToContact": "You must be logged in to contact a provider",
+  "cannotIdentifyProvider": "Cannot identify the provider",
+  "conversationOpenError": "Error opening conversation",
+  "contactError": "Contact error",
+  "permissionDenied": "Permission denied",
+  "dismiss": "Dismiss"
   
 
 }
