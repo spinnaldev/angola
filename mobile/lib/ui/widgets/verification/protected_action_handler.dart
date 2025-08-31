@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:teyago/ui/screens/client/phone_verification_screen.dart';
-import 'package:teyago/ui/screens/provider/provider_verification_screen.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/phone_verification_provider.dart';
 import '../../screens/auth/login_screen.dart';
+import '../../screens/client/phone_verification_screen.dart';
+import '../../screens/provider/provider_verification_screen.dart';
 
 class ProtectedActionHandler {
   static Future<bool> checkAndHandleVerification({
@@ -304,7 +304,7 @@ class ProtectedActionHandler {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const ProviderVerificationScreen(viewOnly: true),
+              builder: (context) => const ProviderVerificationScreen(),
             ),
           );
         };
@@ -321,7 +321,7 @@ class ProtectedActionHandler {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const ProviderVerificationScreen(resubmit: true),
+              builder: (context) => const ProviderVerificationScreen(),
             ),
           );
         };

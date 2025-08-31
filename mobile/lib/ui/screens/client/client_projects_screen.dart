@@ -224,7 +224,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                 );
               },
             ),
-      floatingActionButton: _isInitialLoading 
+    floatingActionButton: _isInitialLoading 
           ? null // Ne pas afficher le FAB pendant le chargement initial
           : ProtectedFloatingActionButton(
               actionDescription: l10n.addProjectTooltip,

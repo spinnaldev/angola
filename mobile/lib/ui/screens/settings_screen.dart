@@ -1,4 +1,4 @@
-// lib/ui/screens/settings_screen.dart - VERSION MULTILINGUE COMPLÈTE
+// lib/ui/screens/settings_screen.dart - VERSION SIMPLIFIÉE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -8,9 +8,6 @@ import '../../core/services/profile_manager.dart';
 import '../widgets/language_selector.dart';
 import 'edit_profile_screen.dart';
 import 'auth/login_screen.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_of_service_screen.dart';
-import 'help_faq_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -77,15 +74,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildNotificationsSection(context, l10n),
             const SizedBox(height: 24),
 
-            // Section Préférences
-            _buildPreferencesSection(context, l10n),
-            const SizedBox(height: 24),
+            // Section Préférences - SIMPLIFIÉE
+            // _buildPreferencesSection(context, l10n),
+            // const SizedBox(height: 24),
 
-            // Section Support et Aide
-            _buildSupportSection(context, l10n),
-            const SizedBox(height: 24),
-
-            // Section Légal
+            // Section Légal - SEULEMENT ABOUT
             _buildLegalSection(context, l10n),
             const SizedBox(height: 24),
 
@@ -343,6 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // SECTION PRÉFÉRENCES SIMPLIFIÉE - Seulement Dark Mode et Location
   Widget _buildPreferencesSection(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,58 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSupportSection(BuildContext context, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(l10n.supportAndHelp),
-        _buildSettingsCard(
-          children: [
-            _buildSettingsTile(
-              icon: Icons.help_outline,
-              title: l10n.helpAndFAQ,
-              subtitle: l10n.frequentlyAskedQuestions,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HelpFAQScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            _buildSettingsTile(
-              icon: Icons.contact_support,
-              title: l10n.contactUs,
-              subtitle: l10n.customerSupportAssistance,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.customerSupportComingSoon),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            _buildSettingsTile(
-              icon: Icons.feedback,
-              title: l10n.giveFeedback,
-              subtitle: l10n.helpUsImproveApp,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.feedbackComingSoon),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
+  // SECTION LÉGALE SIMPLIFIÉE - Seulement About (redirection vers votre page about)
   Widget _buildLegalSection(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,49 +394,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _buildSettingsCard(
           children: [
             _buildSettingsTile(
-              icon: Icons.privacy_tip,
-              title: l10n.privacyPolicy,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PrivacyPolicyScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            _buildSettingsTile(
-              icon: Icons.description,
-              title: l10n.termsOfService,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TermsOfServiceScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            _buildSettingsTile(
               icon: Icons.info_outline,
               title: l10n.about,
               subtitle: l10n.version('1.0.0'),
               onTap: () {
-                showAboutDialog(
-                  context: context,
-                  applicationName: l10n.appName,
-                  applicationVersion: '1.0.0',
-                  applicationIcon: const Icon(
-                    Icons.home_repair_service,
-                    size: 48,
-                    color: Color(0xFF142FE2),
-                  ),
-                  children: [
-                    Text(l10n.appDescription),
-                  ],
-                );
+                // NAVIGATION VERS VOTRE PAGE ABOUT EXISTANTE
+                Navigator.pushNamed(context, '/about');
+                
+                // Alternative si vous voulez garder le dialog existant :
+                // showAboutDialog(
+                //   context: context,
+                //   applicationName: l10n.appName,
+                //   applicationVersion: '1.0.0',
+                //   applicationIcon: const Icon(
+                //     Icons.home_repair_service,
+                //     size: 48,
+                //     color: Color(0xFF142FE2),
+                //   ),
+                //   children: [
+                //     Text(l10n.appDescription),
+                //   ],
+                // );
               },
             ),
           ],
@@ -575,42 +496,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               child: Text(
                 l10n.logout,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showDeleteAccountDialog(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            l10n.deleteAccount,
-            style: const TextStyle(color: Colors.red),
-          ),
-          content: Text(l10n.deleteAccountWarning),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.deleteAccountToImplement),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
-              child: Text(
-                l10n.delete,
                 style: const TextStyle(color: Colors.red),
               ),
             ),

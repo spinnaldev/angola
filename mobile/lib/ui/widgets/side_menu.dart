@@ -514,19 +514,19 @@ class SideMenu extends StatelessWidget {
           },
         ),
 
-        _buildMenuItem(
-          context,
-          icon: Icons.help_outline,
-          text: l10n.helpAndFAQ,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HelpFAQScreen(),
-              ),
-            );
-          },
-        ),
+        // _buildMenuItem(
+        //   context,
+        //   icon: Icons.help_outline,
+        //   text: l10n.helpAndFAQ,
+        //   onTap: () {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (context) => const HelpFAQScreen(),
+        //       ),
+        //     );
+        //   },
+        // ),
         _buildMenuItem(
           context,
           icon: Icons.logout,
