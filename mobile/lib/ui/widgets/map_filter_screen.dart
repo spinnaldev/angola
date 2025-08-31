@@ -548,6 +548,8 @@
 
 // 
 // lib/ui/widgets/map_filter_screen.dart - Version améliorée
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -582,7 +584,8 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   String _errorMessage = '';
   LatLng? _currentPosition;
   bool _showListView = false;
-  List<ProviderModel> _providers = [];
+  List<ProviderModel> _allProviders = []; // Liste complète
+  List<ProviderModel> _filteredProviders = []; // Liste filtrée
   ProviderModel? _selectedProvider;
   
   // Contrôleurs d'animation
@@ -591,16 +594,15 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   late Animation<double> _bottomSheetAnimation;
   late Animation<double> _fabAnimation;
 
-  // Filtres
+  // Filtres simplifiés - seulement distance et rating
   double _radiusFilter = 10.0; // km
-  int _minRatingFilter = 0;
-  String _businessTypeFilter = '';
+  double _minRatingFilter = 0.0; // Note minimum (0 à 5)
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
-    _loadData();
+    _loadDataWithLocation();
   }
 
   void _initAnimations() {
@@ -640,91 +642,160 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     super.dispose();
   }
 
-  Future<void> _loadData() async {
+  // Méthode améliorée pour charger les données avec localisation
+  Future<void> _loadDataWithLocation() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
     try {
-      // Récupérer la position actuelle
+      // 1. D'abord récupérer la position actuelle
+      await _updateCurrentLocation();
+      
+      // 2. Puis charger les prestataires
+      await _loadProviders();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Erreur lors du chargement: $e';
+          _isLoading = false;
+        });
+      }
+      print('Erreur MapFilterScreen: $e');
+    }
+  }
+
+  // Méthode séparée pour mettre à jour la localisation
+  Future<void> _updateCurrentLocation() async {
+    try {
       final locationProvider = Provider.of<LocationProvider>(context, listen: false);
       
+      // Vérifier si on a déjà une position
       if (locationProvider.currentPosition != null) {
         _currentPosition = LatLng(
           locationProvider.currentPosition!.latitude,
           locationProvider.currentPosition!.longitude,
         );
-      } else {
-        // Essayer de récupérer la position
-        bool success = await locationProvider.getCurrentLocation();
-        if (success && locationProvider.currentPosition != null) {
-          _currentPosition = LatLng(
-            locationProvider.currentPosition!.latitude,
-            locationProvider.currentPosition!.longitude,
-          );
-        } else {
-          // Position par défaut (Cotonou, Bénin)
-          _currentPosition = const LatLng(6.3728, 2.3905);
-        }
+        return;
       }
 
-      // Charger les prestataires
-      await _loadProviders();
-
-      setState(() {
-        _isLoading = false;
-      });
+      // Sinon, essayer de récupérer la position
+      bool locationServicesEnabled = await locationProvider.checkLocationServices();
+      
+      if (locationServicesEnabled) {
+        bool permissionGranted = await locationProvider.requestLocationPermission();
+        
+        if (permissionGranted) {
+          bool locationSuccess = await locationProvider.getCurrentLocation();
+          
+          if (locationSuccess && locationProvider.currentPosition != null) {
+            _currentPosition = LatLng(
+              locationProvider.currentPosition!.latitude,
+              locationProvider.currentPosition!.longitude,
+            );
+          }
+        }
+      }
+      
+      // Position par défaut si échec (Cotonou, Bénin)
+      _currentPosition ??= const LatLng(6.3728, 2.3905);
+      
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Erreur lors du chargement: $e';
-        _isLoading = false;
-      });
+      print('Erreur lors de la récupération de la localisation: $e');
+      _currentPosition = const LatLng(6.3728, 2.3905);
     }
   }
 
   Future<void> _loadProviders() async {
+    if (!mounted) return;
+    
     final providerListProvider = Provider.of<ProviderListProvider>(context, listen: false);
     
     try {
       if (widget.categoryId != null) {
         await providerListProvider.fetchProvidersByCategory(widget.categoryId!);
       } else if (_currentPosition != null) {
+        // Utiliser un rayon par défaut pour charger tous les prestataires proches
         await providerListProvider.fetchNearbyProviders(
           _currentPosition!.latitude,
           _currentPosition!.longitude,
-          radius: _radiusFilter,
+          radius: 50.0, // Rayon plus large pour avoir plus de données
         );
       } else {
         await providerListProvider.fetchProviders();
       }
 
-      _providers = providerListProvider.providers;
+      _allProviders = List.from(providerListProvider.providers);
       _applyFilters();
-      _createMarkers(_providers);
+      
     } catch (e) {
       print('Erreur lors du chargement des prestataires: $e');
+      _allProviders = [];
+      _filteredProviders = [];
     }
   }
 
   void _applyFilters() {
-    List<ProviderModel> filteredProviders = List.from(_providers);
+    if (!mounted) return;
 
-    // Filtre par note
+    List<ProviderModel> filtered = List.from(_allProviders);
+
+    // Filtre par note minimum
     if (_minRatingFilter > 0) {
-      filteredProviders = filteredProviders
-          .where((provider) => provider.rating >= _minRatingFilter)
-          .toList();
+      filtered = filtered.where((provider) => provider.rating >= _minRatingFilter).toList();
     }
 
-    // Filtre par type d'entreprise
-    if (_businessTypeFilter.isNotEmpty) {
-      filteredProviders = filteredProviders
-          .where((provider) => provider.businessType == _businessTypeFilter)
-          .toList();
+    // Filtre par distance si on a une position actuelle
+    if (_currentPosition != null) {
+      filtered = filtered.where((provider) {
+        if (provider.latitude == null || provider.longitude == null) return false;
+        
+        double distance = _calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          provider.latitude!,
+          provider.longitude!,
+        );
+        
+        return distance <= _radiusFilter;
+      }).toList();
     }
 
-    _createMarkers(filteredProviders);
+    _filteredProviders = filtered;
+    _createMarkers(_filteredProviders);
+    
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // Calcul de distance entre deux points (en km)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371; // Rayon de la Terre en km
+    
+    double dLat = _toRadians(lat2 - lat1);
+    double dLon = _toRadians(lon2 - lon1);
+    
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) * math.cos(_toRadians(lat2)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    
+    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    
+    return earthRadius * c;
+  }
+
+  double _toRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 
   void _createMarkers(List<ProviderModel> providers) {
@@ -767,8 +838,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
         );
       }
     }
-    
-    setState(() {});
   }
 
   void _showProviderBottomSheet(ProviderModel provider) {
@@ -798,7 +867,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     return StatefulBuilder(
       builder: (context, setModalState) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
+          height: MediaQuery.of(context).size.height * 0.5, // Réduit la hauteur
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
@@ -836,10 +905,8 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       onPressed: () {
                         setModalState(() {
                           _radiusFilter = 10.0;
-                          _minRatingFilter = 0;
-                          _businessTypeFilter = '';
+                          _minRatingFilter = 0.0;
                         });
-                        _applyFilters();
                       },
                       child: Text(AppLocalizations.of(context)!.reset),
                     ),
@@ -861,11 +928,13 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 10),
                       Slider(
                         value: _radiusFilter,
                         min: 1.0,
                         max: 50.0,
                         divisions: 49,
+                        activeColor: const Color(0xFF142FE2),
                         onChanged: (value) {
                           setModalState(() {
                             _radiusFilter = value;
@@ -873,95 +942,54 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                         },
                       ),
                       
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       
                       // Note minimum
                       Text(
-                        AppLocalizations.of(context)!.minimumRating,
+                        '${AppLocalizations.of(context)!.minimumRating}: ${_minRatingFilter.toStringAsFixed(1)} ⭐',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: List.generate(5, (index) {
-                          final rating = index + 1;
-                          return GestureDetector(
-                            onTap: () {
-                              setModalState(() {
-                                _minRatingFilter = _minRatingFilter == rating ? 0 : rating;
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 10),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _minRatingFilter >= rating
-                                    ? const Color(0xFF142FE2)
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: _minRatingFilter >= rating
-                                        ? Colors.white
-                                        : Colors.grey,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$rating+',
-                                    style: TextStyle(
-                                      color: _minRatingFilter >= rating
-                                          ? Colors.white
-                                          : Colors.grey,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
+                      Slider(
+                        value: _minRatingFilter,
+                        min: 0.0,
+                        max: 5.0,
+                        divisions: 10, // Steps de 0.5
+                        activeColor: const Color(0xFF142FE2),
+                        onChanged: (value) {
+                          setModalState(() {
+                            _minRatingFilter = value;
+                          });
+                        },
                       ),
                       
                       const SizedBox(height: 20),
                       
-                      // Type d'entreprise
-                      Text(
-                        AppLocalizations.of(context)!.businessType,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      // Afficher le nombre de prestataires qui correspondent
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 10,
-                        children: ['Entreprise', 'Freelance', 'Auto-entrepreneur'].map((type) {
-                          return ChoiceChip(
-                            label: Text(type),
-                            selected: _businessTypeFilter == type,
-                            onSelected: (selected) {
-                              setModalState(() {
-                                _businessTypeFilter = selected ? type : '';
-                              });
-                            },
-                            selectedColor: const Color(0xFF142FE2),
-                            labelStyle: TextStyle(
-                              color: _businessTypeFilter == type
-                                  ? Colors.white
-                                  : Colors.black,
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Rayon: ${_radiusFilter.toInt()}km, Note min: ${_minRatingFilter.toStringAsFixed(1)}',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
-                          );
-                        }).toList(),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -974,7 +1002,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    _loadProviders();
+                    _applyFilters(); // Appliquer les filtres
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
@@ -999,9 +1027,23 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // Carte Google Maps
+          // Carte Google Maps ou état de chargement
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Color(0xFF142FE2),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Chargement de la carte...',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
               : _errorMessage.isNotEmpty
                   ? Center(
                       child: Column(
@@ -1016,7 +1058,10 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: _loadData,
+                            onPressed: _loadDataWithLocation,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF142FE2),
+                            ),
                             child: Text(AppLocalizations.of(context)!.retry),
                           ),
                         ],
@@ -1057,7 +1102,58 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                     ),
                   ),
                   
-                  const Spacer(),
+                  const SizedBox(width: 8),
+                  
+                  // Info sur le nombre de prestataires
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '${_filteredProviders.length} prestataire(s) trouvé(s)',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 8),
+                  
+                  // Bouton actualiser localisation
+                  ScaleTransition(
+                    scale: _fabAnimation,
+                    child: FloatingActionButton(
+                      heroTag: "location",
+                      mini: true,
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF142FE2),
+                      onPressed: () async {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                        await _updateCurrentLocation();
+                        await _loadProviders();
+                        setState(() {
+                          _isLoading = false;
+                        });
+                      },
+                      child: const Icon(Icons.my_location),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 8),
                   
                   // Bouton filtres
                   ScaleTransition(
@@ -1072,7 +1168,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                     ),
                   ),
                   
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   
                   // Bouton liste/carte
                   ScaleTransition(
@@ -1116,7 +1212,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
             ),
 
           // Vue liste (optionnelle)
-          if (_showListView)
+          if (_showListView && !_isLoading)
             Positioned(
               top: 100,
               left: 16,
@@ -1139,7 +1235,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        '${_providers.length} ${AppLocalizations.of(context)!.providersFound}',
+                        '${_filteredProviders.length} ${AppLocalizations.of(context)!.providersFound}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1147,13 +1243,38 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       ),
                     ),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: _providers.length,
-                        itemBuilder: (context, index) {
-                          final provider = _providers[index];
-                          return _buildProviderListItem(provider);
-                        },
-                      ),
+                      child: _filteredProviders.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Aucun prestataire trouvé',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Essayez d\'élargir votre rayon de recherche',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _filteredProviders.length,
+                              itemBuilder: (context, index) {
+                                final provider = _filteredProviders[index];
+                                return _buildProviderListItem(provider);
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -1279,24 +1400,15 @@ class _MapFilterScreenState extends State<MapFilterScreen>
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Naviguer vers le détail (simulé)
-                    if (provider.services.isNotEmpty) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServiceDetailScreen(
-                            serviceId: provider.services.first.id,
-                            providerId: provider.id,
-                          ),
-                        ),
-                      );
-                    }
+                    // Naviguer vers le détail du prestataire
+                    Navigator.pop(context); // Fermer la carte
+                    // Ajouter ici navigation vers profil prestataire
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
                     foregroundColor: Colors.white,
                   ),
-                  child: Text(AppLocalizations.of(context)!.viewServices),
+                  child: const Text('Voir profil'),
                 ),
               ),
             ],

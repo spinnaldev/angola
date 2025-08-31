@@ -1,9 +1,9 @@
-// lib/ui/screens/client/client_projects_screen.dart
+// lib/ui/screens/client/client_projects_screen.dart - Version corrigée
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
 import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
 import '../../../providers/project_provider.dart';
@@ -11,7 +11,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../core/models/client_project.dart';
 import '../../widgets/loading_indicator.dart';
 import '../project_detail_screen.dart';
-import '../post_project_screen.dart'; // Import pour la page d'ajout de projet
+import '../post_project_screen.dart';
 
 class ClientProjectsScreen extends StatefulWidget {
   const ClientProjectsScreen({Key? key}) : super(key: key);
@@ -23,12 +23,20 @@ class ClientProjectsScreen extends StatefulWidget {
 class _ClientProjectsScreenState extends State<ClientProjectsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isInitialLoading = true; // Nouvel état pour le chargement initial
+  bool _hasInitialized = false; // Pour éviter les multiples chargements
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadData();
+    // On appelle le chargement après que le widget soit construit
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_hasInitialized) {
+        _hasInitialized = true;
+        _loadData();
+      }
+    });
   }
 
   @override
@@ -38,27 +46,46 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
+
+    // Afficher le chargement seulement si c'est le premier chargement
+    if (_isInitialLoading) {
+      setState(() {
+        _isInitialLoading = true;
+      });
+    }
+
     final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
     
     try {
+      print('Début du chargement des projets utilisateur...'); // Debug
       await projectProvider.fetchUserProjects();
+      print('Projets chargés avec succès: ${projectProvider.userProjects.length}'); // Debug
+      
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+        });
+      }
     } catch (e) {
       print('Erreur lors du chargement des projets: $e');
       
-      // Si l'erreur indique un problème d'authentification
-      if (e.toString().contains('401') || 
-          e.toString().contains('Unauthorized') || 
-          e.toString().contains('Non autorisé') ||
-          e.toString().contains('Session expirée')) {
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+        });
         
-        // Afficher un dialog pour se reconnecter
-        if (mounted) {
+        // Si l'erreur indique un problème d'authentification
+        if (e.toString().contains('401') || 
+            e.toString().contains('Unauthorized') || 
+            e.toString().contains('Non autorisé') ||
+            e.toString().contains('Session expirée')) {
+          
+          // Afficher un dialog pour se reconnecter
           _showAuthenticationDialog();
-        }
-      } else {
-        // Afficher l'erreur générale
-        if (mounted) {
+        } else {
+          // Afficher l'erreur générale
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(l10n.loadingError(e.toString())),
@@ -134,14 +161,6 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         elevation: 0,
         backgroundColor: const Color(0xFF142FE2),
         foregroundColor: Colors.white,
-        // actions: [
-        //   // Bouton + pour ajouter un nouveau projet
-        //   IconButton(
-        //     onPressed: _navigateToAddProject,
-        //     icon: const Icon(Icons.add),
-        //     tooltip: l10n.addProjectTooltip,
-        //   ),
-        // ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -155,54 +174,64 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           unselectedLabelColor: Colors.white70,
         ),
       ),
-      body: Consumer<ProjectProvider>(
-        builder: (context, projectProvider, _) {
-          if (projectProvider.isLoadingUserProjects) {
-            return const Center(child: LoadingIndicator());
-          }
+      body: _isInitialLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LoadingIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Chargement de vos projets...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Consumer<ProjectProvider>(
+              builder: (context, projectProvider, _) {
+                if (projectProvider.isLoadingUserProjects) {
+                  return const Center(child: LoadingIndicator());
+                }
 
-          if (projectProvider.errorMessage != null) {
-            return _buildErrorState(projectProvider.errorMessage!);
-          }
+                if (projectProvider.errorMessage != null) {
+                  return _buildErrorState(projectProvider.errorMessage!);
+                }
 
-          final projects = projectProvider.userProjects;
+                final projects = projectProvider.userProjects;
 
-          if (projects.isEmpty) {
-            return _buildEmptyState();
-          }
+                if (projects.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildProjectsList(projects), // Tous
-              _buildProjectsList(projects
-                  .where((p) => p.status == 'open')
-                  .toList()), // Ouverts
-              _buildProjectsList(projects
-                  .where((p) => p.status == 'in_progress')
-                  .toList()), // En cours
-              _buildProjectsList(projects
-                  .where((p) => p.status == 'completed' || p.status == 'closed')
-                  .toList()), // Terminés
-            ],
-          );
-        },
-      ),
-      // Bouton flottant alternatif (optionnel)
-      floatingActionButton : ProtectedFloatingActionButton(
-        actionDescription: l10n.addProjectTooltip,
-        onPressed: _navigateToAddProject,
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.white,
-      )
-
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: _navigateToAddProject,
-      //   backgroundColor: const Color(0xFF142FE2),
-      //   foregroundColor: Colors.white,
-      //   tooltip: l10n.addProjectTooltip,
-      //   child: const Icon(Icons.add),
-      // ),
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildProjectsList(projects), // Tous
+                    _buildProjectsList(projects
+                        .where((p) => p.status == 'open')
+                        .toList()), // Ouverts
+                    _buildProjectsList(projects
+                        .where((p) => p.status == 'in_progress')
+                        .toList()), // En cours
+                    _buildProjectsList(projects
+                        .where((p) => p.status == 'completed' || p.status == 'closed')
+                        .toList()), // Terminés
+                  ],
+                );
+              },
+            ),
+      floatingActionButton: _isInitialLoading 
+          ? null // Ne pas afficher le FAB pendant le chargement initial
+          : ProtectedFloatingActionButton(
+              actionDescription: l10n.addProjectTooltip,
+              onPressed: _navigateToAddProject,
+              child: const Icon(Icons.add),
+              backgroundColor: const Color(0xFF142FE2),
+            ),
     );
   }
 
@@ -257,6 +286,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
 
     return RefreshIndicator(
       onRefresh: _loadData,
+      color: const Color(0xFF142FE2),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: projects.length,
@@ -328,11 +358,14 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                 const Spacer(),
                 Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text(
-                  project.location,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    project.location,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -504,7 +537,7 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
           ),
           const SizedBox(height: 24),
           ProtectedActionButton(
-            actionDescription: l10n.addProjectTooltip, // ou "créer un projet"
+            actionDescription: l10n.addProjectTooltip,
             onPressed: _navigateToAddProject,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF142FE2),
@@ -523,19 +556,6 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
               ],
             ),
           )
-          // ElevatedButton.icon(
-          //   onPressed: _navigateToAddProject,
-          //   icon: const Icon(Icons.add),
-          //   label: Text(l10n.createProject),
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: const Color(0xFF142FE2),
-          //     foregroundColor: Colors.white,
-          //     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(8),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -563,13 +583,16 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            error,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              error,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -613,7 +636,9 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Color(0xFF142FE2),
+          ),
         ),
       );
 
@@ -657,7 +682,9 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Color(0xFF142FE2),
+          ),
         ),
       );
 

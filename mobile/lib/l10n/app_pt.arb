@@ -1593,5 +1593,92 @@
   "conversationOpenError": "Erro ao abrir conversa",
   "contactError": "Erro de contacto",
   "permissionDenied": "Permissão negada",
-  "dismiss": "Dispensar"
+  "dismiss": "Dispensar",
+
+  "addEvidence": "Adicionar Prova",
+  "evidenceDescription": "Descrição da Prova",
+  "description": "Descrição",
+  "explainWhatThisProves": "Explique o que este documento/imagem prova",
+  "pleaseEnterDescription": "Por favor, digite uma descrição",
+  "descriptionTooShort": "A descrição deve ter pelo menos 10 caracteres",
+  "evidenceType": "Tipo de Prova",
+  "image": "Imagem",
+  "document": "Documento",
+  "selectedFile": "Arquivo Selecionado",
+  "removeFile": "Remover Arquivo",
+  "submitEvidence": "Enviar Prova",
+  "pleaseSelectFile": "Por favor, selecione um arquivo",
+  "fileTooLarge": "O arquivo é muito grande (máximo 10 MB)",
+  "evidenceAddedSuccessfully": "Prova adicionada com sucesso",
+  "errorAddingEvidence": "Erro ao adicionar prova",
+  "uploadingEvidence": "Enviando prova...",
+  "pleaseWait": "Por favor, aguarde",
+  "uploadTimeout": "Timeout de upload: arquivo muito grande ou conexão muito lenta",
+  "networkError": "Erro de rede: verifique sua conexão com a internet",
+  "retry": "Tentar novamente",
+  "error": "Erro",
+  "selectImageSource": "Selecionar Fonte da Imagem",
+  "camera": "Câmera",
+  "gallery": "Galeria",
+  "fileLimitsInfo": "Formatos aceitos: JPG, PNG, PDF. Tamanho máximo: 10 MB",
+
+  "verificationServiceNotInitialized": "Serviço de verificação não inicializado",
+  "verificationServiceNotInitializedMessage": "A verificação protege a segurança da plataforma. Entre em contato com o suporte se este problema persistir.",
+  
+  "phoneVerificationRequired": "Verificação de telefone obrigatória",
+  "phoneVerificationForAction": "Para {actionDescription}, você deve verificar seu número de telefone.",
+  "@phoneVerificationForAction": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneVerificationSecurityNote": "Esta verificação protege contra contas fraudulentas e protege sua conta.",
+  "verifyPhone": "Verificar meu telefone",
+  
+  "providerVerificationRequired": "Verificação de prestador obrigatória",
+  "providerVerificationForAction": "Para {actionDescription}, você deve verificar seu perfil de prestador com seus documentos de identidade.",
+  "@providerVerificationForAction": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "providerVerificationBenefits": "Esta verificação aumenta a confiança do cliente e lhe dá acesso a todos os recursos do prestador.",
+  "startVerification": "Iniciar verificação",
+  
+  "verificationInProgress": "Verificação em andamento",
+  "verificationInProgressMessage": "Sua solicitação de verificação está sendo analisada. Você ainda não pode {actionDescription}.",
+  "@verificationInProgressMessage": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "verificationRejected": "Verificação rejeitada",
+  "verificationRejectedMessage": "Sua solicitação de verificação foi rejeitada. Envie novos documentos para {actionDescription}.",
+  "@verificationRejectedMessage": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "viewStatus": "Ver status",
+  "submitNewDocuments": "Enviar novos documentos",
+  "tryAgain": "Tentar novamente",
+  "backToProfile": "Voltar ao perfil",
+  
+  "serviceNotInitialized": "Serviço não inicializado",
+  "serviceNotInitializedMessage": "Este serviço ainda não foi configurado. Entre em contato com o suporte.",
+  "contactSupport": "Contatar suporte",
+  
+  "errorOccurred": "Ocorreu um erro",
+  "unknownError": "Erro desconhecido",
+  "pleaseContactSupport": "Entre em contato com o suporte se o problema persistir"
 }

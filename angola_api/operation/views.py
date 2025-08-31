@@ -34,6 +34,9 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import get_language_from_request
 from django.core.cache import cache
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import FCMToken, NotificationPreference, NotificationHistory
 from .fcm_service import FCMService
@@ -2414,24 +2417,108 @@ class DisputeViewSet(viewsets.ModelViewSet):
         # Sauvegarder avec client et provider automatiquement définis
         serializer.save(client=self.request.user, provider=provider)
         
-    @action(detail=True, methods=['post'])
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def add_evidence(self, request, pk=None):
-        dispute = self.get_object()
-        description = request.data.get('description')
-        file = request.data.get('file')
-        
-        if not description or not file:
-            return Response({"detail": "Description and file are required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        evidence = DisputeEvidence.objects.create(
-            dispute=dispute,
-            user=request.user,
-            description=description,
-            file=file
-        )
-        
-        serializer = DisputeEvidenceSerializer(evidence)
-        return Response(serializer.data)
+        """
+        Ajouter une preuve à un litige avec gestion d'erreurs améliorée
+        """
+        try:
+            dispute = self.get_object()
+            
+            # Vérifier les droits
+            if request.user != dispute.client and request.user != dispute.provider.user:
+                return Response(
+                    {"detail": "Vous n'avez pas l'autorisation d'ajouter des preuves à ce litige"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Log du début de traitement
+            logger.info(f"Début ajout preuve pour litige {pk} par utilisateur {request.user.id}")
+            
+            # Récupération sécurisée des données
+            description = None
+            file = None
+            
+            try:
+                description = request.data.get('description', '').strip()
+                file = request.FILES.get('file')
+            except Exception as e:
+                logger.error(f"Erreur lecture request.data: {e}")
+                return Response(
+                    {"detail": "Erreur lors de la lecture des données. Le fichier est peut-être trop volumineux."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validation des données
+            if not description:
+                return Response(
+                    {"detail": "La description est requise"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            if not file:
+                return Response(
+                    {"detail": "Le fichier est requis"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Vérification de la taille du fichier
+            max_size = 10 * 1024 * 1024  # 10MB
+            if file.size > max_size:
+                return Response(
+                    {"detail": f"Le fichier est trop volumineux. Taille maximum autorisée: {max_size // (1024*1024)}MB"}, 
+                    status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                )
+            
+            # Vérification du type de fichier
+            allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+            if hasattr(file, 'content_type') and file.content_type not in allowed_types:
+                return Response(
+                    {"detail": f"Type de fichier non autorisé. Types acceptés: {', '.join(allowed_types)}"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Log avant création
+            logger.info(f"Création de la preuve - Taille fichier: {file.size} bytes")
+            
+            # Créer la preuve avec gestion d'erreur
+            try:
+                evidence = DisputeEvidence.objects.create(
+                    dispute=dispute,
+                    user=request.user,
+                    description=description,
+                    file=file
+                )
+                
+                logger.info(f"Preuve créée avec succès - ID: {evidence.id}")
+                
+                # Sérialiser et retourner
+                serializer = DisputeEvidenceSerializer(evidence)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+            except Exception as create_error:
+                logger.error(f"Erreur création preuve: {create_error}")
+                return Response(
+                    {"detail": "Erreur lors de la sauvegarde du fichier. Réessayez avec un fichier plus petit."}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+        except Exception as e:
+            logger.error(f"Erreur générale add_evidence: {e}")
+            
+            # Messages d'erreur spécifiques selon le type d'exception
+            if "timeout" in str(e).lower() or "expired" in str(e).lower():
+                error_message = "Timeout d'upload: le fichier est trop volumineux ou la connexion est trop lente."
+            elif "memory" in str(e).lower():
+                error_message = "Fichier trop volumineux pour être traité."
+            else:
+                error_message = "Erreur inattendue lors de l'ajout de la preuve."
+                
+            return Response(
+                {"detail": error_message}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
@@ -5267,6 +5354,111 @@ def send_project_update_notification(project, update_type, message):
         logger.error(f"Erreur notification projet: {e}")
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_verification_status(request):
+    """
+    Endpoint unifié pour obtenir le statut de vérification de l'utilisateur
+    Évite les confusions entre types de vérification
+    """
+    user = request.user
+    
+    try:
+        # Synchroniser les statuts avant de répondre
+        _sync_all_verification_statuses(user)
+        
+        response_data = {
+            'user_id': user.id,
+            'user_role': user.role,
+            'is_verified': user.is_verified,
+        }
+        
+        # Détails selon le rôle
+        if user.role == 'client':
+            phone_verification = getattr(user, 'phone_verification', None)
+            response_data['phone_verification'] = {
+                'exists': phone_verification is not None,
+                'status': phone_verification.status if phone_verification else 'not_started',
+                'phone_number': phone_verification.phone_number if phone_verification else None,
+                'verified_at': phone_verification.verified_at if phone_verification else None,
+                'can_verify': True,
+                'message': _('Phone verification required for client actions') if not phone_verification or phone_verification.status != 'verified' else _('Phone verified successfully')
+            }
+            
+        elif user.role == 'provider':
+            provider = getattr(user, 'provider_profile', None)
+            if provider:
+                verification = getattr(provider, 'verification', None)
+                response_data['provider_verification'] = {
+                    'exists': verification is not None,
+                    'status': verification.verification_status if verification else 'not_started',
+                    'submitted_at': verification.submitted_at if verification else None,
+                    'verified_at': verification.verified_at if verification else None,
+                    'rejection_reason': verification.rejection_reason if verification else None,
+                    'can_verify': verification is None or verification.verification_status in ['not_started', 'rejected'],
+                    'message': _get_verification_message(verification.verification_status if verification else 'not_started')
+                }
+            else:
+                response_data['provider_verification'] = {
+                    'exists': False,
+                    'status': 'no_provider_profile',
+                    'message': _('Provider profile not found')
+                }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur get_verification_status: {e}")
+        return Response({
+            'error': _('Verification service temporarily unavailable'),
+            'detail': str(e)
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+def _get_verification_message(verification_status):
+    """Obtenir le message approprié selon le statut de vérification"""
+    messages = {
+        'not_started': _('Provider verification not started'),
+        'pending': _('Provider verification under review'),
+        'verified': _('Provider profile verified successfully'),
+        'rejected': _('Provider verification rejected - new documents required'),
+    }
+    return messages.get(verification_status, _('Unknown verification status'))
+
+def _sync_all_verification_statuses(user):
+    """
+    Synchroniser tous les statuts de vérification pour éviter les incohérences
+    """
+    try:
+        if user.role == 'client':
+            # Synchroniser avec phone_verification
+            phone_verification = getattr(user, 'phone_verification', None)
+            expected_verified = phone_verification and phone_verification.status == 'verified'
+            
+            if user.is_verified != expected_verified:
+                user.is_verified = expected_verified
+                user.save()
+                print(f"🔄 Client {user.username} statut synchronisé: {expected_verified}")
+        
+        elif user.role == 'provider':
+            # Synchroniser avec provider verification
+            provider = getattr(user, 'provider_profile', None)
+            if provider:
+                verification = getattr(provider, 'verification', None)
+                expected_verified = verification and verification.verification_status == 'verified'
+                
+                if user.is_verified != expected_verified:
+                    user.is_verified = expected_verified
+                    user.save()
+                    print(f"🔄 Provider {user.username} statut synchronisé: {expected_verified}")
+            else:
+                # Pas de profil prestataire = pas vérifié
+                if user.is_verified:
+                    user.is_verified = False
+                    user.save()
+                    print(f"🔄 Provider {user.username} sans profil -> non vérifié")
+                    
+    except Exception as e:
+        print(f"❌ Erreur synchronisation statuts: {e}")
 
 
 
@@ -5336,3 +5528,76 @@ def test_bulk_fcm(request):
             'success': False,
             'error': str(e)
         })
+
+@action(detail=False, methods=['get'])
+def profile(self, request):
+    """
+    Vue profil utilisateur corrigée avec gestion d'erreurs
+    """
+    user = request.user
+    
+    try:
+        # Synchroniser les statuts
+        _sync_all_verification_statuses(user)
+        
+        # Données de base
+        response_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone_number': user.phone_number,
+            'role': user.role,
+            'is_verified': user.is_verified,
+            'profile_picture': user.profile_picture.url if user.profile_picture else None,
+            'bio': user.bio,
+            'location': user.location,
+            'company_name': user.company_name,
+            'created_at': user.created_at,
+            'verification_service_available': True,  # Toujours vrai maintenant
+        }
+        
+        # Détails selon le rôle
+        if user.role == 'client':
+            phone_verification = getattr(user, 'phone_verification', None)
+            response_data['phone_verification_details'] = {
+                'status': phone_verification.status if phone_verification else 'not_started',
+                'phone_number': phone_verification.phone_number if phone_verification else None,
+                'verified_at': phone_verification.verified_at if phone_verification else None,
+            } if phone_verification else None
+            
+        elif user.role == 'provider':
+            provider = getattr(user, 'provider_profile', None)
+            if provider:
+                response_data['provider_details'] = {
+                    'business_type': provider.business_type,
+                    'description': provider.description,
+                    'experience_years': provider.experience_years,
+                    'rating': provider.rating,
+                    'total_reviews': provider.total_reviews,
+                    'services_count': provider.provider_services.count(),
+                    'verification': None
+                }
+                
+                # Détails de vérification
+                verification = getattr(provider, 'verification', None)
+                if verification:
+                    response_data['provider_details']['verification'] = {
+                        'status': verification.verification_status,
+                        'submitted_at': verification.submitted_at,
+                        'verified_at': verification.verified_at,
+                        'is_business': verification.is_business,
+                        'rejection_reason': verification.rejection_reason,
+                        'message': _get_verification_message(verification.verification_status)
+                    }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur vue profile: {e}")
+        return Response({
+            'error': _('Profile service temporarily unavailable'),
+            'detail': _('Please try again later or contact support'),
+            'verification_service_available': False,
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)

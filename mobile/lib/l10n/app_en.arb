@@ -1524,7 +1524,95 @@
   "conversationOpenError": "Error opening conversation",
   "contactError": "Contact error",
   "permissionDenied": "Permission denied",
-  "dismiss": "Dismiss"
+  "dismiss": "Dismiss",
+
+  "addEvidence": "Add Evidence",
+  "evidenceDescription": "Evidence Description",
+  "description": "Description",
+  "explainWhatThisProves": "Explain what this document/image proves",
+  "pleaseEnterDescription": "Please enter a description",
+  "descriptionTooShort": "Description must be at least 10 characters long",
+  "evidenceType": "Evidence Type",
+  "image": "Image",
+  "document": "Document",
+  "selectedFile": "Selected File",
+  "removeFile": "Remove File",
+  "submitEvidence": "Submit Evidence",
+  "pleaseSelectFile": "Please select a file",
+  "fileTooLarge": "File is too large (maximum 10 MB)",
+  "evidenceAddedSuccessfully": "Evidence added successfully",
+  "errorAddingEvidence": "Error adding evidence",
+  "uploadingEvidence": "Uploading evidence...",
+  "pleaseWait": "Please wait",
+  "uploadTimeout": "Upload timeout: file too large or connection too slow",
+  "networkError": "Network error: check your internet connection",
+  "retry": "Retry",
+  "error": "Error",
+  "selectImageSource": "Select Image Source",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "fileLimitsInfo": "Accepted formats: JPG, PNG, PDF. Maximum size: 10 MB",
+  "verificationServiceNotInitialized": "Verification service not initialized",
+  "verificationServiceNotInitializedMessage": "Verification protects platform security. Please contact support if this issue persists.",
+  
+  
+  "phoneVerificationRequired": "Phone verification required",
+  "phoneVerificationForAction": "To {actionDescription}, you must verify your phone number.",
+  "@phoneVerificationForAction": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneVerificationSecurityNote": "This verification protects against fraudulent accounts and secures your account.",
+  "verifyPhone": "Verify my phone",
+  
+  
+  "providerVerificationRequired": "Provider verification required",
+  "providerVerificationForAction": "To {actionDescription}, you must verify your provider profile with your identity documents.",
+  "@providerVerificationForAction": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "providerVerificationBenefits": "This verification increases client trust and gives you access to all provider features.",
+  "startVerification": "Start verification",
+  
+  
+  "verificationInProgress": "Verification in progress",
+  "verificationInProgressMessage": "Your verification request is under review. You cannot {actionDescription} yet.",
+  "@verificationInProgressMessage": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "verificationRejected": "Verification rejected",
+  "verificationRejectedMessage": "Your verification request was rejected. Please submit new documents to {actionDescription}.",
+  "@verificationRejectedMessage": {
+    "placeholders": {
+      "actionDescription": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "viewStatus": "View status",
+  "submitNewDocuments": "Submit new documents",
+  "tryAgain": "Try again",
+  "backToProfile": "Back to profile",
+  "serviceNotInitialized": "Service not initialized",
+  "serviceNotInitializedMessage": "This service is not yet configured. Please contact support.",
+  "contactSupport": "Contact support",
+  
+  "errorOccurred": "An error occurred",
+  "unknownError": "Unknown error",
+  "pleaseContactSupport": "Please contact support if the issue persists"
   
 
 }
