@@ -1634,5 +1634,94 @@
   
   "errorOccurred": "Une erreur s'est produite",
   "unknownError": "Erreur inconnue",
-  "pleaseContactSupport": "Veuillez contacter le support si le problème persiste"
+  "pleaseContactSupport": "Veuillez contacter le support si le problème persiste",
+  "verificationError": "Erreur de vérification",
+
+  "editService": "Modifier le service",
+  "addCompletedWork": "Ajouter un travail effectué",
+  "mainImage": "Image principale",
+  "addMainImage": "Ajouter une image principale",
+  "basicInformation": "Informations de base",
+  "serviceTitle": "Titre du service",
+  "pleaseEnterTitle": "Veuillez entrer un titre",
+  "category": "Catégorie",
+  "noExpertiseCategoriesSelected": "Vous n'avez pas encore sélectionné de catégories d'expertise",
+  "selectCategory": "Sélectionner une catégorie",
+  "subcategory": "Sous-catégorie",
+  "selectSubcategory": "Sélectionner une sous-catégorie",
+  "description": "Description",
+  "pleaseEnterDescription": "Veuillez entrer une description",
+  "priceType": "Type de prix",
+  "fixedPrice": "Prix fixe",
+  "hourlyPrice": "Prix horaire",
+  "dailyPrice": "Prix journalier",
+  "negotiablePrice": "Prix négociable",
+  "onQuote": "Sur devis",
+  "priceAOA": "Prix (AOA)",
+  "pleaseEnterPrice": "Veuillez entrer un prix",
+  "pleaseEnterValidPrice": "Veuillez entrer un prix valide",
+  "imageGallery": "Galerie d'images",
+  "add": "Ajouter",
+  "galleryImageDescription": "Ajoutez entre 1 et 10 images pour votre galerie ({count}/10)",
+  "@galleryImageDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "imageNumber": "Image {number}",
+  "@imageNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "optionalCaption": "Légende (optionnelle)",
+  "existingImages": "Images existantes",
+  "serviceOptions": "Options du service",
+  "serviceOptionsDescription": "Ajoutez des options ou caractéristiques incluses dans votre service",
+  "noOptionsAdded": "Aucune option ajoutée",
+  "update": "Mettre à jour",
+  "addWork": "Ajouter le travail",
+  "optionNumber": "Option {number}",
+  "@optionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "optionName": "Nom de l'option",
+  "optionIncludedInBasePrice": "Option incluse dans le prix de base",
+  "additionalPriceAOA": "Prix supplémentaire (AOA)",
+  
+  "errorLoadingExpertiseCategories": "Erreur lors du chargement de vos catégories d'expertise",
+  "errorLoadingSubcategories": "Erreur lors du chargement des sous-catégories",
+  "pleaseSelectCategory": "Veuillez sélectionner une catégorie",
+  "pleaseSelectSubcategory": "Veuillez sélectionner une sous-catégorie",
+  "pleaseAddAtLeastOneGalleryImage": "Veuillez ajouter au moins une image à la galerie",
+  "cannotAddMoreThan10Images": "Vous ne pouvez pas ajouter plus de 10 images",
+  "optionMustHaveDescription": "L'option \"{optionName}\" doit avoir une description",
+  "@optionMustHaveDescription": {
+    "placeholders": {
+      "optionName": {
+        "type": "String"
+      }
+    }
+  },
+  "optionMustHavePrice": "L'option \"{optionName}\" doit avoir un prix car elle n'est pas incluse",
+  "@optionMustHavePrice": {
+    "placeholders": {
+      "optionName": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceAddedSuccessfully": "Service ajouté avec succès",
+  "serviceUpdatedSuccessfully": "Service mis à jour avec succès",
+  "error": "Erreur"
+
+  
 }

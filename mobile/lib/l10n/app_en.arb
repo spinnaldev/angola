@@ -1612,7 +1612,94 @@
   
   "errorOccurred": "An error occurred",
   "unknownError": "Unknown error",
-  "pleaseContactSupport": "Please contact support if the issue persists"
+  "pleaseContactSupport": "Please contact support if the issue persists",
+  "verificationError": "Verification error",
+
+  "editService": "Edit Service",
+  "addCompletedWork": "Add Completed Work",
+  "mainImage": "Main Image",
+  "addMainImage": "Add main image",
+  "basicInformation": "Basic Information",
+  "serviceTitle": "Service Title",
+  "pleaseEnterTitle": "Please enter a title",
+  "category": "Category",
+  "noExpertiseCategoriesSelected": "You haven't selected expertise categories yet",
+  "selectCategory": "Select a category",
+  "subcategory": "Subcategory",
+  "selectSubcategory": "Select a subcategory",
+  "description": "Description",
+  "pleaseEnterDescription": "Please enter a description",
+  "priceType": "Price Type",
+  "fixedPrice": "Fixed Price",
+  "hourlyPrice": "Hourly Price",
+  "dailyPrice": "Daily Price",
+  "negotiablePrice": "Negotiable Price",
+  "onQuote": "On Quote",
+  "priceAOA": "Price (AOA)",
+  "pleaseEnterPrice": "Please enter a price",
+  "pleaseEnterValidPrice": "Please enter a valid price",
+  "imageGallery": "Image Gallery",
+  "add": "Add",
+  "galleryImageDescription": "Add between 1 and 10 images to your gallery ({count}/10)",
+  "@galleryImageDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "imageNumber": "Image {number}",
+  "@imageNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "optionalCaption": "Caption (optional)",
+  "existingImages": "Existing Images",
+  "serviceOptions": "Service Options",
+  "serviceOptionsDescription": "Add options or features included in your service",
+  "noOptionsAdded": "No options added",
+  "update": "Update",
+  "addWork": "Add Work",
+  "optionNumber": "Option {number}",
+  "@optionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "optionName": "Option Name",
+  "optionIncludedInBasePrice": "Option included in base price",
+  "additionalPriceAOA": "Additional price (AOA)",
+  
+  "errorLoadingExpertiseCategories": "Error loading your expertise categories",
+  "errorLoadingSubcategories": "Error loading subcategories",
+  "pleaseSelectCategory": "Please select a category",
+  "pleaseSelectSubcategory": "Please select a subcategory",
+  "pleaseAddAtLeastOneGalleryImage": "Please add at least one gallery image",
+  "cannotAddMoreThan10Images": "You cannot add more than 10 images",
+  "optionMustHaveDescription": "Option \"{optionName}\" must have a description",
+  "@optionMustHaveDescription": {
+    "placeholders": {
+      "optionName": {
+        "type": "String"
+      }
+    }
+  },
+  "optionMustHavePrice": "Option \"{optionName}\" must have a price since it's not included",
+  "@optionMustHavePrice": {
+    "placeholders": {
+      "optionName": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceAddedSuccessfully": "Service added successfully",
+  "serviceUpdatedSuccessfully": "Service updated successfully",
+  "error": "Error"
   
 
 }

@@ -1,8 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:teyago/providers/auth_provider.dart';
-import 'package:teyago/ui/widgets/verification/verification_required_dialog.dart';
+import 'protected_action_handler.dart';
 
 class ProtectedFloatingActionButton extends StatelessWidget {
   final String actionDescription;
@@ -10,6 +8,7 @@ class ProtectedFloatingActionButton extends StatelessWidget {
   final Widget child;
   final String? tooltip;
   final Color? backgroundColor;
+  final VerificationType requiredVerification;
 
   const ProtectedFloatingActionButton({
     Key? key,
@@ -18,28 +17,25 @@ class ProtectedFloatingActionButton extends StatelessWidget {
     required this.child,
     this.tooltip,
     this.backgroundColor,
+    this.requiredVerification = VerificationType.auto,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        return FloatingActionButton(
-          onPressed: () => _handlePress(context, authProvider),
-          tooltip: tooltip,
-          backgroundColor: backgroundColor,
-          child: child,
+    return FloatingActionButton(
+      onPressed: () async {
+        final canProceed = await ProtectedActionHandler.checkAndHandleVerification(
+          context: context,
+          actionDescription: actionDescription,
+          requiredVerification: requiredVerification,
         );
+        if (canProceed) {
+          onPressed();
+        }
       },
+      tooltip: tooltip,
+      backgroundColor: backgroundColor,
+      child: child,
     );
-  }
-
-  void _handlePress(BuildContext context, AuthProvider authProvider) {
-    if (authProvider.canPerformAction(context , actionDescription)) {
-      onPressed();
-    } else {
-      final result = authProvider.getVerificationResult(context , actionDescription);
-      VerificationRequiredDialog.show(context, result);
-    }
   }
 }

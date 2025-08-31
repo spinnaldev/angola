@@ -1,8 +1,9 @@
-// lib/ui/screens/provider/add_edit_service_screen.dart
+// lib/ui/screens/provider/add_edit_service_screen.dart - Version internationalisée
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUTÉ
 import '../../../core/models/service_option.dart';
 import '../../../providers/language_provider.dart';
 import '../../../providers/service_provider.dart';
@@ -43,16 +44,18 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   List<ServiceOption> _serviceOptions = [];
 
   List<Subcategory> _availableSubcategories = [];
-  List<int> _expertiseCategories =
-      []; // IDs des catégories d'expertise du prestataire
+  List<int> _expertiseCategories = [];
 
-  final List<Map<String, dynamic>> _priceTypes = [
-    {'value': 'fixed', 'label': 'Prix fixe'},
-    {'value': 'hourly', 'label': 'Prix horaire'},
-    {'value': 'daily', 'label': 'Prix journalier'},
-    {'value': 'negotiable', 'label': 'Prix négociable'},
-    {'value': 'quote', 'label': 'Sur devis'},
-  ];
+  // Types de prix dynamiques selon la langue
+  List<Map<String, dynamic>> _getPriceTypes(AppLocalizations l10n) {
+    return [
+      {'value': 'fixed', 'label': l10n.fixedPrice},
+      {'value': 'hourly', 'label': l10n.hourlyPrice},
+      {'value': 'daily', 'label': l10n.dailyPrice},
+      {'value': 'negotiable', 'label': l10n.negotiablePrice},
+      {'value': 'quote', 'label': l10n.onQuote},
+    ];
+  }
 
   @override
   void initState() {
@@ -86,6 +89,8 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   }
 
   Future<void> _loadProviderExpertiseCategories() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     try {
       // Récupérer les catégories d'expertise depuis l'API
       final expertiseCategories =
@@ -110,8 +115,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
       print('Erreur lors du chargement des catégories d\'expertise: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text('Erreur lors du chargement de vos catégories d\'expertise'),
+          content: Text(l10n.errorLoadingExpertiseCategories),
           backgroundColor: Colors.red,
         ),
       );
@@ -119,10 +123,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   }
 
   Future<void> _loadSubcategoriesForCategory(int categoryId) async {
+    final l10n = AppLocalizations.of(context)!;
+    
     setState(() {
       _isFetchingSubcategories = true;
-      _selectedSubcategoryId =
-          null; // Réinitialiser la sous-catégorie sélectionnée
+      _selectedSubcategoryId = null;
     });
 
     try {
@@ -152,7 +157,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors du chargement des sous-catégories'),
+          content: Text(l10n.errorLoadingSubcategories),
           backgroundColor: Colors.red,
         ),
       );
@@ -191,7 +196,6 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     }
   }
 
-  // Méthode pour supprimer une image
   void _removeGalleryImage(int index) {
     setState(() {
       _galleryImageFiles.removeAt(index);
@@ -201,7 +205,6 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     });
   }
 
-  // Méthode pour ajouter une option
   void _addServiceOption() {
     setState(() {
       _serviceOptions.add(
@@ -214,14 +217,12 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     });
   }
 
-  // Méthode pour supprimer une option
   void _removeServiceOption(int index) {
     setState(() {
       _serviceOptions.removeAt(index);
     });
   }
 
-  // Méthode pour mettre à jour une option
   void _updateServiceOption(int index, ServiceOption updatedOption) {
     setState(() {
       _serviceOptions[index] = updatedOption;
@@ -229,6 +230,8 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   }
 
   Future<void> _saveService() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -236,7 +239,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Veuillez sélectionner une catégorie'),
+          content: Text(l10n.pleaseSelectCategory),
           backgroundColor: Colors.red,
         ),
       );
@@ -246,19 +249,20 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     if (_selectedSubcategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Veuillez sélectionner une sous-catégorie'),
+          content: Text(l10n.pleaseSelectSubcategory),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
+    
     final totalGalleryImages = _galleryImageFiles.length +
         (widget.serviceToEdit?.galleryImages.length ?? 0);
 
     if (totalGalleryImages == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Veuillez ajouter au moins une image à la galerie'),
+          content: Text(l10n.pleaseAddAtLeastOneGalleryImage),
           backgroundColor: Colors.red,
         ),
       );
@@ -268,13 +272,12 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     if (totalGalleryImages > 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Vous ne pouvez pas ajouter plus de 10 images'),
+          content: Text(l10n.cannotAddMoreThan10Images),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
-
 
     // Validation des options seulement si elles existent
     for (int i = 0; i < _serviceOptions.length; i++) {
@@ -284,7 +287,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
       if (option.name.isNotEmpty && option.description.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('L\'option "${option.name}" doit avoir une description'),
+            content: Text(l10n.optionMustHaveDescription(option.name)),
             backgroundColor: Colors.red,
           ),
         );
@@ -295,7 +298,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
       if (option.name.isNotEmpty && !option.isIncluded && (option.price == null || option.price! <= 0)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('L\'option "${option.name}" doit avoir un prix car elle n\'est pas incluse'),
+            content: Text(l10n.optionMustHavePrice(option.name)),
             backgroundColor: Colors.red,
           ),
         );
@@ -306,9 +309,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     setState(() {
       _isLoading = true;
     });
+    
     for (int i = 0; i < _captionControllers.length; i++) {
       _imageCaptions[i] = _captionControllers[i].text;
     }
+    
     try {
       final serviceProvider =
           Provider.of<ServiceProvider>(context, listen: false);
@@ -336,7 +341,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Service ajouté avec succès')),
+            SnackBar(content: Text(l10n.serviceAddedSuccessfully)),
           );
           Navigator.pop(context);
         }
@@ -356,7 +361,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Service mis à jour avec succès')),
+            SnackBar(content: Text(l10n.serviceUpdatedSuccessfully)),
           );
           Navigator.pop(context);
         }
@@ -364,7 +369,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
+          SnackBar(content: Text('${l10n.error}: ${e.toString()}')),
         );
       }
     } finally {
@@ -378,11 +383,14 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // ✅ AJOUTÉ
+    final priceTypes = _getPriceTypes(l10n);
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.serviceToEdit != null
-            ? 'Modifier le travail'
-            : 'Ajouter un travail éffectué'),
+            ? l10n.editService // ✅ MODIFIÉ
+            : l10n.addCompletedWork), // ✅ MODIFIÉ
         elevation: 0,
       ),
       body: _isLoading
@@ -394,9 +402,9 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section d'image principale (existant)
+                    // Section d'image principale
                     Text(
-                      'Image principale',
+                      l10n.mainImage, // ✅ MODIFIÉ
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -441,7 +449,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        'Ajouter une image principale',
+                                        l10n.addMainImage, // ✅ MODIFIÉ
                                         style: TextStyle(
                                           color: Colors.grey[600],
                                         ),
@@ -454,7 +462,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
                     // Section informations de base
                     Text(
-                      'Informations de base',
+                      l10n.basicInformation, // ✅ MODIFIÉ
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -464,11 +472,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
                     // Champ titre
                     AppTextField(
-                      label: 'Titre du service',
+                      label: l10n.serviceTitle, // ✅ MODIFIÉ
                       controller: _titleController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer un titre';
+                          return l10n.pleaseEnterTitle; // ✅ MODIFIÉ
                         }
                         return null;
                       },
@@ -476,14 +484,14 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     SizedBox(height: 16),
 
                     // Sélection de catégorie
-                    Text('Catégorie'),
+                    Text(l10n.category), // ✅ MODIFIÉ
                     SizedBox(height: 8),
                     Consumer<ServiceProvider>(
                       builder: (context, serviceProvider, child) {
                         // S'il n'y a pas de catégories d'expertise, afficher un message
                         if (_expertiseCategories.isEmpty) {
                           return Text(
-                            'Vous n\'avez pas encore sélectionné de catégories d\'expertise',
+                            l10n.noExpertiseCategoriesSelected, // ✅ MODIFIÉ
                             style: TextStyle(color: Colors.red),
                           );
                         }
@@ -500,7 +508,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
-                          hint: Text('Sélectionner une catégorie'),
+                          hint: Text(l10n.selectCategory), // ✅ MODIFIÉ
                           isExpanded: true,
                           items: _expertiseCategories.map((categoryId) {
                             final category =
@@ -510,7 +518,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                               child: Text(
                                   category?.getLocalizedName(
                                     Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
-                                  )  ?? 'Catégorie $categoryId'),
+                                  )  ?? '${l10n.category} $categoryId'),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -528,7 +536,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     SizedBox(height: 16),
 
                     // Sélection de sous-catégorie
-                    Text('Sous-catégorie'),
+                    Text(l10n.subcategory), // ✅ MODIFIÉ
                     SizedBox(height: 8),
                     _isFetchingSubcategories
                         ? Center(child: CircularProgressIndicator())
@@ -544,7 +552,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 14),
                             ),
-                            hint: Text('Sélectionner une sous-catégorie'),
+                            hint: Text(l10n.selectSubcategory), // ✅ MODIFIÉ
                             isExpanded: true,
                             items: _availableSubcategories.map((subcategory) {
                               return DropdownMenuItem<int>(
@@ -564,12 +572,12 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
                     // Description
                     AppTextField(
-                      label: 'Description',
+                      label: l10n.description, // ✅ MODIFIÉ
                       controller: _descriptionController,
                       keyboardType: TextInputType.multiline,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer une description';
+                          return l10n.pleaseEnterDescription; // ✅ MODIFIÉ
                         }
                         return null;
                       },
@@ -577,7 +585,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     SizedBox(height: 16),
 
                     // Type de prix
-                    Text('Type de prix'),
+                    Text(l10n.priceType), // ✅ MODIFIÉ
                     SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: _priceType,
@@ -592,7 +600,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                             EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       isExpanded: true,
-                      items: _priceTypes.map((type) {
+                      items: priceTypes.map((type) {
                         return DropdownMenuItem<String>(
                           value: type['value'],
                           child: Text(type['label']),
@@ -612,19 +620,19 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppTextField(
-                            label: 'Prix (AOA)',
+                            label: l10n.priceAOA, // ✅ MODIFIÉ
                             controller: _priceController,
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (_priceType != 'quote' &&
                                   (value == null || value.isEmpty)) {
-                                return 'Veuillez entrer un prix';
+                                return l10n.pleaseEnterPrice; // ✅ MODIFIÉ
                               }
                               if (value != null && value.isNotEmpty) {
                                 try {
                                   double.parse(value);
                                 } catch (e) {
-                                  return 'Veuillez entrer un prix valide';
+                                  return l10n.pleaseEnterValidPrice; // ✅ MODIFIÉ
                                 }
                               }
                               return null;
@@ -639,7 +647,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Galerie d\'images',
+                          l10n.imageGallery, // ✅ MODIFIÉ
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -650,7 +658,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                               ? _pickGalleryImage
                               : null,
                           icon: Icon(Icons.add_photo_alternate),
-                          label: Text('Ajouter'),
+                          label: Text(l10n.add), // ✅ MODIFIÉ
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
@@ -660,7 +668,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Ajoutez entre 1 et 10 images pour votre galerie (${_galleryImageFiles.length}/10)',
+                      l10n.galleryImageDescription(_galleryImageFiles.length), // ✅ MODIFIÉ
                       style: TextStyle(
                         color: Colors.grey[600],
                       ),
@@ -700,7 +708,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Image ${index + 1}',
+                                              l10n.imageNumber(index + 1), // ✅ MODIFIÉ
                                               style: TextStyle(
                                                   fontWeight: FontWeight.bold),
                                             ),
@@ -731,7 +739,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                                   TextField(
                                     controller: _captionControllers[index],
                                     decoration: InputDecoration(
-                                      labelText: 'Légende (optionnelle)',
+                                      labelText: l10n.optionalCaption, // ✅ MODIFIÉ
                                       border: OutlineInputBorder(),
                                     ),
                                   ),
@@ -749,7 +757,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Images existantes',
+                            l10n.existingImages, // ✅ MODIFIÉ
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -821,7 +829,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Options du service',
+                          l10n.serviceOptions, // ✅ MODIFIÉ
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -830,7 +838,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         ElevatedButton.icon(
                           onPressed: _addServiceOption,
                           icon: Icon(Icons.add),
-                          label: Text('Ajouter'),
+                          label: Text(l10n.add), // ✅ MODIFIÉ
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
@@ -840,7 +848,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Ajoutez des options ou caractéristiques incluses dans votre service',
+                      l10n.serviceOptionsDescription, // ✅ MODIFIÉ
                       style: TextStyle(
                         color: Colors.grey[600],
                       ),
@@ -855,13 +863,13 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                         itemCount: _serviceOptions.length,
                         itemBuilder: (context, index) {
                           return _buildServiceOptionItem(
-                              index, _serviceOptions[index]);
+                              index, _serviceOptions[index], l10n);
                         },
                       )
                     else
                       Center(
                         child: Text(
-                          'Aucune option ajoutée',
+                          l10n.noOptionsAdded, // ✅ MODIFIÉ
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontStyle: FontStyle.italic,
@@ -871,11 +879,10 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
                     // Bouton de sauvegarde
                     SizedBox(height: 32),
-                    // Bouton de sauvegarde
                     AppButton(
                       text: widget.serviceToEdit != null
-                          ? 'Mettre à jour'
-                          : 'Ajouter le travail',
+                          ? l10n.update // ✅ MODIFIÉ
+                          : l10n.addWork, // ✅ MODIFIÉ
                       onPressed: _saveService,
                       isLoading: _isLoading,
                     ),
@@ -887,7 +894,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
   }
 
   // Widget pour les options de service
-  Widget _buildServiceOptionItem(int index, ServiceOption option) {
+  Widget _buildServiceOptionItem(int index, ServiceOption option, AppLocalizations l10n) {
     // Utiliser des contrôleurs pour chaque option
     final nameController = TextEditingController(text: option.name);
     final descriptionController =
@@ -908,7 +915,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Option ${index + 1}',
+                  l10n.optionNumber(index + 1), // ✅ MODIFIÉ
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -924,7 +931,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: 'Nom de l\'option',
+                labelText: l10n.optionName, // ✅ MODIFIÉ
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
@@ -944,7 +951,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
             TextField(
               controller: descriptionController,
               decoration: InputDecoration(
-                labelText: 'Description',
+                labelText: l10n.description, // ✅ MODIFIÉ
                 border: OutlineInputBorder(),
               ),
               maxLines: 2,
@@ -979,7 +986,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                     );
                   },
                 ),
-                Text('Option incluse dans le prix de base'),
+                Expanded(child: Text(l10n.optionIncludedInBasePrice)), // ✅ MODIFIÉ
               ],
             ),
             if (!option.isIncluded) ...[
@@ -987,7 +994,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
               TextField(
                 controller: priceController,
                 decoration: InputDecoration(
-                  labelText: 'Prix supplémentaire (AOA)',
+                  labelText: l10n.additionalPriceAOA, // ✅ MODIFIÉ
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
