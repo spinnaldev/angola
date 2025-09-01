@@ -84,7 +84,6 @@ class Dispute {
     }
   }
 }
-
 class DisputeEvidence {
   final int? id;
   final int disputeId;
@@ -103,22 +102,109 @@ class DisputeEvidence {
   }) : this.createdAt = createdAt ?? DateTime.now();
 
   factory DisputeEvidence.fromJson(Map<String, dynamic> json) {
-    return DisputeEvidence(
-      id: json['id'],
-      disputeId: json['dispute_id'],
-      description: json['description'],
-      fileUrl: json['file_url'],
-      userName: json['user_name'] ?? 'Utilisateur',
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
-          : DateTime.now(),
-    );
+    try {
+      print('📋 Debug DisputeEvidence.fromJson: $json');
+      
+      // Parsing sécurisé de l'ID
+      int? parsedId;
+      if (json['id'] != null) {
+        parsedId = _parseIntSafely(json['id']);
+      }
+      
+      // Parsing sécurisé du dispute_id avec plusieurs fallbacks possibles
+      int parsedDisputeId = 0;
+      if (json['dispute_id'] != null) {
+        parsedDisputeId = _parseIntSafely(json['dispute_id']);
+      } else if (json['dispute'] != null) {
+        parsedDisputeId = _parseIntSafely(json['dispute']);
+      } else {
+        print('⚠️ Aucun dispute_id trouvé dans la réponse, utilisation de 0');
+      }
+      
+      // Parsing sécurisé des autres champs
+      String parsedDescription = json['description']?.toString() ?? '';
+      String parsedFileUrl = json['file_url']?.toString() ?? 
+                             json['file']?.toString() ?? 
+                             json['url']?.toString() ?? '';
+      String parsedUserName = json['user_name']?.toString() ?? 
+                              json['username']?.toString() ??
+                              json['user']?.toString() ?? 
+                              'Utilisateur';
+      
+      DateTime parsedCreatedAt;
+      if (json['created_at'] != null) {
+        try {
+          parsedCreatedAt = DateTime.parse(json['created_at'].toString());
+        } catch (e) {
+          print('⚠️ Erreur parsing date: $e, utilisation date actuelle');
+          parsedCreatedAt = DateTime.now();
+        }
+      } else {
+        parsedCreatedAt = DateTime.now();
+      }
+
+      final evidence = DisputeEvidence(
+        id: parsedId,
+        disputeId: parsedDisputeId,
+        description: parsedDescription,
+        fileUrl: parsedFileUrl,
+        userName: parsedUserName,
+        createdAt: parsedCreatedAt,
+      );
+      
+      print('✅ DisputeEvidence créé avec succès: ID=${evidence.id}, DisputeID=${evidence.disputeId}');
+      return evidence;
+      
+    } catch (e, stackTrace) {
+      print('❌ Erreur dans DisputeEvidence.fromJson: $e');
+      print('❌ StackTrace: $stackTrace');
+      print('❌ JSON problématique: $json');
+      
+      // Retourner un objet par défaut pour éviter le crash
+      return DisputeEvidence(
+        id: null,
+        disputeId: 0,
+        description: json['description']?.toString() ?? 'Description non disponible',
+        fileUrl: json['file_url']?.toString() ?? '',
+        userName: 'Utilisateur',
+        createdAt: DateTime.now(),
+      );
+    }
+  }
+
+  // Méthode de parsing sécurisé pour les entiers
+  static int _parseIntSafely(dynamic value) {
+    if (value == null) {
+      return 0;
+    }
+    
+    try {
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String && value.isNotEmpty) {
+        return int.parse(value);
+      }
+      print('⚠️ Valeur non parsable en int: $value (${value.runtimeType})');
+      return 0;
+    } catch (e) {
+      print('❌ Erreur parsing int: $e pour valeur: $value');
+      return 0;
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'dispute_id': disputeId,
       'description': description,
+      'file_url': fileUrl,
+      'user_name': userName,
+      'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  @override
+  String toString() {
+    return 'DisputeEvidence(id: $id, disputeId: $disputeId, description: $description)';
   }
 }

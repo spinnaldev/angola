@@ -194,34 +194,31 @@ class ServiceProvider with ChangeNotifier {
   // ✅ MÉTHODE CORRIGÉE: fetchMyServices
   Future<void> fetchMyServices() async {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
 
     try {
-      print("👤 Récupération de mes services...");
+      print("🔄 Récupération des services du prestataire...");
       
-      // ✅ Utiliser ApiClient au lieu de http.get
-      final responseData = await _apiClient.get('services/my_services/', requireAuth: true);
-      
-      List<dynamic> data;
-      if (responseData is Map<String, dynamic>) {
-        data = responseData['results'] ?? [];
-      } else if (responseData is List) {
-        data = responseData;
+      // ✅ Récupérer seulement les services du prestataire connecté
+      final responseData = await _apiClient.get(
+        'services/my_services/', // Nouvel endpoint à créer
+        requireAuth: true
+      );
+
+      if (responseData != null && responseData['results'] != null) {
+        _myServices = (responseData['results'] as List)
+            .map((json) => Service.fromJson(json))
+            .toList();
+        
+        print("✅ ${_myServices.length} services récupérés");
       } else {
-        data = [];
+        _myServices = [];
+        print("⚠️ Aucun service trouvé");
       }
 
-      _myServices = data.map((item) {
-        final service = Service.fromJson(item);
-        print("✅ Mon service: ${service.title} (encodage correct)");
-        return service;
-      }).toList();
-      
-      print("👤 Mes services récupérés: ${_myServices.length}");
     } catch (e) {
-      print("❌ Erreur fetchMyServices: $e");
-      _errorMessage = 'Erreur lors du chargement des services';
+      print('❌ Erreur lors de la récupération des services: $e');
+      _errorMessage = e.toString();
       _myServices = [];
     } finally {
       _isLoading = false;
@@ -622,38 +619,52 @@ class ServiceProvider with ChangeNotifier {
     try {
       print("🔄 Mise à jour disponibilité service $serviceId: $isAvailable");
       
-      // ✅ Utiliser ApiClient au lieu de http.patch
-      final responseData = await _apiClient.put(
-        'services/$serviceId/',
-        data: {'is_available': isAvailable},
-        requireAuth: true
-      );
-
-      if (responseData != null) {
-        final index = _myServices.indexWhere((service) => service.id == serviceId);
-        if (index != -1) {
-          _myServices[index] = Service(
-            id: _myServices[index].id,
-            title: _myServices[index].title,
-            description: _myServices[index].description,
-            imageUrl: _myServices[index].imageUrl,
-            rating: _myServices[index].rating,
-            reviewCount: _myServices[index].reviewCount,
-            provider_id: _myServices[index].provider_id,
-            businessType: _myServices[index].businessType,
-            price: _myServices[index].price,
-            priceType: _myServices[index].priceType,
-            categoryId: _myServices[index].categoryId,
-            subcategoryId: _myServices[index].subcategoryId,
-            isAvailable: isAvailable,
-          );
-          print("✅ Disponibilité mise à jour localement");
-          notifyListeners();
-        }
+      // ✅ Essayer PATCH d'abord (plus approprié)
+      try {
+        final responseData = await _apiClient.put(
+          'services/$serviceId/toggle_availability/',
+          data: {'is_available': isAvailable},
+          requireAuth: true
+        );
+        print("✅ Disponibilité mise à jour avec succès via PATCH");
+      } catch (e) {
+        print('⚠️ PATCH échoué, tentative PUT: $e');
+        
+        // Si PATCH échoue, essayer PUT
+        final responseData = await _apiClient.put(
+          'services/$serviceId/toggle_availability/',
+          data: {'is_available': isAvailable},
+          requireAuth: true
+        );
+        print("✅ Disponibilité mise à jour avec succès via PUT");
       }
+
+      // Mettre à jour localement
+      final index = _myServices.indexWhere((service) => service.id == serviceId);
+      if (index != -1) {
+        _myServices[index] = Service(
+          id: _myServices[index].id,
+          title: _myServices[index].title,
+          description: _myServices[index].description,
+          imageUrl: _myServices[index].imageUrl,
+          rating: _myServices[index].rating,
+          reviewCount: _myServices[index].reviewCount,
+          provider_id: _myServices[index].provider_id,
+          businessType: _myServices[index].businessType,
+          price: _myServices[index].price,
+          priceType: _myServices[index].priceType,
+          categoryId: _myServices[index].categoryId,
+          subcategoryId: _myServices[index].subcategoryId,
+          isAvailable: isAvailable, // ✅ Nouvelle valeur
+          galleryImages: _myServices[index].galleryImages,
+          options: _myServices[index].options,
+        );
+        notifyListeners();
+      }
+      
     } catch (e) {
       print('❌ Error updateServiceAvailability: $e');
-      rethrow;
+      throw Exception('Impossible de mettre à jour le service: ${e.toString()}');
     }
   }
 

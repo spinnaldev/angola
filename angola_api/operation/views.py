@@ -1402,6 +1402,46 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(services, many=True)
         return Response(serializer.data)
 
+
+    @action(detail=True, methods=['put'], permission_classes=[IsAuthenticated])
+    def toggle_availability(self, request, pk=None):
+        """Endpoint spécialisé pour changer la disponibilité d'un service"""
+        try:
+            service = self.get_object()
+            
+            # Vérifier que l'utilisateur est bien le propriétaire
+            if not hasattr(request.user, 'provider_profile') or service.provider != request.user.provider_profile:
+                return Response(
+                    {"detail": "Vous n'êtes pas autorisé à modifier ce service"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Récupérer la nouvelle valeur de disponibilité
+            is_available = request.data.get('is_available')
+            if is_available is None:
+                return Response(
+                    {"detail": "Le champ 'is_available' est requis"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Mettre à jour la disponibilité
+            service.is_available = bool(is_available)
+            service.save(update_fields=['is_available'])
+            
+            # Retourner la réponse
+            serializer = self.get_serializer(service)
+            return Response({
+                "detail": f"Service {'activé' if is_available else 'désactivé'} avec succès",
+                "service": serializer.data
+            })
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Erreur lors de la mise à jour: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+
     @action(detail=False, methods=['get'])
     def count(self, request):
         """
