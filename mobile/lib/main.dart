@@ -146,7 +146,7 @@
 
     runApp(MyApp(languageProvider: languageProvider));
   }
-
+  
   class MyApp extends StatelessWidget {
     final LanguageProvider languageProvider;
 
