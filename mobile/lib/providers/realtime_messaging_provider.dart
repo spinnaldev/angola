@@ -38,7 +38,13 @@ class RealtimeMessagingProvider with ChangeNotifier {
     
     _isListening = true;
     print('✅ Écoute des messages en temps réel activée');
+    
+    // ✅ NOUVEAU: Demander les compteurs initiaux
+    Future.delayed(Duration(milliseconds: 500), () {
+      requestInitialCounts();
+    });
   }
+
 
   /// Arrêter l'écoute des messages en temps réel
   void stopListening() {
@@ -101,6 +107,7 @@ class RealtimeMessagingProvider with ChangeNotifier {
     final type = message['type'] as String?;
     
     switch (type) {
+      // Cases existantes conservées
       case 'message_update':
         _handleMessageUpdate(message);
         break;
@@ -119,9 +126,70 @@ class RealtimeMessagingProvider with ChangeNotifier {
       case 'connection_established':
         _handleConnectionEstablished(message);
         break;
+        
+      // ✅ NOUVEAUX CASES pour le compteur automatique
+      case 'message_count_update':
+        _handleMessageCountUpdate(message);
+        break;
+      case 'counts_update':
+        _handleCountsUpdate(message);
+        break;
+      case 'initial_counts':
+        _handleInitialCounts(message);
+        break;
+        
       default:
         // Ignorer les autres types de messages
         break;
+    }
+  }
+
+
+
+  void _handleMessageCountUpdate(Map<String, dynamic> message) {
+    try {
+      final count = message['count'] as int? ?? 0;
+      print('💬 Mise à jour compteur messages reçue: $count');
+      
+      // Mettre à jour le compteur dans MessagingProvider
+      _messagingProvider.updateUnreadCountAutomatically(count);
+      
+      notifyListeners();
+    } catch (e) {
+      print('❌ Erreur mise à jour compteur messages: $e');
+    }
+  }
+
+  /// Gérer la mise à jour des compteurs globaux
+  void _handleCountsUpdate(Map<String, dynamic> message) {
+    try {
+      final eventType = message['event_type'] as String?;
+      
+      if (eventType == 'message_count_update') {
+        final messageCount = message['message_count'] as int?;
+        if (messageCount != null) {
+          print('💬 Mise à jour compteur via counts_update: $messageCount');
+          _messagingProvider.updateUnreadCountAutomatically(messageCount);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur counts_update messages: $e');
+    }
+  }
+
+  /// Gérer les compteurs initiaux
+  void _handleInitialCounts(Map<String, dynamic> message) {
+    try {
+      final messageCount = message['message_count'] as int? ?? 0;
+      print('💬 Compteurs initiaux reçus - Messages: $messageCount');
+      
+      // Initialiser le compteur dans MessagingProvider
+      _messagingProvider.initializeUnreadCount(messageCount);
+      
+      notifyListeners();
+    } catch (e) {
+      print('❌ Erreur compteurs initiaux messages: $e');
     }
   }
 
@@ -159,9 +227,10 @@ class RealtimeMessagingProvider with ChangeNotifier {
       // Créer l'objet message
       final newMessage = Message.fromJson(messageData, _messagingProvider.currentUserId ?? 0);
       
-      // Ajouter le message au provider
       final conversationId = newMessage.conversationId;
       if (conversationId != null) {
+        // ✅ SOLUTION SIMPLE: Utiliser la méthode publique existante
+        // Le compteur sera automatiquement corrigé par le signal Django
         _messagingProvider.addMessageLocally(conversationId, newMessage);
       }
       
@@ -186,9 +255,10 @@ class RealtimeMessagingProvider with ChangeNotifier {
       // Créer l'objet message
       final newMessage = Message.fromJson(messageData, _messagingProvider.currentUserId ?? 0);
       
-      // Ajouter le message au provider
       final conversationId = newMessage.conversationId;
       if (conversationId != null) {
+        // ✅ SOLUTION SIMPLE: Utiliser la méthode publique existante
+        // Le compteur sera automatiquement corrigé par le signal Django
         _messagingProvider.addMessageLocally(conversationId, newMessage);
       }
       
@@ -345,15 +415,14 @@ class RealtimeMessagingProvider with ChangeNotifier {
           isRead: message.isRead,
         );
         
-        // Créer une nouvelle conversation mise à jour
+        // ✅ MODIFICATION: Ne pas incrémenter unreadCount manuellement
+        // Le compteur sera mis à jour automatiquement par le signal Django
         final updatedConversation = Conversation(
           id: conversation.id,
           otherPerson: conversation.otherPerson,
           currentUserId: conversation.currentUserId,
           lastMessage: lastMessage,
-          unreadCount: message.senderId == conversation.currentUserId 
-              ? conversation.unreadCount 
-              : conversation.unreadCount + 1,
+          unreadCount: conversation.unreadCount, // ✅ Garder la valeur actuelle
           createdAt: conversation.createdAt,
           isOnline: conversation.isOnline,
         );
@@ -363,6 +432,15 @@ class RealtimeMessagingProvider with ChangeNotifier {
       }
     } catch (e) {
       print('❌ Erreur lors de la mise à jour de la conversation: $e');
+    }
+  }
+
+  void requestInitialCounts() {
+    if (_webSocketService.isConnected) {
+      _webSocketService.sendMessage({
+        'type': 'get_counts',
+      });
+      print('💬 Demande des compteurs initiaux envoyée');
     }
   }
 

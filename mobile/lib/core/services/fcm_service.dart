@@ -2,10 +2,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
+import 'package:teyago/core/models/notification_model.dart';
+import 'package:teyago/core/services/notification_navigation_service.dart';
+import '../../main.dart';
 import 'api_service.dart';
 
 class FCMService {
@@ -272,24 +276,37 @@ class FCMService {
 
   /// Gérer les messages quand l'app est en arrière-plan
   Future<void> _handleBackgroundMessage(RemoteMessage message) async {
-    print('📨 Message FCM ouvert (app fermée): ${message.notification?.title}');
+    print('🔥 === MESSAGE FCM BACKGROUND ===');
+    print('📱 App fermée/arrière-plan: OUI');
+    print('📄 Title: ${message.notification?.title}');
+    print('📝 Body: ${message.notification?.body}');
+    print('🏷️ Data: ${message.data}');
+    print('===============================');
 
-    // Traiter les données du message
-    await _processMessageData(message);
+    // ← SUPPRIMER cette ligne car elle fait double emploi
+    // await _processMessageData(message);
 
-    // Naviguer vers l'écran approprié si nécessaire
+    // Navigation directe
     await _navigateFromNotification(message);
   }
 
   /// Vérifier si l'app a été ouverte depuis une notification
   Future<void> _checkInitialMessage() async {
-    RemoteMessage? initialMessage =
-        await _firebaseMessaging.getInitialMessage();
+    try {
+      RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
 
-    if (initialMessage != null) {
-      print(
-          '📨 App ouverte depuis notification: ${initialMessage.notification?.title}');
-      await _handleBackgroundMessage(initialMessage);
+      if (initialMessage != null) {
+        print('🚀 === APP OUVERTE DEPUIS NOTIFICATION ===');
+        print('📄 Title: ${initialMessage.notification?.title}');
+        print('🏷️ Data: ${initialMessage.data}');
+        
+        // ← NOUVEAU : NAVIGUER IMMÉDIATEMENT
+        await _navigateFromNotification(initialMessage);
+      } else {
+        print('📱 App ouverte normalement (pas depuis notification)');
+      }
+    } catch (e) {
+      print('❌ Erreur _checkInitialMessage: $e');
     }
   }
 
@@ -303,22 +320,22 @@ class FCMService {
       // Selon le type de notification, effectuer différentes actions
       final notificationType = data['type'] ?? '';
 
-      switch (notificationType) {
-        case 'new_message':
-          // Mettre à jour les conversations
-          await _handleNewMessageNotification(data);
-          break;
-        case 'new_offer':
-          // Mettre à jour les offres
-          await _handleNewOfferNotification(data);
-          break;
-        case 'project_update':
-          // Mettre à jour les projets
-          await _handleProjectUpdateNotification(data);
-          break;
-        default:
-          print('🔔 Type de notification non géré: $notificationType');
-      }
+      // switch (notificationType) {
+      //   case 'new_message':
+      //     // Mettre à jour les conversations
+      //     await _handleNewMessageNotification(data);
+      //     break;
+      //   case 'new_offer':
+      //     // Mettre à jour les offres
+      //     await _handleNewOfferNotification(data);
+      //     break;
+      //   case 'project_update':
+      //     // Mettre à jour les projets
+      //     await _handleProjectUpdateNotification(data);
+      //     break;
+      //   default:
+      //     print('🔔 Type de notification non géré: $notificationType');
+      // }
     } catch (e) {
       print('❌ Erreur traitement données message: $e');
     }
@@ -346,41 +363,200 @@ class FCMService {
 
   /// Naviguer depuis une notification
   Future<void> _navigateFromNotification(RemoteMessage message) async {
-    final data = message.data;
-    final notificationType = data['type'] ?? '';
+    try {
+      final data = message.data;
+      final notificationType = data['type'] ?? data['notification_type'] ?? '';
+      
+      print('🧭 === NAVIGATION NOTIFICATION ===');
+      print('📱 Type: $notificationType');
+      print('🏷️ Data: $data');
+      
+      // Attendre un peu pour que l'app soit complètement chargée
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Obtenir le context depuis la navigation key
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        print('❌ Pas de context disponible, retry dans 1 seconde...');
+        // Retry une fois après 1 seconde
+        await Future.delayed(const Duration(seconds: 1));
+        final retryContext = navigatorKey.currentContext;
+        if (retryContext == null) {
+          print('❌ Toujours pas de context après retry');
+          return;
+        }
+        await _performNavigation(retryContext, message);
+      } else {
+        await _performNavigation(context, message);
+      }
 
-    // Navigation selon le type
-    switch (notificationType) {
-      case 'new_message':
-        final conversationId = data['conversation_id'];
-        if (conversationId != null) {
-          // Naviguer vers la conversation
-          print('🧭 Navigation vers conversation: $conversationId');
-        }
-        break;
-      case 'new_offer':
-        final projectId = data['project_id'];
-        if (projectId != null) {
-          // Naviguer vers le projet
-          print('🧭 Navigation vers projet: $projectId');
-        }
-        break;
+    } catch (e) {
+      print('❌ Erreur navigation notification: $e');
     }
   }
 
+  Future<void> _performNavigation(BuildContext context, RemoteMessage message) async {
+    try {
+      final data = message.data;
+      final notificationType = data['type'] ?? data['notification_type'] ?? '';
+      
+      // Créer un NotificationModel temporaire pour utiliser votre système existant
+      final notification = NotificationModel(
+        id: 0, // ID temporaire
+        title: message.notification?.title ?? data['title'] ?? '',
+        message: message.notification?.body ?? data['body'] ?? data['message'] ?? '',
+        notificationType: notificationType,
+        relatedObjectId: _extractIntFromData(data, 'related_object_id'),
+        isRead: false,
+        createdAt: DateTime.now(),
+        extraData: _extractExtraData(data),
+      );
+      
+      print('✅ NotificationModel créé pour navigation');
+      print('   Type: ${notification.notificationType}');
+      print('   RelatedId: ${notification.relatedObjectId}');
+      print('   ExtraData: ${notification.extraData}');
+      
+      // ← UTILISER VOTRE SYSTÈME EXISTANT
+      await NotificationNavigationService.navigateToNotificationTarget(
+        context,
+        notification,
+      );
+      
+    } catch (e) {
+      print('❌ Erreur _performNavigation: $e');
+      // Fallback : navigation simple vers Messages
+      Navigator.pushNamed(context, '/messages');
+    }
+  }
   /// Gestionnaire de clic sur notification locale
   void _onNotificationTapped(NotificationResponse response) async {
     print('👆 Notification cliquée: ${response.payload}');
 
     if (response.payload != null) {
       try {
-        final data = jsonDecode(response.payload!);
-        // Traiter les données et naviguer
-        await _processNotificationTap(data);
+        // ✅ NOUVEAU : Parser avec gestion des erreurs
+        final data = _parseNotificationPayload(response.payload!);
+        
+        if (data != null) {
+          // Traiter les données et naviguer
+          await _processNotificationTap(data);
+        } else {
+          print('❌ Impossible de parser les données de notification');
+        }
       } catch (e) {
         print('❌ Erreur traitement clic notification: $e');
+        // ✅ FALLBACK : Navigation simple vers Messages
+        await _fallbackNavigation();
       }
     }
+  }
+
+  /// ✅ NOUVELLE MÉTHODE : Parser le payload avec gestion d'erreurs
+  Map<String, dynamic>? _parseNotificationPayload(String payload) {
+    try {
+      print('🔍 Payload brut: $payload');
+      
+      // Première tentative : JSON standard
+      try {
+        return jsonDecode(payload) as Map<String, dynamic>;
+      } catch (e) {
+        print('⚠️ Échec JSON standard, tentative de nettoyage...');
+      }
+      
+      // Deuxième tentative : Nettoyer le format Python
+      String cleanedPayload = _cleanPythonFormat(payload);
+      print('🧹 Payload nettoyé: $cleanedPayload');
+      
+      return jsonDecode(cleanedPayload) as Map<String, dynamic>;
+      
+    } catch (e) {
+      print('❌ Échec total du parsing: $e');
+      return null;
+    }
+  }
+
+
+  /// ✅ NOUVELLE MÉTHODE : Nettoyer le format Python pour le rendre JSON valide
+  String _cleanPythonFormat(String pythonString) {
+    String cleaned = pythonString;
+    
+    // Remplacer None par null
+    cleaned = cleaned.replaceAll('None', 'null');
+    
+    // Remplacer True par true
+    cleaned = cleaned.replaceAll('True', 'true');
+    
+    // Remplacer False par false  
+    cleaned = cleaned.replaceAll('False', 'false');
+    
+    // Ajouter des guillemets autour des clés (regex pour les clés sans guillemets)
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
+      (match) => '${match.group(1)}"${match.group(2)}":',
+    );
+    
+    // Remplacer les guillemets simples par des guillemets doubles (mais attention aux apostrophes)
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r"'([^']*)'"),
+      (match) {
+        String content = match.group(1)!;
+        // Échapper les guillemets doubles dans le contenu
+        content = content.replaceAll('"', '\\"');
+        return '"$content"';
+      },
+    );
+    
+    return cleaned;
+  }
+
+  /// ✅ NOUVELLE MÉTHODE : Navigation de secours
+  Future<void> _fallbackNavigation() async {
+    try {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        print('🔄 Navigation de secours vers MessagesScreen');
+        Navigator.pushNamed(context, '/messages');
+      }
+    } catch (e) {
+      print('❌ Erreur navigation de secours: $e');
+    }
+  }
+  /// Extraire un entier depuis les données
+  int? _extractIntFromData(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return null;
+    
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    
+    return null;
+  }
+
+  /// Extraire les données supplémentaires
+  Map<String, dynamic>? _extractExtraData(Map<String, dynamic> data) {
+    Map<String, dynamic> extraData = {};
+    
+    // Copier toutes les données pertinentes
+    final relevantKeys = [
+      'conversation_id', 'sender_id', 'sender_first_name', 'sender_last_name',
+      'sender_username', 'sender_avatar', 'sender_company_name',
+      'project_id', 'offer_id', 'provider_id', 'service_id', 'quote_id',
+      'review_id', 'dispute_id', 'item_type', 'item_id'
+    ];
+    
+    for (String key in relevantKeys) {
+      if (data.containsKey(key)) {
+        final value = data[key];
+        if (value is String && int.tryParse(value) != null) {
+          extraData[key] = int.parse(value);
+        } else {
+          extraData[key] = value;
+        }
+      }
+    }
+    
+    return extraData.isNotEmpty ? extraData : null;
   }
 
   /// Traiter le clic sur notification

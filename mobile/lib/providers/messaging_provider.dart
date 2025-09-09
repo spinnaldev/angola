@@ -13,6 +13,8 @@ class MessagingProvider with ChangeNotifier {
   int? _currentConversationId;
   int? _currentUserId;
 
+  int _totalUnreadCount = 0;
+
   MessagingProvider(this._apiService);
 
   // Getters
@@ -22,6 +24,51 @@ class MessagingProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
   int? get currentUserId => _currentUserId;
+
+
+  int get totalUnreadCountAutomatic => _totalUnreadCount;
+
+  // ✅ MODIFIER la méthode existante pour utiliser le compteur automatique quand disponible
+  int getTotalUnreadCount() {
+    // Si le compteur automatique est disponible (> 0 ou WebSocket connecté), l'utiliser
+    // Sinon, calculer manuellement comme avant
+    if (_totalUnreadCount >= 0) {
+      return _totalUnreadCount;
+    }
+    
+    // Calcul manuel (méthode existante conservée comme fallback)
+    return _conversations.fold(0, (sum, conversation) => sum + conversation.unreadCount);
+  }
+
+  // ✅ NOUVEAU: Mettre à jour le compteur automatiquement (appelé par WebSocket)
+  void updateUnreadCountAutomatically(int count) {
+    if (_totalUnreadCount != count) {
+      _totalUnreadCount = count;
+      print('💬 Compteur messages mis à jour automatiquement: $count');
+      notifyListeners();
+    }
+  }
+
+  void initializeUnreadCount(int count) {
+    _totalUnreadCount = count;
+    print('💬 Compteur messages initialisé: $count');
+    notifyListeners();
+  }
+
+  // ✅ NOUVEAU: Incrémenter le compteur lors d'un nouveau message reçu
+  void incrementUnreadCount() {
+    _totalUnreadCount++;
+    print('💬 Compteur messages incrémenté: $_totalUnreadCount');
+    notifyListeners();
+  }
+
+  // ✅ NOUVEAU: Décrémenter le compteur lors de la lecture de messages
+  void decrementUnreadCount(int amount) {
+    _totalUnreadCount = (_totalUnreadCount - amount).clamp(0, 999);
+    print('💬 Compteur messages décrémenté de $amount: $_totalUnreadCount');
+    notifyListeners();
+  }
+
 
   // Méthode pour définir l'utilisateur actuel
   void setCurrentUserId(int userId) {
@@ -208,13 +255,16 @@ class MessagingProvider with ChangeNotifier {
       final success = await _apiService.markMessagesAsRead(conversationId);
       
       if (success) {
-        // Mettre à jour localement les messages comme lus
+        // Code existant conservé
         markAllMessagesAsReadLocally(conversationId);
         
-        // Mettre à jour le compteur non lu de la conversation
+        // ✅ NOUVEAU: Calculer combien de messages ont été marqués comme lus
         final conversationIndex = _conversations.indexWhere((c) => c.id == conversationId);
         if (conversationIndex != -1) {
           final conversation = _conversations[conversationIndex];
+          final unreadCount = conversation.unreadCount;
+          
+          // Mettre à jour la conversation (code existant)
           final updatedConversation = Conversation(
             id: conversation.id,
             otherPerson: conversation.otherPerson,
@@ -225,6 +275,10 @@ class MessagingProvider with ChangeNotifier {
             isOnline: conversation.isOnline,
           );
           _conversations[conversationIndex] = updatedConversation;
+          
+          // ✅ NOUVEAU: Décrémenter le compteur automatique
+          decrementUnreadCount(unreadCount);
+          
           notifyListeners();
         }
       }
@@ -236,27 +290,38 @@ class MessagingProvider with ChangeNotifier {
     }
   }
 
-  int getTotalUnreadCount() {
-    return _conversations.fold(0, (sum, conversation) => sum + conversation.unreadCount);
-  }
-
-  // ========================================
-  // MÉTHODES POUR LES TEMPS RÉEL
-  // ========================================
-
-  /// Ajouter un message localement (pour WebSocket)
   void addMessageLocally(int conversationId, Message message) {
     if (_messages.containsKey(conversationId)) {
       // Vérifier si le message n'existe pas déjà
       if (!_messages[conversationId]!.any((m) => m.id == message.id)) {
         _messages[conversationId]!.add(message);
+        
+        // ✅ NOUVEAU: Si ce n'est pas notre message et qu'il n'est pas lu, incrémenter le compteur
+        if (message.senderId != _currentUserId && !message.isRead) {
+          incrementUnreadCount();
+        }
+        
         notifyListeners();
       }
     } else {
       _messages[conversationId] = [message];
+      
+      // ✅ NOUVEAU: Si ce n'est pas notre message et qu'il n'est pas lu, incrémenter le compteur
+      if (message.senderId != _currentUserId && !message.isRead) {
+        incrementUnreadCount();
+      }
+      
       notifyListeners();
     }
   }
+
+  // int getTotalUnreadCount() {
+  //   return _conversations.fold(0, (sum, conversation) => sum + conversation.unreadCount);
+  // }
+
+  // ========================================
+  // MÉTHODES POUR LES TEMPS RÉEL
+  // ========================================
 
   /// Marquer un message comme lu localement
   void markMessageAsReadLocally(int conversationId, int messageId) {
@@ -338,13 +403,19 @@ class MessagingProvider with ChangeNotifier {
     _messages.remove(conversationId);
     notifyListeners();
   }
+  void resetUnreadCount() {
+    _totalUnreadCount = 0;
+    notifyListeners();
+  }
 
-  /// Nettoyer les données
+  // ✅ MODIFIER la méthode clearData existante
   void clearData() {
     _conversations.clear();
     _messages.clear();
     _currentConversationId = null;
     _currentUserId = null;
+    _totalUnreadCount = 0; // ✅ NOUVEAU: Réinitialiser le compteur
     notifyListeners();
   }
+  
 }

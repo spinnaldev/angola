@@ -566,6 +566,7 @@ class ServiceProvider with ChangeNotifier {
       final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
 
+      // ✅ CHAMPS DE BASE
       request.fields['title'] = title;
       request.fields['description'] = description;
       request.fields['subcategory'] = subcategoryId.toString();
@@ -573,6 +574,50 @@ class ServiceProvider with ChangeNotifier {
 
       if (price > 0) {
         request.fields['price'] = price.toString();
+      }
+
+      // ✅ IMAGE PRINCIPALE
+      if (mainImage != null) {
+        final mainImageFile = await http.MultipartFile.fromPath(
+          'image',
+          mainImage.path,
+        );
+        request.files.add(mainImageFile);
+        print("📷 Image principale mise à jour");
+      }
+
+      // ✅ AJOUT: TRAITEMENT DES IMAGES DE GALERIE (comme dans addService)
+      request.fields['gallery_images_count'] = galleryImages.length.toString();
+      print("📷 Nombre d'images de galerie: ${galleryImages.length}");
+      
+      for (int i = 0; i < galleryImages.length; i++) {
+        final file = galleryImages[i];
+        final multipartFile = await http.MultipartFile.fromPath(
+          'gallery_image_${i}_image',
+          file.path,
+        );
+        request.files.add(multipartFile);
+        request.fields['gallery_image_${i}_caption'] = imageCaptions[i];
+        print("✅ Image galerie ${i + 1}: ${imageCaptions[i]} (encodage correct)");
+      }
+
+      // ✅ AJOUT: TRAITEMENT DES OPTIONS (comme dans addService)
+      final validOptions = options.where((option) => 
+        option.name.isNotEmpty
+      ).toList();
+      
+      request.fields['options_count'] = validOptions.length.toString();
+      print("⚙️ Nombre d'options: ${validOptions.length}");
+      
+      for (int i = 0; i < validOptions.length; i++) {
+        final option = validOptions[i];
+        request.fields['option_${i}_name'] = option.name;
+        request.fields['option_${i}_description'] = option.description;
+        if (option.price != null && option.price! > 0) {
+          request.fields['option_${i}_price'] = option.price.toString();
+        }
+        request.fields['option_${i}_is_included'] = option.isIncluded.toString();
+        print("✅ Option ${i + 1}: ${option.name} (encodage correct)");
       }
 
       var streamedResponse = await request.send();

@@ -24,6 +24,9 @@ class WebSocketService {
   static const Duration reconnectDelay = Duration(seconds: 3);
   static const Duration heartbeatInterval = Duration(seconds: 30);
 
+  WebSocketChannel? _generalChannel;
+  Stream<Map<String, dynamic>>? _generalStream;
+  
   // Getters
   bool get isConnected => _isConnected;
   Stream<Map<String, dynamic>>? get messageStream => _messageController?.stream;
@@ -36,6 +39,7 @@ class WebSocketService {
     }
 
     _userId = userId;
+    // ✅ MODIFICATION: Utiliser le consumer général au lieu du consumer user spécifique
     _wsUrl = '${baseUrl.replaceFirst('http', 'ws')}/ws/user/$userId/';
     
     try {
@@ -163,6 +167,25 @@ class WebSocketService {
       'user_id': _userId,
       'client_type': 'flutter',
     });
+    
+    // ✅ NOUVEAU: Demander les compteurs initiaux après connexion
+    Future.delayed(Duration(milliseconds: 500), () {
+      requestInitialCounts();
+    });
+  }
+
+  void requestInitialCounts() {
+    sendMessage({
+      'type': 'get_counts',
+    });
+    print('📊 Demande des compteurs initiaux envoyée');
+  }
+
+  /// Demander le nombre de notifications non lues (méthode existante conservée)
+  void requestUnreadCount() {
+    sendMessage({
+      'type': 'get_unread_count',
+    });
   }
 
   /// Envoyer un message via WebSocket
@@ -196,13 +219,6 @@ class WebSocketService {
     });
   }
 
-  /// Demander le nombre de notifications non lues
-  void requestUnreadCount() {
-    sendMessage({
-      'type': 'get_unread_count',
-    });
-  }
-
   /// Se joindre à une conversation
   void joinConversation(int conversationId) {
     sendMessage({
@@ -219,6 +235,22 @@ class WebSocketService {
     });
   }
 
+  void requestUnreadMessageCount() {
+    sendMessage({
+      'type': 'get_message_count',
+    });
+    print('💬 Demande du compteur de messages envoyée');
+  }
+
+  /// ✅ NOUVEAU: Marquer des messages comme lus via WebSocket
+  void markMessagesAsRead(int conversationId) {
+    sendMessage({
+      'type': 'mark_messages_as_read',
+      'conversation_id': conversationId,
+    });
+    print('✅ Demande de marquage messages comme lus envoyée pour conversation $conversationId');
+  }
+  
   /// Déconnecter le WebSocket
   Future<void> disconnect() async {
     print('🔌 Déconnexion WebSocket...');

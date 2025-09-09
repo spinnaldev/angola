@@ -1373,13 +1373,51 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
     
     #@require_verification("modifier un service")
     def update(self, request, *args, **kwargs):
-        # Code similaire à la méthode create pour traiter les images et options
-        # ...
+        # ✅ AJOUT: Extraire les données des fichiers et du formulaire (similaire à create)
+        gallery_images = []
+        options_data = []
         
+        # ✅ AJOUT: Traiter les images de galerie
+        gallery_images_count = int(request.data.get('gallery_images_count', 0))
+        logger.info("Le nombre d'image est:")
+        logger.info(gallery_images_count)
+        for i in range(gallery_images_count):
+            prefix = f'gallery_image_{i}_'
+            if f'{prefix}image' in request.FILES:
+                gallery_images.append({
+                    'image': request.FILES[f'{prefix}image'],
+                    'caption': request.data.get(f'{prefix}caption', ''),
+                    'order': i
+                })
+        
+        # ✅ AJOUT: Traiter les options
+        options_count = int(request.data.get('options_count', 0))
+        for i in range(options_count):
+            prefix = f'option_{i}_'
+            name = request.data.get(f'{prefix}name')
+            if name:
+                options_data.append({
+                    'name': name,
+                    'description': request.data.get(f'{prefix}description', ''),
+                    'price': request.data.get(f'{prefix}price') or None,
+                    'is_included': request.data.get(f'{prefix}is_included', 'true').lower() == 'true'
+                })
+        
+        # ✅ AJOUT: Validation des images
+        if gallery_images_count > 10:
+            return Response(
+                {'error': 'Vous ne pouvez pas ajouter plus de 10 images'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Code existant pour la mise à jour
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
         serializer.is_valid(raise_exception=True)
         
+        # ✅ MAINTENANT: Les variables sont définies
+        logger.info("Les images sont")
+        logger.info(gallery_images)
         serializer.context['gallery_images'] = gallery_images
         serializer.context['options'] = options_data
         

@@ -1,5 +1,6 @@
 // lib/main.dart
-  import 'dart:convert';
+  import 'dart:async';
+import 'dart:convert';
   import 'dart:io';
   import 'package:flutter/foundation.dart';
   import 'package:flutter/material.dart';
@@ -59,7 +60,7 @@
     await Firebase.initializeApp();
     print('📨 Message FCM en arrière-plan: ${message.notification?.title}');
   }
-
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   void main() async {
     // Assurer que les liaisons Flutter sont initialisées
     WidgetsFlutterBinding.ensureInitialized();
@@ -290,6 +291,9 @@
         child: Consumer<LanguageProvider>(
           builder: (context, languageProvider, child) {
             return MaterialApp(
+
+              navigatorKey: navigatorKey,
+
               debugShowCheckedModeBanner: false,
               showPerformanceOverlay: false, // Supprime l'overlay de performance
               checkerboardRasterCacheImages:
@@ -387,6 +391,8 @@
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initializeApp();
       });
+
+      _initializeRealtimeServices();
     }
 
     void _initAnimations() {
@@ -461,7 +467,7 @@
         final authProvider = context.read<AuthProvider>();
         await authProvider.checkAuthenticationStatus();
         
-        // ✅ NOUVEAU : Initialiser FCM si l'utilisateur est connecté
+        // ✅ VÉRIFIER que cette section est bien présente :
         if (authProvider.isAuthenticated && authProvider.currentUser != null) {
           try {
             print('🔔 === INITIALISATION FCM ===');
@@ -471,7 +477,6 @@
             await fcmProvider.initializeFCM();
             
             print('✅ FCM Provider initialisé');
-            print('🔑 Token FCM: ${fcmProvider.fcmToken?.substring(0, 20) ?? 'null'}...');
             
           } catch (fcmError) {
             print('❌ Erreur initialisation FCM: $fcmError');
@@ -496,6 +501,45 @@
           _isInitialized = true;
         });
       }
+    }
+
+    void _initializeRealtimeServices() {
+      // Délai pour permettre l'initialisation complète des providers
+      Timer(Duration(seconds: 3), () {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        
+        if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+          final userId = authProvider.currentUser!.id;
+          
+          print('🚀 Initialisation services temps réel pour user $userId');
+          
+          try {
+            // 1. Connecter WebSocket général
+            final webSocketService = WebSocketService.instance;
+            webSocketService.connect('ws:teyago.com/api/', userId);
+            
+            // 2. Initialiser le MessagingProvider avec l'ID utilisateur
+            final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+            messagingProvider.setCurrentUserId(userId);
+            
+            // 3. Démarrer l'écoute temps réel des messages
+            final realtimeMessagingProvider = Provider.of<RealtimeMessagingProvider>(context, listen: false);
+            realtimeMessagingProvider.startListening();
+            
+            // 4. Demander les compteurs initiaux
+            Timer(Duration(seconds: 1), () {
+              realtimeMessagingProvider.requestInitialCounts();
+            });
+            
+            print('✅ Services temps réel initialisés pour user $userId');
+            
+          } catch (e) {
+            print('❌ Erreur initialisation services temps réel: $e');
+          }
+        } else {
+          print('⚠️ Utilisateur non connecté, services temps réel non initialisés');
+        }
+      });
     }
 
     Future<void> _connectWebSocket() async {

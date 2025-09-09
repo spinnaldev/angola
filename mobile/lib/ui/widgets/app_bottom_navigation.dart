@@ -210,10 +210,15 @@ class AppBottomNavigation extends StatelessWidget {
   }
 
   /// Construit l'icône des messages avec badge
-  Widget _buildMessagesIcon(BuildContext context, {bool isActive = false}) {
+   Widget _buildMessagesIcon(BuildContext context, {bool isActive = false}) {
     return Consumer<MessagingProvider>(
       builder: (context, messagingProvider, child) {
-        final unreadCount = messagingProvider.getTotalUnreadCount();
+        // ✅ UTILISER LE COMPTEUR AUTOMATIQUE au lieu de l'ancien
+        final unreadCount = messagingProvider.totalUnreadCountAutomatic;
+        
+        // ✅ AJOUT DE DEBUG pour voir pourquoi c'est 0
+        print('🔍 Badge Messages - Compteur automatique: $unreadCount');
+        print('🔍 Badge Messages - Compteur manuel: ${messagingProvider.getTotalUnreadCount()}');
         
         return Stack(
           clipBehavior: Clip.none,
@@ -234,7 +239,7 @@ class AppBottomNavigation extends StatelessWidget {
                     minHeight: 18,
                   ),
                   child: Text(
-                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    unreadCount > 99 ? '99+' : '$unreadCount',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,

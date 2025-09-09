@@ -85,6 +85,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'count': event['count']
         }))
 
+    async def message_count_update(self, event):
+        """Envoyer la mise à jour du compteur de messages"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_count_update',
+            'count': event['count']
+        }))
+
     @database_sync_to_async
     def mark_notification_as_read(self, notification_id):
         """Marquer une notification comme lue"""
@@ -147,6 +154,107 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'type': 'unread_count',
             'count': count
         }))
+
+class GeneralConsumer(AsyncWebsocketConsumer):
+    """Consumer général pour tous les événements en temps réel"""
+    
+    async def connect(self):
+        self.user_id = self.scope['url_route']['kwargs']['user_id']
+        self.user_group_name = f'user_{self.user_id}'
+        
+        # Vérifier l'authentification
+        if self.scope["user"].is_anonymous:
+            await self.close()
+            return
+        
+        # Vérifier les permissions
+        if str(self.scope["user"].id) != self.user_id:
+            await self.close()
+            return
+        
+        # Rejoindre le groupe utilisateur
+        await self.channel_layer.group_add(
+            self.user_group_name,
+            self.channel_name
+        )
+        
+        await self.accept()
+        
+        logger.info(f"✅ GeneralConsumer connecté pour user {self.user_id}")
+        
+        # Envoyer les compteurs initiaux
+        await self.send_initial_counts()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
+            self.user_group_name,
+            self.channel_name
+        )
+        
+        logger.info(f"❌ GeneralConsumer déconnecté pour user {self.user_id}")
+
+    async def receive(self, text_data):
+        """Recevoir des messages du client"""
+        try:
+            text_data_json = json.loads(text_data)
+            message_type = text_data_json.get('type')
+            
+            if message_type == 'get_counts':
+                await self.send_initial_counts()
+                
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Format JSON invalide'
+            }))
+
+    async def send_initial_counts(self):
+        """Envoyer les compteurs initiaux"""
+        notification_count = await self.get_notification_count()
+        message_count = await self.get_message_count()
+        
+        await self.send(text_data=json.dumps({
+            'type': 'initial_counts',
+            'notification_count': notification_count,
+            'message_count': message_count
+        }))
+
+    async def counts_update(self, event):
+        """Envoyer les mises à jour de compteurs"""
+        await self.send(text_data=json.dumps({
+            'type': 'counts_update',
+            'event_type': event['event_type'],
+            'notification_count': event.get('notification_count'),
+            'message_count': event.get('message_count')
+        }))
+
+    async def notification_update(self, event):
+        """Envoyer les mises à jour de notifications"""
+        await self.send(text_data=json.dumps({
+            'type': 'notification_update',
+            'event_type': event['event_type'],
+            'notification': event.get('notification')
+        }))
+
+    @database_sync_to_async
+    def get_notification_count(self):
+        """Obtenir le nombre de notifications non lues"""
+        return Notification.objects.filter(
+            user_id=self.user_id,
+            is_read=False
+        ).count()
+
+    @database_sync_to_async
+    def get_message_count(self):
+        """Obtenir le nombre de messages non lus"""
+        from django.db.models import Q
+        return Message.objects.filter(
+            conversation__in=Conversation.objects.filter(
+                Q(client_id=self.user_id) | Q(provider__user_id=self.user_id)
+            ),
+            is_read=False
+        ).exclude(sender_id=self.user_id).count()
+    
 
 class ChatConsumer(AsyncWebsocketConsumer):
     """Consumer pour les messages de chat en temps réel"""
@@ -294,7 +402,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             logger.error(f"Erreur marquer messages lus: {e}")
 
 class UserConsumer(AsyncWebsocketConsumer):
-    """Consumer général pour l'utilisateur (notifications + messages)"""
+    """Consumer général pour un utilisateur (notifications + messages + autres événements)"""
     
     async def connect(self):
         self.user_id = self.scope['url_route']['kwargs']['user_id']
@@ -305,7 +413,7 @@ class UserConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         
-        # Vérifier l'autorisation
+        # Vérifier les permissions
         if str(self.scope["user"].id) != self.user_id:
             await self.close()
             return
@@ -320,8 +428,12 @@ class UserConsumer(AsyncWebsocketConsumer):
         
         logger.info(f"✅ UserConsumer connecté pour user {self.user_id}")
         
-        # Envoyer les compteurs initiaux
-        await self.send_initial_counts()
+        # Envoyer confirmation de connexion
+        await self.send(text_data=json.dumps({
+            'type': 'connection_established',
+            'message': 'WebSocket connecté',
+            'user_id': self.user_id
+        }))
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -332,71 +444,151 @@ class UserConsumer(AsyncWebsocketConsumer):
         logger.info(f"❌ UserConsumer déconnecté pour user {self.user_id}")
 
     async def receive(self, text_data):
-        """Gérer les messages du client"""
+        """Recevoir des messages du client Flutter"""
         try:
-            data = json.loads(text_data)
-            message_type = data.get('type')
+            text_data_json = json.loads(text_data)
+            message_type = text_data_json.get('type')
             
+            # ✅ Gérer les différents types de messages de votre app Flutter
             if message_type == 'get_counts':
+                await self.send_initial_counts()
+            elif message_type == 'get_unread_count':
+                await self.send_notification_count()
+            elif message_type == 'get_message_count':
+                await self.send_message_count()
+            elif message_type == 'mark_as_read':
+                notification_id = text_data_json.get('notification_id')
+                await self.mark_notification_as_read(notification_id)
+            elif message_type == 'mark_all_as_read':
+                await self.mark_all_notifications_as_read()
+            elif message_type == 'join_conversation':
+                conversation_id = text_data_json.get('conversation_id')
+                await self.join_conversation(conversation_id)
+            elif message_type == 'leave_conversation':
+                conversation_id = text_data_json.get('conversation_id')
+                await self.leave_conversation(conversation_id)
+            elif message_type == 'heartbeat':
+                # Gérer le heartbeat de votre WebSocketService
+                await self.send(text_data=json.dumps({
+                    'type': 'heartbeat_response',
+                    'timestamp': text_data_json.get('timestamp')
+                }))
+            elif message_type == 'connection':
+                # Gérer le message de connexion de votre WebSocketService
                 await self.send_initial_counts()
                 
         except json.JSONDecodeError:
-            pass
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Format JSON invalide'
+            }))
 
-    async def notification_update(self, event):
-        """Envoyer une mise à jour de notification"""
-        await self.send(text_data=json.dumps(event))
-
-    async def message_update(self, event):
-        """Envoyer une mise à jour de message"""
-        await self.send(text_data=json.dumps(event))
-
-    async def counts_update(self, event):
-        """Envoyer une mise à jour des compteurs"""
-        await self.send(text_data=json.dumps(event))
-
-    @database_sync_to_async
-    def get_counts(self):
-        """Obtenir les compteurs de notifications et messages"""
-        try:
-            user = self.scope["user"]
-            
-            # Compteur notifications
-            notification_count = Notification.objects.filter(
-                user=user, 
-                is_read=False
-            ).count()
-            
-            # Compteur messages
-            if hasattr(user, 'provider_profile'):
-                # Prestataire : messages des clients
-                message_count = Message.objects.filter(
-                    conversation__provider=user.provider_profile,
-                    sender__in=Conversation.objects.filter(
-                        provider=user.provider_profile
-                    ).values_list('client', flat=True),
-                    is_read=False
-                ).count()
-            else:
-                # Client : messages des prestataires
-                message_count = Message.objects.filter(
-                    conversation__client=user,
-                    is_read=False
-                ).exclude(sender=user).count()
-            
-            return {
-                'notification_count': notification_count,
-                'message_count': message_count,
-                'total_count': notification_count + message_count
-            }
-        except Exception as e:
-            logger.error(f"Erreur get_counts: {e}")
-            return {'notification_count': 0, 'message_count': 0, 'total_count': 0}
+    # ✅ NOUVELLES MÉTHODES pour les compteurs automatiques
 
     async def send_initial_counts(self):
-        """Envoyer les compteurs initiaux"""
-        counts = await self.get_counts()
+        """Envoyer les compteurs initiaux (notifications + messages)"""
+        notification_count = await self.get_notification_count()
+        message_count = await self.get_message_count()
+        
         await self.send(text_data=json.dumps({
-            'type': 'counts',
-            **counts
+            'type': 'initial_counts',
+            'notification_count': notification_count,
+            'message_count': message_count
         }))
+        
+        logger.info(f"📊 Compteurs initiaux envoyés pour user {self.user_id}: notif={notification_count}, msg={message_count}")
+
+    async def send_notification_count(self):
+        """Envoyer le compteur de notifications"""
+        count = await self.get_notification_count()
+        await self.send(text_data=json.dumps({
+            'type': 'unread_count',
+            'count': count
+        }))
+
+    async def send_message_count(self):
+        """Envoyer le compteur de messages"""
+        count = await self.get_message_count()
+        await self.send(text_data=json.dumps({
+            'type': 'message_count_update',
+            'count': count
+        }))
+
+    # ✅ MÉTHODES appelées par les signaux Django
+
+    async def message_count_update(self, event):
+        """Envoyer la mise à jour du compteur de messages (appelé par signal)"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_count_update',
+            'count': event['count']
+        }))
+
+    async def initial_counts(self, event):
+        """Envoyer les compteurs initiaux (appelé par signal)"""
+        await self.send(text_data=json.dumps({
+            'type': 'initial_counts',
+            'notification_count': event['notification_count'],
+            'message_count': event['message_count']
+        }))
+
+    async def chat_message(self, event):
+        """Envoyer un nouveau message (appelé par signal)"""
+        await self.send(text_data=json.dumps({
+            'type': 'chat_message',
+            'message': event['message']
+        }))
+
+    # ✅ MÉTHODES utilitaires
+
+    @database_sync_to_async
+    def get_notification_count(self):
+        """Obtenir le nombre de notifications non lues"""
+        return Notification.objects.filter(
+            user_id=self.user_id,
+            is_read=False
+        ).count()
+
+    @database_sync_to_async
+    def get_message_count(self):
+        """Obtenir le nombre de messages non lus"""
+        from django.db.models import Q
+        return Message.objects.filter(
+            conversation__in=Conversation.objects.filter(
+                Q(client_id=self.user_id) | Q(provider__user_id=self.user_id)
+            ),
+            is_read=False
+        ).exclude(sender_id=self.user_id).count()
+
+    @database_sync_to_async
+    def mark_notification_as_read(self, notification_id):
+        """Marquer une notification comme lue"""
+        try:
+            notification = Notification.objects.get(
+                id=notification_id, 
+                user_id=self.user_id
+            )
+            notification.is_read = True
+            notification.save()
+            return True
+        except Notification.DoesNotExist:
+            return False
+
+    @database_sync_to_async
+    def mark_all_notifications_as_read(self):
+        """Marquer toutes les notifications comme lues"""
+        Notification.objects.filter(
+            user_id=self.user_id, 
+            is_read=False
+        ).update(is_read=True)
+
+    @database_sync_to_async
+    def join_conversation(self, conversation_id):
+        """Rejoindre une conversation (logique selon vos besoins)"""
+        # Implémenter selon votre logique existante
+        logger.info(f"User {self.user_id} rejoint conversation {conversation_id}")
+
+    @database_sync_to_async
+    def leave_conversation(self, conversation_id):
+        """Quitter une conversation (logique selon vos besoins)"""
+        # Implémenter selon votre logique existante
+        logger.info(f"User {self.user_id} quitte conversation {conversation_id}")

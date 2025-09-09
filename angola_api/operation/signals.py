@@ -8,10 +8,10 @@ from .fcm import notify_user_by_fcm
 from channels.layers import get_channel_layer
 from .fcm_service import FCMService
 from operation.models import (
-    AdminAction, ClientProject, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
+    AdminAction, ClientProject, Conversation, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
 )
 import logging
-
+from django.db.models import Q
 
 # Obtenir la couche de canal pour WebSocket
 channel_layer = get_channel_layer()
@@ -426,6 +426,128 @@ def create_and_send_notification(user, title, message, notification_type, relate
 #     except Exception as e:
 #         print(f"❌ Erreur création notification (continue quand même): {e}")
 #         return None
+@receiver(post_save, sender=Message)
+def new_message_created(sender, instance, created, **kwargs):
+    """Signal automatique quand un nouveau message est créé - VERSION ADAPTÉE"""
+    if created:
+        try:
+            conversation = instance.conversation
+            
+            # Déterminer l'expéditeur et le destinataire
+            if instance.sender == conversation.client:
+                recipient = conversation.provider.user
+                sender_name = conversation.client.first_name or conversation.client.username
+            else:
+                recipient = conversation.client
+                sender_name = conversation.provider.user.first_name or conversation.provider.user.username
+            
+            # ✅ NOUVEAU: METTRE À JOUR LE COMPTEUR DE MESSAGES AUTOMATIQUEMENT
+            unread_messages_count = Message.objects.filter(
+                conversation__in=Conversation.objects.filter(
+                    Q(client=recipient) | Q(provider__user=recipient)
+                ),
+                is_read=False
+            ).exclude(sender=recipient).count()
+            
+            # Envoyer la mise à jour du compteur automatique
+            send_message_count_update(recipient.id, unread_messages_count)
+            
+            # ✅ NOUVEAU: ENVOYER UNE NOTIFICATION FCM POUR LE NOUVEAU MESSAGE
+            try:
+                FCMService.send_notification_to_user(
+                    recipient.id,
+                    f"💬 Nouveau message de {sender_name}",
+                    instance.content[:100] + ('...' if len(instance.content) > 100 else ''),
+                    'new_message',
+                    {
+                        'conversation_id': str(conversation.id),
+                        'sender_id': str(instance.sender.id),
+                        'message_id': str(instance.id),
+                        'click_action': 'FLUTTER_NOTIFICATION_CLICK'
+                    }
+                )
+                print(f"✅ Notification FCM message envoyée pour user {recipient.id}")
+            except Exception as fcm_error:
+                print(f"⚠️ Erreur FCM message: {fcm_error}")
+            
+            # Code existant pour WebSocket (conservé si vous l'avez)
+            message_data = {
+                'id': instance.id,
+                'conversation_id': conversation.id,
+                'content': instance.content,
+                'sender_id': instance.sender.id,
+                'sender_name': sender_name,
+                'created_at': instance.created_at.isoformat(),
+                'is_read': instance.is_read
+            }
+            
+            # Envoyer le message via WebSocket (code existant conservé)
+            try:
+                if channel_layer:
+                    # Envoyer au consumer général
+                    async_to_sync(channel_layer.group_send)(
+                        f'user_{recipient.id}',
+                        {
+                            'type': 'chat_message',
+                            'message': message_data
+                        }
+                    )
+                    
+                    # Envoyer aussi dans le groupe de la conversation (si vous l'utilisez)
+                    async_to_sync(channel_layer.group_send)(
+                        f'chat_{conversation.id}',
+                        {
+                            'type': 'chat_message',
+                            'message': message_data
+                        }
+                    )
+            except Exception as e:
+                print(f"⚠️ Erreur chat WebSocket: {e}")
+                
+        except Exception as e:
+            print(f"❌ Erreur signal nouveau message: {e}")
+
+# ================================================================
+# 3. SIGNAL POUR QUAND UN MESSAGE EST MARQUÉ COMME LU
+# ================================================================
+
+@receiver(post_save, sender=Message)
+def message_read_status_changed(sender, instance, created, **kwargs):
+    """Signal quand un message est marqué comme lu"""
+    if not created and instance.is_read:
+        try:
+            conversation = instance.conversation
+            
+            # Déterminer le destinataire (celui qui a reçu le message)
+            if instance.sender == conversation.client:
+                recipient = conversation.provider.user
+            else:
+                recipient = conversation.client
+            
+            # Calculer le nouveau nombre de messages non lus pour ce destinataire
+            unread_messages_count = Message.objects.filter(
+                conversation__in=Conversation.objects.filter(
+                    Q(client=recipient) | Q(provider__user=recipient)
+                ),
+                is_read=False
+            ).exclude(sender=recipient).count()
+            
+            # Envoyer la mise à jour du compteur
+            send_message_count_update(recipient.id, unread_messages_count)
+            
+        except Exception as e:
+            print(f"❌ Erreur signal message lu: {e}")
+
+
+# @receiver(post_save, sender=Conversation) 
+# def conversation_messages_marked_read(sender, instance, **kwargs):
+#     """Signal quand tous les messages d'une conversation sont marqués comme lus"""
+#     try:
+#         # Ce signal peut être déclenché par votre API markMessagesAsRead
+#         # Vous pouvez l'adapter selon votre implémentation
+#         pass
+#     except Exception as e:
+#         print(f"❌ Erreur signal conversation messages lus: {e}")
 # ================================================================
 # ✅ NOUVELLES FONCTIONS SPÉCIALISÉES POUR CRÉER LES EXTRADATA
 # ================================================================
@@ -779,6 +901,62 @@ def phone_verification_status_changed(sender, instance, created, **kwargs):
             notification_type='phone_verified',
             related_object_id=instance.id
         )
+
+
+
+def send_message_count_update(user_id, count):
+    """Helper pour envoyer la mise à jour du compteur de messages non lus"""
+    if channel_layer:
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_{user_id}',
+            {
+                'type': 'message_count_update',
+                'count': count
+            }
+        )
+        
+        async_to_sync(channel_layer.group_send)(
+            f'user_{user_id}',
+            {
+                'type': 'counts_update',
+                'event_type': 'message_count_update',
+                'message_count': count
+            }
+        )
+
+def send_initial_counts(user_id):
+    """Envoyer les compteurs initiaux (notifications + messages)"""
+    if channel_layer:
+        try:
+            # Compter les notifications non lues
+            notification_count = Notification.objects.filter(
+                user_id=user_id, 
+                is_read=False
+            ).count()
+            
+            # Compter les messages non lus
+            from django.db.models import Q
+            message_count = Message.objects.filter(
+                conversation__in=Conversation.objects.filter(
+                    Q(client_id=user_id) | Q(provider__user_id=user_id)
+                ),
+                is_read=False
+            ).exclude(sender_id=user_id).count()
+            
+            # Envoyer les compteurs initiaux
+            async_to_sync(channel_layer.group_send)(
+                f'user_{user_id}',
+                {
+                    'type': 'initial_counts',
+                    'notification_count': notification_count,
+                    'message_count': message_count
+                }
+            )
+            
+            print(f"✅ Compteurs initiaux envoyés pour user {user_id}: notifications={notification_count}, messages={message_count}")
+            
+        except Exception as e:
+            print(f"❌ Erreur envoi compteurs initiaux: {e}")
 
 # ================================================================
 # ✅ FONCTIONS UTILITAIRES CONSERVÉES (code existant)
