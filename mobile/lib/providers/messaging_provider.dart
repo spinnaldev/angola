@@ -30,15 +30,32 @@ class MessagingProvider with ChangeNotifier {
 
   // ✅ MODIFIER la méthode existante pour utiliser le compteur automatique quand disponible
   int getTotalUnreadCount() {
-    // Si le compteur automatique est disponible (> 0 ou WebSocket connecté), l'utiliser
-    // Sinon, calculer manuellement comme avant
-    if (_totalUnreadCount >= 0) {
-      return _totalUnreadCount;
+    print('🔍 === DEBUG TOTAL UNREAD COUNT ===');
+    print('Nombre de conversations: ${_conversations.length}');
+    
+    if (_conversations.isEmpty) {
+      print('❌ PROBLÈME: Aucune conversation dans le provider!');
+      return 0;
     }
     
-    // Calcul manuel (méthode existante conservée comme fallback)
-    return _conversations.fold(0, (sum, conversation) => sum + conversation.unreadCount);
+    int total = 0;
+    for (int i = 0; i < _conversations.length; i++) {
+      final conv = _conversations[i];
+      print('Conversation $i:');
+      print('  - ID: ${conv.id}');
+      print('  - Autre personne: ${conv.otherPerson.fullName}');
+      print('  - UnreadCount: ${conv.unreadCount}');
+      print('  - Dernier message: ${conv.lastMessage?.content ?? "Aucun"}');
+      
+      total += conv.unreadCount;
+    }
+    
+    print('TOTAL CALCULÉ: $total');
+    print('================================');
+    
+    return total;
   }
+
 
   // ✅ NOUVEAU: Mettre à jour le compteur automatiquement (appelé par WebSocket)
   void updateUnreadCountAutomatically(int count) {
@@ -84,10 +101,19 @@ class MessagingProvider with ChangeNotifier {
         _currentUserId = await _apiService.getCurrentUserId();
       }
 
+      print('🔍 === DEBUG FETCH CONVERSATIONS ===');
+      print('User ID: $_currentUserId');
+      
       _conversations = await _apiService.getConversations();
       
+      print('Conversations récupérées de l\'API: ${_conversations.length}');
+      for (var conv in _conversations) {
+        print('  - ${conv.otherPerson.fullName}: ${conv.unreadCount} non lus');
+      }
+      print('===================================');
+      
     } catch (error) {
-      print('Error fetching conversations: $error');
+      print('❌ Erreur fetch conversations: $error');
       _conversations = [];
     } finally {
       _isLoading = false;

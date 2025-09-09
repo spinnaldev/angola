@@ -214,7 +214,7 @@ class AppBottomNavigation extends StatelessWidget {
     return Consumer<MessagingProvider>(
       builder: (context, messagingProvider, child) {
         // ✅ UTILISER LE COMPTEUR AUTOMATIQUE au lieu de l'ancien
-        final unreadCount = messagingProvider.totalUnreadCountAutomatic;
+        final unreadCount = messagingProvider.getTotalUnreadCount();
         
         // ✅ AJOUT DE DEBUG pour voir pourquoi c'est 0
         print('🔍 Badge Messages - Compteur automatique: $unreadCount');

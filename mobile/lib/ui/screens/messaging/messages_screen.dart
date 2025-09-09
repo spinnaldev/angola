@@ -157,6 +157,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
   
+
   Widget _buildConversationItem(Conversation conversation) {
     final l10n = AppLocalizations.of(context)!;
     final lastMessage = conversation.lastMessage;
@@ -285,5 +286,52 @@ class _MessagesScreenState extends State<MessagesScreen> {
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
+  }
+}
+
+
+class DebugConversationsWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MessagingProvider>(
+      builder: (context, messagingProvider, child) {
+        return Container(
+          color: Colors.red.shade100,
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('🔍 DEBUG CONVERSATIONS', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Provider conversations: ${messagingProvider.conversations.length}'),
+              Text('Compteur manuel: ${messagingProvider.getTotalUnreadCount()}'),
+              Text('Compteur auto: ${messagingProvider.totalUnreadCountAutomatic}'),
+              SizedBox(height: 8),
+              ...messagingProvider.conversations.map((conv) {
+                return Container(
+                  margin: EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.all(8),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ID: ${conv.id}'),
+                      Text('Nom: ${conv.otherPerson.fullName}'),
+                      Text('Unread: ${conv.unreadCount}'),
+                      Text('LastMsg: ${conv.lastMessage?.content ?? "Aucun"}'),
+                    ],
+                  ),
+                );
+              }).toList(),
+              if (messagingProvider.conversations.isEmpty)
+                Container(
+                  padding: EdgeInsets.all(8),
+                  color: Colors.red.shade200,
+                  child: Text('❌ AUCUNE CONVERSATION DANS LE PROVIDER !'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

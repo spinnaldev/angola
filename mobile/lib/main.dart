@@ -176,11 +176,31 @@ import 'dart:convert';
           // Fournisseurs de données
           Provider<ApiService>.value(value: apiService),
 
-          //  Provider<WebSocketService>(create: (_) => WebSocketService()),
+          Provider<WebSocketService>(
+            create: (_) => WebSocketService.instance,
+            dispose: (_, service) => service.dispose(),
+          ),
 
           // NOUVEAU : Provider de langue
           ChangeNotifierProvider.value(value: languageProvider),
 
+          ChangeNotifierProxyProvider<AuthProvider, MessagingProvider>(
+            create: (context) => MessagingProvider(
+              Provider.of<ApiService>(context, listen: false),
+            ),
+            update: (context, auth, previous) => previous ?? MessagingProvider(
+              Provider.of<ApiService>(context, listen: false),
+            ),
+          ),
+
+          ChangeNotifierProxyProvider2<MessagingProvider, WebSocketService, RealtimeMessagingProvider>(
+            create: (context) => RealtimeMessagingProvider(
+              Provider.of<MessagingProvider>(context, listen: false),
+              Provider.of<WebSocketService>(context, listen: false),
+            ),
+            update: (context, messaging, websocket, previous) => 
+              previous ?? RealtimeMessagingProvider(messaging, websocket),
+          ),
           // Providers d'état
           ChangeNotifierProvider(
             create: (_) => AuthProvider(authService),
@@ -231,12 +251,12 @@ import 'dart:convert';
           ChangeNotifierProvider(
             create: (_) => FCMProvider(_fcmService, apiService),
           ),
-          ChangeNotifierProvider<RealtimeMessagingProvider>(
-            create: (context) => RealtimeMessagingProvider(
-              context.read<MessagingProvider>(),
-              webSocketService,
-            ),
-          ),
+          // ChangeNotifierProvider<RealtimeMessagingProvider>(
+          //   create: (context) => RealtimeMessagingProvider(
+          //     context.read<MessagingProvider>(),
+          //     webSocketService,
+          //   ),
+          // ),
           ChangeNotifierProvider(
             create: (_) =>
                 LocationProvider(), // Nouveau provider pour la localisation
@@ -392,6 +412,10 @@ import 'dart:convert';
         _initializeApp();
       });
 
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeServices();
+      });
+      
       _initializeRealtimeServices();
     }
 
@@ -433,6 +457,46 @@ import 'dart:convert';
       WidgetsBinding.instance.removeObserver(this);
       _animationController.dispose();
       super.dispose();
+    }
+
+    void _initializeServices() async {
+      try {
+        // Attendre que l'authentification soit prête
+        await Future.delayed(Duration(seconds: 1));
+        
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        
+        if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+          final userId = authProvider.currentUser!.id;
+          
+          print('🚀 Initialisation services pour user $userId');
+          
+          // ✅ WebSocketService maintenant accessible via Provider
+          final webSocketService = Provider.of<WebSocketService>(context, listen: false);
+          await webSocketService.connect('ws://votre-domaine.com', userId);
+          
+          // ✅ Initialiser MessagingProvider
+          final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+          messagingProvider.setCurrentUserId(userId);
+          
+          // ✅ Démarrer RealtimeMessagingProvider
+          final realtimeProvider = Provider.of<RealtimeMessagingProvider>(context, listen: false);
+          realtimeProvider.startListening();
+          
+          // ✅ Demander les compteurs après un délai
+          Future.delayed(Duration(seconds: 2), () {
+            realtimeProvider.requestInitialCounts();
+          });
+          
+          print('✅ Services temps réel initialisés');
+          
+        } else {
+          print('⚠️ Utilisateur non connecté');
+        }
+        
+      } catch (e) {
+        print('❌ Erreur initialisation: $e');
+      }
     }
 
     @override
