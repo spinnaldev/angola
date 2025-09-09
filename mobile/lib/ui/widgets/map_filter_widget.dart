@@ -19,7 +19,7 @@ class MapFilterWidget extends StatefulWidget {
 }
 
 class _MapFilterWidgetState extends State<MapFilterWidget> {
-  double _searchRadius = 10.0;
+  double _searchRadius = 15.0;
   double _minRating = 0.0;
   String _businessType = '';
   
@@ -104,9 +104,9 @@ class _MapFilterWidgetState extends State<MapFilterWidget> {
                     Expanded(
                       child: Slider(
                         value: _searchRadius,
-                        min: 1.0,
-                        max: 50.0,
-                        divisions: 49,
+                        min: ImprovedNearbyProvider.MIN_SEARCH_RADIUS,
+                        max: ImprovedNearbyProvider.MAX_SEARCH_RADIUS,
+                        divisions: (ImprovedNearbyProvider.MAX_SEARCH_RADIUS - ImprovedNearbyProvider.MIN_SEARCH_RADIUS).toInt(),
                         label: '${_searchRadius.round()} km',
                         onChanged: (value) {
                           setState(() {
@@ -148,9 +148,9 @@ class _MapFilterWidgetState extends State<MapFilterWidget> {
                     Expanded(
                       child: Slider(
                         value: _minRating,
-                        min: 0.0,
-                        max: 5.0,
-                        divisions: 10,
+                         min: ImprovedNearbyProvider.MIN_SEARCH_RADIUS,
+                        max: ImprovedNearbyProvider.MAX_SEARCH_RADIUS,
+                        divisions: (ImprovedNearbyProvider.MAX_SEARCH_RADIUS - ImprovedNearbyProvider.MIN_SEARCH_RADIUS).toInt(),
                         label: _minRating == 0.0 
                             ? 'Toutes les notes' 
                             : '${_minRating.toStringAsFixed(1)} ⭐',
@@ -307,7 +307,7 @@ class _MapFilterWidgetState extends State<MapFilterWidget> {
 
   void _resetFilters() {
     setState(() {
-      _searchRadius = 10.0;
+      _searchRadius = 15.0;
       _minRating = 0.0;
       _businessType = '';
     });

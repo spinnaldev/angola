@@ -1,4 +1,4 @@
-  // lib/main.dart
+// lib/main.dart
   import 'dart:convert';
   import 'dart:io';
   import 'package:flutter/foundation.dart';
@@ -368,22 +368,64 @@
     State<AppInitializer> createState() => _AppInitializerState();
   }
 
-  class _AppInitializerState extends State<AppInitializer> with WidgetsBindingObserver {
+  class _AppInitializerState extends State<AppInitializer> 
+      with WidgetsBindingObserver, TickerProviderStateMixin {
     bool _isInitialized = false;
+    
+    // Contrôleurs d'animation
+    late AnimationController _animationController;
+    late Animation<double> _scaleAnimation;
+    late Animation<double> _opacityAnimation;
+    late Animation<double> _rotationAnimation;
 
     @override
     void initState() {
       super.initState();
       WidgetsBinding.instance.addObserver(this);
+      _initAnimations();
       // ✅ SOLUTION : Attendre que le build soit terminé
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initializeApp();
       });
     }
 
+    void _initAnimations() {
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 2000),
+        vsync: this,
+      );
+
+      _scaleAnimation = Tween<double>(
+        begin: 0.5,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ));
+
+      _opacityAnimation = Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.8, curve: Curves.easeIn),
+      ));
+
+      _rotationAnimation = Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeInOut),
+      ));
+
+      _animationController.forward();
+    }
+
     @override
     void dispose() {
       WidgetsBinding.instance.removeObserver(this);
+      _animationController.dispose();
       super.dispose();
     }
 
@@ -491,15 +533,107 @@
     @override
     Widget build(BuildContext context) {
       if (!_isInitialized) {
-        return const Scaffold(
+        return Scaffold(
+          backgroundColor: Colors.white,
           body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Initialisation WebSocket...'),
-              ],
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Animation du logo
+                    Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: Transform.rotate(
+                        angle: _rotationAnimation.value * 0.1, // Légère rotation
+                        child: Opacity(
+                          opacity: _opacityAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              // boxShadow: [
+                              //   BoxShadow(
+                              //     color: const Color(0xFF142FE2).withOpacity(0.3),
+                              //     blurRadius: 20,
+                              //     spreadRadius: 5,
+                              //   ),
+                              // ],
+                            ),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 120,
+                              height: 120,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    // color: const Color(0xFF142FE2),
+                                    // borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.business,
+                                    color: Colors.white,
+                                    size: 60,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Indicateur de progression animé
+                    Opacity(
+                      opacity: _opacityAnimation.value,
+                      child: Column(
+                        children: [
+                          // Barre de progression personnalisée
+                          Container(
+                            width: 200,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                backgroundColor: Colors.transparent,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  const Color(0xFF142FE2).withOpacity(0.8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Texte d'initialisation avec animation
+                          AnimatedBuilder(
+                            animation: _animationController,
+                            builder: (context, child) {
+                              final dots = '.' * ((_animationController.value * 3).floor() + 1);
+                              return Text(
+                                'Initialisation $dots',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         );

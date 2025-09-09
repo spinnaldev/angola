@@ -595,7 +595,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   late Animation<double> _fabAnimation;
 
   // Filtres simplifiés - seulement distance et rating
-  double _radiusFilter = 10.0; // km
+  double _radiusFilter = 15.0; // km
   double _minRatingFilter = 0.0; // Note minimum (0 à 5)
 
   @override
@@ -728,7 +728,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
         await providerListProvider.fetchNearbyProviders(
           _currentPosition!.latitude,
           _currentPosition!.longitude,
-          radius: 50.0, // Rayon plus large pour avoir plus de données
+          radius: 70.0, // Rayon plus large pour avoir plus de données
         );
       } else {
         await providerListProvider.fetchProviders();
@@ -904,7 +904,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                     TextButton(
                       onPressed: () {
                         setModalState(() {
-                          _radiusFilter = 10.0;
+                          _radiusFilter = 15.0;
                           _minRatingFilter = 0.0;
                         });
                       },
@@ -932,8 +932,8 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       Slider(
                         value: _radiusFilter,
                         min: 1.0,
-                        max: 50.0,
-                        divisions: 49,
+                        max: 70.0,
+                        divisions: 69,
                         activeColor: const Color(0xFF142FE2),
                         onChanged: (value) {
                           setModalState(() {

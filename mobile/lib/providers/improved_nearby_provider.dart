@@ -26,11 +26,17 @@ class ImprovedNearbyProvider with ChangeNotifier {
   String _errorMessage = '';
 
   // Paramètres de recherche
-  double _searchRadius = 10.0; // km
+  double _searchRadius = 15.0; // km
   String _selectedCategory = '';
   int? _selectedCategoryId;
   double _minRating = 0.0;
   String _businessType = '';
+  
+
+  // Constantes pour les rayons
+  static const double MIN_SEARCH_RADIUS = 1.0;
+  static const double MAX_SEARCH_RADIUS = 70.0;
+  static const double DEFAULT_SEARCH_RADIUS = 15.0;
   
   // Cache et optimisation
   DateTime? _lastSearchTime;
@@ -297,7 +303,7 @@ class ImprovedNearbyProvider with ChangeNotifier {
 
   // Réinitialiser tous les filtres
   void resetFilters() {
-    _searchRadius = 10.0;
+    _searchRadius = 15.0;
     _selectedCategoryId = null;
     _selectedCategory = '';
     _minRating = 0.0;

@@ -22,10 +22,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void initState() {
     super.initState();
-    // Charger les catégories au démarrage
+    // ← MODIFICATION : Charger les catégories avec tri automatique par nombre d'annonces
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CategoryProvider>(context, listen: false).fetchCategories();
+      _loadCategoriesWithSorting();
     });
+  }
+
+  // ← NOUVELLE MÉTHODE : Charger et trier automatiquement
+  Future<void> _loadCategoriesWithSorting() async {
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    
+    // Charger les catégories avec tri automatique par nombre de services
+    await categoryProvider.fetchCategories(sortByServiceCount: true);
   }
 
   @override
@@ -33,6 +41,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchController.dispose();
     super.dispose();
   }
+  
   void _performSearch() {
     final query = _searchController.text.trim();
     
@@ -106,51 +115,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
 
         // Champ de recherche
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        //   child: Container(
-        //     height: 50,
-        //     decoration: BoxDecoration(
-        //       color: Colors.grey[200],
-        //       borderRadius: BorderRadius.circular(8),
-        //     ),
-        //     child: TextField(
-        //       controller: _searchController,
-        //       decoration: InputDecoration(
-        //         hintText: l10n.searchForServices,
-        //         prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        //         border: InputBorder.none,
-        //         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        //       ),
-        //     ),
-        //   ),
-        // ),
-
-        
-        // Container(
-        //   height: 50,
-        //   decoration: BoxDecoration(
-        //     color: Colors.grey[200],
-        //     borderRadius: BorderRadius.circular(8),
-        //   ),
-        //   child: TextField(
-        //     controller: _searchController,
-        //     decoration: InputDecoration(
-        //       hintText: l10n.searchForServices,
-        //       prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        //       // ✅ AJOUT D'UN BOUTON DE RECHERCHE
-        //       suffixIcon: IconButton(
-        //         icon: const Icon(Icons.arrow_forward, color: Colors.grey),
-        //         onPressed: _performSearch,
-        //       ),
-        //       border: InputBorder.none,
-        //       contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        //     ),
-        //     // ✅ AJOUT DE onSubmitted
-        //     onSubmitted: (_) => _performSearch(),
-        //   ),
-        // ),
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Container(
@@ -184,7 +148,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ),
 
-        // Grille des catégories en mosaïque
+        // Grille des catégories en mosaïque (maintenant triées automatiquement)
         Expanded(
           child: Consumer<CategoryProvider>(
             builder: (context, categoryProvider, child) {

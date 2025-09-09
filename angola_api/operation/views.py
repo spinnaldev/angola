@@ -1076,7 +1076,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
         """Endpoint optimisé pour récupérer les prestataires à proximité"""
         latitude = request.query_params.get('latitude')
         longitude = request.query_params.get('longitude')
-        radius = float(request.query_params.get('radius', 10.0))
+        radius =min(float(request.query_params.get('radius', 10.0)) , 70)
         
         if not (latitude and longitude):
             # Fallback vers les prestataires récents
@@ -3709,8 +3709,8 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                         }
                         logger.info(f"📋 Notification data: {notification_data}")
                         
-                        notification = Notification.objects.create(**notification_data)
-                        logger.info(f"✅ Notification created: ID={notification.id}")
+                        # notification = Notification.objects.create(**notification_data)
+                        # logger.info(f"✅ Notification created: ID={notification.id}")
 
                     except Exception as notif_error:
                         logger.error(f"❌ Erreur création notification: {notif_error}")
@@ -3855,22 +3855,22 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
             offer = serializer.save(provider=request.user.provider_profile)
             
             # Créer une notification pour le client
-            try:
-                from .models import Notification
-                Notification.objects.create(
-                    user=project.client,
-                    title="Nouvelle offre reçue",
-                    message=f"Une nouvelle offre a été reçue pour votre projet '{project.title}'",
-                    notification_type='new_offer',
-                    related_object_id=offer.id
-                )
-            except Exception as e:
-                print(f"Erreur création notification: {e}")
+            # try:
+            #     from .models import Notification
+            #     Notification.objects.create(
+            #         user=project.client,
+            #         title="Nouvelle offre reçue",
+            #         message=f"Une nouvelle offre a été reçue pour votre projet '{project.title}'",
+            #         notification_type='new_offer',
+            #         related_object_id=offer.id
+            #     )
+            # except Exception as e:
+            #     print(f"Erreur création notification: {e}")
             
-            return Response(
-                self.get_serializer(offer).data,
-                status=status.HTTP_201_CREATED
-            )
+            # return Response(
+            #     self.get_serializer(offer).data,
+            #     status=status.HTTP_201_CREATED
+            # )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
