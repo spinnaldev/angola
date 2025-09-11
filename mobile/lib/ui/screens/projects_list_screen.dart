@@ -292,8 +292,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                           project: _projects[index],
                           onTap: () =>
                               _navigateToProjectDetail(_projects[index]),
-                          onFavoriteToggle: (project) =>
-                              _toggleProjectFavorite(project),
+                              onFavoriteToggle: () => _toggleProjectFavorite(_projects[index]),
+                          // onFavoriteToggle: (project) =>
+                          //     _toggleProjectFavorite(project),
                         ),
                       );
                     },

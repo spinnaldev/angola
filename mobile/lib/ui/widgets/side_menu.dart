@@ -7,7 +7,9 @@ import 'package:teyago/config/routes.dart';
 import 'package:teyago/core/services/fcm_service.dart';
 import 'package:teyago/providers/language_provider.dart';
 import 'package:teyago/providers/realtime_notification_provider.dart';
+import 'package:teyago/ui/screens/favorites_screen.dart';
 import 'package:teyago/ui/screens/help_faq_screen.dart';
+import 'package:teyago/ui/screens/reviews_screen.dart';
 import 'package:teyago/ui/widgets/language_selector.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
@@ -354,6 +356,36 @@ class SideMenu extends StatelessWidget {
         _buildMenuItem(
           context,
           icon: Icons.gavel,
+          text: l10n.myFavorites,
+          onTap: () {
+            onClose();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FavoritesScreen(),
+              ),
+            );
+          },
+        ),
+
+        _buildMenuItem(
+          context,
+          icon: Icons.gavel,
+          text: l10n.myReviews,
+          onTap: () {
+            onClose();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ReviewsScreen(),
+              ),
+            );
+          },
+        ),
+
+        _buildMenuItem(
+          context,
+          icon: Icons.gavel,
           text: ProfileManager.isProviderMode()
               ? l10n.myComplaints
               : l10n.myDisputes,
@@ -367,6 +399,7 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
+
         // ElevatedButton(
         //   onPressed: () async {
         //     final fcmService = FCMService();
