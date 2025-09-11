@@ -181,6 +181,7 @@ import 'dart:convert';
             dispose: (_, service) => service.dispose(),
           ),
 
+          
           // NOUVEAU : Provider de langue
           ChangeNotifierProvider.value(value: languageProvider),
 
@@ -415,7 +416,7 @@ import 'dart:convert';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initializeServices();
       });
-      
+
       _initializeRealtimeServices();
     }
 

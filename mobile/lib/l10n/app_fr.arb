@@ -1781,7 +1781,38 @@
   "disputeCreatedOn": "Créé le {date}",
   "attachedFile": "Fichier joint",
   "canAddEvidence": "Vous pouvez ajouter des preuves tant que le litige est ouvert",
-  "disputeClosedInfo": "Ce litige a été fermé et ne peut plus être modifié"
+  "disputeClosedInfo": "Ce litige a été fermé et ne peut plus être modifié",
+
+  "favorites": "Favoris",
+  "myFavorites": "Mes favoris",
+  "favoriteProjects": "Projets favoris",
+  "favoriteProviders": "Prestataires favoris",
+  "noFavorites": "Aucun favori",
+  "noFavoriteProjects": "Aucun projet en favori",
+  "noFavoriteProviders": "Aucun prestataire en favori",
+  "addToFavorites": "Ajouter aux favoris",
+  "removeFromFavorites": "Retirer des favoris",
+  "favoritesManagement": "Gestion des favoris",
+  
+  "reviews": "Avis",
+  "myReviews": "Mes avis",
+  "reviewsGiven": "Avis donnés",
+  "reviewsReceived": "Avis reçus",
+  "noReviews": "Aucun avis",
+  "noReviewsGiven": "Aucun avis donné",
+  "noReviewsReceived": "Aucun avis reçu",
+  "writeReview": "Écrire un avis",
+  "viewAllReviews": "Voir tous les avis",
+  "rating": "Note",
+  "comment": "Commentaire",
+  "reviewTitle": "Titre de l'avis",
+  "overallRating": "Note globale",
+  "qualityRating": "Qualité",
+  "punctualityRating": "Ponctualité",
+  "valueRating": "Rapport qualité/prix",
+  "reviewDate": "Date de l'avis",
+  "verifiedReview": "Avis vérifié",
+  "reviewSubmitted": "Avis soumis avec succès"
 
   
 }

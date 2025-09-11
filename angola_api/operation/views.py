@@ -5679,3 +5679,43 @@ def profile(self, request):
             'detail': _('Please try again later or contact support'),
             'verification_service_available': False,
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class ServiceFavoriteViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des services favoris"""
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
+    
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        provider_id = request.data.get('provider_id')
+        if not provider_id:
+            return Response(
+                {'error': 'provider_id requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            provider = Provider.objects.get(id=provider_id)
+        except Provider.DoesNotExist:
+            return Response(
+                {'error': 'Prestataire non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user,
+            provider=provider
+        )
+        
+        if created:
+            serializer = self.get_serializer(favorite)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {'message': 'Prestataire déjà en favoris'},
+                status=status.HTTP_200_OK
+            )

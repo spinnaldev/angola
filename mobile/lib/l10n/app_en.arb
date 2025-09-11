@@ -1759,7 +1759,37 @@
   "disputeCreatedOn": "Created on {date}",
   "attachedFile": "Attached file",
   "canAddEvidence": "You can add evidence while the dispute is open",
-  "disputeClosedInfo": "This dispute has been closed and can no longer be modified"
+  "disputeClosedInfo": "This dispute has been closed and can no longer be modified",
+  "favorites": "Favorites",
+  "myFavorites": "My favorites",
+  "favoriteProjects": "Favorite projects",
+  "favoriteProviders": "Favorite providers",
+  "noFavorites": "No favorites",
+  "noFavoriteProjects": "No favorite projects",
+  "noFavoriteProviders": "No favorite providers",
+  "addToFavorites": "Add to favorites",
+  "removeFromFavorites": "Remove from favorites",
+  "favoritesManagement": "Favorites management",
+  
+  "reviews": "Reviews",
+  "myReviews": "My reviews",
+  "reviewsGiven": "Reviews given",
+  "reviewsReceived": "Reviews received",
+  "noReviews": "No reviews",
+  "noReviewsGiven": "No reviews given",
+  "noReviewsReceived": "No reviews received",
+  "writeReview": "Write a review",
+  "viewAllReviews": "View all reviews",
+  "rating": "Rating",
+  "comment": "Comment",
+  "reviewTitle": "Review title",
+  "overallRating": "Overall rating",
+  "qualityRating": "Quality",
+  "punctualityRating": "Punctuality",
+  "valueRating": "Value for money",
+  "reviewDate": "Review date",
+  "verifiedReview": "Verified review",
+  "reviewSubmitted": "Review submitted successfully"
   
 
 }
