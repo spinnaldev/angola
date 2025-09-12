@@ -79,33 +79,45 @@ class FavoritesProvider with ChangeNotifier {
         }
         
         _favoriteProviders = [];
+        Set<int> seenProviderIds = {}; // ✅ NOUVEAU : Éviter les doublons
         
         for (var item in data) {
           if (item is Map<String, dynamic>) {
+            ProviderModel? provider;
+            int? providerId;
+            
             // ✅ CORRIGÉ : Gérer les différentes structures possibles
             if (item['provider_details'] != null) {
               // Structure : {provider: 1, provider_details: {...}}
               try {
-                _favoriteProviders.add(ProviderModel.fromJson(item['provider_details']));
-                print('✅ Prestataire ajouté via provider_details: ${item['provider_details']['id']}');
+                provider = ProviderModel.fromJson(item['provider_details']);
+                providerId = provider.id;
               } catch (e) {
                 print('❌ Erreur parsing provider_details: $e');
               }
             } else if (item['provider'] is Map<String, dynamic>) {
               // Structure : {provider: {...}}
               try {
-                _favoriteProviders.add(ProviderModel.fromJson(item['provider']));
-                print('✅ Prestataire ajouté via provider: ${item['provider']['id']}');
+                provider = ProviderModel.fromJson(item['provider']);
+                providerId = provider.id;
               } catch (e) {
                 print('❌ Erreur parsing provider: $e');
               }
-            } else {
-              print('⚠️ Structure non reconnue pour l\'élément: $item');
+            }
+            
+            // ✅ NOUVEAU : Ajouter seulement si pas de doublon
+            if (provider != null && providerId != null && !seenProviderIds.contains(providerId)) {
+              _favoriteProviders.add(provider);
+              seenProviderIds.add(providerId);
+              // print('✅ Prestataire unique ajouté: ${provider.id} - ${provider.firstName} ${provider.lastName}');
+            } else if (providerId != null && seenProviderIds.contains(providerId)) {
+              print('⚠️ Doublon ignoré pour prestataire ID: $providerId');
             }
           }
         }
         
-        print('✅ ${_favoriteProviders.length} prestataires favoris chargés');
+        print('✅ ${_favoriteProviders.length} prestataires favoris uniques chargés');
+        print('🔍 IDs des prestataires favoris: ${_favoriteProviders.map((p) => p.id).toList()}');
       } else {
         _favoriteProviders = [];
       }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart'; // AJOUT pour la localisation
 import 'package:teyago/core/models/provider_model.dart';
+import 'package:teyago/ui/screens/reviews_screen.dart';
 import '../../core/models/review.dart';
 import '../../core/models/client_project.dart';
 import '../../providers/category_provider.dart';
@@ -31,6 +32,11 @@ import '../../providers/notification_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/services/improved_location_service.dart';
 import '../../providers/improved_nearby_provider.dart';
+import '../screens/provider/quote_requests_screen.dart';
+import '../screens/provider/my_offers_screen.dart';
+import '../screens/messaging/messages_screen.dart';
+import '../screens/profile_screen.dart';
+
 import 'dart:math' show Random;
 
 class HomeScreen extends StatefulWidget {
@@ -1552,11 +1558,18 @@ class _HomeScreenState extends State<HomeScreen>
               Expanded(
                 child: _buildStatCard(
                   l10n.completedServices,
-                  _providerStats['prestations_completed_this_month']
-                          ?.toString() ??
-                      '0',
+                  _providerStats['prestations_completed_this_month']?.toString() ?? '0',
                   Icons.check_circle,
                   Colors.green,
+                  // ✅ REDIRECTION: Services terminés → Page liste demandes de devis
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuoteRequestsScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1566,6 +1579,15 @@ class _HomeScreenState extends State<HomeScreen>
                   _providerStats['prestations_in_progress']?.toString() ?? '0',
                   Icons.work,
                   Colors.blue,
+                  // ✅ REDIRECTION: En cours → Page des offres
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyOffersScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -1579,6 +1601,10 @@ class _HomeScreenState extends State<HomeScreen>
                   _providerStats['unread_messages']?.toString() ?? '0',
                   Icons.message,
                   Colors.orange,
+                  // ✅ REDIRECTION: Messages non lus → Page des messages
+                  onTap: () {
+                    Navigator.pushNamed(context, '/messages');
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1588,6 +1614,15 @@ class _HomeScreenState extends State<HomeScreen>
                   _providerStats['pending_offers']?.toString() ?? '0',
                   Icons.account_balance_wallet,
                   Colors.green,
+                  // ✅ REDIRECTION: Offres en attente → Page des offres
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyOffersScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -1601,15 +1636,37 @@ class _HomeScreenState extends State<HomeScreen>
                   (_providerStats['avg_rating'] ?? 0.0).toStringAsFixed(1),
                   Icons.star,
                   Colors.amber,
+                  // ✅ REDIRECTION: Note moyenne → Page des avis (profil)
+                  onTap: () {
+                    // Navigator.pushNamed(context, '/profile');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReviewsScreen(),
+                      ),
+                    );
+                  },
+                  
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.totalReviews,
+                  l10n.totalReviews, 
                   _providerStats['total_reviews']?.toString() ?? '0',
                   Icons.rate_review,
                   Colors.purple,
+                  // ✅ REDIRECTION: Total des avis → Page des avis (profil)
+                  onTap: () {
+                    // Navigator.pushNamed(context, '/profile');
+                    // Navigator.pushNamed(context, '/profile');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReviewsScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -1620,8 +1677,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
+    String title, 
+    String value, 
+    IconData icon, 
+    Color color, {
+    VoidCallback? onTap, // ✅ NOUVEAU PARAMÈTRE OPTIONNEL
+  }) {
+    Widget cardContent = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
@@ -1630,7 +1692,20 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 24),
+              // ✅ AJOUT d'une icône de navigation si cliquable
+              if (onTap != null) ...[
+                const Spacer(),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
             value,
@@ -1650,6 +1725,16 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       ),
     );
+
+    // ✅ Envelopper dans GestureDetector seulement si cliquable
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 
   // ================== WIDGETS COMMUNS ==================

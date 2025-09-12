@@ -2377,6 +2377,26 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getProviderStatsById(int providerId) async {
+    try {
+      print('📊 Récupération des statistiques du prestataire $providerId...');
+      
+      final data = await _apiClient.get('providers-public/$providerId/stats/', requireAuth: false);
+      
+      print('✅ Statistiques prestataire récupérées');
+      return data;
+    } catch (e) {
+      print('❌ Erreur dans getProviderStatsById: $e');
+      // Retourner des données par défaut en cas d'erreur
+      return {
+        'total_completed_projects': 0,
+        'avg_rating': 0.0,
+        'total_reviews': 0,
+      };
+    }
+  }
+
+
   Future<Map<String, dynamic>> getProviderStats() async {
     try {
       print('📊 Récupération des statistiques prestataire...');

@@ -1862,8 +1862,9 @@
   "noReviewsGivenSubtitle": "Ainda não deu nenhuma avaliação aos prestadores de serviços",
   "noReviewsReceivedSubtitle": "Ainda não recebeu nenhuma avaliação",
   "reviewsGivenTitle": "Avaliações dadas",
-  "reviewsReceivedTitle": "Avaliações recebidas"
-
+  "reviewsReceivedTitle": "Avaliações recebidas",
+  "company": "Empresa",
+  "completedProjects": "projetos concluídos"
 
 
 }

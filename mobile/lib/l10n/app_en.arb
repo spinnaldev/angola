@@ -1793,7 +1793,9 @@
   "noReviewsGivenSubtitle": "You haven't given any reviews to providers yet",
   "noReviewsReceivedSubtitle": "You haven't received any reviews yet",
   "reviewsGivenTitle": "Reviews given",
-  "reviewsReceivedTitle": "Reviews received"
+  "reviewsReceivedTitle": "Reviews received",
+  "company": "Company", 
+  "completedProjects": "completed projects"
   
 
 }

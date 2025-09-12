@@ -1816,7 +1816,9 @@
   "noReviewsGivenSubtitle": "Vous n'avez encore donné aucun avis sur les prestataires",
   "noReviewsReceivedSubtitle": "Vous n'avez encore reçu aucun avis",
   "reviewsGivenTitle": "Avis donnés",
-  "reviewsReceivedTitle": "Avis reçus"
+  "reviewsReceivedTitle": "Avis reçus",
+  "company": "Entreprise",
+  "completedProjects": "projets terminés"
   
 
   

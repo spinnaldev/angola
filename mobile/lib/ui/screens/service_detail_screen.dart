@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/core/services/api_service.dart';
 import 'package:teyago/providers/quote_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
@@ -48,6 +49,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   bool _isSubmittingReview = false;
   bool _isSubmittingQuote = false;
 
+  Map<String, dynamic>? _providerStats;
+  bool _isLoadingProviderStats = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +63,31 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       _loadData();
     });
   }
+
+  Future<void> _loadProviderStats(int providerId) async {
+    setState(() {
+      _isLoadingProviderStats = true;
+    });
+
+    try {
+      // Utiliser l'API pour récupérer les statistiques du prestataire
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final stats = await apiService.getProviderStatsById(providerId); // Nouvelle méthode API
+      
+      setState(() {
+        _providerStats = stats;
+        _isLoadingProviderStats = false;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement des stats du prestataire: $e');
+      setState(() {
+        _providerStats = null;
+        _isLoadingProviderStats = false;
+      });
+    }
+  }
+
+
   void _clearPreviousData() {
     // Effacer les données du service précédent
     final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
@@ -211,6 +240,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       await Provider.of<ReviewProvider>(context, listen: false)
         .fetchServiceReviews(widget.serviceId);
       
+
+      // ✅ NOUVEAU : Charger les statistiques du prestataire
+      await _loadProviderStats(service.provider_id);
+
       print("Service et avis chargés pour le service ID: ${widget.serviceId}");
       print(service.provider_id);
 
@@ -221,6 +254,81 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         await favoritesProvider.loadAllFavorites();
       }
     }
+  }
+
+
+  String _getCompanyName(provider, AppLocalizations l10n) {
+  // Utiliser businessType s'il existe
+  if (provider.businessType != null && provider.businessType.isNotEmpty) {
+    return provider.businessType;
+  }
+  
+  // Sinon le nom du provider
+  if (provider.compa != null && provider.name.isNotEmpty) {
+    return provider.name;
+  }
+  
+  // Fallback
+  return l10n.company;
+}
+
+
+  Widget _buildProviderStatsRow(provider, service, AppLocalizations l10n) {
+    return Row(
+      children: [
+        // Note et avis du service
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF142FE2),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.star, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                "${service.rating.toStringAsFixed(1)}", 
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          "(${service.reviewCount} ${l10n.reviews})",
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 14,
+          ),
+        ),
+        
+        // ✅ NOUVEAU : Affichage des projets terminés
+        if (_providerStats != null) ...[
+          const SizedBox(width: 16),
+          Icon(Icons.check_circle, color: Colors.green, size: 16),
+          const SizedBox(width: 4),
+          Text(
+            "${_providerStats!['total_completed_projects'] ?? 0} ${l10n.completedProjects}",
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+        ] else if (_isLoadingProviderStats) ...[
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1),
+          ),
+        ],
+      ],
+    );
   }
 
   Map<String, dynamic> _calculateServiceStats(List<Review> reviews) {
@@ -693,47 +801,48 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          provider.businessType,
+                          _getCompanyName(provider, l10n), // ✅ NOUVEAU : Nom de compagnie ou fallback
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[700],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            // Note et avis
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF142FE2),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.star, color: Colors.white, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${service.rating.toStringAsFixed(1)}", // ✅ CORRECT - Note du service
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                "(${service.reviewCount} ${l10n.reviews})", // ✅ CORRECT - Avis du service
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 14,
-                                ),
-                              ),
-                          ],
-                        ),
+                        _buildProviderStatsRow(provider, service, l10n),
+                        // Row(
+                        //   children: [
+                        //     // Note et avis
+                        //       Container(
+                        //         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        //         decoration: BoxDecoration(
+                        //           color: const Color(0xFF142FE2),
+                        //           borderRadius: BorderRadius.circular(16),
+                        //         ),
+                        //         child: Row(
+                        //           children: [
+                        //             const Icon(Icons.star, color: Colors.white, size: 16),
+                        //             const SizedBox(width: 4),
+                        //             Text(
+                        //               "${service.rating.toStringAsFixed(1)}", // ✅ CORRECT - Note du service
+                        //               style: const TextStyle(
+                        //                 color: Colors.white,
+                        //                 fontWeight: FontWeight.bold,
+                        //                 fontSize: 14,
+                        //               ),
+                        //             ),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //       const SizedBox(width: 8),
+                        //       Text(
+                        //         "(${service.reviewCount} ${l10n.reviews})", // ✅ CORRECT - Avis du service
+                        //         style: TextStyle(
+                        //           color: Colors.grey[700],
+                        //           fontSize: 14,
+                        //         ),
+                        //       ),
+                        //   ],
+                        // ),
 
                         // Prix du service si disponible
                         if (service.price > 0 && service.priceType != 'quote')
