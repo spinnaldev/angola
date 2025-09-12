@@ -5,7 +5,6 @@ import '../../providers/reviews_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
 import '../widgets/review_card.dart';
-import 'base_screen.dart';
 
 class ReviewsScreen extends StatefulWidget {
   const ReviewsScreen({Key? key}) : super(key: key);
@@ -16,19 +15,27 @@ class ReviewsScreen extends StatefulWidget {
 
 class _ReviewsScreenState extends State<ReviewsScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController; // Nullable car pas toujours nécessaire
 
   @override
   void initState() {
     super.initState();
     
-    // Ajuster le nombre d'onglets selon le type d'utilisateur
-    final isProvider = ProfileManager.isProviderMode();
-    _tabController = TabController(length: isProvider ? 2 : 1, vsync: this);
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTabs();
       _loadReviews();
     });
+  }
+
+  void _initializeTabs() {
+    // ✅ CORRIGÉ - Créer TabController SEULEMENT pour prestataires
+    final isProvider = ProfileManager.isProviderMode();
+    
+    if (isProvider) {
+      // Prestataires ont 2 onglets : Avis donnés + Avis reçus
+      _tabController = TabController(length: 2, vsync: this);
+    }
+    // Pour les clients : pas de TabController (un seul contenu)
   }
 
   void _loadReviews() {
@@ -40,7 +47,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -49,59 +56,89 @@ class _ReviewsScreenState extends State<ReviewsScreen>
     final l10n = AppLocalizations.of(context)!;
     final isProvider = ProfileManager.isProviderMode();
     
-    return BaseScreen(
-      currentIndex: -1, // Pas dans la nav principale
-      body: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.myReviews),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
-          titleTextStyle: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFF142FE2),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF142FE2),
-            tabs: [
-              Tab(text: l10n.reviewsGiven),
-              if (isProvider) Tab(text: l10n.reviewsReceived),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.myReviews),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
         ),
-        body: Consumer<ReviewsProvider>(
-          builder: (context, reviewsProvider, child) {
+        // ✅ CORRIGÉ - TabBar seulement pour prestataires
+        bottom: isProvider && _tabController != null ? TabBar(
+          controller: _tabController!,
+          labelColor: const Color(0xFF142FE2),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF142FE2),
+          tabs: [
+            Tab(text: l10n.reviewsGiven),
+            Tab(text: l10n.reviewsReceived),
+          ],
+        ) : null,
+      ),
+      body: Consumer<ReviewsProvider>(
+        builder: (context, reviewsProvider, child) {
+          if (reviewsProvider.isLoadingGiven || reviewsProvider.isLoadingReceived) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (reviewsProvider.error.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    reviewsProvider.error,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadReviews,
+                    child: Text(l10n.retry),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // ✅ CORRIGÉ - Affichage selon le rôle avec TabController approprié
+          if (isProvider && _tabController != null) {
+            // Prestataires voient TabBarView avec 2 onglets
             return TabBarView(
-              controller: _tabController,
+              controller: _tabController!,
               children: [
                 _buildReviewsGivenTab(reviewsProvider, l10n),
-                if (isProvider) _buildReviewsReceivedTab(reviewsProvider, l10n),
+                _buildReviewsReceivedTab(reviewsProvider, l10n),
               ],
             );
-          },
-        ),
+          } else {
+            // Clients voient directement les avis donnés (sans TabBarView)
+            return _buildReviewsGivenTab(reviewsProvider, l10n);
+          }
+        },
       ),
     );
   }
 
   Widget _buildReviewsGivenTab(ReviewsProvider provider, AppLocalizations l10n) {
-    if (provider.isLoadingGiven) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (provider.error.isNotEmpty) {
-      return _buildErrorState(provider.error);
-    }
-
     if (provider.reviewsGiven.isEmpty) {
       return _buildEmptyState(
-        icon: Icons.rate_review_outlined,
+        icon: Icons.rate_review,
         title: l10n.noReviewsGiven,
-        subtitle: 'Vous n\'avez encore donné aucun avis',
+        subtitle: l10n.noReviewsGivenSubtitle,
       );
     }
 
@@ -111,10 +148,10 @@ class _ReviewsScreenState extends State<ReviewsScreen>
         children: [
           // Statistiques
           _buildStatsCard(
-            title: 'Avis donnés',
+            title: l10n.reviewsGivenTitle,
             count: provider.reviewsGiven.length,
             averageRating: provider.averageRatingGiven,
-            color: const Color(0xFF142FE2),
+            color: Colors.blue,
           ),
           
           // Liste des avis
@@ -141,19 +178,11 @@ class _ReviewsScreenState extends State<ReviewsScreen>
   }
 
   Widget _buildReviewsReceivedTab(ReviewsProvider provider, AppLocalizations l10n) {
-    if (provider.isLoadingReceived) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (provider.error.isNotEmpty) {
-      return _buildErrorState(provider.error);
-    }
-
     if (provider.reviewsReceived.isEmpty) {
       return _buildEmptyState(
         icon: Icons.star_border,
         title: l10n.noReviewsReceived,
-        subtitle: 'Vous n\'avez encore reçu aucun avis',
+        subtitle: l10n.noReviewsReceivedSubtitle,
       );
     }
 
@@ -163,7 +192,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
         children: [
           // Statistiques
           _buildStatsCard(
-            title: 'Avis reçus',
+            title: l10n.reviewsReceivedTitle,
             count: provider.reviewsReceived.length,
             averageRating: provider.averageRatingReceived,
             color: Colors.green,
@@ -181,7 +210,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
                   child: ReviewCard(
                     review: review,
                     showProvider: false,
-                    showClient: true, // Afficher le client qui a évalué
+                    showClient: true, // Afficher le client qui a donné l'avis
                   ),
                 );
               },
@@ -198,32 +227,28 @@ class _ReviewsScreenState extends State<ReviewsScreen>
     required double averageRating,
     required Color color,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.star,
-              color: color,
-              size: 32,
+              color: Colors.white,
+              size: 24,
             ),
           ),
           const SizedBox(width: 16),
@@ -233,47 +258,53 @@ class _ReviewsScreenState extends State<ReviewsScreen>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      '$count avis',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    if (count > 0) ...[
-                      const SizedBox(width: 16),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            averageRating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+                Text(
+                  '$count ${l10n.reviewsCount}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                l10n.averageRating,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    averageRating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -286,62 +317,36 @@ class _ReviewsScreenState extends State<ReviewsScreen>
     required String subtitle,
   }) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 80,
+              color: Colors.grey[300],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            error,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 16,
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadReviews,
-            child: const Text('Réessayer'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

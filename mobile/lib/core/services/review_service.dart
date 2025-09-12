@@ -1,121 +1,50 @@
-// lib/core/services/review_service.dart - VERSION CORRIGÉE avec ApiClient
+// lib/core/services/review_service.dart - VERSION CORRIGÉE avec bons endpoints
 
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
+import '../api/api_client.dart';
 import '../models/review.dart';
-import 'api_service.dart';
-import '../api/api_client.dart'; // ✅ Import ApiClient
-import 'package:http_parser/http_parser.dart';
 
 class ReviewService {
-  final ApiService _apiService;
-  late final ApiClient _apiClient; // ✅ Référence ApiClient
-  
-  ReviewService(this._apiService) {
-    // ✅ Initialiser ApiClient pour bénéficier des corrections d'encodage
-    _apiClient = ApiClient(baseUrl: _apiService.baseUrl);
-  }
-  
-  // ✅ MÉTHODE CORRIGÉE: createReviewWithTitle (MultipartRequest conservé mais headers corrigés)
-  Future<Review> createReviewWithTitle(
-    Review review,
-    List<File> images
-  ) async {
+  final ApiClient _apiClient;
+
+  ReviewService(this._apiClient);
+
+  // ✅ CORRIGÉ - Créer un avis avec titre
+  Future<void> createReviewWithTitle(Review review, List<dynamic> images) async {
     try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${_apiService.baseUrl}/reviews/'),
-      );
+      print('🚀 Création d\'avis avec titre...');
       
-      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
-      final headers = await _apiClient.getHeaders();
-      request.headers.addAll(headers);
+      final Map<String, dynamic> reviewData = {
+        'provider': review.providerId,
+        'service': review.serviceId,
+        'overall_rating': review.rating,
+        'quality_rating': review.qualityRating ?? review.rating,
+        'punctuality_rating': review.punctualityRating ?? review.rating,
+        'value_rating': review.valueRating ?? review.rating,
+        'comment': review.comment,
+        'review_title': review.reviewTitle, // ✅ AJOUT du titre
+      };
+
+      await _apiClient.post('reviews/', data: reviewData, requireAuth: true);
+      print('✅ Avis créé avec succès');
       
-      request.fields['provider'] = review.providerId.toString();
-      if (review.serviceId != null) {
-        request.fields['service'] = review.serviceId.toString();
-      }
-      
-      request.fields['quality_rating'] = review.rating.toString();
-      request.fields['punctuality_rating'] = review.rating.toString(); 
-      request.fields['value_rating'] = review.rating.toString();
-      request.fields['comment'] = review.comment;
-      
-      // NOUVEAU: Ajouter le titre de l'avis
-      if (review.reviewTitle != null && review.reviewTitle!.isNotEmpty) {
-        request.fields['review_title'] = review.reviewTitle!;
-      }
-      
-      // Ajouter les images
-      for (var i = 0; i < images.length; i++) {
-        var file = images[i];
-        var fileName = file.path.split('/').last;
-        var extension = fileName.split('.').last.toLowerCase();
-        
-        var mimeType = 'image/jpeg';
-        if (extension == 'png') mimeType = 'image/png';
-        if (extension == 'gif') mimeType = 'image/gif';
-        
-        request.files.add(
-          http.MultipartFile(
-            'uploaded_images',
-            file.readAsBytes().asStream(),
-            file.lengthSync(),
-            filename: fileName,
-            contentType: MediaType.parse(mimeType),
-          ),
-        );
-      }
-      
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      
-      print('Review creation response status: ${response.statusCode}');
-      print('Review creation response body: ${response.body}');
-      
-      if (response.statusCode == 201) {
-        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
-        String responseBody;
-        try {
-          responseBody = utf8.decode(response.bodyBytes);
-        } catch (e) {
-          responseBody = response.body;
-        }
-        
-        final data = json.decode(responseBody);
-        return Review.fromJson(data);
-      } else {
-        throw Exception('Failed to create review: ${response.body}');
-      }
     } catch (e) {
-      print('Error in createReviewWithTitle: $e');
-      rethrow;
+      print('❌ Erreur création avis: $e');
+      throw e;
     }
   }
-  
-  // Méthode existante conservée pour compatibilité
-  Future<Review> createReview(
-    Review review,
-    List<File> images
-  ) async {
-    // Appeler la nouvelle méthode
-    return createReviewWithTitle(review, images);
-  }
-  
-  // ✅ MÉTHODE CORRIGÉE: getProviderReviews
+
+  // ✅ CORRIGÉ - Avis d'un prestataire spécifique
   Future<List<Review>> getProviderReviews(int providerId) async {
     try {
-      print('Fetching reviews for provider: $providerId');
+      print('📥 Récupération avis prestataire: $providerId');
       
-      // ✅ Utiliser ApiClient au lieu de http.get
-      final responseData = await _apiClient.get('reviews/?provider=$providerId', requireAuth: false);
-      
-      print('✅ Response data type: ${responseData.runtimeType}');
-      print('✅ Response data: $responseData');
+      // ✅ ENDPOINT CORRIGÉ - Utiliser le bon endpoint
+      final responseData = await _apiClient.get(
+        'reviews/?provider=$providerId', 
+        requireAuth: false
+      );
       
       if (responseData != null) {
-        // ✅ Gérer les données déjà décodées par ApiClient
         List<dynamic> data = [];
         
         if (responseData is Map && responseData.containsKey('results')) {
@@ -136,11 +65,6 @@ class ReviewService {
         
         print('✅ Successfully parsed ${reviews.length} reviews');
         
-        // ✅ Debug encodage des commentaires
-        for (var review in reviews.take(2)) {
-          print('✅ Review comment: ${review.comment} (encodage correct)');
-        }
-        
         return reviews;
       } else {
         print('❌ Null response from API');
@@ -152,14 +76,15 @@ class ReviewService {
     }
   }
   
-  // ✅ MÉTHODE CORRIGÉE: getUserReviews
+  // ✅ CORRIGÉ - Mes avis donnés (utilisateur connecté)
   Future<List<Review>> getUserReviews() async {
     try {
-      // ✅ Utiliser ApiClient au lieu de http.get
-      final responseData = await _apiClient.get('reviews/my-reviews/', requireAuth: true);
+      print('📥 Récupération de mes avis donnés...');
+      
+      // ✅ ENDPOINT CORRIGÉ - Utiliser l'action custom du ViewSet
+      final responseData = await _apiClient.get('reviews/my_reviews/', requireAuth: true);
       
       if (responseData != null) {
-        // ✅ Gérer les données déjà décodées par ApiClient
         List<dynamic> data = [];
         
         if (responseData is Map && responseData.containsKey('results')) {
@@ -184,18 +109,54 @@ class ReviewService {
     }
   }
 
-  // ✅ MÉTHODE CORRIGÉE: getServiceReviews
+  // ✅ NOUVEAU - Avis reçus par un prestataire (utilisateur connecté)
+  Future<List<Review>> getProviderReceivedReviews() async {
+    try {
+      print('📨 Récupération des avis reçus...');
+      
+      // ✅ ENDPOINT CORRIGÉ - Utiliser l'action custom du ViewSet
+      final responseData = await _apiClient.get('reviews/provider_reviews/', requireAuth: true);
+      
+      if (responseData != null) {
+        List<dynamic> data = [];
+        
+        if (responseData is Map && responseData.containsKey('results')) {
+          data = responseData['results'] ?? [];
+        } else if (responseData is List) {
+          data = responseData;
+        } else {
+          return [];
+        }
+
+        final reviews = data.map((item) => Review.fromJson(item)).toList();
+        
+        print('✅ Récupéré ${reviews.length} avis reçus');
+        
+        return reviews;
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('❌ Error in getProviderReceivedReviews: $e');
+      // Si l'utilisateur n'est pas prestataire, retourner liste vide
+      if (e.toString().contains('You are not a provider')) {
+        return [];
+      }
+      rethrow;
+    }
+  }
+
+  // ✅ CORRIGÉ - Avis d'un service spécifique
   Future<List<Review>> getServiceReviews(int serviceId) async {
     try {
       print('Fetching reviews for service: $serviceId');
       
-      // ✅ Utiliser ApiClient au lieu de http.get
+      // ✅ ENDPOINT CORRIGÉ - Filtrer par service
       final responseData = await _apiClient.get('reviews/?service=$serviceId', requireAuth: false);
       
       print('✅ Service reviews response: $responseData');
       
       if (responseData != null) {
-        // ✅ Gérer les données déjà décodées par ApiClient
         List<dynamic> data = [];
         
         if (responseData is Map && responseData.containsKey('results')) {
@@ -216,11 +177,6 @@ class ReviewService {
         
         print('✅ Successfully parsed ${reviews.length} reviews for service');
         
-        // ✅ Debug encodage
-        for (var review in reviews.take(2)) {
-          print('✅ Service review: ${review.comment}');
-        }
-        
         return reviews;
       } else {
         print('❌ Null response for service reviews');
@@ -232,16 +188,17 @@ class ReviewService {
     }
   }
   
-  // ✅ MÉTHODE CORRIGÉE: getTopReviews
+  // ✅ CORRIGÉ - Meilleurs avis
   Future<List<Review>> getTopReviews() async {
     try {
-      // ✅ Utiliser ApiClient au lieu de http.get
+      print('📥 Récupération des meilleurs avis...');
+      
+      // ✅ ENDPOINT CORRIGÉ - Utiliser l'action custom
       final responseData = await _apiClient.get('reviews/top_reviews/', requireAuth: false);
       
       print('✅ Top reviews response received');
       
       if (responseData != null) {
-        // ✅ Gérer les données déjà décodées par ApiClient
         List<dynamic> data = [];
         
         if (responseData is Map && responseData.containsKey('results')) {
@@ -256,11 +213,6 @@ class ReviewService {
         print('✅ Found ${data.length} top reviews');
         
         final reviews = data.map((item) => Review.fromJson(item)).toList();
-        
-        // ✅ Debug encodage des meilleurs avis
-        for (var review in reviews.take(2)) {
-          print('✅ Top review: ${review.comment} (encodage correct)');
-        }
         
         return reviews;
       } else {

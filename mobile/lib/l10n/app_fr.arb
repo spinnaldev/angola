@@ -1812,7 +1812,11 @@
   "valueRating": "Rapport qualité/prix",
   "reviewDate": "Date de l'avis",
   "verifiedReview": "Avis vérifié",
-  "reviewSubmitted": "Avis soumis avec succès"
+  "reviewSubmitted": "Avis soumis avec succès",
+  "noReviewsGivenSubtitle": "Vous n'avez encore donné aucun avis sur les prestataires",
+  "noReviewsReceivedSubtitle": "Vous n'avez encore reçu aucun avis",
+  "reviewsGivenTitle": "Avis donnés",
+  "reviewsReceivedTitle": "Avis reçus"
   
 
   

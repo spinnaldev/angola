@@ -1858,5 +1858,12 @@
   "valueRating": "Custo-benefício",
   "reviewDate": "Data da avaliação",
   "verifiedReview": "Avaliação verificada",
-  "reviewSubmitted": "Avaliação enviada com sucesso"
+  "reviewSubmitted": "Avaliação enviada com sucesso",
+  "noReviewsGivenSubtitle": "Ainda não deu nenhuma avaliação aos prestadores de serviços",
+  "noReviewsReceivedSubtitle": "Ainda não recebeu nenhuma avaliação",
+  "reviewsGivenTitle": "Avaliações dadas",
+  "reviewsReceivedTitle": "Avaliações recebidas"
+
+
+
 }

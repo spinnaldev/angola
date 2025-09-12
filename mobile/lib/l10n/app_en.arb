@@ -1789,7 +1789,11 @@
   "valueRating": "Value for money",
   "reviewDate": "Review date",
   "verifiedReview": "Verified review",
-  "reviewSubmitted": "Review submitted successfully"
+  "reviewSubmitted": "Review submitted successfully",
+  "noReviewsGivenSubtitle": "You haven't given any reviews to providers yet",
+  "noReviewsReceivedSubtitle": "You haven't received any reviews yet",
+  "reviewsGivenTitle": "Reviews given",
+  "reviewsReceivedTitle": "Reviews received"
   
 
 }
