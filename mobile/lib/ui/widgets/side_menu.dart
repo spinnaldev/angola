@@ -355,7 +355,7 @@ class SideMenu extends StatelessWidget {
       children: [
         _buildMenuItem(
           context,
-          icon: Icons.gavel,
+          icon: Icons.favorite_border, // ou Icons.bookmark_border
           text: l10n.myFavorites,
           onTap: () {
             onClose();
@@ -367,10 +367,11 @@ class SideMenu extends StatelessWidget {
             );
           },
         ),
-
+        
+        // ✅ CORRIGÉ - Icône avis appropriée 
         _buildMenuItem(
           context,
-          icon: Icons.gavel,
+          icon: Icons.rate_review, // ou Icons.star_rate
           text: l10n.myReviews,
           onTap: () {
             onClose();
@@ -385,7 +386,7 @@ class SideMenu extends StatelessWidget {
 
         _buildMenuItem(
           context,
-          icon: Icons.gavel,
+          icon: Icons.report_problem, // ou Icons.gavel pour litiges
           text: ProfileManager.isProviderMode()
               ? l10n.myComplaints
               : l10n.myDisputes,
@@ -400,25 +401,8 @@ class SideMenu extends StatelessWidget {
           },
         ),
 
-        // ElevatedButton(
-        //   onPressed: () async {
-        //     final fcmService = FCMService();
-        //     await fcmService.testLocalNotification();
-        //   },
-        //   child: Text('Test Notification Locale'),
-        // ),
         _buildNotificationMenuItem(context, l10n),
-        // _buildMenuItem(
-        //   context,
-        //   icon: Icons.notifications_none,
-        //   text: l10n.notifications,
-        //   onTap: () {
-        //     onClose();
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       SnackBar(content: Text(l10n.notificationsComingSoon)),
-        //     ); 
-        //   },
-        // ),
+        
       ],
     );
   }

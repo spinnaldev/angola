@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/services/profile_manager.dart';
 import '../widgets/project_card.dart';
 import '../widgets/provider_card.dart';
-
-import 'base_screen.dart';
+import 'project_detail_screen.dart';
+import 'provider_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -17,16 +18,29 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTabs();
       _loadFavorites();
     });
+  }
+
+  void _initializeTabs() {
+    // Déterminer le nombre d'onglets selon le rôle de l'utilisateur
+    final isProviderMode = ProfileManager.isProviderMode();
+    
+    if (isProviderMode) {
+      // Prestataires voient seulement les projets favoris
+      _tabController = TabController(length: 1, vsync: this);
+    } else {
+      // Clients voient seulement les prestataires favoris  
+      _tabController = TabController(length: 1, vsync: this);
+    }
   }
 
   void _loadFavorites() {
@@ -38,82 +52,72 @@ class _FavoritesScreenState extends State<FavoritesScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isProviderMode = ProfileManager.isProviderMode();
     
-    return BaseScreen(
-      currentIndex: -1, // Pas dans la nav principale
-      body: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.myFavorites),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
-          titleTextStyle: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFF142FE2),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF142FE2),
-            tabs: [
-              Tab(text: l10n.favoriteProjects),
-              Tab(text: l10n.favoriteProviders),
-            ],
-          ),
+    return Scaffold( // ✅ CORRIGÉ - Utiliser Scaffold au lieu de BaseScreen
+      appBar: AppBar(
+        title: Text(l10n.myFavorites),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
         ),
-        body: Consumer<FavoritesProvider>(
-          builder: (context, favoritesProvider, child) {
-            if (favoritesProvider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        // ✅ CORRIGÉ - Pas de TabBar dans AppBar car un seul onglet maintenant
+      ),
+      body: Consumer<FavoritesProvider>(
+        builder: (context, favoritesProvider, child) {
+          if (favoritesProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            if (favoritesProvider.error.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.grey[400],
+          if (favoritesProvider.error.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    favoritesProvider.error,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      favoritesProvider.error,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadFavorites,
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                _buildProjectsTab(favoritesProvider, l10n),
-                _buildProvidersTab(favoritesProvider, l10n),
-              ],
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadFavorites,
+                    child: Text(l10n.tryAgain),
+                  ),
+                ],
+              ),
             );
-          },
-        ),
+          }
+
+          // ✅ CORRIGÉ - Affichage selon le rôle
+          if (isProviderMode) {
+            // Prestataires voient les projets favoris
+            return _buildProjectsTab(favoritesProvider, l10n);
+          } else {
+            // Clients voient les prestataires favoris
+            return _buildProvidersTab(favoritesProvider, l10n);
+          }
+        },
       ),
     );
   }
@@ -138,13 +142,15 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             padding: const EdgeInsets.only(bottom: 16),
             child: ProjectCard(
               project: project,
-              // ✅ MAINTENANT C'EST UN VoidCallback SIMPLE
+              // ✅ CORRIGÉ - Bonne navigation vers ProjectDetailScreen
               onTap: () {
-                // Navigation vers le détail du projet
-                Navigator.pushNamed(
+                Navigator.push(
                   context,
-                  '/project-detail',
-                  arguments: {'projectId': project.id},
+                  MaterialPageRoute(
+                    builder: (context) => ProjectDetailScreen(
+                      projectId: project.id,
+                    ),
+                  ),
                 );
               },
               onFavoriteToggle: () {
@@ -177,6 +183,17 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             padding: const EdgeInsets.only(bottom: 16),
             child: ProviderCard(
               provider: providerModel,
+              // ✅ AJOUT - Navigation vers le profil du prestataire
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProviderDetailScreen(
+                      providerId: providerModel.id,
+                    ),
+                  ),
+                );
+              },
               onFavoriteToggle: () {
                 provider.toggleProviderFavorite(providerModel.id);
               },
