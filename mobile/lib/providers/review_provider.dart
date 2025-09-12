@@ -1,4 +1,3 @@
-// lib/providers/review_provider.dart - VERSION MISE À JOUR
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -19,11 +18,11 @@ class ReviewProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<Review> get topReviews => _topReviews;
 
-  // NOUVELLE méthode: Créer un avis avec titre
+  // ✅ CORRIGÉ - Créer un avis avec titre
   Future<bool> createReviewWithTitle(
     int providerId,
     int rating,
-    String title,        // NOUVEAU paramètre
+    String title,
     String comment,
     List<File> images,
     int? serviceId,
@@ -39,8 +38,9 @@ class ReviewProvider with ChangeNotifier {
         serviceId: serviceId,
         rating: rating,
         comment: comment,
-        reviewTitle: title,  // NOUVEAU champ
+        reviewTitle: title,
         clientName: '', // Sera remplacé par l'API
+        providerName: 'Prestataire', // ✅ AJOUT - valeur temporaire, sera remplacée par l'API
       );
 
       print('Review object providerId: ${review.providerId}');
@@ -105,6 +105,7 @@ class ReviewProvider with ChangeNotifier {
     notifyListeners();
     print("🧹 ReviewProvider: Avis effacés");
   }
+
   // Récupérer les avis laissés par l'utilisateur
   Future<void> fetchUserReviews() async {
     _isLoading = true;
@@ -149,7 +150,6 @@ class ReviewProvider with ChangeNotifier {
     }
   }
 
-  
   // Nouvelle méthode pour récupérer les avis spécifiques à un service
   Future<void> fetchServiceReviews(int serviceId) async {
     _isLoading = true;
@@ -170,7 +170,7 @@ class ReviewProvider with ChangeNotifier {
     }
   }
 
-  // NOUVELLE méthode: Générer des avis factices avec titre et entreprise
+  // ✅ CORRIGÉ - Générer des avis factices avec toutes les propriétés requises
   List<Review> _generateMockReviews() {
     return [
       Review(
@@ -182,7 +182,11 @@ class ReviewProvider with ChangeNotifier {
         reviewTitle: 'Excellent travail de rénovation',
         clientName: 'Marie Dubois',
         clientCompanyName: 'Restaurant Le Gourmet',
+        providerName: 'RénoExpert SARL', // ✅ AJOUT - requis maintenant
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        qualityRating: 5, // ✅ AJOUT - optionnel mais recommandé pour les mocks
+        punctualityRating: 5,
+        valueRating: 4,
       ),
       Review(
         id: 2,
@@ -193,7 +197,11 @@ class ReviewProvider with ChangeNotifier {
         reviewTitle: 'Dépannage rapide et efficace',
         clientName: 'Jean Martin',
         clientCompanyName: 'Café Central',
+        providerName: 'Plomberie Express', // ✅ AJOUT
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        qualityRating: 5,
+        punctualityRating: 5,
+        valueRating: 5,
       ),
       Review(
         id: 3,
@@ -204,7 +212,11 @@ class ReviewProvider with ChangeNotifier {
         reviewTitle: 'Peinture de qualité professionnelle',
         clientName: 'Sophie Laurent',
         clientCompanyName: null, // Pas d'entreprise
+        providerName: 'Peinture Pro', // ✅ AJOUT
         createdAt: DateTime.now().subtract(const Duration(days: 5)),
+        qualityRating: 5,
+        punctualityRating: 4,
+        valueRating: 4,
       ),
       Review(
         id: 4,
@@ -215,7 +227,11 @@ class ReviewProvider with ChangeNotifier {
         reviewTitle: 'Installation électrique parfaite',
         clientName: 'Ahmed Ben Ali',
         clientCompanyName: 'Boulangerie Ben Ali',
+        providerName: 'Électro Solutions', // ✅ AJOUT
         createdAt: DateTime.now().subtract(const Duration(days: 7)),
+        qualityRating: 5,
+        punctualityRating: 5,
+        valueRating: 4,
       ),
       Review(
         id: 5,
@@ -226,7 +242,11 @@ class ReviewProvider with ChangeNotifier {
         reviewTitle: 'Transformation réussie du jardin',
         clientName: 'Fatima Ndiaye',
         clientCompanyName: 'Salon de beauté Ndiaye',
+        providerName: 'Jardins & Paysages', // ✅ AJOUT
         createdAt: DateTime.now().subtract(const Duration(days: 10)),
+        qualityRating: 4,
+        punctualityRating: 5,
+        valueRating: 5,
       ),
     ];
   }

@@ -398,7 +398,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     client_name = serializers.StringRelatedField(source='client.username', read_only=True)
     client_picture = serializers.ImageField(source='client.profile_picture', read_only=True)
     client_company_name = serializers.SerializerMethodField()
-
+    provider_name = serializers.CharField(source='provider.company_name', read_only=True)
     images = ReviewImageSerializer(many=True, read_only=True)
     uploaded_images = serializers.ListField(
         child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),

@@ -15,8 +15,10 @@ import 'dart:convert';
   import 'package:teyago/core/services/provider_verification_service.dart';
   import 'package:teyago/core/services/websocket_service.dart';
   import 'package:teyago/providers/cm_provider.dart';
+import 'package:teyago/providers/favorites_provider.dart';
   import 'package:teyago/providers/realtime_messaging_provider.dart';
   import 'package:teyago/providers/realtime_notification_provider.dart';
+import 'package:teyago/providers/reviews_provider.dart';
   import 'package:teyago/ui/screens/app_entry_screen.dart';
   import 'package:teyago/ui/screens/home/home_screen.dart';
   import 'core/api/api_client.dart';
@@ -241,6 +243,15 @@ import 'dart:convert';
           ),
           ChangeNotifierProvider(
             create: (_) => MessagingProvider(apiService),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ReviewProvider(reviewService),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ReviewsProvider(reviewService),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => FavoritesProvider(apiService),
           ),
           // Providers temps réel (dépendent des providers de base)
           ChangeNotifierProvider<RealtimeNotificationProvider>(
@@ -474,7 +485,7 @@ import 'dart:convert';
           
           // ✅ WebSocketService maintenant accessible via Provider
           final webSocketService = Provider.of<WebSocketService>(context, listen: false);
-          await webSocketService.connect('ws://votre-domaine.com', userId);
+          await webSocketService.connect('ws://teyago/api', userId);
           
           // ✅ Initialiser MessagingProvider
           final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
@@ -581,7 +592,7 @@ import 'dart:convert';
           try {
             // 1. Connecter WebSocket général
             final webSocketService = WebSocketService.instance;
-            webSocketService.connect('ws:teyago.com/api/', userId);
+            webSocketService.connect('ws:teyago.com/api', userId);
             
             // 2. Initialiser le MessagingProvider avec l'ID utilisateur
             final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);

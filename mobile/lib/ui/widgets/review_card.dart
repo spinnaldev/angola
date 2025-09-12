@@ -1,98 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import '../../core/models/review.dart';
-// import 'rating_stars.dart';
-
-// class ReviewCard extends StatelessWidget {
-//   final Review review;
-
-//   const ReviewCard({
-//     Key? key,
-//     required this.review,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       margin: const EdgeInsets.only(bottom: 16),
-//       padding: const EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(8),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.grey.withOpacity(0.1),
-//             spreadRadius: 1,
-//             blurRadius: 3,
-//             offset: const Offset(0, 1),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           // En-tête avec info utilisateur
-//           Row(
-//             children: [
-//               // Avatar utilisateur
-//               CircleAvatar(
-//                 radius: 20,
-//                 backgroundImage: review.userImageUrl.isNotEmpty
-//                     ? NetworkImage(review.userImageUrl)
-//                     : null,
-//                 child: review.userImageUrl.isEmpty
-//                     ? Text(
-//                         review.userName.substring(0, 1),
-//                         style: const TextStyle(fontSize: 20),
-//                       )
-//                     : null,
-//               ),
-//               const SizedBox(width: 12),
-              
-//               // Nom et date
-//               Expanded(
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text(
-//                       review.userName,
-//                       style: const TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: 16,
-//                       ),
-//                     ),
-//                     Text(
-//                       DateFormat('dd/MM/yyyy').format(review.date),
-//                       style: TextStyle(
-//                         color: Colors.grey[600],
-//                         fontSize: 12,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-              
-//               // Note
-//               RatingStars(rating: review.rating),
-//             ],
-//           ),
-          
-//           const SizedBox(height: 12),
-          
-//           // Commentaire
-//           Text(
-//             review.comment,
-//             style: const TextStyle(
-//               fontSize: 14,
-//               height: 1.5,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/review.dart';
@@ -138,13 +43,16 @@ class ReviewCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
-                    child: Text(
-                      _getInitials(),
-                      style: const TextStyle(
-                        color: Color(0xFF142FE2),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    backgroundImage: _getAvatarImage(),
+                    child: _getAvatarImage() == null
+                        ? Text(
+                            _getInitials(),
+                            style: const TextStyle(
+                              color: Color(0xFF142FE2),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -204,9 +112,9 @@ class ReviewCard extends StatelessWidget {
               const SizedBox(height: 12),
               
               // Titre de l'avis (si présent)
-              if (review.title?.isNotEmpty == true) ...[
+              if (review.reviewTitle?.isNotEmpty == true) ...[
                 Text(
-                  review.title!,
+                  review.reviewTitle!,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -230,12 +138,14 @@ class ReviewCard extends StatelessWidget {
               
               const SizedBox(height: 12),
               
-              // Détails des notes (si disponibles)
-              if (review.qualityRating != null) ...[
+              // Détails des notes (si disponibles) - ✅ CORRIGÉ
+              if (review.qualityRating != null && 
+                  review.punctualityRating != null && 
+                  review.valueRating != null) ...[
                 Row(
                   children: [
                     _buildRatingDetail('Qualité', review.qualityRating!),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 16), // ✅ CORRIGÉ - suppression du "a"
                     _buildRatingDetail('Ponctualité', review.punctualityRating!),
                     const SizedBox(width: 16),
                     _buildRatingDetail('Prix', review.valueRating!),
@@ -248,13 +158,13 @@ class ReviewCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.verified,
                       color: Colors.green,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    Text(
+                    const Text(
                       'Avis vérifié',
                       style: TextStyle(
                         fontSize: 12,
@@ -270,6 +180,16 @@ class ReviewCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // ✅ Méthode pour obtenir l'image d'avatar appropriée
+  ImageProvider? _getAvatarImage() {
+    if (showProvider && review.providerImageUrl?.isNotEmpty == true) {
+      return NetworkImage(review.providerImageUrl!);
+    } else if (showClient && review.clientImageUrl?.isNotEmpty == true) {
+      return NetworkImage(review.clientImageUrl!);
+    }
+    return null;
   }
 
   String _getInitials() {
@@ -291,11 +211,12 @@ class ReviewCard extends StatelessWidget {
   }
 
   Color _getRatingColor() {
-    if (review.rating >= 4.0) return Colors.green;
-    if (review.rating >= 3.0) return Colors.orange;
+    if (review.rating >= 4) return Colors.green;
+    if (review.rating >= 3) return Colors.orange;
     return Colors.red;
   }
 
+  // ✅ Méthode _buildRatingDetail réimplémentée correctement
   Widget _buildRatingDetail(String label, int rating) {
     return Column(
       children: [
@@ -312,7 +233,7 @@ class ReviewCard extends StatelessWidget {
           children: List.generate(5, (index) {
             return Icon(
               index < rating ? Icons.star : Icons.star_border,
-              color: Colors.amber,
+              color: index < rating ? Colors.amber : Colors.grey[300],
               size: 12,
             );
           }),
