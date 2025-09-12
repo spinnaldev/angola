@@ -78,10 +78,32 @@ class FavoritesProvider with ChangeNotifier {
           data = responseData;
         }
         
-        _favoriteProviders = data
-            .where((item) => item['provider'] != null) // Filtrer les prestataires
-            .map((item) => ProviderModel.fromJson(item['provider']))
-            .toList();
+        _favoriteProviders = [];
+        
+        for (var item in data) {
+          if (item is Map<String, dynamic>) {
+            // ✅ CORRIGÉ : Gérer les différentes structures possibles
+            if (item['provider_details'] != null) {
+              // Structure : {provider: 1, provider_details: {...}}
+              try {
+                _favoriteProviders.add(ProviderModel.fromJson(item['provider_details']));
+                print('✅ Prestataire ajouté via provider_details: ${item['provider_details']['id']}');
+              } catch (e) {
+                print('❌ Erreur parsing provider_details: $e');
+              }
+            } else if (item['provider'] is Map<String, dynamic>) {
+              // Structure : {provider: {...}}
+              try {
+                _favoriteProviders.add(ProviderModel.fromJson(item['provider']));
+                print('✅ Prestataire ajouté via provider: ${item['provider']['id']}');
+              } catch (e) {
+                print('❌ Erreur parsing provider: $e');
+              }
+            } else {
+              print('⚠️ Structure non reconnue pour l\'élément: $item');
+            }
+          }
+        }
         
         print('✅ ${_favoriteProviders.length} prestataires favoris chargés');
       } else {
@@ -263,7 +285,11 @@ class FavoritesProvider with ChangeNotifier {
 
   /// ✅ NOUVEAU : Vérifier si un service est en favori
   bool isServiceFavorite(int serviceId) {
-    return _favoriteServices.any((service) => service.id == serviceId);
+    final isFavorite = _favoriteServices.any((service) => service.id == serviceId);
+    print('🔍 DEBUG - isServiceFavorite($serviceId): $isFavorite');
+    print('🔍 DEBUG - _favoriteServices.length: ${_favoriteServices.length}');
+    print('🔍 DEBUG - IDs dans _favoriteServices: ${_favoriteServices.map((s) => s.id).toList()}');
+    return isFavorite;
   }
 
   /// Effacer les erreurs

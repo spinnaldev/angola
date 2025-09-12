@@ -159,10 +159,18 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       return;
     }
 
+    // ✅ DEBUG - Afficher l'état actuel des favoris
+    final currentlyFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+    print('🔍 DEBUG - Service ${widget.serviceId} est favori: $currentlyFavorite');
+    print('🔍 DEBUG - Nombre de services favoris: ${favoritesProvider.favoriteServices.length}');
+    print('🔍 DEBUG - IDs des services favoris: ${favoritesProvider.favoriteServices.map((s) => s.id).toList()}');
+
     // ✅ CORRIGÉ : Passer le providerId au toggleServiceFavorite
     favoritesProvider.toggleServiceFavorite(widget.serviceId, providerId: widget.providerId).then((success) {
       if (success) {
         final isNowFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+        print('🔍 DEBUG - Après toggle, service ${widget.serviceId} est favori: $isNowFavorite');
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isNowFavorite ? l10n.addedToFavorites : l10n.removedFromFavorites),
@@ -575,12 +583,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        // ✅ AJOUT ICÔNE FAVORIS EN HAUT À DROITE
+        // ✅ AJOUT ICÔNE FAVORIS EN HAUT À DROITE (VERSION CORRIGÉE)
         actions: [
           if (isClient && authProvider.isAuthenticated)
             Consumer<FavoritesProvider>(
               builder: (context, favoritesProvider, child) {
-                final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+                // ✅ CORRIGÉ : Vérifier si le PRESTATAIRE est en favori (pas le service)
+                final isFavorite = favoritesProvider.isProviderFavorite(widget.providerId);
                 
                 return IconButton(
                   onPressed: _toggleFavorite,
@@ -588,7 +597,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.red : Colors.grey[600],
                   ),
-                  tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                  tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
                 );
               },
             ),
