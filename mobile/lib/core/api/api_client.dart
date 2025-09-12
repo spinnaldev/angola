@@ -27,6 +27,19 @@ class ApiClient {
 
   //   return headers;
   // }
+  Future<dynamic> patch(String endpoint,
+    {Map<String, dynamic>? data, bool requireAuth = true}) async {
+    final headers = await getHeaders(requireAuth: requireAuth);
+
+    final String body = data != null ? json.encode(data) : '';
+    final response = await http.patch(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: headers,
+      body: utf8.encode(body),
+    );
+
+    return _handleResponse(response);
+  }
 
   Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {
     Map<String, String> headers = {

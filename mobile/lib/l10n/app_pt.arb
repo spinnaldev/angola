@@ -1864,7 +1864,10 @@
   "reviewsGivenTitle": "Avaliações dadas",
   "reviewsReceivedTitle": "Avaliações recebidas",
   "company": "Empresa",
-  "completedProjects": "projetos concluídos"
+  "completedProjects": "projetos concluídos",
+  "commentAddedSuccessfully": "Comentário adicionado com sucesso",
+  "errorAddingComment": "Erro ao adicionar comentário", 
+  "closeImage": "Fechar"
 
 
 }

@@ -1795,7 +1795,10 @@
   "reviewsGivenTitle": "Reviews given",
   "reviewsReceivedTitle": "Reviews received",
   "company": "Company", 
-  "completedProjects": "completed projects"
+  "completedProjects": "completed projects",
+  "commentAddedSuccessfully": "Comment added successfully",
+  "errorAddingComment": "Error adding comment",
+  "closeImage": "Close"
   
 
 }

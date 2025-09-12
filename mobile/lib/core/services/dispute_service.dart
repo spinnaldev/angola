@@ -85,7 +85,53 @@ class DisputeService {
       rethrow;
     }
   }
-  
+  Future<DisputeEvidence> addComment(int disputeId, String commentText) async {
+    try {
+      print('💬 Ajout de commentaire au litige $disputeId...');
+      print('✅ Commentaire: $commentText');
+      
+      // ✅ MODIFICATION : Utiliser le même endpoint que add_evidence mais sans fichier
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${_apiService.baseUrl}/disputes/$disputeId/add_evidence/'),
+      );
+      
+      final headers = await _apiClient.getHeaders();
+      request.headers.addAll(headers);
+      
+      // ✅ NOUVEAU : Ajouter seulement la description, pas de fichier
+      request.fields['description'] = commentText;
+      
+      // ✅ IMPORTANT : Ne pas ajouter de fichier, l'endpoint l'accepte maintenant
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      print('📡 Statut réponse ajout commentaire: ${response.statusCode}');
+      
+      if (response.statusCode == 201) {
+        String responseBody;
+        try {
+          responseBody = utf8.decode(response.bodyBytes);
+        } catch (e) {
+          responseBody = response.body;
+        }
+        
+        final data = json.decode(responseBody);
+        
+        if (data['description'] != null) {
+          print('✅ Commentaire ajouté: ${data['description']}');
+        }
+        
+        return DisputeEvidence.fromJson(data);
+      } else {
+        throw Exception('Failed to add comment: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error in addComment: $e');
+      rethrow;
+    }
+  }
   // ✅ MÉTHODE CORRIGÉE: addDisputeEvidence (MultipartRequest conservé mais headers corrigés)
   Future<DisputeEvidence> addDisputeEvidence(
     int disputeId, 
@@ -94,22 +140,18 @@ class DisputeService {
   ) async {
     try {
       print('📎 Ajout de preuve au litige $disputeId...');
-      print('✅ Description de la preuve: $description (encodage correct)');
+      print('✅ Description de la preuve: $description');
       
-      // Utiliser multipart request pour pouvoir envoyer des fichiers
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('${_apiService.baseUrl}/disputes/$disputeId/add_evidence/'),
       );
       
-      // ✅ Utiliser ApiClient pour les headers (cohérence avec encodage)
       final headers = await _apiClient.getHeaders();
       request.headers.addAll(headers);
       
-      // Ajouter les champs du formulaire
       request.fields['description'] = description;
       
-      // Ajouter le fichier
       final fileName = file.path.split('/').last;
       final fileExtension = fileName.split('.').last.toLowerCase();
       
@@ -128,14 +170,12 @@ class DisputeService {
         ),
       );
       
-      // Envoyer la requête
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       
       print('📡 Statut réponse ajout preuve: ${response.statusCode}');
       
       if (response.statusCode == 201) {
-        // ✅ Traitement UTF-8 pour la réponse MultipartRequest
         String responseBody;
         try {
           responseBody = utf8.decode(response.bodyBytes);
@@ -145,9 +185,8 @@ class DisputeService {
         
         final data = json.decode(responseBody);
         
-        // ✅ Debug encodage de la preuve créée
         if (data['description'] != null) {
-          print('✅ Preuve ajoutée: ${data['description']} (encodage correct)');
+          print('✅ Preuve ajoutée: ${data['description']}');
         }
         
         return DisputeEvidence.fromJson(data);
@@ -374,5 +413,41 @@ class DisputeService {
       default:
         return 'application';
     }
+  }
+}
+
+class DisputeComment {
+  final int? id;
+  final int disputeId;
+  final String comment;
+  final String userName;
+  final DateTime createdAt;
+
+  DisputeComment({
+    this.id,
+    required this.disputeId,
+    required this.comment,
+    required this.userName,
+    required this.createdAt,
+  });
+
+  factory DisputeComment.fromJson(Map<String, dynamic> json) {
+    return DisputeComment(
+      id: json['id'],
+      disputeId: json['dispute_id'] ?? json['dispute'],
+      comment: json['comment'] ?? '',
+      userName: json['user_name'] ?? json['user']?['name'] ?? 'Utilisateur',
+      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'dispute_id': disputeId,
+      'comment': comment,
+      'user_name': userName,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 }

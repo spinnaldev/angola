@@ -3063,34 +3063,35 @@ class ApiService {
 
   Future<bool> closeProject(int projectId) async {
     try {
-      print('🔒 Clôture du projet $projectId...');
+      print('Clôture du projet $projectId...');
 
-      final data = await _apiClient.put('projects/$projectId/close_project/',
+      // CHANGEMENT: PUT -> PATCH
+      final data = await _apiClient.patch('projects/$projectId/close_project/',
           requireAuth: true);
 
-      print('✅ Projet clôturé avec succès');
+      print('Projet clôturé avec succès');
       print('Notifications envoyées: ${data['notifications_sent']}');
 
       return true;
     } catch (e) {
-      print('❌ Erreur lors de la clôture du projet: $e');
+      print('Erreur lors de la clôture du projet: $e');
       throw e;
     }
   }
 
   Future<ClientProject> updateProjectStatus(
-      int projectId, String newStatus) async {
+    int projectId, String newStatus) async {
     try {
-      print(
-          '📝 Mise à jour du statut du projet $projectId vers "$newStatus"...');
+      print('Mise à jour du statut du projet $projectId vers "$newStatus"...');
 
-      final data = await _apiClient.put('projects/$projectId/update_status/',
+      // CHANGEMENT: PUT -> PATCH
+      final data = await _apiClient.patch('projects/$projectId/update_status/',
           data: {'status': newStatus}, requireAuth: true);
 
-      print('✅ Statut mis à jour avec succès');
-      return ClientProject.fromJson(data['project']);
+      print('Statut du projet mis à jour avec succès');
+      return ClientProject.fromJson(data);
     } catch (e) {
-      print('❌ Erreur lors de la mise à jour du statut: $e');
+      print('Erreur lors de la mise à jour du statut: $e');
       throw e;
     }
   }

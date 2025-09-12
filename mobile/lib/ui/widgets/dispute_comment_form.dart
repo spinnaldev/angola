@@ -1,6 +1,7 @@
-// lib/ui/widgets/dispute_comment_form.dart
+// lib/ui/widgets/dispute_comment_form.dart - VERSION CORRIGÉE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT des traductions
 import '../../providers/dispute_provider.dart';
 import '../screens/disputes/add_evidence_screen.dart';
 
@@ -30,6 +31,8 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // ✅ TRADUCTIONS
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -47,9 +50,9 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ajouter un commentaire',
-            style: TextStyle(
+          Text(
+            l10n.addComment, // ✅ TRADUIT
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -58,7 +61,7 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
           TextField(
             controller: _commentController,
             decoration: InputDecoration(
-              hintText: 'Écrivez votre commentaire...',
+              hintText: l10n.writeYourComment, // ✅ TRADUIT
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -85,7 +88,7 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
                   ).then((_) => widget.onCommentAdded());
                 },
                 icon: const Icon(Icons.attach_file),
-                label: const Text('Ajouter une preuve'),
+                label: Text(l10n.addEvidence), // ✅ TRADUIT
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Theme.of(context).primaryColor,
                 ),
@@ -106,7 +109,7 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Envoyer'),
+                    : Text(l10n.send), // ✅ TRADUIT
               ),
             ],
           ),
@@ -115,33 +118,50 @@ class _DisputeCommentFormState extends State<DisputeCommentForm> {
     );
   }
 
+  // ✅ CORRECTION MAJEURE : Méthode réelle d'ajout de commentaire
   Future<void> _submitComment() async {
-    if (_commentController.text.isEmpty) return;
+    if (_commentController.text.trim().isEmpty) return;
+
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      // Cette fonctionnalité nécessiterait une API pour ajouter des commentaires
-      // Pour l'instant, on simule juste le comportement
-      await Future.delayed(const Duration(milliseconds: 500));
+      // ✅ Appel de la vraie API via le provider
+      final success = await Provider.of<DisputeProvider>(
+        context, 
+        listen: false
+      ).addComment(
+        widget.disputeId,
+        _commentController.text.trim(),
+      );
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Commentaire ajouté'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _commentController.clear();
-        widget.onCommentAdded();
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.commentAddedSuccessfully ?? 'Commentaire ajouté avec succès'), // ✅ TRADUIT avec fallback
+              backgroundColor: Colors.green,
+            ),
+          );
+          _commentController.clear();
+          widget.onCommentAdded(); // Recharger les données
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.errorAddingComment ?? 'Erreur lors de l\'ajout du commentaire'), // ✅ TRADUIT avec fallback
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.errorTitle ?? 'Erreur'}: ${e.toString()}'), // ✅ TRADUIT avec fallback
             backgroundColor: Colors.red,
           ),
         );

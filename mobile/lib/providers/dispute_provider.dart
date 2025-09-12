@@ -137,6 +137,37 @@ class DisputeProvider with ChangeNotifier {
     }
   }
   
+  // ✅ NOUVELLE MÉTHODE : Ajouter un commentaire
+  Future<bool> addComment(int disputeId, String commentText) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    
+    try {
+      // ✅ NOUVEAU : Utiliser la méthode addComment du service
+      final commentEvidence = await _disputeService.addComment(disputeId, commentText);
+      
+      // Mettre à jour le litige actuel si c'est celui auquel on ajoute le commentaire
+      if (_currentDispute != null && _currentDispute!.id == disputeId) {
+        _currentDispute!.evidence.add(commentEvidence);
+      }
+      
+      // Mettre à jour le litige dans la liste complète
+      final index = _disputes.indexWhere((d) => d.id == disputeId);
+      if (index != -1) {
+        _disputes[index].evidence.add(commentEvidence);
+      }
+      
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Mettre à jour le statut d'un litige (principalement pour les administrateurs)
   Future<bool> updateDisputeStatus(
     int disputeId,
