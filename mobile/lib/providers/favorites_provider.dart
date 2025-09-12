@@ -1,7 +1,8 @@
-// mobile/lib/providers/favorites_provider.dart
+// mobile/lib/providers/favorites_provider.dart - ÉTENDU AVEC SERVICES
 import 'package:flutter/material.dart';
 import '../core/models/client_project.dart';
 import '../core/models/provider_model.dart';
+import '../core/models/service.dart'; // ✅ AJOUT
 import '../core/services/api_service.dart';
 import '../core/api/api_client.dart';
 
@@ -11,20 +12,22 @@ class FavoritesProvider with ChangeNotifier {
 
   List<ClientProject> _favoriteProjects = [];
   List<ProviderModel> _favoriteProviders = [];
+  List<Service> _favoriteServices = []; // ✅ NOUVEAU
   bool _isLoading = false;
   String _error = '';
 
   FavoritesProvider(this._apiService) {
-    // ✅ Initialiser ApiClient comme dans vos autres providers
+    // Initialiser ApiClient comme dans vos autres providers
     _apiClient = ApiClient(baseUrl: _apiService.baseUrl);
   }
 
   // Getters
   List<ClientProject> get favoriteProjects => _favoriteProjects;
   List<ProviderModel> get favoriteProviders => _favoriteProviders;
+  List<Service> get favoriteServices => _favoriteServices; // ✅ NOUVEAU
   bool get isLoading => _isLoading;
   String get error => _error;
-  int get totalFavorites => _favoriteProjects.length + _favoriteProviders.length;
+  int get totalFavorites => _favoriteProjects.length + _favoriteProviders.length + _favoriteServices.length; // ✅ MODIFIÉ
 
   /// Charger tous les favoris
   Future<void> loadAllFavorites() async {
@@ -36,6 +39,7 @@ class FavoritesProvider with ChangeNotifier {
       await Future.wait([
         loadFavoriteProjects(),
         loadFavoriteProviders(),
+        loadFavoriteServices(), // ✅ NOUVEAU
       ]);
     } catch (e) {
       _error = 'Erreur lors du chargement des favoris: $e';
@@ -50,7 +54,6 @@ class FavoritesProvider with ChangeNotifier {
   Future<void> loadFavoriteProjects() async {
     try {
       print('📋 Chargement des projets favoris...');
-      // ✅ Utiliser la méthode existante de votre ApiService
       _favoriteProjects = await _apiService.getFavoriteProjects();
       print('✅ ${_favoriteProjects.length} projets favoris chargés');
     } catch (e) {
@@ -64,7 +67,6 @@ class FavoritesProvider with ChangeNotifier {
     try {
       print('👥 Chargement des prestataires favoris...');
       
-      // ✅ Utiliser ApiClient comme dans vos autres services
       final responseData = await _apiClient.get('favorites/', requireAuth: true);
       
       if (responseData != null) {
@@ -77,6 +79,7 @@ class FavoritesProvider with ChangeNotifier {
         }
         
         _favoriteProviders = data
+            .where((item) => item['provider'] != null) // Filtrer les prestataires
             .map((item) => ProviderModel.fromJson(item['provider']))
             .toList();
         
@@ -90,10 +93,40 @@ class FavoritesProvider with ChangeNotifier {
     }
   }
 
+  /// ✅ NOUVEAU : Charger les services favoris
+  Future<void> loadFavoriteServices() async {
+    try {
+      print('🔧 Chargement des services favoris...');
+      
+      final responseData = await _apiClient.get('favorites/', requireAuth: true);
+      
+      if (responseData != null) {
+        List<dynamic> data = [];
+        
+        if (responseData is Map<String, dynamic>) {
+          data = responseData['results'] ?? [];
+        } else if (responseData is List) {
+          data = responseData;
+        }
+        
+        _favoriteServices = data
+            .where((item) => item['service'] != null) // Filtrer les services
+            .map((item) => Service.fromJson(item['service']))
+            .toList();
+        
+        print('✅ ${_favoriteServices.length} services favoris chargés');
+      } else {
+        _favoriteServices = [];
+      }
+    } catch (e) {
+      print('❌ Erreur loadFavoriteServices: $e');
+      _favoriteServices = [];
+    }
+  }
+
   /// Basculer favori projet
   Future<bool> toggleProjectFavorite(int projectId) async {
     try {
-      // ✅ Utiliser la méthode existante de votre ApiService
       final result = await _apiService.toggleProjectFavorite(projectId);
       await loadFavoriteProjects(); // Recharger la liste
       return result;
@@ -112,12 +145,7 @@ class FavoritesProvider with ChangeNotifier {
           .any((provider) => provider.id == providerId);
 
       if (isCurrentlyFavorite) {
-        // ✅ Retirer des favoris - trouver l'ID du favori
-        final favoriteProvider = _favoriteProviders
-            .firstWhere((provider) => provider.id == providerId);
-        
-        // On a besoin de l'ID du favori (pas du provider)
-        // Chercher dans la liste complète pour avoir l'ID du favori
+        // Retirer des favoris - trouver l'ID du favori
         final responseData = await _apiClient.get('favorites/', requireAuth: true);
         
         if (responseData != null) {
@@ -130,7 +158,7 @@ class FavoritesProvider with ChangeNotifier {
           
           // Trouver l'ID du favori correspondant
           final favoriteItem = data.firstWhere(
-            (item) => item['provider']['id'] == providerId,
+            (item) => item['provider'] != null && item['provider']['id'] == providerId,
             orElse: () => null,
           );
           
@@ -141,7 +169,7 @@ class FavoritesProvider with ChangeNotifier {
           }
         }
       } else {
-        // ✅ Ajouter aux favoris
+        // Ajouter aux favoris
         await _apiClient.post(
           'favorites/', 
           data: {'provider_id': providerId}, 
@@ -160,6 +188,69 @@ class FavoritesProvider with ChangeNotifier {
     }
   }
 
+  /// ✅ NOUVEAU : Basculer favori service
+  Future<bool> toggleServiceFavorite(int serviceId, {int? providerId}) async {
+    try {
+      // Vérifier si déjà en favori
+      final isCurrentlyFavorite = _favoriteServices
+          .any((service) => service.id == serviceId);
+
+      if (isCurrentlyFavorite) {
+        // Retirer des favoris - trouver l'ID du favori
+        final responseData = await _apiClient.get('favorites/', requireAuth: true);
+        
+        if (responseData != null) {
+          List<dynamic> data = [];
+          if (responseData is Map<String, dynamic>) {
+            data = responseData['results'] ?? [];
+          } else if (responseData is List) {
+            data = responseData;
+          }
+          
+          // Trouver l'ID du favori correspondant
+          final favoriteItem = data.firstWhere(
+            (item) => item['service'] != null && item['service']['id'] == serviceId,
+            orElse: () => null,
+          );
+          
+          if (favoriteItem != null) {
+            final favoriteId = favoriteItem['id'];
+            await _apiClient.delete('favorites/$favoriteId/', requireAuth: true);
+            print('✅ Service retiré des favoris');
+          }
+        }
+      } else {
+        // ✅ CORRIGÉ : Ajouter aux favoris avec provider_id
+        Map<String, dynamic> requestData = {};
+        
+        if (providerId != null) {
+          // Si on a le provider_id, l'utiliser
+          requestData['provider'] = providerId;
+        }
+        
+        // Ajouter le service_id si nécessaire (selon votre API)
+        requestData['service_id'] = serviceId;
+        
+        print('🔧 Données envoyées pour favori service: $requestData');
+        
+        await _apiClient.post(
+          'favorites/', 
+          data: requestData, 
+          requireAuth: true
+        );
+        print('✅ Service ajouté aux favoris');
+      }
+
+      await loadFavoriteServices(); // Recharger la liste
+      return !isCurrentlyFavorite;
+    } catch (e) {
+      _error = 'Erreur lors de la modification du favori: $e';
+      notifyListeners();
+      print('❌ Erreur toggleServiceFavorite: $e');
+      return false;
+    }
+  }
+
   /// Vérifier si un projet est en favori
   bool isProjectFavorite(int projectId) {
     return _favoriteProjects.any((project) => project.id == projectId);
@@ -168,6 +259,11 @@ class FavoritesProvider with ChangeNotifier {
   /// Vérifier si un prestataire est en favori
   bool isProviderFavorite(int providerId) {
     return _favoriteProviders.any((provider) => provider.id == providerId);
+  }
+
+  /// ✅ NOUVEAU : Vérifier si un service est en favori
+  bool isServiceFavorite(int serviceId) {
+    return _favoriteServices.any((service) => service.id == serviceId);
   }
 
   /// Effacer les erreurs

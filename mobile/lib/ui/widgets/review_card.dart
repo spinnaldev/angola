@@ -76,12 +76,9 @@ class ReviewCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Note globale
+                  // ✅ SEULEMENT LA NOTE GLOBALE (pas de qualité/ponctualité/prix)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _getRatingColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -96,7 +93,7 @@ class ReviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          review.rating.toStringAsFixed(1),
+                          review.rating.toString(),
                           style: TextStyle(
                             color: _getRatingColor(),
                             fontWeight: FontWeight.w600,
@@ -111,7 +108,7 @@ class ReviewCard extends StatelessWidget {
               
               const SizedBox(height: 12),
               
-              // Titre de l'avis (si présent)
+              // Titre de l'avis (si disponible)
               if (review.reviewTitle?.isNotEmpty == true) ...[
                 Text(
                   review.reviewTitle!,
@@ -127,33 +124,51 @@ class ReviewCard extends StatelessWidget {
               // Commentaire
               Text(
                 review.comment,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Colors.black87,
                   height: 1.4,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
               
-              const SizedBox(height: 12),
-              
-              // Détails des notes (si disponibles) - ✅ CORRIGÉ
-              if (review.qualityRating != null && 
-                  review.punctualityRating != null && 
-                  review.valueRating != null) ...[
-                Row(
-                  children: [
-                    _buildRatingDetail('Qualité', review.qualityRating!),
-                    const SizedBox(width: 16), // ✅ CORRIGÉ - suppression du "a"
-                    _buildRatingDetail('Ponctualité', review.punctualityRating!),
-                    const SizedBox(width: 16),
-                    _buildRatingDetail('Prix', review.valueRating!),
-                  ],
+              // Images (si disponibles)
+              if (review.imageUrls.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 80,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: review.imageUrls.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            review.imageUrls[index],
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.grey,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
               
-              // Badge vérifié
+              // Badge vérifié (si applicable)
               if (review.isVerified) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -214,31 +229,5 @@ class ReviewCard extends StatelessWidget {
     if (review.rating >= 4) return Colors.green;
     if (review.rating >= 3) return Colors.orange;
     return Colors.red;
-  }
-
-  // ✅ Méthode _buildRatingDetail réimplémentée correctement
-  Widget _buildRatingDetail(String label, int rating) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            return Icon(
-              index < rating ? Icons.star : Icons.star_border,
-              color: index < rating ? Colors.amber : Colors.grey[300],
-              size: 12,
-            );
-          }),
-        ),
-      ],
-    );
   }
 }

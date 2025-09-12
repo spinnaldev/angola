@@ -32,7 +32,9 @@ class _FavoritesScreenState extends State<FavoritesScreen>
 
   void _initializeTabs() {
     // Déterminer le nombre d'onglets selon le rôle de l'utilisateur
-    final isProviderMode = ProfileManager.isProviderMode();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    final isProviderMode = user?.role == 'provider'; // ✅ Utiliser le rôle réel
     
     if (isProviderMode) {
       // Prestataires voient seulement les projets favoris
@@ -59,9 +61,11 @@ class _FavoritesScreenState extends State<FavoritesScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isProviderMode = ProfileManager.isProviderMode();
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.currentUser;
+    final isProviderMode = user?.role == 'provider'; // ✅ Utiliser le rôle réel
     
-    return Scaffold( // ✅ CORRIGÉ - Utiliser Scaffold au lieu de BaseScreen
+    return Scaffold(
       appBar: AppBar(
         title: Text(l10n.myFavorites),
         backgroundColor: Colors.white,
@@ -72,7 +76,6 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        // ✅ CORRIGÉ - Pas de TabBar dans AppBar car un seul onglet maintenant
       ),
       body: Consumer<FavoritesProvider>(
         builder: (context, favoritesProvider, child) {
@@ -102,14 +105,14 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadFavorites,
-                    child: Text(l10n.tryAgain),
+                    child: Text(l10n.retry), // ✅ TRADUCTION
                   ),
                 ],
               ),
             );
           }
 
-          // ✅ CORRIGÉ - Affichage selon le rôle
+          // ✅ Affichage selon le rôle réel de l'utilisateur
           if (isProviderMode) {
             // Prestataires voient les projets favoris
             return _buildProjectsTab(favoritesProvider, l10n);
@@ -127,7 +130,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       return _buildEmptyState(
         icon: Icons.bookmark_border,
         title: l10n.noFavoriteProjects,
-        subtitle: 'Parcourez les projets et ajoutez-les à vos favoris',
+        subtitle: 'Parcourez les projets disponibles et marquez ceux qui vous intéressent comme favoris pour les retrouver facilement', // ✅ MESSAGE PLUS DESCRIPTIF
       );
     }
 
@@ -142,7 +145,6 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             padding: const EdgeInsets.only(bottom: 16),
             child: ProjectCard(
               project: project,
-              // ✅ CORRIGÉ - Bonne navigation vers ProjectDetailScreen
               onTap: () {
                 Navigator.push(
                   context,
@@ -168,7 +170,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       return _buildEmptyState(
         icon: Icons.people_outline,
         title: l10n.noFavoriteProviders,
-        subtitle: 'Explorez les prestataires et ajoutez-les à vos favoris',
+        subtitle: 'Explorez les prestataires de services et ajoutez vos favoris pour les retrouver rapidement', // ✅ MESSAGE PLUS DESCRIPTIF
       );
     }
 
@@ -183,7 +185,6 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             padding: const EdgeInsets.only(bottom: 16),
             child: ProviderCard(
               provider: providerModel,
-              // ✅ AJOUT - Navigation vers le profil du prestataire
               onTap: () {
                 Navigator.push(
                   context,
@@ -228,13 +229,16 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

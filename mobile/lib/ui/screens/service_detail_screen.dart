@@ -7,6 +7,7 @@ import 'package:teyago/providers/quote_provider.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
 import '../../providers/review_provider.dart';
+import '../../providers/favorites_provider.dart'; // ✅ AJOUT POUR FAVORIS
 import '../widgets/rating_stars.dart';
 import '../widgets/review_card.dart';
 import 'disputes/create_dispute_screen.dart';
@@ -97,7 +98,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     }
   }
 
-
   void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
     final l10n = AppLocalizations.of(context)!; // ✅ AJOUTÉ
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -136,6 +136,50 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     }
   }
 
+  // ✅ NOUVELLE MÉTHODE POUR FAVORIS
+  void _toggleFavorite() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
+
+    if (!authProvider.isAuthenticated) {
+      _checkAuthAndExecute(context, () {});
+      return;
+    }
+
+    final user = authProvider.currentUser;
+    if (user?.role == 'provider') {
+      // Les prestataires ne peuvent pas ajouter des services aux favoris
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Seuls les clients peuvent ajouter des services aux favoris'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // ✅ CORRIGÉ : Passer le providerId au toggleServiceFavorite
+    favoritesProvider.toggleServiceFavorite(widget.serviceId, providerId: widget.providerId).then((success) {
+      if (success) {
+        final isNowFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isNowFavorite ? l10n.addedToFavorites : l10n.removedFromFavorites),
+            backgroundColor: isNowFavorite ? Colors.green : Colors.grey,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la modification du favori'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
   Future<void> _loadData() async {
     print("Load data");
     print(widget.serviceId);
@@ -161,6 +205,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       
       print("Service et avis chargés pour le service ID: ${widget.serviceId}");
       print(service.provider_id);
+
+      // ✅ NOUVEAU : Charger les favoris
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+        await favoritesProvider.loadAllFavorites();
+      }
     }
   }
 
@@ -271,26 +322,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       VerificationRequiredDialog.show(context, result);
     }
   }
-
-
-  // void _onRequestQuotePressed() {
-  //   _checkAuthAndExecute(context, () {
-  //     _openQuoteRequestForm();
-  //   });
-  // }
-
-  // void _openDisputePressed(provider , service){
-  //   _checkAuthAndExecute(context, (){
-  //     _openDisputeScreen(provider , service);
-  //   });
-  // }
-  // // Utilisation pour le bouton "Signaler un problème"
-  // void _onReviewFormPressed() {
-  //   print("Non connecté");
-  //   _checkAuthAndExecute(context, () {
-  //     _openReviewForm(); // Cette méthode sera à implémenter
-  //   });
-  // }
 
   Future<void> _submitQuoteRequest(int providerId, int serviceId) async {
     final l10n = AppLocalizations.of(context)!;
@@ -522,6 +553,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   Widget build(BuildContext context) {
     
     final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.currentUser;
+    final isClient = user?.role != 'provider'; // Seuls les clients voient l'icône favoris
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -541,6 +575,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        // ✅ AJOUT ICÔNE FAVORIS EN HAUT À DROITE
+        actions: [
+          if (isClient && authProvider.isAuthenticated)
+            Consumer<FavoritesProvider>(
+              builder: (context, favoritesProvider, child) {
+                final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+                
+                return IconButton(
+                  onPressed: _toggleFavorite,
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.grey[600],
+                  ),
+                  tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                );
+              },
+            ),
+        ],
       ),
       body: Consumer2<ServiceProvider, ProviderDetailProvider>(
         builder: (context, serviceProvider, providerDetailProvider, _) {

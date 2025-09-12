@@ -405,7 +405,7 @@ class _AppInitializerState extends State<AppInitializer>
     try {
       // 1. Vérifier l'authentification
       final authProvider = context.read<AuthProvider>();
-      await authProvider.checkAuthStatus();
+      await authProvider.getCurrentUser(); // ✅ Méthode qui existe
       print('✅ État d\'authentification vérifié');
       
       // 2. Si utilisateur connecté, initialiser les services
@@ -428,15 +428,15 @@ class _AppInitializerState extends State<AppInitializer>
     print('🚀 Initialisation services pour user $userId');
     
     try {
-      // 1. Initialiser FCM
+      // 1. Initialiser FCM (inclut automatiquement les préférences)
       final fcmProvider = context.read<FCMProvider>();
       await fcmProvider.initializeFCM();
-      print('✅ FCM Provider initialisé');
+      print('✅ FCM Provider initialisé avec préférences');
       
-      // 2. Charger les préférences de notification
+      // 2. Charger les notifications utilisateur
       final notificationProvider = context.read<NotificationProvider>();
-      await notificationProvider.loadNotificationPreferences();
-      print('✅ Préférences de notification chargées');
+      await notificationProvider.loadUnreadCount(); // ✅ Méthode qui existe
+      print('✅ Notifications utilisateur chargées');
       
       // 3. Connecter WebSocket
       await _connectWebSocket();
