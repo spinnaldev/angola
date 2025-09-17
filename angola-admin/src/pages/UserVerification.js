@@ -368,16 +368,12 @@ const UserVerification = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {verification.provider_info?.username}
+                              {verification.provider_name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {verification.provider_info?.email}
+                              {verification.provider_email}
                             </div>
-                            {verification.provider_info?.company_name && (
-                              <div className="text-sm text-gray-500">
-                                {verification.provider_info.company_name}
-                              </div>
-                            )}
+                           
                           </div>
                         </div>
                       </td>

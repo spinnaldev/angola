@@ -15,8 +15,6 @@ from .serializers import (
     ClientProjectListSerializer, ProjectOfferSerializer,
     DisputeSerializer, ReportSerializer
 )
-
-
 class AdminProjectViewSet(viewsets.ModelViewSet):
     """ViewSet pour l'administration des projets"""
     serializer_class = ClientProjectListSerializer
@@ -26,11 +24,12 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
         queryset = ClientProject.objects.select_related(
             'client', 'category'
         ).prefetch_related(
-            'offers', 'favorites', 'required_skills'
+            'project_offers', 'favorites', 'required_skills'
         ).annotate(
-            offers_count=Count('offers'),
-            favorites_count=Count('favorites'),
-            views_count=Count('project_views')
+            # Use different names to avoid conflicts with model properties
+            total_offers=Count('project_offers'),
+            total_favorites=Count('favorites')
+            # views_count is already a model field, no annotation needed
         )
         
         # Filtres
@@ -71,7 +70,8 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
                     project = ClientProject.objects.get(id=item['id'])
                     item['client_name'] = f"{project.client.first_name} {project.client.last_name}".strip() or project.client.email
                     item['category_name'] = project.category.name if project.category else 'N/A'
-                except:
+                except Exception as e:
+                    print(f"Error enriching project {item.get('id')}: {e}")
                     item['client_name'] = 'Utilisateur supprimé'
                     item['category_name'] = 'N/A'
             
@@ -90,10 +90,12 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
         try:
             data['client_name'] = f"{instance.client.first_name} {instance.client.last_name}".strip() or instance.client.email
             data['category_name'] = instance.category.name if instance.category else 'N/A'
-            data['offers_count'] = instance.offers.count()
-            data['favorites_count'] = instance.favorites.count()
-            data['views_count'] = instance.project_views.count()
-        except:
+            # Use the annotated values or fallback to property/count
+            data['offers_count'] = getattr(instance, 'total_offers', instance.offers_count)
+            data['favorites_count'] = getattr(instance, 'total_favorites', instance.favorites.count())
+            # views_count is already available as a model field
+        except Exception as e:
+            print(f"Error in retrieve: {e}")
             data['client_name'] = 'Utilisateur supprimé'
             data['category_name'] = 'N/A'
         
@@ -106,7 +108,7 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
         offers = ProjectOffer.objects.filter(project=project).select_related(
             'provider__user'
         ).annotate(
-            provider_rating=Avg('provider__reviews_received__rating')
+            provider_rating=Avg('provider__reviews_received__overall_rating')
         ).order_by('-created_at')
         
         serializer = ProjectOfferSerializer(offers, many=True)
@@ -118,7 +120,8 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
                 provider = offer.provider
                 item['provider_name'] = f"{provider.user.first_name} {provider.user.last_name}".strip() or provider.user.email
                 item['provider_rating'] = round(item.get('provider_rating', 0) or 0, 1)
-            except:
+            except Exception as e:
+                print(f"Error enriching offer {item.get('id')}: {e}")
                 item['provider_name'] = 'Prestataire supprimé'
                 item['provider_rating'] = 0
         
@@ -200,8 +203,7 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
             'monthly_stats': monthly_stats,
             'top_categories': top_categories
         })
-
-
+    
 class AdminDisputeViewSet(viewsets.ModelViewSet):
     """ViewSet amélioré pour l'administration des litiges"""
     serializer_class = DisputeSerializer
