@@ -1,4 +1,6 @@
 // lib/providers/messaging_provider.dart
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../core/models/conversation.dart';
 import '../core/models/message.dart';
@@ -14,6 +16,9 @@ class MessagingProvider with ChangeNotifier {
   int? _currentUserId;
 
   int _totalUnreadCount = 0;
+  Timer? _updateTimer;
+  static const Duration _updateInterval = Duration(seconds: 30); // Même fréquence que notifications
+  bool _isAutoUpdateEnabled = false;
 
   MessagingProvider(this._apiService);
 
@@ -25,9 +30,95 @@ class MessagingProvider with ChangeNotifier {
   bool get isSending => _isSending;
   int? get currentUserId => _currentUserId;
 
+  int get totalUnreadCount => _totalUnreadCount;
+  bool get isAutoUpdateEnabled => _isAutoUpdateEnabled;
 
   int get totalUnreadCountAutomatic => _totalUnreadCount;
 
+
+
+ void startAutoUpdate() {
+    if (_isAutoUpdateEnabled) {
+      print('💬 Mise à jour automatique des messages déjà active');
+      return;
+    }
+
+    print('💬 Démarrage de la mise à jour automatique des messages');
+    _isAutoUpdateEnabled = true;
+    
+    // Première mise à jour immédiate
+    _updateUnreadCount();
+    
+    // Planifier les mises à jour périodiques
+    _updateTimer = Timer.periodic(_updateInterval, (timer) {
+      _updateUnreadCount();
+    });
+  }
+
+  // ✅ NOUVEAU : Arrêter la mise à jour automatique
+  void stopAutoUpdate() {
+    if (!_isAutoUpdateEnabled) return;
+
+    print('💬 Arrêt de la mise à jour automatique des messages');
+    _updateTimer?.cancel();
+    _updateTimer = null;
+    _isAutoUpdateEnabled = false;
+  }
+
+  // ✅ NOUVEAU : Mettre à jour le compteur de messages non lus
+  Future<void> _updateUnreadCount() async {
+    try {
+      final count = await _apiService.getUnreadMessagesCount();
+      if (count != _totalUnreadCount) {
+        _totalUnreadCount = count;
+        print('💬 Compteur messages mis à jour: $_totalUnreadCount');
+        notifyListeners();
+      }
+    } catch (e) {
+      print('❌ Erreur mise à jour compteur messages: $e');
+      // Ne pas afficher d'erreur à l'utilisateur pour les mises à jour automatiques
+    }
+  }
+
+  // ✅ NOUVEAU : Initialiser le compteur (appelé par le WebSocket)
+  void initializeUnreadCount(int count) {
+    print('💬 Initialisation compteur messages: $count');
+    _totalUnreadCount = count;
+    notifyListeners();
+  }
+
+  // ✅ NOUVEAU : Mettre à jour le compteur automatiquement (appelé par le WebSocket)
+  void updateUnreadCountAutomatically(int count) {
+    if (count != _totalUnreadCount) {
+      print('💬 Mise à jour automatique compteur: $_totalUnreadCount → $count');
+      _totalUnreadCount = count;
+      notifyListeners();
+    }
+  }
+
+  // ✅ NOUVEAU : Incrémenter le compteur
+  void incrementUnreadCount() {
+    _totalUnreadCount++;
+    print('💬 Compteur incrémenté: $_totalUnreadCount');
+    notifyListeners();
+  }
+
+  // ✅ NOUVEAU : Décrémenter le compteur
+  void decrementUnreadCount(int amount) {
+    _totalUnreadCount = (_totalUnreadCount - amount).clamp(0, double.infinity).toInt();
+    print('💬 Compteur décrémenté de $amount: $_totalUnreadCount');
+    notifyListeners();
+  }
+
+  // ✅ NOUVEAU : Recalculer le compteur total depuis les conversations
+  void recalculateUnreadCount() {
+    final calculatedCount = _conversations.fold(0, (sum, conversation) => sum + conversation.unreadCount);
+    if (calculatedCount != _totalUnreadCount) {
+      print('💬 Recalcul compteur: $_totalUnreadCount → $calculatedCount');
+      _totalUnreadCount = calculatedCount;
+      notifyListeners();
+    }
+  }
   // ✅ MODIFIER la méthode existante pour utiliser le compteur automatique quand disponible
   int getTotalUnreadCount() {
     print('🔍 === DEBUG TOTAL UNREAD COUNT ===');
@@ -58,33 +149,33 @@ class MessagingProvider with ChangeNotifier {
 
 
   // ✅ NOUVEAU: Mettre à jour le compteur automatiquement (appelé par WebSocket)
-  void updateUnreadCountAutomatically(int count) {
-    if (_totalUnreadCount != count) {
-      _totalUnreadCount = count;
-      print('💬 Compteur messages mis à jour automatiquement: $count');
-      notifyListeners();
-    }
-  }
+  // void updateUnreadCountAutomatically(int count) {
+  //   if (_totalUnreadCount != count) {
+  //     _totalUnreadCount = count;
+  //     print('💬 Compteur messages mis à jour automatiquement: $count');
+  //     notifyListeners();
+  //   }
+  // }
 
-  void initializeUnreadCount(int count) {
-    _totalUnreadCount = count;
-    print('💬 Compteur messages initialisé: $count');
-    notifyListeners();
-  }
+  // void initializeUnreadCount(int count) {
+  //   _totalUnreadCount = count;
+  //   print('💬 Compteur messages initialisé: $count');
+  //   notifyListeners();
+  // }
 
-  // ✅ NOUVEAU: Incrémenter le compteur lors d'un nouveau message reçu
-  void incrementUnreadCount() {
-    _totalUnreadCount++;
-    print('💬 Compteur messages incrémenté: $_totalUnreadCount');
-    notifyListeners();
-  }
+  // // ✅ NOUVEAU: Incrémenter le compteur lors d'un nouveau message reçu
+  // void incrementUnreadCount() {
+  //   _totalUnreadCount++;
+  //   print('💬 Compteur messages incrémenté: $_totalUnreadCount');
+  //   notifyListeners();
+  // }
 
-  // ✅ NOUVEAU: Décrémenter le compteur lors de la lecture de messages
-  void decrementUnreadCount(int amount) {
-    _totalUnreadCount = (_totalUnreadCount - amount).clamp(0, 999);
-    print('💬 Compteur messages décrémenté de $amount: $_totalUnreadCount');
-    notifyListeners();
-  }
+  // // ✅ NOUVEAU: Décrémenter le compteur lors de la lecture de messages
+  // void decrementUnreadCount(int amount) {
+  //   _totalUnreadCount = (_totalUnreadCount - amount).clamp(0, 999);
+  //   print('💬 Compteur messages décrémenté de $amount: $_totalUnreadCount');
+  //   notifyListeners();
+  // }
 
 
   // Méthode pour définir l'utilisateur actuel

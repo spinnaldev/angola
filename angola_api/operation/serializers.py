@@ -606,11 +606,47 @@ class QuoteRequestSerializer(serializers.ModelSerializer):
         
 class DisputeEvidenceSerializer(serializers.ModelSerializer):
     user_name = serializers.StringRelatedField(source='user.username', read_only=True)
+    # ✅ NOUVEAU CHAMP : URL du fichier avec gestion du cas null
+    file_url = serializers.SerializerMethodField()
+    # ✅ NOUVEAU CHAMP : Indicateur de présence de fichier
+    has_file = serializers.SerializerMethodField()
     
     class Meta:
         model = DisputeEvidence
-        fields = ('id', 'user', 'user_name', 'description', 'file', 'created_at')
-        read_only_fields = ('user',)
+        fields = (
+            'id', 'user', 'user_name', 'description', 'file', 'file_url', 
+            'has_file', 'evidence_type', 'created_at'
+        )
+        read_only_fields = ('user', 'evidence_type')
+    
+    def get_file_url(self, obj):
+        """
+        ✅ MODIFICATION : Retourner l'URL du fichier ou une chaîne vide
+        """
+        if obj.file and hasattr(obj.file, 'url'):
+            # Construire l'URL complète si elle est relative
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return ""  # Chaîne vide pour les commentaires sans fichier
+    
+    def get_has_file(self, obj):
+        """
+        ✅ NOUVEAU : Indicateur boolean pour savoir s'il y a un fichier
+        """
+        return bool(obj.file)
+    
+    def validate(self, data):
+        """
+        ✅ VALIDATION : Au moins description requise, fichier optionnel
+        """
+        if not data.get('description', '').strip():
+            raise serializers.ValidationError({
+                'description': 'La description est obligatoire'
+            })
+        
+        return data
 
 class DisputeSerializer(serializers.ModelSerializer):
     client_name = serializers.StringRelatedField(source='client.username', read_only=True)

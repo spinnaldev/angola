@@ -333,11 +333,43 @@ class DisputeEvidence(TimeStampMixin):
     dispute = models.ForeignKey(Dispute, on_delete=models.CASCADE, related_name='evidence')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.TextField()
-    file = models.FileField(upload_to='dispute_evidence/')
+    # ✅ MODIFICATION PRINCIPALE : Rendre le fichier optionnel
+    file = models.FileField(
+        upload_to='dispute_evidence/', 
+        null=True, 
+        blank=True,
+        help_text="Fichier optionnel pour la preuve (image ou document)"
+    )
+    
+    # ✅ NOUVEAU CHAMP : Type de preuve pour différencier
+    evidence_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('document', 'Document avec fichier'),
+            ('comment', 'Commentaire textuel'),
+        ],
+        default='comment',
+        help_text="Type de preuve : document avec fichier ou simple commentaire"
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Preuve de litige"
+        verbose_name_plural = "Preuves de litiges"
+    
+    def save(self, *args, **kwargs):
+        # ✅ LOGIQUE AUTOMATIQUE : Définir le type selon la présence du fichier
+        if self.file:
+            self.evidence_type = 'document'
+        else:
+            self.evidence_type = 'comment'
+        super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"Evidence for dispute #{self.dispute.id} by {self.user.username}"
-
+        if self.evidence_type == 'comment':
+            return f"Commentaire pour litige #{self.dispute.id} par {self.user.username}"
+        else:
+            return f"Preuve pour litige #{self.dispute.id} par {self.user.username}"
 class Notification(TimeStampMixin):
     TYPE_CHOICES = (
         ('message', 'Nouveau message'),

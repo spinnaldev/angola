@@ -4224,6 +4224,28 @@ class ApiService {
       throw Exception('Erreur lors de la récupération du projet: $e');
     }
   }
+
+  Future<int> getUnreadMessagesCount() async {
+  try {
+    print('💬 Récupération du compteur de messages non lus...');
+    
+    final data = await _apiClient.get('messages/unread_count/', requireAuth: true);
+    
+    if (data != null) {
+      final count = data['count'] as int? ?? 0;
+      print('✅ Compteur messages récupéré: $count');
+      return count;
+    } else {
+      print('⚠️ Réponse nulle pour le compteur de messages');
+      return 0;
+    }
+  } catch (e) {
+    print('❌ Erreur récupération compteur messages: $e');
+    return 0; // Retourner 0 en cas d'erreur pour éviter les crashs
+  }
+}
+
+
   // ===============================
   // MÉTHODES UTILITAIRES
   // ===============================

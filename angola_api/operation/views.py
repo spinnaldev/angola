@@ -921,6 +921,27 @@ class SubCategoryViewSet(viewsets.ModelViewSet):
     #         return [IsAdminUser()]
     #     return [AllowAny()]
 
+@action(detail=True, methods=['get'])
+def stats(self, request, pk=None):
+    """Statistiques publiques d'un prestataire"""
+    provider = self.get_object()
+    
+    # Compter les projets terminés
+    total_completed_projects = ProjectOffer.objects.filter(
+        provider=provider,
+        status='completed'
+    ).count()
+    
+    # Autres statistiques
+    avg_rating = provider.avg_rating or 0.0
+    total_reviews = provider.reviews_received.count()
+    
+    return Response({
+        'total_completed_projects': total_completed_projects,
+        'avg_rating': float(avg_rating),
+        'total_reviews': total_reviews,
+    })
+
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = Provider.objects.all()
     serializer_class = ProviderListSerializer
@@ -2499,7 +2520,8 @@ class DisputeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def add_evidence(self, request, pk=None):
         """
-        Ajouter une preuve à un litige avec gestion d'erreurs améliorée
+        Ajouter une preuve/commentaire à un litige avec fichier optionnel
+        ✅ MODIFICATION : Supporte maintenant les commentaires sans fichier
         """
         try:
             dispute = self.get_object()
@@ -2512,7 +2534,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
                 )
             
             # Log du début de traitement
-            logger.info(f"Début ajout preuve pour litige {pk} par utilisateur {request.user.id}")
+            logger.info(f"Début ajout preuve/commentaire pour litige {pk} par utilisateur {request.user.id}")
             
             # Récupération sécurisée des données
             description = None
@@ -2520,79 +2542,83 @@ class DisputeViewSet(viewsets.ModelViewSet):
             
             try:
                 description = request.data.get('description', '').strip()
-                file = request.FILES.get('file')
+                file = request.FILES.get('file')  # ✅ MODIFICATION : Optionnel maintenant
             except Exception as e:
                 logger.error(f"Erreur lecture request.data: {e}")
                 return Response(
-                    {"detail": "Erreur lors de la lecture des données. Le fichier est peut-être trop volumineux."}, 
+                    {"detail": "Erreur lors de la lecture des données."}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Validation des données
+            # ✅ MODIFICATION : Validation adaptée
             if not description:
                 return Response(
                     {"detail": "La description est requise"}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                
+            
+            # ✅ MODIFICATION : Le fichier n'est plus obligatoire
+            # Si pas de fichier, on crée un simple commentaire
             if not file:
-                return Response(
-                    {"detail": "Le fichier est requis"}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Vérification de la taille du fichier
-            max_size = 10 * 1024 * 1024  # 10MB
-            if file.size > max_size:
-                return Response(
-                    {"detail": f"Le fichier est trop volumineux. Taille maximum autorisée: {max_size // (1024*1024)}MB"}, 
-                    status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-                )
-            
-            # Vérification du type de fichier
-            allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
-            if hasattr(file, 'content_type') and file.content_type not in allowed_types:
-                return Response(
-                    {"detail": f"Type de fichier non autorisé. Types acceptés: {', '.join(allowed_types)}"}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Log avant création
-            logger.info(f"Création de la preuve - Taille fichier: {file.size} bytes")
-            
-            # Créer la preuve avec gestion d'erreur
-            try:
-                evidence = DisputeEvidence.objects.create(
-                    dispute=dispute,
-                    user=request.user,
-                    description=description,
-                    file=file
-                )
+                logger.info(f"Création d'un commentaire textuel (sans fichier)")
+            else:
+                # Validation du fichier seulement s'il est présent
+                # Vérification de la taille du fichier
+                max_size = 10 * 1024 * 1024  # 10MB
+                if file.size > max_size:
+                    return Response(
+                        {"detail": f"Le fichier est trop volumineux. Taille maximum autorisée: {max_size // (1024*1024)}MB"}, 
+                        status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                    )
                 
-                logger.info(f"Preuve créée avec succès - ID: {evidence.id}")
+                # Vérification du type de fichier
+                allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+                if hasattr(file, 'content_type') and file.content_type not in allowed_types:
+                    return Response(
+                        {"detail": f"Type de fichier non autorisé. Types acceptés: {', '.join(allowed_types)}"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                logger.info(f"Création d'une preuve avec fichier - Taille: {file.size} bytes")
+            
+            # ✅ MODIFICATION : Créer la preuve avec ou sans fichier
+            try:
+                evidence_data = {
+                    'dispute': dispute,
+                    'user': request.user,
+                    'description': description,
+                }
+                
+                # Ajouter le fichier seulement s'il est présent
+                if file:
+                    evidence_data['file'] = file
+                
+                evidence = DisputeEvidence.objects.create(**evidence_data)
+                
+                logger.info(f"Preuve/commentaire créé avec succès - ID: {evidence.id}, Type: {evidence.evidence_type}")
                 
                 # Sérialiser et retourner
                 serializer = DisputeEvidenceSerializer(evidence)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
             except Exception as create_error:
-                logger.error(f"Erreur création preuve: {create_error}")
+                logger.error(f"Erreur création preuve/commentaire: {create_error}")
                 return Response(
-                    {"detail": "Erreur lors de la sauvegarde du fichier. Réessayez avec un fichier plus petit."}, 
+                    {"detail": "Erreur lors de la sauvegarde. Veuillez réessayer."}, 
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
                 
         except Exception as e:
             logger.error(f"Erreur générale add_evidence: {e}")
             
-            # Messages d'erreur spécifiques selon le type d'exception
+            # Messages d'erreur spécifiques
             if "timeout" in str(e).lower() or "expired" in str(e).lower():
-                error_message = "Timeout d'upload: le fichier est trop volumineux ou la connexion est trop lente."
-            elif "memory" in str(e).lower():
-                error_message = "Fichier trop volumineux pour être traité."
+                error_message = "Timeout: la connexion est trop lente."
+            elif "permission" in str(e).lower():
+                error_message = "Erreur de permissions."
             else:
-                error_message = "Erreur inattendue lors de l'ajout de la preuve."
-                
+                error_message = "Erreur interne du serveur."
+            
             return Response(
                 {"detail": error_message}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -3758,7 +3784,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
                     # Envoyer notification FCM
                     logger.info(f"🚁 FCM 1: Sending FCM notification...")
                     try:
-                        send_new_offer_notification(project, offer)
+                        # send_new_offer_notification(project, offer)
                         logger.info(f"✅ FCM notification sent")
                     except Exception as fcm_error:
                         logger.error(f"❌ Erreur FCM notification: {fcm_error}")

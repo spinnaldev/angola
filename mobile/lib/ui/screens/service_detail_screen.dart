@@ -62,6 +62,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       _clearPreviousData();
       _loadData();
     });
+
+    
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        Provider.of<FavoritesProvider>(context, listen: false).loadAllFavorites();
+      }
+    });
+
   }
 
   Future<void> _loadProviderStats(int providerId) async {
@@ -693,22 +703,31 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         ),
         // ✅ AJOUT ICÔNE FAVORIS EN HAUT À DROITE (VERSION CORRIGÉE)
         actions: [
-          if (isClient && authProvider.isAuthenticated)
-            Consumer<FavoritesProvider>(
-              builder: (context, favoritesProvider, child) {
-                // ✅ CORRIGÉ : Vérifier si le PRESTATAIRE est en favori (pas le service)
-                final isFavorite = favoritesProvider.isProviderFavorite(widget.providerId);
-                
-                return IconButton(
-                  onPressed: _toggleFavorite,
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.red : Colors.grey[600],
-                  ),
-                  tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
-                );
-              },
-            ),
+          // Consumer2<AuthProvider, FavoritesProvider>(
+          //   builder: (context, authProvider, favoritesProvider, _) {
+          //     if (!authProvider.isAuthenticated) {
+          //       return SizedBox.shrink();
+          //     }
+
+          //     final user = authProvider.currentUser;
+              
+          //     // Cacher pour les prestataires (ils ne peuvent pas ajouter aux favoris)
+          //     if (user?.role == 'provider') {
+          //       return SizedBox.shrink();
+          //     }
+
+          //     final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+              
+          //     return IconButton(
+          //       onPressed: () => _toggleFavorite(),
+          //       icon: Icon(
+          //         isFavorite ? Icons.favorite : Icons.favorite_border,
+          //         color: isFavorite ? Colors.red : null,
+          //       ),
+          //       tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+          //     );
+          //   },
+          // ),
         ],
       ),
       body: Consumer2<ServiceProvider, ProviderDetailProvider>(

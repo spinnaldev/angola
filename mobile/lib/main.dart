@@ -363,8 +363,82 @@ class _AppInitializerState extends State<AppInitializer>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _safeInitializeApp();
     });
+
+    _initializeAutoUpdates();
   }
 
+  void _initializeAutoUpdates() {
+    // Attendre que les providers soient initialisés
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoUpdatesWhenAuthenticated();
+    });
+  }
+
+  void _startAutoUpdatesWhenAuthenticated() {
+    // Écouter les changements d'authentification
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    authProvider.addListener(() {
+      if (authProvider.isAuthenticated) {
+        _startAllAutoUpdates();
+      } else {
+        _stopAllAutoUpdates();
+      }
+    });
+
+    // Démarrer immédiatement si déjà connecté
+    if (authProvider.isAuthenticated) {
+      _startAllAutoUpdates();
+    }
+  }
+
+  void _startAllAutoUpdates() {
+    print('🚀 Démarrage des mises à jour automatiques...');
+    
+    try {
+      // Démarrer les notifications (existant)
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+      final realtimeNotificationProvider = Provider.of<RealtimeNotificationProvider>(context, listen: false);
+      
+      // notificationProvider.startAutoUpdate();
+      // realtimeNotificationProvider.startListening();
+
+      // ✅ NOUVEAU : Démarrer les messages
+      final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+      final realtimeMessagingProvider = Provider.of<RealtimeMessagingProvider>(context, listen: false);
+      
+      messagingProvider.startAutoUpdate();
+      realtimeMessagingProvider.startListening();
+
+      print('✅ Toutes les mises à jour automatiques démarrées');
+    } catch (e) {
+      print('❌ Erreur démarrage mises à jour automatiques: $e');
+    }
+  }
+
+  void _stopAllAutoUpdates() {
+    print('🛑 Arrêt des mises à jour automatiques...');
+    
+    try {
+      // Arrêter les notifications (existant)
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+      final realtimeNotificationProvider = Provider.of<RealtimeNotificationProvider>(context, listen: false);
+      
+      // notificationProvider.stopAutoUpdate();
+      // realtimeNotificationProvider.stopListening();
+
+      // ✅ NOUVEAU : Arrêter les messages
+      final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+      final realtimeMessagingProvider = Provider.of<RealtimeMessagingProvider>(context, listen: false);
+      
+      messagingProvider.stopAutoUpdate();
+      realtimeMessagingProvider.stopListening();
+
+      print('✅ Toutes les mises à jour automatiques arrêtées');
+    } catch (e) {
+      print('❌ Erreur arrêt mises à jour automatiques: $e');
+    }
+  }
   void _initAnimations() {
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 2000),
