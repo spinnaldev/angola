@@ -12,7 +12,7 @@ from .models import (
     Provider, Review, Notification
 )
 from .serializers import (
-    ClientProjectListSerializer, ProjectOfferSerializer,
+    AdminNotificationSerializer, ClientProjectListSerializer, ProjectOfferSerializer,
     DisputeSerializer, ReportSerializer
 )
 class AdminProjectViewSet(viewsets.ModelViewSet):
@@ -411,3 +411,76 @@ def admin_recent_activity(request):
             } for u in recent_users
         ]
     })
+
+
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import AdminNotification
+
+class AdminNotificationViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les notifications admin"""
+    queryset = AdminNotification.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def get_serializer_class(self):
+        # Vous devrez créer AdminNotificationSerializer
+        return AdminNotificationSerializer
+    
+    def get_queryset(self):
+        queryset = AdminNotification.objects.all().order_by('-created_at')
+        
+        # Filtrer par statut de lecture
+        is_read = self.request.query_params.get('is_read')
+        if is_read is not None:
+            queryset = queryset.filter(is_read=is_read.lower() == 'true')
+        
+        # Filtrer par type
+        notification_type = self.request.query_params.get('type')
+        if notification_type:
+            queryset = queryset.filter(type=notification_type)
+        
+        # Filtrer par priorité
+        priority = self.request.query_params.get('priority')
+        if priority:
+            queryset = queryset.filter(priority=priority)
+        
+        return queryset
+    
+    @action(detail=True, methods=['patch'])
+    def mark_read(self, request, pk=None):
+        """Marquer une notification comme lue"""
+        notification = self.get_object()
+        notification.mark_as_read()
+        return Response({'status': 'marked_as_read'})
+    
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        """Marquer toutes les notifications comme lues"""
+        count = AdminNotification.objects.filter(is_read=False).update(
+            is_read=True,
+            read_at=timezone.now()
+        )
+        return Response({'status': f'{count} notifications marked as read'})
+    
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Compter les notifications non lues"""
+        count = AdminNotification.objects.filter(is_read=False).count()
+        return Response({'unread_count': count})
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Statistiques des notifications"""
+        from django.db.models import Count
+        
+        stats = AdminNotification.objects.values('type').annotate(
+            total=Count('id'),
+            unread=Count('id', filter=Q(is_read=False))
+        ).order_by('type')
+        
+        return Response({
+            'total_notifications': AdminNotification.objects.count(),
+            'unread_notifications': AdminNotification.objects.filter(is_read=False).count(),
+            'by_type': list(stats)
+        })

@@ -1696,3 +1696,44 @@ class NotificationStatsSerializer(serializers.Serializer):
         sent = obj.get('sent', 0)
         clicked = obj.get('clicked', 0)
         return round((clicked / sent * 100), 2) if sent > 0 else 0
+    
+
+class AdminNotificationSerializer(serializers.ModelSerializer):
+    """Serializer pour les notifications admin"""
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    time_since_created = serializers.SerializerMethodField()
+    related_user_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AdminNotification
+        fields = [
+            'id', 'type', 'type_display', 'title', 'message', 
+            'priority', 'priority_display', 'related_object_id',
+            'related_object_type', 'is_read', 'read_at', 
+            'created_at', 'time_since_created', 'related_user_name',
+            'extra_data'
+        ]
+        read_only_fields = ['created_at', 'read_at']
+    
+    def get_time_since_created(self, obj):
+        """Temps écoulé depuis la création"""
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
+        else:
+            return "À l'instant"
+    
+    def get_related_user_name(self, obj):
+        """Nom de l'utilisateur concerné"""
+        if obj.related_user:
+            return f"{obj.related_user.first_name} {obj.related_user.last_name}".strip() or obj.related_user.email
+        return None

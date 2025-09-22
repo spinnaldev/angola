@@ -1373,3 +1373,60 @@ class NotificationHistory(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.user.email} ({self.status})"
+    
+
+
+class AdminNotification(TimeStampMixin):
+    """Notifications pour les administrateurs"""
+    TYPE_CHOICES = (
+        ('user_registration', 'Nouvel utilisateur'),
+        ('document_submission', 'Documents soumis'),
+        ('project_created', 'Nouveau projet'),
+        ('offer_submitted', 'Nouvelle offre'),
+        ('dispute_created', 'Nouveau litige'),
+        ('dispute_evidence', 'Nouvelle preuve'),
+        ('verification_request', 'Demande de vérification'),
+        ('payment_received', 'Paiement reçu'),
+        ('system_alert', 'Alerte système'),
+    )
+    
+    PRIORITY_CHOICES = (
+        ('low', 'Faible'),
+        ('normal', 'Normal'),
+        ('high', 'Élevée'),
+        ('urgent', 'Urgent'),
+    )
+    
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='normal')
+    
+    # Référence vers l'objet concerné
+    related_object_id = models.PositiveIntegerField(null=True, blank=True)
+    related_object_type = models.CharField(max_length=50, null=True, blank=True)
+    
+    # Utilisateur concerné
+    related_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # État
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    # Métadonnées additionnelles
+    extra_data = models.JSONField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Notification Admin"
+        verbose_name_plural = "Notifications Admin"
+    
+    def __str__(self):
+        return f"{self.get_type_display()} - {self.title}"
+    
+    def mark_as_read(self):
+        """Marquer comme lue"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()

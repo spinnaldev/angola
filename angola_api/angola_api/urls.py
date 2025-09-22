@@ -26,7 +26,7 @@ from operation import views
 from django.conf import settings
 from django.conf.urls.static import static
 from operation.admin_views import (
-    AdminProjectViewSet, AdminDisputeViewSet,
+    AdminNotificationViewSet, AdminProjectViewSet, AdminDisputeViewSet,
     admin_dashboard_stats, admin_recent_activity
 )
 from operation.views import (
@@ -75,7 +75,7 @@ router.register(r'api/admin/disputes', AdminDisputeViewSet, basename='admin-disp
 
 router.register(r'api/admin/conversations', AdminConversationViewSet, basename='admin-conversations')
 
-router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='admin-notifications')
+# router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='admin-notifications')
 
 router.register(r'api/admin/provider-verification', AdminProviderVerificationViewSet, basename='admin-provider-verification')
 
@@ -84,7 +84,7 @@ router.register(r'api/admin/phone-verification', AdminPhoneVerificationViewSet, 
 router.register(r'api/fcm', FCMViewSet, basename='fcm')
 router.register(r'api/notification-preferences', NotificationPreferenceViewSet, basename='notification-preferences')
 router.register(r'api/notification-history', NotificationHistoryViewSet, basename='notification-history')
-
+router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='admin-notifications')
 urlpatterns = [
     path('django-admin/', admin.site.urls),
     

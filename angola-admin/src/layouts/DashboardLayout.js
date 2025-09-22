@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from '../components/NotificationDropdown';
+
+
+
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -256,26 +260,32 @@ const DashboardLayout = ({ children }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
+        
+        <header className="bg-white shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Logo et navigation existants */}
+            <div className="flex items-center">
               <div className="flex items-center">
                 <h1 className="text-2xl font-semibold text-gray-900">
                   {menuItems.find(item => item.path === location.pathname)?.label || 'Admin Panel'}
                 </h1>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <button className="p-1 border-2 border-transparent text-gray-400 rounded-full hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition duration-150 ease-in-out">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5-5 5-5h-5m-6 10v6a3 3 0 01-6 0v-6a3 3 0 016 0zm0 0l6-6-6-6" />
-                    </svg>
-                  </button>
-                </div>
+            </div>
+            
+            {/* Notifications et profil */}
+            <div className="flex items-center space-x-4">
+              <NotificationDropdown />
+              
+              {/* Menu profil existant */}
+              <div className="flex items-center space-x-3">
+                {/* Votre menu profil existant */}
               </div>
             </div>
           </div>
         </header>
+        
+          
+          
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">

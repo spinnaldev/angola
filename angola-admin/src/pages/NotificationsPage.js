@@ -213,13 +213,13 @@ const NotificationsPage = () => {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center">
             <FiBell className="w-8 h-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total_notifications}</p>
             </div>
           </div>
         </div>
@@ -229,12 +229,12 @@ const NotificationsPage = () => {
             <FiBell className="w-8 h-8 text-red-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Non lues</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.unread}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.unread_notifications}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        {/* <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center">
             <FiClock className="w-8 h-8 text-green-500" />
             <div className="ml-4">
@@ -252,7 +252,7 @@ const NotificationsPage = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.activeUsers || 0}</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Filtres et recherche */}

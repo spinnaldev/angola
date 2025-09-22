@@ -8,7 +8,7 @@ from .fcm import notify_user_by_fcm
 from channels.layers import get_channel_layer
 from .fcm_service import FCMService
 from operation.models import (
-    AdminAction, ClientProject, Conversation, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message
+    AdminAction, AdminNotification, ClientProject, Conversation, Dispute, Notification, PhoneVerification, ProjectOffer, ProviderVerification, QuoteRequest, Message, User
 )
 import logging
 from django.db.models import Q
@@ -270,162 +270,6 @@ def create_and_send_notification(user, title, message, notification_type, relate
         print(f"❌ Erreur création notification (continue quand même): {e}")
         return None
 
-
-
-# def create_and_send_notification(user, title, message, notification_type, related_object_id=None, extra_data=None):
-#     """
-#     Fonction utilitaire pour créer une notification et l'envoyer via WebSocket + FCM
-#     ROBUSTE : Ne lève jamais d'exception, continue toujours
-#     NOUVEAU : Support des extra_data pour la navigation précise
-#     """
-
-#     logger.info(f"🔔 NOTIFICATION: user={user.email}, type={notification_type}, title={title[:30]}...")
-#     logger.info(f"🔔 user {user}")
-#     logger.info(f"🔔 title {title} ")
-#     logger.info(f"🔔 related_object_id {related_object_id}")
-#     logger.info(f"🔔 extra_data {extra_data} ")
-#     logger.info(f"🔔 notification_type {notification_type}")
-    
-#     try:
-#         # Créer la notification en base avec extra_data
-#         notification = Notification.objects.create(
-#             user=user,
-#             title=title,
-#             message=message,
-#             notification_type=notification_type,
-#             related_object_id=related_object_id,
-#             # extra_data=extra_data  # ✅ NOUVEAU : Support des données supplémentaires
-#         )
-        
-#         logger.info(f"✅ DB NOTIFICATION: id={notification.id}")
-        
-#         # Préparer les données pour WebSocket
-#         notification_data = {
-#             'id': notification.id,
-#             'title': notification.title,
-#             'message': notification.message,
-#             'notification_type': notification.notification_type,
-#             'related_object_id': notification.related_object_id,
-#             'is_read': notification.is_read,
-#             # 'extra_data': notification.extra_data,  # ✅ NOUVEAU : Inclure les données supplémentaires
-#             'created_at': notification.created_at.isoformat(),
-#         }
-        
-
-        
-#         # ESSAYER UN NOUVEL ENVOI DE NOTIFICATION FCM
-#         logger.info(f"🗑️ On tente le second envoi")
-#         data= {
-#                 "type": notification_type,
-#                 "notification_id": str(notification.id),
-#                 **notification_data
-#             }
-#         logger.info(f"🔔 user {user}")
-#         logger.info(f"🔔 title {title} ")
-#         logger.info(f"🔔 body {notification.message[:100] + "..." if len(notification.message) > 100 else notification.message,}")
-#         logger.info(f"🔔 data {data} ")
-#         logger.info(f"🔔 notification_type {notification_type}")
-
-#         try:
-#             fcm_result= notify_user_by_fcm(
-#                 user,
-#                 notification.title,
-#                 notification.message[:100] + "..." if len(notification.message) > 100 else notification.message,
-#                 data
-#             )
-#             logger.info(f"Seconde tentative terminée")
-#             if fcm_result:
-#                 logger.info(f"✅ [NOTIF] FCM envoyé avec succès pour notification {notification.id}")
-#             else:
-#                 logger.warning(f"⚠️ [NOTIF] Échec de l'envoi FCM pour notification {notification.id}")
-#                 # return notification
-#         except Exception as fcm_error:
-#             logger.error(f"❌ FCM secondaire ERROR: {fcm_error}")
-       
-
-#         # ✅ ENVOYER VIA FCM (code existant conservé)
-#         try:
-#             logger.info(f"🚀 FCM START pour user {user.email}")
-            
-#             # Vérifier tokens FCM
-#             fcm_tokens = user.fcm_tokens.filter(is_active=True)
-#             logger.info(f"🔑 FCM TOKENS: {fcm_tokens.count()} actifs")
-            
-#             if not fcm_tokens.exists():
-#                 logger.warning(f"⚠️ AUCUN TOKEN FCM pour {user.email}")
-#                 return notification
-            
-#             # Config FCM
-#             fcm_config = get_fcm_notification_config(
-#                 notification_type=notification_type,
-#                 title=title,
-#                 message=message,
-#                 related_object_id=related_object_id
-#             )
-            
-#             # Ajouter extra_data si disponible
-#             # if extra_data:
-#             #     fcm_config['data'].update({'extra_data': str(extra_data)})
-            
-#             # Envoi FCM
-#             logger.info(f"🔑 FCM TOKENS:{fcm_config['title']}")
-#             logger.info(f"🔑 FCM TOKENS: {fcm_config['body']}")
-#             logger.info(f"🔑 FCM TOKENS: {fcm_config['notification_type']}")
-#             logger.info(f"🔑 FCM TOKENS: {fcm_config['data']}")
-#             logger.info(f"🔑 FCM TOKENS: {fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')}")
-#             logger.info(f"🔑 USER {user.id}")
-
-#             # 🆕 AJOUT DE DEBUG AVANT L'APPEL
-#             logger.info(f"🚀 AVANT APPEL FCMService.send_notification_to_user")
-#             logger.info(f"🚀 Type FCMService: {type(FCMService)}")
-#             logger.info(f"🚀 Méthode existe?: {hasattr(FCMService, 'send_notification_to_user')}")
-
-#             # 🆕 TEST AVEC TRY/EXCEPT DÉTAILLÉ
-#             try:
-#                 logger.info(f"🚀 APPEL EN COURS...")
-#                 fcm_success = FCMService.send_notification_to_user(
-#                     user.id,
-#                     fcm_config['title'],
-#                     fcm_config['body'],
-#                     fcm_config['notification_type'],
-#                     fcm_config['data'],
-#                     fcm_config['data'].get('click_action', 'FLUTTER_NOTIFICATION_CLICK')
-#                 )
-#                 logger.info(f"🚀 APPEL TERMINÉ - Résultat: {fcm_success}")
-#             except Exception as call_error:
-#                 logger.error(f"🚀 EXCEPTION LORS DE L'APPEL: {call_error}")
-#                 logger.error(f"🚀 Type erreur: {type(call_error)}")
-#                 import traceback
-#                 logger.error(f"🚀 Traceback: {traceback.format_exc()}")
-#                 fcm_success = False
-
-#             logger.info(f"🎯 FCM RESULT: {fcm_success}")
-            
-#         except Exception as fcm_error:
-#             logger.error(f"❌ FCM ERROR pour {user.email}: {fcm_error}")
-        
-
-#         # Envoyer via WebSocket (avec gestion d'erreur)
-#         try:
-#             send_notification_to_user(user.id, notification_data)
-#             print(f"✅ Notification WebSocket envoyée pour user {user.id}")
-#         except Exception as ws_error:
-#             print(f"⚠️ Erreur WebSocket notification (continue quand même): {ws_error}")
-        
-#         # Mettre à jour le compteur (avec gestion d'erreur)
-#         try:
-#             unread_count = Notification.objects.filter(user=user, is_read=False).count()
-#             send_unread_count_update(user.id, unread_count)
-#             print(f"✅ Compteur mis à jour pour user {user.id}: {unread_count}")
-#         except Exception as count_error:
-#             print(f"⚠️ Erreur compteur notifications (continue quand même): {count_error}")
-        
-#         print(f"✅ Notification complète envoyée avec succès: {notification.id}")
-#         return notification
-        
-#     except Exception as e:
-#         print(f"❌ Erreur création notification (continue quand même): {e}")
-#         return None
 @receiver(post_save, sender=Message)
 def new_message_created(sender, instance, created, **kwargs):
     """Signal automatique quand un nouveau message est créé - VERSION ADAPTÉE"""
@@ -539,18 +383,6 @@ def message_read_status_changed(sender, instance, created, **kwargs):
             print(f"❌ Erreur signal message lu: {e}")
 
 
-# @receiver(post_save, sender=Conversation) 
-# def conversation_messages_marked_read(sender, instance, **kwargs):
-#     """Signal quand tous les messages d'une conversation sont marqués comme lus"""
-#     try:
-#         # Ce signal peut être déclenché par votre API markMessagesAsRead
-#         # Vous pouvez l'adapter selon votre implémentation
-#         pass
-#     except Exception as e:
-#         print(f"❌ Erreur signal conversation messages lus: {e}")
-# ================================================================
-# ✅ NOUVELLES FONCTIONS SPÉCIALISÉES POUR CRÉER LES EXTRADATA
-# ================================================================
 
 def create_message_notification_with_extradata(message, conversation):
     """Créer une notification de message avec les bonnes extraData"""
@@ -1022,3 +854,130 @@ def send_bulk_notification(users, title, message, notification_type='general'):
     
     print(f"📊 Notifications en masse: {success_count} succès, {error_count} erreurs")
     return {'success': success_count, 'errors': error_count}
+
+
+
+
+# ================================================================
+# ✅ NOUVELLES FONCTIONS POUR LES NOTIFICATIONS ADMIN
+# ================================================================
+
+def create_admin_notification(type_name, title, message, user=None, related_object=None, priority='normal', extra_data=None):
+    """Fonction utilitaire pour créer une notification admin"""
+    try:
+        notification = AdminNotification.objects.create(
+            type=type_name,
+            title=title,
+            message=message,
+            related_user=user,
+            related_object_id=related_object.id if related_object else None,
+            related_object_type=related_object.__class__.__name__ if related_object else None,
+            priority=priority,
+            extra_data=extra_data or {}
+        )
+        logger.info(f"✅ [ADMIN NOTIF] Créée: {type_name} - {title}")
+        return notification
+    except Exception as e:
+        logger.error(f"❌ [ADMIN NOTIF] Erreur création: {e}")
+        return None
+
+# ================================================================
+# ✅ NOUVEAUX SIGNAUX POUR NOTIFICATIONS ADMIN
+# ================================================================
+
+@receiver(post_save, sender=User)
+def notify_admin_user_registration(sender, instance, created, **kwargs):
+    """Notification admin lors de l'inscription d'un nouvel utilisateur"""
+    if created:
+        role_display = instance.get_role_display()
+        create_admin_notification(
+            type_name='user_registration',
+            title=f'Nouvel utilisateur inscrit',
+            message=f'{instance.first_name} {instance.last_name} ({instance.email}) s\'est inscrit en tant que {role_display}',
+            user=instance,
+            related_object=instance,
+            priority='normal',
+            extra_data={
+                'user_role': instance.role,
+                'user_email': instance.email,
+                'registration_date': instance.created_at.isoformat() if hasattr(instance, 'created_at') else timezone.now().isoformat()
+            }
+        )
+
+@receiver(post_save, sender=ProviderVerification)
+def notify_admin_document_submission(sender, instance, created, **kwargs):
+    """Notification admin lors de la soumission de documents"""
+    if created or (instance.verification_status == 'pending'):
+        create_admin_notification(
+            type_name='document_submission',
+            title='Documents de vérification soumis',
+            message=f'{instance.provider.user.first_name} {instance.provider.user.last_name} a soumis des documents pour vérification',
+            user=instance.provider.user,
+            related_object=instance,
+            priority='high',
+            extra_data={
+                'provider_id': instance.provider.id,
+                'document_type': 'identity_verification',
+                'verification_status': instance.verification_status,
+                'submission_date': instance.created_at.isoformat() if hasattr(instance, 'created_at') else timezone.now().isoformat()
+            }
+        )
+
+@receiver(post_save, sender=ClientProject)
+def notify_admin_project_creation(sender, instance, created, **kwargs):
+    """Notification admin lors de la création d'un projet"""
+    if created:
+        create_admin_notification(
+            type_name='project_created',
+            title='Nouveau projet créé',
+            message=f'"{instance.title}" - Budget: {instance.budget_display} - Par {instance.client.first_name} {instance.client.last_name}',
+            user=instance.client,
+            related_object=instance,
+            priority='normal',
+            extra_data={
+                'project_title': instance.title,
+                'budget_range': instance.budget_range,
+                'category': instance.category.name if instance.category else None,
+                'client_email': instance.client.email,
+                'location': instance.location
+            }
+        )
+
+@receiver(post_save, sender=ProjectOffer)
+def notify_admin_offer_submission(sender, instance, created, **kwargs):
+    """Notification admin lors de la soumission d'une offre"""
+    if created:
+        create_admin_notification(
+            type_name='offer_submitted',
+            title='Nouvelle offre soumise',
+            message=f'{instance.provider.user.first_name} {instance.provider.user.last_name} a soumis une offre de {instance.proposed_price} AOA pour "{instance.project.title}"',
+            user=instance.provider.user,
+            related_object=instance,
+            priority='normal',
+            extra_data={
+                'project_title': instance.project.title,
+                'project_id': instance.project.id,
+                'proposed_price': str(instance.proposed_price),
+                'delivery_time': instance.delivery_time,
+                'provider_email': instance.provider.user.email
+            }
+        )
+
+@receiver(post_save, sender=Dispute)
+def notify_admin_dispute_creation(sender, instance, created, **kwargs):
+    """Notification admin lors de la création d'un litige"""
+    if created:
+        create_admin_notification(
+            type_name='dispute_created',
+            title='Nouveau litige créé',
+            message=f'Litige "{instance.title}" entre {instance.client.first_name} {instance.client.last_name} et {instance.provider.user.first_name} {instance.provider.user.last_name}',
+            user=instance.client,
+            related_object=instance,
+            priority='high',
+            extra_data={
+                'dispute_title': instance.title,
+                'client_email': instance.client.email,
+                'provider_email': instance.provider.user.email,
+                'service_title': instance.service.title if hasattr(instance, 'service') and instance.service else None
+            }
+        )

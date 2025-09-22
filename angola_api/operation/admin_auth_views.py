@@ -547,27 +547,27 @@ def bulk_mark_read(request):
 
 # *******************NOTIFICATIONS **************************
 
-class AdminNotificationViewSet(viewsets.ModelViewSet):
-    queryset = Notification.objects.all()
-    serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+# class AdminNotificationViewSet(viewsets.ModelViewSet):
+#     queryset = Notification.objects.all()
+#     serializer_class = NotificationSerializer
+#     permission_classes = [IsAuthenticated, IsAdminUser]
     
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
-        total = Notification.objects.count()
-        unread = Notification.objects.filter(is_read=False).count()
-        recent = Notification.objects.filter(
-            created_at__gte=timezone.now() - timedelta(days=1)
-        ).count()
+#     @action(detail=False, methods=['get'])
+#     def stats(self, request):
+#         total = Notification.objects.count()
+#         unread = Notification.objects.filter(is_read=False).count()
+#         recent = Notification.objects.filter(
+#             created_at__gte=timezone.now() - timedelta(days=1)
+#         ).count()
         
-        return Response({
-            'total': total,
-            'unread': unread,
-            'recent': recent,
-            'activeUsers': User.objects.filter(
-                notifications__created_at__gte=timezone.now() - timedelta(days=7)
-            ).distinct().count()
-        })
+#         return Response({
+#             'total': total,
+#             'unread': unread,
+#             'recent': recent,
+#             'activeUsers': User.objects.filter(
+#                 notifications__created_at__gte=timezone.now() - timedelta(days=7)
+#             ).distinct().count()
+#         })
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])
