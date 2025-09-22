@@ -1,4 +1,4 @@
-// lib/main.dart - VERSION CORRIGÉE
+// lib/main.dart - VERSION CORRIGÉE AVEC VRAI LOGO
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -591,37 +591,31 @@ class _AppInitializerState extends State<AppInitializer>
                     child: Opacity(
                       opacity: _opacityAnimation.value,
                       child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF142FE2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.handyman,
-                          color: Colors.white,
-                          size: 60,
+                        padding: const EdgeInsets.all(20),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 120,
+                          height: 120,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF142FE2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.handyman,
+                              color: Colors.white,
+                              size: 60,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   
                   const SizedBox(height: 32),
-                  
-                  Opacity(
-                    opacity: _opacityAnimation.value,
-                    child: const Text(
-                      'TEYAGO',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF142FE2),
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 16),
+                
                   
                   // Indicateur de progression
                   Container(

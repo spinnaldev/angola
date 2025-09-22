@@ -210,33 +210,47 @@ class AppBottomNavigation extends StatelessWidget {
   }
 
   /// Construit l'icône des messages avec badge
-   Widget _buildMessagesIcon(BuildContext context, {bool isActive = false}) {
+  Widget _buildMessagesIcon(BuildContext context, {bool isActive = false}) {
     return Consumer<MessagingProvider>(
       builder: (context, messagingProvider, child) {
-        // ✅ UTILISER LE COMPTEUR AUTOMATIQUE au lieu de l'ancien
-        final unreadCount = messagingProvider.getTotalUnreadCount();
+        // ✅ CORRECTION : Utiliser totalUnreadCount au lieu de getTotalUnreadCount()
+        // totalUnreadCount utilise _totalUnreadCount qui vient de l'API
+        // getTotalUnreadCount() fait un calcul local qui peut être 0 si conversations pas chargées
+        final unreadCount = messagingProvider.totalUnreadCount;
         
-        // ✅ AJOUT DE DEBUG pour voir pourquoi c'est 0
-        print('🔍 Badge Messages - Compteur automatique: $unreadCount');
-        print('🔍 Badge Messages - Compteur manuel: ${messagingProvider.getTotalUnreadCount()}');
+        // ✅ DEBUG pour vérifier quelle valeur est utilisée
+        print('🔍 Badge Messages - totalUnreadCount (API): ${messagingProvider.totalUnreadCount}');
+        print('🔍 Badge Messages - getTotalUnreadCount (local): ${messagingProvider.getTotalUnreadCount()}');
+        print('🔍 Badge utilisé: $unreadCount');
         
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            Icon(isActive ? Icons.message : Icons.message_outlined),
+            Icon(
+              isActive ? Icons.message : Icons.message_outlined,
+              size: 24,
+            ),
+            // Badge rouge avec le nombre
             if (unreadCount > 0)
               Positioned(
                 right: -8,
                 top: -8,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: unreadCount > 99 ? 4 : 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1,
+                    ),
                   ),
                   constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
+                    minWidth: 16,
+                    minHeight: 16,
                   ),
                   child: Text(
                     unreadCount > 99 ? '99+' : '$unreadCount',

@@ -395,38 +395,90 @@ class FCMService {
     }
   }
 
+  // Future<void> _performNavigation(BuildContext context, RemoteMessage message) async {
+  //   try {
+  //     final data = message.data;
+  //     final notificationType = data['type'] ?? data['notification_type'] ?? '';
+      
+  //     // Créer un NotificationModel temporaire pour utiliser votre système existant
+  //     final notification = NotificationModel(
+  //       id: 0, // ID temporaire
+  //       title: message.notification?.title ?? data['title'] ?? '',
+  //       message: message.notification?.body ?? data['body'] ?? data['message'] ?? '',
+  //       notificationType: notificationType,
+  //       relatedObjectId: _extractIntFromData(data, 'related_object_id'),
+  //       isRead: false,
+  //       createdAt: DateTime.now(),
+  //       extraData: _extractExtraData(data),
+  //     );
+      
+  //     print('✅ NotificationModel créé pour navigation');
+  //     print('   Type: ${notification.notificationType}');
+  //     print('   RelatedId: ${notification.relatedObjectId}');
+  //     print('   ExtraData: ${notification.extraData}');
+      
+  //     // ← UTILISER VOTRE SYSTÈME EXISTANT
+  //     await NotificationNavigationService.navigateToNotificationTarget(
+  //       context,
+  //       notification,
+  //     );
+      
+  //   } catch (e) {
+  //     print('❌ Erreur _performNavigation: $e');
+  //     // Fallback : navigation simple vers Messages
+  //     Navigator.pushNamed(context, '/messages');
+  //   }
+  // }
   Future<void> _performNavigation(BuildContext context, RemoteMessage message) async {
     try {
       final data = message.data;
       final notificationType = data['type'] ?? data['notification_type'] ?? '';
       
-      // Créer un NotificationModel temporaire pour utiliser votre système existant
-      final notification = NotificationModel(
-        id: 0, // ID temporaire
-        title: message.notification?.title ?? data['title'] ?? '',
-        message: message.notification?.body ?? data['body'] ?? data['message'] ?? '',
-        notificationType: notificationType,
-        relatedObjectId: _extractIntFromData(data, 'related_object_id'),
-        isRead: false,
-        createdAt: DateTime.now(),
-        extraData: _extractExtraData(data),
-      );
+      print('🧭 === NAVIGATION DIRECTE FCM ===');
+      print('📱 Type: $notificationType');
+      print('🏷️ Data: $data');
       
-      print('✅ NotificationModel créé pour navigation');
-      print('   Type: ${notification.notificationType}');
-      print('   RelatedId: ${notification.relatedObjectId}');
-      print('   ExtraData: ${notification.extraData}');
+      // ✅ NAVIGATION DIRECTE SIMPLE (éviter NotificationNavigationService)
       
-      // ← UTILISER VOTRE SYSTÈME EXISTANT
-      await NotificationNavigationService.navigateToNotificationTarget(
-        context,
-        notification,
-      );
+      // Extraire conversation_id
+      int? conversationId = _extractIntFromData(data, 'conversation_id') ?? 
+                           _extractIntFromData(data, 'related_object_id');
+      
+      print('🎯 Conversation ID: $conversationId');
+      
+      if (conversationId != null && notificationType == 'new_message') {
+        print('💬 Navigation vers conversation $conversationId');
+        
+        // Navigation directe vers l'onglet Messages 
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: {'initialIndex': 2}, // Index de l'onglet Messages
+        );
+        
+      } else {
+        print('🏠 Navigation par défaut vers accueil');
+        
+        // Navigation par défaut
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+        );
+      }
+      
+      print('✅ Navigation FCM terminée avec succès');
       
     } catch (e) {
       print('❌ Erreur _performNavigation: $e');
-      // Fallback : navigation simple vers Messages
-      Navigator.pushNamed(context, '/messages');
+      
+      // Fallback simple
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/home',
+        (route) => false,
+      );
     }
   }
   /// Gestionnaire de clic sur notification locale

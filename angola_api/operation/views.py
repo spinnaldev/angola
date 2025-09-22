@@ -2430,6 +2430,40 @@ class MessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """
+        Obtenir le nombre de messages non lus pour l'utilisateur actuel
+        Endpoint: GET /api/messages/unread_count/
+        """
+        try:
+            user = request.user
+            if not user.is_authenticated:
+                return Response({'count': 0}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # Compter les messages non lus où l'utilisateur n'est PAS l'expéditeur
+            if hasattr(user, 'provider_profile'):
+                # Pour un prestataire: messages dans conversations où il est provider
+                unread_count = Message.objects.filter(
+                    conversation__provider=user.provider_profile,
+                    is_read=False
+                ).exclude(sender=user).count()
+            else:
+                # Pour un client: messages dans conversations où il est client  
+                unread_count = Message.objects.filter(
+                    conversation__client=user,
+                    is_read=False
+                ).exclude(sender=user).count()
+
+            logger.info(f'💬 Messages non lus pour {user.email}: {unread_count}')
+            return Response({'count': unread_count}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.info(f'❌ Erreur récupération compteur messages: {e}')
+            return Response({
+                'count': 0,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # @api_view(['GET'])
 # @permission_classes([AllowAny])

@@ -409,7 +409,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'client', 'client_name', 'client_picture', 'provider', 'service',
                  'quality_rating', 'punctuality_rating', 'value_rating', 'overall_rating',
-                 'comment','review_title', 'is_verified', 'created_at', 'images', 'uploaded_images' , "client_company_name")
+                 'comment','review_title', 'is_verified', 'created_at', 'images', 'uploaded_images' ,'provider_name', "client_company_name")
         read_only_fields = ('client', 'is_verified', 'overall_rating')
     
     def get_client_company_name(self, obj):

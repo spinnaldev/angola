@@ -1,5 +1,6 @@
 # angola_api/operation/signals.py - VERSION MISE À JOUR AVEC EXTRADATA
 
+import json
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -208,6 +209,21 @@ def create_and_send_notification(user, title, message, notification_type, relate
             
             # Ajouter extra_data si disponible
             if extra_data:
+                # Au lieu de str(extra_data), utiliser JSON pour un formatage correct
+                try:
+                    if isinstance(extra_data, dict):
+                        # Ajouter chaque clé individuellement pour un accès direct
+                        for key, value in extra_data.items():
+                            fcm_config['data'][key] = str(value)
+                        
+                        # Et aussi l'objet complet en JSON correct
+                        fcm_config['data']['extra_data'] = json.dumps(extra_data)
+                    else:
+                        fcm_config['data']['extra_data'] = json.dumps(extra_data)
+                except Exception as json_error:
+                    logger.error(f"❌ Erreur JSON extra_data: {json_error}")
+                    fcm_config['data']['extra_data'] = str(extra_data)
+                    
                 fcm_config['data'].update({'extra_data': str(extra_data)})
             
             # Envoi FCM
