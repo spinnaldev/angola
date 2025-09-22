@@ -244,15 +244,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
               ),
             ),
           // Indicateur de statut en ligne
-          if (!hasUnread)
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: conversation.isOnline ? Colors.green : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-            ),
+          // if (!hasUnread)
+          //   Container(
+          //     width: 8,
+          //     height: 8,
+          //     decoration: BoxDecoration(
+          //       color: conversation.isOnline ? Colors.green : Colors.transparent,
+          //       shape: BoxShape.circle,
+          //     ),
+          //   ),
         ],
       ),
       onTap: () {

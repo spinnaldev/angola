@@ -395,90 +395,38 @@ class FCMService {
     }
   }
 
-  // Future<void> _performNavigation(BuildContext context, RemoteMessage message) async {
-  //   try {
-  //     final data = message.data;
-  //     final notificationType = data['type'] ?? data['notification_type'] ?? '';
-      
-  //     // Créer un NotificationModel temporaire pour utiliser votre système existant
-  //     final notification = NotificationModel(
-  //       id: 0, // ID temporaire
-  //       title: message.notification?.title ?? data['title'] ?? '',
-  //       message: message.notification?.body ?? data['body'] ?? data['message'] ?? '',
-  //       notificationType: notificationType,
-  //       relatedObjectId: _extractIntFromData(data, 'related_object_id'),
-  //       isRead: false,
-  //       createdAt: DateTime.now(),
-  //       extraData: _extractExtraData(data),
-  //     );
-      
-  //     print('✅ NotificationModel créé pour navigation');
-  //     print('   Type: ${notification.notificationType}');
-  //     print('   RelatedId: ${notification.relatedObjectId}');
-  //     print('   ExtraData: ${notification.extraData}');
-      
-  //     // ← UTILISER VOTRE SYSTÈME EXISTANT
-  //     await NotificationNavigationService.navigateToNotificationTarget(
-  //       context,
-  //       notification,
-  //     );
-      
-  //   } catch (e) {
-  //     print('❌ Erreur _performNavigation: $e');
-  //     // Fallback : navigation simple vers Messages
-  //     Navigator.pushNamed(context, '/messages');
-  //   }
-  // }
   Future<void> _performNavigation(BuildContext context, RemoteMessage message) async {
     try {
       final data = message.data;
       final notificationType = data['type'] ?? data['notification_type'] ?? '';
       
-      print('🧭 === NAVIGATION DIRECTE FCM ===');
-      print('📱 Type: $notificationType');
-      print('🏷️ Data: $data');
+      // Créer un NotificationModel temporaire pour utiliser votre système existant
+      final notification = NotificationModel(
+        id: 0, // ID temporaire
+        title: message.notification?.title ?? data['title'] ?? '',
+        message: message.notification?.body ?? data['body'] ?? data['message'] ?? '',
+        notificationType: notificationType,
+        relatedObjectId: _extractIntFromData(data, 'related_object_id'),
+        isRead: false,
+        createdAt: DateTime.now(),
+        extraData: _extractExtraData(data),
+      );
       
-      // ✅ NAVIGATION DIRECTE SIMPLE (éviter NotificationNavigationService)
+      print('✅ NotificationModel créé pour navigation');
+      print('   Type: ${notification.notificationType}');
+      print('   RelatedId: ${notification.relatedObjectId}');
+      print('   ExtraData: ${notification.extraData}');
       
-      // Extraire conversation_id
-      int? conversationId = _extractIntFromData(data, 'conversation_id') ?? 
-                           _extractIntFromData(data, 'related_object_id');
-      
-      print('🎯 Conversation ID: $conversationId');
-      
-      if (conversationId != null && notificationType == 'new_message') {
-        print('💬 Navigation vers conversation $conversationId');
-        
-        // Navigation directe vers l'onglet Messages 
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
-          arguments: {'initialIndex': 2}, // Index de l'onglet Messages
-        );
-        
-      } else {
-        print('🏠 Navigation par défaut vers accueil');
-        
-        // Navigation par défaut
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
-        );
-      }
-      
-      print('✅ Navigation FCM terminée avec succès');
+      // ← UTILISER VOTRE SYSTÈME EXISTANT
+      await NotificationNavigationService.navigateToNotificationTarget(
+        context,
+        notification,
+      );
       
     } catch (e) {
       print('❌ Erreur _performNavigation: $e');
-      
-      // Fallback simple
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/home',
-        (route) => false,
-      );
+      // Fallback : navigation simple vers Messages
+      Navigator.pushNamed(context, '/messages');
     }
   }
   /// Gestionnaire de clic sur notification locale
@@ -530,25 +478,27 @@ class FCMService {
 
 
   /// ✅ NOUVELLE MÉTHODE : Nettoyer le format Python pour le rendre JSON valide
-  String _cleanPythonFormat(String pythonString) {
-    String cleaned = pythonString;
+  String _cleanPythonFormat(String dartString) {
+    String cleaned = dartString;
     
-    // Remplacer None par null
+    print('🔧 Nettoyage format Dart: $cleaned');
+    
+    // 1. Remplacer None par null
     cleaned = cleaned.replaceAll('None', 'null');
     
-    // Remplacer True par true
+    // 2. Remplacer True par true  
     cleaned = cleaned.replaceAll('True', 'true');
     
-    // Remplacer False par false  
+    // 3. Remplacer False par false
     cleaned = cleaned.replaceAll('False', 'false');
     
-    // Ajouter des guillemets autour des clés (regex pour les clés sans guillemets)
+    // 4. Ajouter des guillemets autour des clés
     cleaned = cleaned.replaceAllMapped(
       RegExp(r'(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
       (match) => '${match.group(1)}"${match.group(2)}":',
     );
     
-    // Remplacer les guillemets simples par des guillemets doubles (mais attention aux apostrophes)
+    // 5. ✅ REGEX CORRIGÉE : Gérer les guillemets simples existants d'ABORD
     cleaned = cleaned.replaceAllMapped(
       RegExp(r"'([^']*)'"),
       (match) {
@@ -559,6 +509,30 @@ class FCMService {
       },
     );
     
+    // 6. ✅ NOUVELLE REGEX PLUS LARGE : Quoter TOUTES les valeurs non-quotées qui ne sont pas des nombres
+    // Cette regex trouve : ": " suivi de n'importe quel contenu jusqu'à la virgule ou accolade fermante,
+    // SAUF si c'est déjà entre guillemets, ou si c'est un nombre, null, true, false
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r':\s*(?!")([^",}]+?)(?=\s*[,}])'),
+      (match) {
+        String value = match.group(1)!.trim();
+        
+        // Ne pas quoter les nombres (entiers ou décimaux)
+        if (RegExp(r'^\d+(\.\d+)?$').hasMatch(value)) {
+          return ': $value';
+        }
+        
+        // Ne pas quoter les mots-clés JSON
+        if (value == 'null' || value == 'true' || value == 'false') {
+          return ': $value';
+        }
+        
+        // Quoter tout le reste (strings, URLs, etc.)
+        return ': "$value"';
+      },
+    );
+    
+    print('✅ Format nettoyé final: $cleaned');
     return cleaned;
   }
 
@@ -613,8 +587,48 @@ class FCMService {
 
   /// Traiter le clic sur notification
   Future<void> _processNotificationTap(Map<String, dynamic> data) async {
-    // Similar à _navigateFromNotification mais pour les notifications locales
-    print('📱 Traitement clic notification locale: $data');
+    try {
+      print('📱 Traitement clic notification locale: $data');
+      
+      // Obtenir le context de navigation
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        print('❌ Pas de context disponible pour navigation');
+        return;
+      }
+      
+      final notification = NotificationModel(
+        id: 0,
+        title: '',
+        message: '',
+        notificationType: data['type'] ?? '',
+        relatedObjectId: _extractIntFromData(data, 'conversation_id') ?? 
+                        _extractIntFromData(data, 'related_object_id'),
+        isRead: false,
+        createdAt: DateTime.now(),
+        extraData: data,
+      );
+      
+      // ✅ Utiliser votre service existant
+      await NotificationNavigationService.navigateToNotificationTarget(context, notification);
+      
+      
+    } catch (e) {
+      print('❌ Erreur _processNotificationTap: $e');
+      // Navigation de secours simple
+      try {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
+        }
+      } catch (fallbackError) {
+        print('❌ Erreur navigation de secours: $fallbackError');
+      }
+    }
   }
 
   /// S'abonner aux topics
