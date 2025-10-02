@@ -68,7 +68,7 @@ router.register(r'api/project-favorites', views.ProjectFavoriteViewSet, basename
 
 router.register(r'api/provider-verification', views.ProviderVerificationViewSet, basename='provider-verification')
 router.register(r'api/phone-verification', views.PhoneVerificationViewSet, basename='phone-verification')
-
+router.register(r'api/client-verification', views.ClientVerificationViewSet, basename='client-verification')
 
 router.register(r'api/admin/projects', AdminProjectViewSet, basename='admin-projects')
 router.register(r'api/admin/disputes', AdminDisputeViewSet, basename='admin-disputes')
@@ -78,6 +78,8 @@ router.register(r'api/admin/conversations', AdminConversationViewSet, basename='
 # router.register(r'api/admin/notifications', AdminNotificationViewSet, basename='admin-notifications')
 
 router.register(r'api/admin/provider-verification', AdminProviderVerificationViewSet, basename='admin-provider-verification')
+
+router.register(r'api/admin/client-verification', AdminClientVerificationViewSet, basename='admin-client-verification')
 
 router.register(r'api/admin/phone-verification', AdminPhoneVerificationViewSet, basename='admin-phone-verification')
 

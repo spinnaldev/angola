@@ -18,12 +18,16 @@ class UserSerializer(serializers.ModelSerializer):
     is_provider_verified = serializers.SerializerMethodField()
     needs_verification = serializers.SerializerMethodField()
 
+    is_client_verified = serializers.SerializerMethodField()
+    client_verification_status = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 
                  'bio', 'profile_picture', 'role', 'is_verified', 'location', 'date_joined',
                  'company_name' , 'full_name', 'verification_status', 'verification_details', 'is_phone_verified', 
-                'is_provider_verified', 'needs_verification' )
+                'is_provider_verified', 'needs_verification' , 'is_client_verified', 'client_verification_status',
+ )
         read_only_fields = ('date_joined', 'is_verified')
         extra_kwargs = {'password': {'write_only': True}}
     
@@ -103,6 +107,31 @@ class UserSerializer(serializers.ModelSerializer):
             return phone_verification and phone_verification.status == 'verified'
         return obj.role != 'client'  # Les non-clients n'ont pas besoin de vérification téléphone
     
+
+    def get_is_client_verified(self, obj):
+        """
+        NOUVEAU : Vérifie si le client est vérifié (avec documents)
+        """
+        if obj.role == 'client':
+            try:
+                client_verification = obj.client_verification
+                return client_verification.verification_status == 'verified'
+            except ClientVerification.DoesNotExist:
+                return False
+        return obj.role != 'client'
+    
+    def get_client_verification_status(self, obj):
+        """
+        NOUVEAU : Retourne le statut de vérification du client
+        """
+        if obj.role == 'client':
+            try:
+                return obj.client_verification.verification_status
+            except ClientVerification.DoesNotExist:
+                return 'not_started'
+        return 'not_applicable'
+
+
     def get_is_provider_verified(self, obj):
         """Vérifie si le profil prestataire est vérifié"""
         if obj.role == 'provider':
@@ -144,6 +173,42 @@ class UserSerializer(serializers.ModelSerializer):
         
 
 
+class UserDetailSerializer(UserSerializer):
+    """
+    Serializer détaillé pour les utilisateurs
+    Inclut les informations de vérification complètes
+    """
+    
+    client_verification_details = serializers.SerializerMethodField()
+    provider_verification_details = serializers.SerializerMethodField()
+    
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + [
+            'client_verification_details',
+            'provider_verification_details',
+        ]
+    
+    def get_client_verification_details(self, obj):
+        """
+        Détails complets de la vérification client
+        """
+        if obj.role == 'client':
+            try:
+                verification = obj.client_verification
+                return ClientVerificationSerializer(verification).data
+            except ClientVerification.DoesNotExist:
+                return None
+        return None
+    
+    def get_provider_verification_details(self, obj):
+        """
+        Détails complets de la vérification prestataire
+        """
+        if obj.role == 'provider':
+            provider = getattr(obj, 'provider_profile', None)
+            if provider and hasattr(provider, 'verification'):
+                return ProviderVerificationSerializer(provider.verification).data
+        return None
 
 # ================================================================
 # 4. SERIALIZERS POUR LES STATISTIQUES ET RAPPORTS
@@ -1387,6 +1452,160 @@ class ProviderVerificationAdminSerializer(serializers.ModelSerializer):
         
         return super().update(instance, validated_data)
     
+# ===============================================================
+# NOUVEAU  SYSTEME DE VERIFICATIO DES EMAILS
+#================================================================
+
+class ClientVerificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer principal pour la vérification des CLIENTS
+    """
+    
+    # Champs calculés en lecture seule
+    client_name = serializers.CharField(source='user.username', read_only=True)
+    client_email = serializers.CharField(source='user.email', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    days_since_submission = serializers.SerializerMethodField()
+    can_be_modified = serializers.SerializerMethodField()
+    documents_provided = serializers.SerializerMethodField()
+    verification_progress = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ClientVerification
+        fields = [
+            # Champs de base
+            'id', 'user', 'client_name', 'client_email', 'full_name',
+            
+            # Configuration de la vérification
+            'document_type',
+            
+            # Documents
+            'id_card_front', 'id_card_back', 'passport_image',
+            
+            # Statut et dates
+            'verification_status', 'submitted_at', 'verified_at', 'verified_by',
+            'rejection_reason', 'admin_notes',
+            
+            # Champs calculés
+            'days_since_submission', 'can_be_modified', 'documents_provided',
+            'verification_progress', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'verification_status', 'submitted_at', 'verified_at', 'verified_by',
+            'rejection_reason', 'admin_notes', 'created_at', 'updated_at'
+        ]
+    
+    def get_full_name(self, obj):
+        """Nom complet du client"""
+        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+    
+    def get_days_since_submission(self, obj):
+        """Nombre de jours depuis la soumission"""
+        if obj.submitted_at:
+            return (timezone.now() - obj.submitted_at).days
+        return None
+    
+    def get_can_be_modified(self, obj):
+        """Peut être modifié"""
+        return obj.can_be_modified()
+    
+    def get_documents_provided(self, obj):
+        """Liste des documents fournis"""
+        return obj.get_documents_list()
+    
+    def get_verification_progress(self, obj):
+        """Pourcentage de progression"""
+        required_fields = 0
+        filled_fields = 0
+        
+        if obj.document_type == 'id_card':
+            required_fields = 2
+            if obj.id_card_front:
+                filled_fields += 1
+            if obj.id_card_back:
+                filled_fields += 1
+        elif obj.document_type == 'passport':
+            required_fields = 1
+            if obj.passport_image:
+                filled_fields += 1
+        
+        if required_fields == 0:
+            return 0
+        return int((filled_fields / required_fields) * 100)
+    
+    def validate(self, data):
+        """Validation globale"""
+        document_type = data.get('document_type', self.instance.document_type if self.instance else 'id_card')
+        
+        if document_type == 'id_card':
+            if not data.get('id_card_front') and (not self.instance or not self.instance.id_card_front):
+                raise serializers.ValidationError({
+                    'id_card_front': 'La carte d\'identité (recto) est requise'
+                })
+            if not data.get('id_card_back') and (not self.instance or not self.instance.id_card_back):
+                raise serializers.ValidationError({
+                    'id_card_back': 'La carte d\'identité (verso) est requise'
+                })
+        elif document_type == 'passport':
+            if not data.get('passport_image') and (not self.instance or not self.instance.passport_image):
+                raise serializers.ValidationError({
+                    'passport_image': 'Le passeport est requis'
+                })
+        
+        return data
+    
+    def update(self, instance, validated_data):
+        """Mise à jour avec logique métier"""
+        
+        # Si on modifie des documents, remettre le statut à pending
+        document_fields = ['id_card_front', 'id_card_back', 'passport_image']
+        if any(field in validated_data for field in document_fields):
+            validated_data['verification_status'] = 'pending'
+            validated_data['submitted_at'] = timezone.now()
+            # Effacer les données de rejet précédentes
+            validated_data['rejection_reason'] = ''
+            validated_data['verified_by'] = None
+            validated_data['verified_at'] = None
+        
+        return super().update(instance, validated_data)
+
+
+class ClientVerificationListSerializer(serializers.ModelSerializer):
+    """
+    Serializer allégé pour les listes de vérifications clients (admin)
+    """
+    client_name = serializers.CharField(source='user.username', read_only=True)
+    client_email = serializers.CharField(source='user.email', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    days_pending = serializers.SerializerMethodField()
+    status_badge = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ClientVerification
+        fields = [
+            'id', 'client_name', 'client_email', 'full_name',
+            'verification_status', 'document_type', 'submitted_at',
+            'days_pending', 'status_badge'
+        ]
+    
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+    
+    def get_days_pending(self, obj):
+        """Nombre de jours en attente"""
+        if obj.submitted_at and obj.verification_status == 'pending':
+            return (timezone.now() - obj.submitted_at).days
+        return None
+    
+    def get_status_badge(self, obj):
+        """Informations pour l'affichage du badge de statut"""
+        status_info = {
+            'not_started': {'color': 'grey', 'text': 'Non commencé'},
+            'pending': {'color': 'orange', 'text': 'En attente'},
+            'verified': {'color': 'green', 'text': 'Vérifié'},
+            'rejected': {'color': 'red', 'text': 'Rejeté'}
+        }
+        return status_info.get(obj.verification_status, status_info['not_started'])
 
 
 # ================================================================

@@ -1,3 +1,5 @@
+// mobile/lib/core/services/verification_guard_service.dart
+// REMPLACEZ votre fichier existant par celui-ci
 
 import 'package:flutter/material.dart';
 import '../models/user.dart';
@@ -31,24 +33,40 @@ class VerificationGuardService {
     return VerificationResult.allowed();
   }
   
-  /// Vérifier l'accès pour un client
+  /// Vérifier l'accès pour un CLIENT (avec documents)
   static VerificationResult _checkClientAccess(BuildContext context, User user, String actionDescription) {
     final l10n = AppLocalizations.of(context)!;
 
-    if (!user.isPhoneVerified) {
+    // NOUVEAU : Vérification par documents au lieu de téléphone
+    if (!user.isClientVerified) {
+      String title = l10n.profileVerificationRequired;
+      String message = _getClientMessage(context, actionDescription, user.clientVerificationStatus ?? 'not_started');
+      String buttonText = 'Vérifier mon compte';
+      String redirectRoute = '/client-verification';
+
+      if (user.clientVerificationStatus == 'pending') {
+        title = l10n.verificationInProgress;
+        message = l10n.verificationInProgressMessage(actionDescription);
+        buttonText = l10n.viewStatus;
+      } else if (user.clientVerificationStatus == 'rejected') {
+        title = l10n.verificationRejected;
+        message = l10n.verificationRejectedMessage(actionDescription);
+        buttonText = l10n.submitNewDocuments;
+      }
+
       return VerificationResult.blocked(
-        title: l10n.phoneVerificationRequired,
-        message: _getClientMessage(context, actionDescription),
-        redirectRoute: '/phone-verification',
-        buttonText: l10n.verifyMyPhone,
-        verificationType: 'phone',
+        title: title,
+        message: message,
+        redirectRoute: redirectRoute,
+        buttonText: buttonText,
+        verificationType: 'client_documents',
       );
     }
 
     return VerificationResult.allowed();
   }
   
-  /// Vérifier l'accès pour un prestataire
+  /// Vérifier l'accès pour un PRESTATAIRE (inchangé)
   static VerificationResult _checkProviderAccess(BuildContext context, User user, String actionDescription) {
     final l10n = AppLocalizations.of(context)!;
 
@@ -72,62 +90,41 @@ class VerificationGuardService {
         message: message,
         redirectRoute: '/provider-verification',
         buttonText: buttonText,
-        verificationType: 'documents',
+        verificationType: 'provider_documents',
       );
     }
 
     return VerificationResult.allowed();
   }
   
-  /// Messages spécifiques pour les clients
-  static String _getClientMessage(BuildContext context, String actionDescription) {
+  /// Messages spécifiques pour les CLIENTS
+  static String _getClientMessage(BuildContext context, String actionDescription, String status) {
     final l10n = AppLocalizations.of(context)!;
-    // switch (actionDescription) {
-    //   case 'créer un projet':
-    //     return 'Pour publier un projet et recevoir des offres de prestataires, vous devez d\'abord vérifier votre numéro de téléphone. Cela garantit la sécurité et la confiance sur notre plateforme.';
-    //   case 'faire une demande de devis':
-    //     return 'Pour demander un devis personnalisé, vous devez vérifier votre numéro de téléphone. Cette étape nous permet de vous protéger contre les demandes frauduleuses.';
-    //   case 'ouvrir un litige':
-    //     return 'Pour ouvrir un litige et protéger vos intérêts, vous devez d\'abord vérifier votre numéro de téléphone.';
-    //   case 'laisser un avis':
-    //     return 'Pour laisser un avis sur un prestataire, vous devez vérifier votre numéro de téléphone afin d\'éviter les faux avis.';
-    //   case 'démarrer une conversation':
-    //     return 'Pour contacter un prestataire, vous devez vérifier votre numéro de téléphone.';
-    //   default:
-    //     return 'Pour utiliser cette fonctionnalité, vous devez vérifier votre numéro de téléphone.';
-    // }
-    switch (actionDescription) {
-      case 'créer un projet':
-        return l10n.verify_phone_create_project;
-      case 'faire une demande de devis':
-        return l10n.verify_phone_request_quote;
-      case 'ouvrir un litige':
-        return l10n.verify_phone_open_dispute;
-      case 'laisser un avis':
-        return l10n.verify_phone_leave_review;
-      case 'démarrer une conversation':
-        return l10n.verify_phone_start_conversation;
-      default:
-        return l10n.verify_phone_generic;
+    
+    if (status == 'not_started') {
+      switch (actionDescription) {
+        case 'créer un projet':
+          return 'Pour publier un projet et recevoir des offres de prestataires, vous devez d\'abord vérifier votre compte avec vos documents d\'identité. Cela garantit la sécurité et la confiance sur notre plateforme.';
+        case 'faire une demande de devis':
+          return 'Pour demander un devis personnalisé, vous devez vérifier votre compte avec vos documents d\'identité.';
+        case 'ouvrir un litige':
+          return 'Pour ouvrir un litige et protéger vos intérêts, vous devez d\'abord vérifier votre compte.';
+        case 'laisser un avis':
+          return 'Pour laisser un avis sur un prestataire, vous devez vérifier votre compte afin d\'éviter les faux avis.';
+        case 'démarrer une conversation':
+          return 'Pour contacter un prestataire, vous devez vérifier votre compte.';
+        default:
+          return 'Pour utiliser cette fonctionnalité, vous devez vérifier votre compte avec vos documents d\'identité.';
+      }
     }
+    return 'Votre vérification est en cours. Patientez ou soumettez de nouveaux documents.';
   }
   
-  /// Messages spécifiques pour les prestataires
+  /// Messages spécifiques pour les PRESTATAIRES (inchangé)
   static String _getProviderMessage(BuildContext context, String actionDescription, String status) {
     final l10n = AppLocalizations.of(context)!;
+    
     if (status == 'not_started') {
-      // switch (actionDescription) {
-      //   case 'créer un service':
-      //     return 'Pour proposer vos services et recevoir des clients, vous devez d\'abord vérifier votre profil prestataire. Envoyez-nous vos documents d\'identité pour garantir la confiance de vos futurs clients.';
-      //   case 'faire une offre':
-      //     return 'Pour répondre aux projets clients, vous devez vérifier votre profil prestataire. Cette vérification rassure les clients sur votre identité.';
-      //   case 'ouvrir un litige':
-      //     return 'Pour ouvrir un litige, vous devez d\'abord être un prestataire vérifié sur notre plateforme.';
-      //   case 'envoyer un message':
-      //     return 'Pour contacter des clients, vous devez vérifier votre profil prestataire.';
-      //   default:
-      //     return 'Pour utiliser cette fonctionnalité prestataire, vous devez vérifier votre profil avec vos documents d\'identité.';
-      // }
       switch (actionDescription) {
         case 'créer un service':
           return l10n.verify_provider_create_service;
@@ -155,6 +152,14 @@ class VerificationGuardService {
   /// Obtenir le type de vérification requis pour un utilisateur
   static String getRequiredVerificationType(User? user) {
     if (user == null) return 'login';
-    return user.requiredVerificationType;
+    if (user.role == 'admin') return 'none';
+    
+    if (user.role == 'client') {
+      return 'client_documents';
+    } else if (user.role == 'provider') {
+      return 'provider_documents';
+    }
+    
+    return 'none';
   }
 }

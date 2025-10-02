@@ -1246,6 +1246,202 @@ class PhoneVerification(TimeStampMixin):
         super().save(*args, **kwargs)
 
 
+
+class ClientVerification(TimeStampMixin):
+    """
+    Modèle pour la vérification des CLIENTS par documents d'identité
+    Fonctionne exactement comme ProviderVerification mais pour les clients
+    """
+    
+    VERIFICATION_STATUS_CHOICES = (
+        ('not_started', 'Non commencé'),
+        ('pending', 'En attente'),
+        ('verified', 'Vérifié'),
+        ('rejected', 'Rejeté'),
+    )
+    
+    DOCUMENT_TYPE_CHOICES = (
+        ('id_card', 'Carte d\'identité'),
+        ('passport', 'Passeport'),
+    )
+    
+    # ============================================================
+    # CHAMPS PRINCIPAUX
+    # ============================================================
+    
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='client_verification',
+        verbose_name="Client"
+    )
+    
+    # Type de document soumis
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_TYPE_CHOICES,
+        default='id_card',
+        verbose_name="Type de document"
+    )
+    
+    # ============================================================
+    # DOCUMENTS D'IDENTITÉ
+    # ============================================================
+    
+    id_card_front = models.ImageField(
+        upload_to='verifications/clients/id_cards/front/', 
+        null=True, 
+        blank=True,
+        verbose_name="Carte d'identité (recto)"
+    )
+    id_card_back = models.ImageField(
+        upload_to='verifications/clients/id_cards/back/', 
+        null=True, 
+        blank=True,
+        verbose_name="Carte d'identité (verso)"
+    )
+    passport_image = models.ImageField(
+        upload_to='verifications/clients/passports/', 
+        null=True, 
+        blank=True,
+        verbose_name="Photo du passeport"
+    )
+    
+    # ============================================================
+    # STATUT ET DATES
+    # ============================================================
+    
+    verification_status = models.CharField(
+        max_length=20, 
+        choices=VERIFICATION_STATUS_CHOICES, 
+        default='not_started',
+        verbose_name="Statut de vérification"
+    )
+    
+    submitted_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Date de soumission"
+    )
+    
+    verified_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Date de vérification"
+    )
+    
+    # ============================================================
+    # GESTION PAR L'ADMIN
+    # ============================================================
+    
+    verified_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='verified_clients',
+        verbose_name="Vérifié par"
+    )
+    
+    rejection_reason = models.TextField(
+        blank=True,
+        verbose_name="Raison du rejet"
+    )
+    
+    admin_notes = models.TextField(
+        blank=True,
+        verbose_name="Notes administratives"
+    )
+    
+    class Meta:
+        verbose_name = "Vérification Client"
+        verbose_name_plural = "Vérifications Clients"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Vérification client {self.user.username} - {self.get_verification_status_display()}"
+    
+    # ============================================================
+    # MÉTHODES DE VALIDATION
+    # ============================================================
+    
+    def clean(self):
+        """Validation personnalisée"""
+        from django.core.exceptions import ValidationError
+        
+        if self.document_type == 'id_card':
+            if not self.id_card_front or not self.id_card_back:
+                raise ValidationError({
+                    'id_card_front': 'Les deux faces de la carte d\'identité sont requises',
+                    'id_card_back': 'Les deux faces de la carte d\'identité sont requises'
+                })
+        elif self.document_type == 'passport':
+            if not self.passport_image:
+                raise ValidationError({
+                    'passport_image': 'L\'image du passeport est requise'
+                })
+    
+    def save(self, *args, **kwargs):
+        """Logique personnalisée lors de la sauvegarde"""
+        
+        # Mettre à jour la date de soumission si le statut passe à pending
+        if (self.verification_status == 'pending' and 
+            self.submitted_at is None):
+            self.submitted_at = timezone.now()
+        
+        # Mettre à jour la date de vérification si approuvé
+        if (self.verification_status == 'verified' and 
+            self.verified_at is None):
+            self.verified_at = timezone.now()
+        
+        super().save(*args, **kwargs)
+        
+        # Mettre à jour le statut is_verified de l'utilisateur
+        self._update_user_verification_status()
+    
+    def _update_user_verification_status(self):
+        """Met à jour le statut is_verified de l'utilisateur"""
+        if self.verification_status == 'verified':
+            self.user.is_verified = True
+        else:
+            self.user.is_verified = False
+        
+        # Éviter la récursion infinie
+        User.objects.filter(id=self.user.id).update(
+            is_verified=self.user.is_verified
+        )
+    
+    # ============================================================
+    # MÉTHODES UTILITAIRES
+    # ============================================================
+    
+    def is_pending(self):
+        """Vérifie si la vérification est en attente"""
+        return self.verification_status == 'pending'
+    
+    def is_verified(self):
+        """Vérifie si la vérification est approuvée"""
+        return self.verification_status == 'verified'
+    
+    def is_rejected(self):
+        """Vérifie si la vérification est rejetée"""
+        return self.verification_status == 'rejected'
+    
+    def can_be_modified(self):
+        """Vérifie si la vérification peut être modifiée"""
+        return self.verification_status in ['not_started', 'rejected']
+    
+    def get_documents_list(self):
+        """Retourne la liste des documents fournis"""
+        documents = []
+        if self.id_card_front:
+            documents.append('Carte d\'identité (recto)')
+        if self.id_card_back:
+            documents.append('Carte d\'identité (verso)')
+        if self.passport_image:
+            documents.append('Passeport')
+        return documents
+
 class FCMToken(models.Model):
     """
     Modèle pour stocker les tokens FCM des utilisateurs

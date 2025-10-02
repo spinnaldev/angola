@@ -4855,6 +4855,172 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
             return error_response
 
 
+
+
+class ClientVerificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour gérer les vérifications des CLIENTS
+    Les clients soumettent leurs documents d'identité
+    """
+    
+    serializer_class = ClientVerificationSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Limiter aux vérifications de l'utilisateur connecté"""
+        return ClientVerification.objects.filter(user=self.request.user)
+    
+    def get_permissions(self):
+        """Permissions spécifiques par action"""
+        if hasattr(self, 'action') and self.action in ['my_status', 'submit_individual_id', 'submit_passport']:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+    
+    @action(detail=False, methods=['get'], url_path='my-status')
+    def my_status(self, request):
+        """
+        📱 Récupérer le statut de vérification du client connecté
+        """
+        try:
+            verification = ClientVerification.objects.get(user=request.user)
+            serializer = self.get_serializer(verification)
+            
+            return Response({
+                'has_verification': True,
+                'verification': serializer.data,
+                'is_verified': verification.is_verified(),
+                'is_pending': verification.is_pending(),
+                'is_rejected': verification.is_rejected(),
+                'can_resubmit': verification.can_be_modified(),
+                'message': self._get_status_message(verification)
+            })
+            
+        except ClientVerification.DoesNotExist:
+            return Response({
+                'has_verification': False,
+                'verification': None,
+                'is_verified': False,
+                'is_pending': False,
+                'is_rejected': False,
+                'can_resubmit': True,
+                'message': 'Vous devez soumettre vos documents d\'identité pour vérification'
+            })
+    
+    @action(detail=False, methods=['post'], url_path='submit-individual-id')
+    def submit_individual_id(self, request):
+        """
+        📤 Soumettre une vérification avec CARTE D'IDENTITÉ (recto + verso)
+        """
+        print(f"\n🆔 Soumission carte d'identité client : {request.user.username}")
+        
+        # Vérifier que l'utilisateur est un client
+        if request.user.role != 'client':
+            return Response({
+                'detail': 'Cette vérification est réservée aux clients'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer ou créer la vérification
+        verification, created = ClientVerification.objects.get_or_create(
+            user=request.user,
+            defaults={'document_type': 'id_card'}
+        )
+        
+        # Vérifier si modification autorisée
+        if not created and not verification.can_be_modified():
+            return Response({
+                'detail': 'Cette vérification ne peut plus être modifiée',
+                'current_status': verification.verification_status
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Valider et sauvegarder
+        serializer = self.get_serializer(
+            verification,
+            data=request.data,
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            # Forcer le type de document et le statut
+            serializer.save(
+                document_type='id_card',
+                verification_status='pending',
+                submitted_at=timezone.now()
+            )
+            
+            logger.info(f"✅ Carte d'identité soumise par client {request.user.username}")
+            
+            return Response({
+                'message': 'Vos documents ont été soumis avec succès pour vérification',
+                'verification': serializer.data,
+                'next_step': 'Votre demande sera examinée par un administrateur sous 24-48h'
+            }, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+        else:
+            print(f"❌ Erreurs validation : {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='submit-passport')
+    def submit_passport(self, request):
+        """
+        📤 Soumettre une vérification avec PASSEPORT
+        """
+        print(f"\n🛂 Soumission passeport client : {request.user.username}")
+        
+        # Vérifier que l'utilisateur est un client
+        if request.user.role != 'client':
+            return Response({
+                'detail': 'Cette vérification est réservée aux clients'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer ou créer la vérification
+        verification, created = ClientVerification.objects.get_or_create(
+            user=request.user,
+            defaults={'document_type': 'passport'}
+        )
+        
+        # Vérifier si modification autorisée
+        if not created and not verification.can_be_modified():
+            return Response({
+                'detail': 'Cette vérification ne peut plus être modifiée',
+                'current_status': verification.verification_status
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Valider et sauvegarder
+        serializer = self.get_serializer(
+            verification,
+            data=request.data,
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            # Forcer le type de document et le statut
+            serializer.save(
+                document_type='passport',
+                verification_status='pending',
+                submitted_at=timezone.now()
+            )
+            
+            logger.info(f"✅ Passeport soumis par client {request.user.username}")
+            
+            return Response({
+                'message': 'Votre passeport a été soumis avec succès pour vérification',
+                'verification': serializer.data,
+                'next_step': 'Votre demande sera examinée par un administrateur sous 24-48h'
+            }, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+        else:
+            print(f"❌ Erreurs validation : {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def _get_status_message(self, verification):
+        """Obtenir un message approprié selon le statut"""
+        if verification.verification_status == 'pending':
+            days = verification.days_since_submission if hasattr(verification, 'days_since_submission') else 0
+            return f'Votre demande est en cours d\'examen (soumise il y a {days} jour(s))'
+        elif verification.verification_status == 'verified':
+            return 'Votre compte a été vérifié avec succès !'
+        elif verification.verification_status == 'rejected':
+            return f'Votre demande a été rejetée : {verification.rejection_reason}. Vous pouvez resoumettre de nouveaux documents.'
+        else:
+            return 'Veuillez soumettre vos documents d\'identité pour vérification'
 # ================================================================
 # 5. VUES POUR VÉRIFIER LES BLOCAGES D'ACTIONS
 # ================================================================
@@ -4864,33 +5030,44 @@ class PhoneVerificationViewSet(viewsets.ModelViewSet):
 def check_verification_status(request):
     """
     Endpoint pour vérifier le statut de vérification global de l'utilisateur
-    Utilisé par le frontend pour déterminer les actions autorisées
+    MISE À JOUR : Support ClientVerification
     """
-    
     user = request.user
-    needs_verification, reason, verification_type = VerificationPermissionMixin.user_needs_verification(user)
     
     response_data = {
         'user_id': user.id,
         'user_role': user.role,
-        'is_verified': not needs_verification,
-        'needs_verification': needs_verification,
-        'verification_type': verification_type,
-        'reason': reason,
+        'is_verified': user.is_verified,
         'is_staff': user.is_staff
     }
     
     # Ajouter les détails spécifiques selon le rôle
     if user.role == 'client':
-        phone_verification = getattr(user, 'phone_verification', None)
-        response_data['phone_verification'] = {
-            'exists': phone_verification is not None,
-            'status': phone_verification.status if phone_verification else 'not_started',
-            'phone_number': phone_verification.phone_number if phone_verification else None,
-            'verified_at': phone_verification.verified_at if phone_verification else None
-        }
+        # NOUVEAU : Vérification client
+        try:
+            client_verification = user.client_verification
+            response_data['client_verification'] = {
+                'exists': True,
+                'status': client_verification.verification_status,
+                'document_type': client_verification.document_type,
+                'submitted_at': client_verification.submitted_at,
+                'verified_at': client_verification.verified_at,
+                'rejection_reason': client_verification.rejection_reason,
+                'can_resubmit': client_verification.can_be_modified(),
+            }
+            response_data['needs_verification'] = client_verification.verification_status != 'verified'
+            response_data['verification_type'] = 'client_documents'
+        except ClientVerification.DoesNotExist:
+            response_data['client_verification'] = {
+                'exists': False,
+                'status': 'not_started',
+                'can_resubmit': True,
+            }
+            response_data['needs_verification'] = True
+            response_data['verification_type'] = 'client_documents'
     
     elif user.role == 'provider':
+        # Vérification prestataire (existante)
         provider = getattr(user, 'provider_profile', None)
         if provider:
             verification = getattr(provider, 'verification', None)
@@ -4900,15 +5077,23 @@ def check_verification_status(request):
                 'is_business': verification.is_business if verification else False,
                 'submitted_at': verification.submitted_at if verification else None,
                 'verified_at': verification.verified_at if verification else None,
-                'rejection_reason': verification.rejection_reason if verification else None
+                'rejection_reason': verification.rejection_reason if verification else None,
+                'can_resubmit': verification.can_be_modified() if verification else True,
             }
+            response_data['needs_verification'] = not verification or verification.verification_status != 'verified'
+            response_data['verification_type'] = 'provider_documents'
         else:
             response_data['provider_verification'] = {
                 'exists': False,
-                'status': 'no_provider_profile'
+                'status': 'no_provider_profile',
             }
+            response_data['needs_verification'] = True
+            response_data['verification_type'] = 'provider_documents'
+    else:
+        response_data['needs_verification'] = False
+        response_data['verification_type'] = 'none'
     
-    return Response(response_data)
+    return Response(response_data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -5562,41 +5747,106 @@ def _get_verification_message(verification_status):
     }
     return messages.get(verification_status, _('Unknown verification status'))
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """
+    Retourne les informations de l'utilisateur connecté
+    MISE À JOUR : Support complet ClientVerification
+    """
+    user = request.user
+    serializer = UserSerializer(user)
+    response_data = serializer.data
+    
+    # Synchroniser tous les statuts de vérification
+    _sync_all_verification_statuses(user)
+    
+    # Informations spécifiques aux PRESTATAIRES
+    if user.role == 'provider':
+        provider = getattr(user, 'provider_profile', None)
+        response_data['provider_details'] = None
+        
+        if provider:
+            response_data['provider_details'] = {
+                'id': provider.id,
+                'company_name': provider.company_name,
+                'specialization': provider.specialization,
+                'bio': provider.bio,
+                'is_verified': provider.is_verified,
+                'rating': float(provider.rating) if provider.rating else 0.0,
+            }
+            
+            # Détails de vérification prestataire
+            verification = getattr(provider, 'verification', None)
+            if verification:
+                response_data['provider_details']['verification'] = {
+                    'status': verification.verification_status,
+                    'submitted_at': verification.submitted_at,
+                    'verified_at': verification.verified_at,
+                    'is_business': verification.is_business,
+                    'rejection_reason': verification.rejection_reason,
+                }
+    
+    # Informations spécifiques aux CLIENTS
+    elif user.role == 'client':
+        # NOUVEAU : Détails de vérification client
+        response_data['client_verification_details'] = None
+        
+        try:
+            client_verification = user.client_verification
+            response_data['client_verification_details'] = {
+                'status': client_verification.verification_status,
+                'document_type': client_verification.document_type,
+                'submitted_at': client_verification.submitted_at,
+                'verified_at': client_verification.verified_at,
+                'rejection_reason': client_verification.rejection_reason,
+                'can_resubmit': client_verification.can_be_modified(),
+            }
+        except ClientVerification.DoesNotExist:
+            response_data['client_verification_details'] = {
+                'status': 'not_started',
+                'can_resubmit': True,
+            }
+    
+    return Response(response_data)
+
+
+
 def _sync_all_verification_statuses(user):
     """
-    Synchroniser tous les statuts de vérification pour éviter les incohérences
+    Synchroniser tous les statuts de vérification
+    MISE À JOUR : Support ClientVerification
     """
     try:
         if user.role == 'client':
-            # Synchroniser avec phone_verification
-            phone_verification = getattr(user, 'phone_verification', None)
-            expected_verified = phone_verification and phone_verification.status == 'verified'
-            
-            if user.is_verified != expected_verified:
-                user.is_verified = expected_verified
-                user.save()
-                print(f"🔄 Client {user.username} statut synchronisé: {expected_verified}")
-        
-        elif user.role == 'provider':
-            # Synchroniser avec provider verification
-            provider = getattr(user, 'provider_profile', None)
-            if provider:
-                verification = getattr(provider, 'verification', None)
-                expected_verified = verification and verification.verification_status == 'verified'
+            # NOUVEAU : Synchronisation avec client_verification
+            try:
+                client_verification = user.client_verification
+                expected_verified = client_verification.verification_status == 'verified'
                 
                 if user.is_verified != expected_verified:
                     user.is_verified = expected_verified
                     user.save()
-                    print(f"🔄 Provider {user.username} statut synchronisé: {expected_verified}")
-            else:
-                # Pas de profil prestataire = pas vérifié
+                    print(f"🔄 Statut client synchronisé pour {user.username}: {expected_verified}")
+            except ClientVerification.DoesNotExist:
                 if user.is_verified:
                     user.is_verified = False
                     user.save()
-                    print(f"🔄 Provider {user.username} sans profil -> non vérifié")
-                    
+                    print(f"🔄 Statut client réinitialisé pour {user.username}")
+        
+        elif user.role == 'provider':
+            # Synchronisation prestataire (existante)
+            provider = getattr(user, 'provider_profile', None)
+            if provider and hasattr(provider, 'verification'):
+                expected_verified = provider.verification.verification_status == 'verified'
+                if user.is_verified != expected_verified:
+                    user.is_verified = expected_verified
+                    user.save()
+                    print(f"🔄 Statut prestataire synchronisé pour {user.username}: {expected_verified}")
+    
     except Exception as e:
-        print(f"❌ Erreur synchronisation statuts: {e}")
+        print(f"❌ Erreur synchronisation vérification: {e}")
 
 
 

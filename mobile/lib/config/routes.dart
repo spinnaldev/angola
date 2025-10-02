@@ -23,6 +23,8 @@ import '../ui/screens/notifications_screen.dart';
 import '../ui/screens/provider/provider_verification_screen.dart';
 import '../ui/screens/client/phone_verification_screen.dart';
 import 'package:teyago/ui/screens/about_screen.dart'; 
+import 'package:teyago/ui/screens/verification/client_verification_screen.dart';
+
 
 class AppRoutes {
   static const String home = '/home';
@@ -50,7 +52,9 @@ class AppRoutes {
   static const String notifications = '/notifications';
   static const String providerVerification = '/provider-verification';
   static const String phoneVerification = '/phone-verification';
+  static const String clientVerification = '/client-verification';
   static const String about = '/about'; 
+  
   static Map<String, WidgetBuilder> get routes => {
         home: (context) => const HomeScreen(),
         login: (context) => const LoginScreen(),
@@ -73,7 +77,7 @@ class AppRoutes {
         providerVerification: (context) => const ProviderVerificationScreen(),
         phoneVerification: (context) => const PhoneVerificationScreen(),
         about: (context) => const AboutScreen(),
-        
+        clientVerification: (context) => ClientVerificationScreen(),
       };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {

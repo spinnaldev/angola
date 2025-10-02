@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/core/services/client_verification_service.dart';
 import 'package:teyago/core/services/notification_service.dart';
 import 'package:teyago/core/services/phone_verification_service.dart';
 import 'package:teyago/core/services/provider_verification_service.dart';
@@ -41,6 +42,7 @@ import 'providers/quote_provider.dart';
 import 'providers/review_provider.dart';
 import 'providers/language_provider.dart';
 import 'config/routes.dart';
+import 'providers/client_verification_provider.dart';
 import 'core/services/profile_manager.dart';
 import 'ui/screens/home_screen.dart';
 import 'providers/dispute_provider.dart';
@@ -244,7 +246,14 @@ class MyApp extends StatelessWidget {
             PhoneVerificationService(apiService)
           ),
         ),
-
+        ChangeNotifierProvider<ClientVerificationProvider>(
+          create: (context) => ClientVerificationProvider(
+            ClientVerificationService(
+              apiService: Provider.of<ApiService>(context, listen: false),
+              apiClient: Provider.of<ApiClient>(context, listen: false),
+            ),
+          ),
+        ),
         // ✅ ÉTAPE 12: Providers temps réel (dépendent des providers précédents)
         ChangeNotifierProxyProvider2<MessagingProvider, WebSocketService, RealtimeMessagingProvider>(
           create: (context) => RealtimeMessagingProvider(

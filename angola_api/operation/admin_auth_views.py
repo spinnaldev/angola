@@ -1043,9 +1043,246 @@ class AdminProviderVerificationViewSet(viewsets.ModelViewSet):
 
 
 # ================================================================
-# 3. VIEWSET ADMIN POUR VÉRIFICATION PAR TÉLÉPHONE
+# 3. VIEWSET ADMIN POUR VÉRIFICATION DES CLIENTS
 # ================================================================
 
+
+
+class AdminClientVerificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet Admin pour gérer les vérifications de CLIENTS
+    SÉPARÉ des vérifications de prestataires
+    """
+    
+    queryset = ClientVerification.objects.all()
+    serializer_class = ClientVerificationSerializer
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    filterset_fields = ['verification_status', 'document_type', 'user__username']
+    search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name']
+    ordering_fields = ['submitted_at', 'verified_at', 'created_at']
+    ordering = ['-submitted_at']
+    
+    def get_serializer_class(self):
+        """Utiliser un serializer allégé pour les listes"""
+        if self.action == 'list':
+            return ClientVerificationListSerializer
+        return ClientVerificationSerializer
+    
+    def list(self, request, *args, **kwargs):
+        """Liste avec pagination"""
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        """Liste des vérifications clients EN ATTENTE"""
+        pending_verifications = self.get_queryset().filter(verification_status='pending')
+        serializer = ClientVerificationListSerializer(pending_verifications, many=True)
+        
+        return Response({
+            'count': pending_verifications.count(),
+            'results': serializer.data
+        })
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Statistiques des vérifications clients pour le dashboard admin"""
+        queryset = self.get_queryset()
+        
+        stats = {
+            'total': queryset.count(),
+            'pending': queryset.filter(verification_status='pending').count(),
+            'verified': queryset.filter(verification_status='verified').count(),
+            'rejected': queryset.filter(verification_status='rejected').count(),
+            'not_started': queryset.filter(verification_status='not_started').count(),
+            'recent': queryset.filter(submitted_at__gte=timezone.now() - timedelta(days=7)).count(),
+            'urgent': queryset.filter(
+                verification_status='pending',
+                submitted_at__lte=timezone.now() - timedelta(days=7)
+            ).count(),
+        }
+        
+        return Response(stats)
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        ✅ APPROUVER une vérification client
+        """
+        verification = self.get_object()
+        
+        if verification.verification_status == 'verified':
+            return Response({
+                'detail': 'Cette vérification est déjà approuvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Approuver la vérification
+        verification.verification_status = 'verified'
+        verification.verified_by = request.user
+        verification.verified_at = timezone.now()
+        verification.rejection_reason = ''
+        verification.save()
+        
+        # Mettre à jour le statut utilisateur
+        verification.user.is_verified = True
+        verification.user.save()
+        
+        # Logger l'action admin
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type='client_verification_approved',
+            target_model='ClientVerification',
+            target_id=verification.id,
+            description=f"Vérification client approuvée pour {verification.user.username}"
+        )
+        
+        logger.info(f"✅ Vérification client approuvée par {request.user.username} pour {verification.user.username}")
+        
+        # OPTIONNEL : Envoyer une notification au client
+        try:
+            from .fcm_service import FCMService
+            FCMService.send_to_user(
+                user_id=verification.user.id,
+                title="Compte vérifié ! ✅",
+                body="Votre compte a été vérifié. Vous pouvez maintenant utiliser toutes les fonctionnalités.",
+                data={'type': 'client_verification_approved'}
+            )
+        except Exception as e:
+            logger.error(f"Erreur envoi notification : {e}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification client approuvée avec succès',
+            'verification': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """
+        ❌ REJETER une vérification client
+        """
+        verification = self.get_object()
+        
+        if verification.verification_status == 'verified':
+            return Response({
+                'detail': 'Impossible de rejeter une vérification déjà approuvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Récupérer la raison du rejet
+        rejection_reason = request.data.get('rejection_reason', '')
+        
+        if not rejection_reason:
+            return Response({
+                'detail': 'Veuillez fournir une raison de rejet'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Rejeter la vérification
+        verification.verification_status = 'rejected'
+        verification.rejection_reason = rejection_reason
+        verification.verified_by = request.user
+        verification.verified_at = None
+        verification.save()
+        
+        # Mettre à jour le statut utilisateur
+        verification.user.is_verified = False
+        verification.user.save()
+        
+        # Logger l'action admin
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type='client_verification_rejected',
+            target_model='ClientVerification',
+            target_id=verification.id,
+            description=f"Vérification client rejetée pour {verification.user.username} : {rejection_reason}"
+        )
+        
+        logger.info(f"❌ Vérification client rejetée par {request.user.username} pour {verification.user.username}")
+        
+        # OPTIONNEL : Envoyer une notification au client
+        try:
+            from .fcm_service import FCMService
+            FCMService.send_to_user(
+                user_id=verification.user.id,
+                title="Vérification rejetée",
+                body=f"Votre demande de vérification a été rejetée : {rejection_reason}",
+                data={'type': 'client_verification_rejected', 'reason': rejection_reason}
+            )
+        except Exception as e:
+            logger.error(f"Erreur envoi notification : {e}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification client rejetée',
+            'verification': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def reset(self, request, pk=None):
+        """
+        🔄 RÉINITIALISER une vérification client
+        """
+        verification = self.get_object()
+        
+        if verification.verification_status == 'verified':
+            return Response({
+                'detail': 'Impossible de réinitialiser une vérification approuvée'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Réinitialiser
+        verification.verification_status = 'not_started'
+        verification.rejection_reason = ''
+        verification.verified_by = None
+        verification.verified_at = None
+        verification.submitted_at = None
+        verification.save()
+        
+        # Mettre à jour le statut utilisateur
+        verification.user.is_verified = False
+        verification.user.save()
+        
+        # Logger l'action admin
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type='client_verification_reset',
+            target_model='ClientVerification',
+            target_id=verification.id,
+            description=f"Vérification client réinitialisée pour {verification.user.username}"
+        )
+        
+        logger.info(f"🔄 Vérification client réinitialisée par {request.user.username} pour {verification.user.username}")
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Vérification client réinitialisée avec succès',
+            'verification': serializer.data
+        })
+    
+    @action(detail=True, methods=['patch'])
+    def add_notes(self, request, pk=None):
+        """
+        📝 Ajouter des notes administratives
+        """
+        verification = self.get_object()
+        admin_notes = request.data.get('admin_notes', '')
+        
+        verification.admin_notes = admin_notes
+        verification.save()
+        
+        serializer = self.get_serializer(verification)
+        return Response({
+            'message': 'Notes ajoutées avec succès',
+            'verification': serializer.data
+        })
+    
 class AdminPhoneVerificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet admin pour consulter les vérifications téléphone

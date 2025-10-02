@@ -23,6 +23,9 @@ class User {
   final bool isProviderVerified;
   final bool needsVerification;
 
+  final bool isClientVerified;
+  final String? clientVerificationStatus;
+  
   User({
     required this.id,
     required this.username,
@@ -40,9 +43,11 @@ class User {
 
     this.verificationStatus,
     this.verificationDetails,
-    required this.isPhoneVerified,
-    required this.isProviderVerified,
-    required this.needsVerification,
+    this.isPhoneVerified = false,
+    this.isProviderVerified = false,
+    this.needsVerification = false,
+    this.isClientVerified = false,
+    this.clientVerificationStatus,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -66,6 +71,9 @@ class User {
       isPhoneVerified: json['is_phone_verified'] ?? false,
       isProviderVerified: json['is_provider_verified'] ?? false,
       needsVerification: json['needs_verification'] ?? false,
+
+      isClientVerified: json['is_client_verified'] ?? false,
+      clientVerificationStatus: json['client_verification_status'],
     );
   }
 
@@ -90,6 +98,10 @@ class User {
       'is_phone_verified': isPhoneVerified,
       'is_provider_verified': isProviderVerified,
       'needs_verification': needsVerification,
+
+      'is_client_verified': isClientVerified,
+      'client_verification_status': clientVerificationStatus,
+
     };
   }
 
@@ -118,59 +130,78 @@ class User {
     return displayName;
   }
 
+  /// Vérifie si l'utilisateur peut effectuer des actions selon son rôle
   bool get canPerformActions {
+    if (role == 'admin') return true;
+    
     if (role == 'client') {
-      return isPhoneVerified;
+      return isClientVerified;
     } else if (role == 'provider') {
       return isProviderVerified;
     }
-    return true; 
+    
+    return true;
   }
 
-  /// Obtient le type de vérification requis
+  /// Obtient le type de vérification requis selon le rôle
   String get requiredVerificationType {
     if (role == 'client') {
-      return 'phone';
+      return 'client_documents';
     } else if (role == 'provider') {
-      return 'documents';
+      return 'provider_documents';
     }
     return 'none';
   }
 
-  /// Obtient le statut de vérification affiché
+  /// Obtient le statut de vérification affiché selon le rôle
   String get displayVerificationStatus {
-    if (verificationStatus == null) {
-      return needsVerification ? 'not_started' : 'not_applicable';
+    if (role == 'client') {
+      return clientVerificationStatus ?? 'not_started';
+    } else if (role == 'provider') {
+      return verificationStatus ?? 'not_started';
     }
-    return verificationStatus!;
+    return 'not_applicable';
   }
 
   /// Vérifie si la vérification est en cours
   bool get isVerificationPending {
-    return verificationStatus == 'pending';
+    if (role == 'client') {
+      return clientVerificationStatus == 'pending';
+    } else if (role == 'provider') {
+      return verificationStatus == 'pending';
+    }
+    return false;
   }
 
   /// Vérifie si la vérification a été rejetée
   bool get isVerificationRejected {
-    return verificationStatus == 'rejected';
+    if (role == 'client') {
+      return clientVerificationStatus == 'rejected';
+    } else if (role == 'provider') {
+      return verificationStatus == 'rejected';
+    }
+    return false;
   }
-
 
   /// Obtient les détails de vérification selon le rôle
   VerificationInfo get verificationInfo {
     if (role == 'client') {
       return VerificationInfo(
-        type: 'phone',
+        type: 'client_documents',
         status: displayVerificationStatus,
-        isVerified: isPhoneVerified,
-        phoneNumber: verificationDetails?['phone_number'],
+        isVerified: isClientVerified,
+        documentType: verificationDetails?['document_type'],
+        submittedAt: verificationDetails?['submitted_at'] != null 
+            ? DateTime.parse(verificationDetails!['submitted_at']) 
+            : null,
         verifiedAt: verificationDetails?['verified_at'] != null 
             ? DateTime.parse(verificationDetails!['verified_at']) 
             : null,
+        rejectionReason: verificationDetails?['rejection_reason'],
       );
     } else if (role == 'provider') {
       return VerificationInfo(
-        type: 'documents',
+        type: 'provider_documents',
         status: displayVerificationStatus,
         isVerified: isProviderVerified,
         isBusiness: verificationDetails?['is_business'] ?? false,
@@ -205,12 +236,14 @@ class User {
     bool? isVerified,
     String? location,
     DateTime? dateJoined,
-    String? companyName, 
+    String? companyName,
     String? verificationStatus,
     Map<String, dynamic>? verificationDetails,
     bool? isPhoneVerified,
     bool? isProviderVerified,
     bool? needsVerification,
+    bool? isClientVerified,
+    String? clientVerificationStatus,
   }) {
     return User(
       id: id ?? this.id,
@@ -225,13 +258,16 @@ class User {
       isVerified: isVerified ?? this.isVerified,
       location: location ?? this.location,
       dateJoined: dateJoined ?? this.dateJoined,
-      companyName: companyName ?? this.companyName, 
-      
+      companyName: companyName ?? this.companyName,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       verificationDetails: verificationDetails ?? this.verificationDetails,
       isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
       isProviderVerified: isProviderVerified ?? this.isProviderVerified,
       needsVerification: needsVerification ?? this.needsVerification,
+      
+      // NOUVEAU
+      isClientVerified: isClientVerified ?? this.isClientVerified,
+      clientVerificationStatus: clientVerificationStatus ?? this.clientVerificationStatus,
     );
   }
 
