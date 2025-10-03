@@ -1261,9 +1261,10 @@
   "submitNewDocuments": "Submit new documents",
   "viewStatus": "View status",
   "backToProfile": "Back to profile",
-  
+  "documentTypeDescription" : "Select the document type",
   "phoneVerificationDescription": "You need to verify your phone number",
   "profileVerificationDescription": "You need to verify your provider profile",
+  "clientVerificationDescription": "You must verify your account with your identity documents",
   "phoneVerifiedDescription": "Your phone number is verified",
   "profileVerifiedDescription": "Your provider profile is verified",
   "verificationPendingDescription": "Your verification request is under review",

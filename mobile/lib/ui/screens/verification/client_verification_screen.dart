@@ -1,5 +1,5 @@
 // mobile/lib/ui/screens/verification/client_verification_screen.dart
-// CRÉEZ ce nouveau fichier
+// VERSION TRADUITE - Utilise AppLocalizations
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -20,10 +20,8 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
   
-  // Type de document sélectionné
-  String _documentType = 'id_card'; // 'id_card' ou 'passport'
+  String _documentType = 'id_card';
   
-  // Fichiers sélectionnés
   File? _idCardFront;
   File? _idCardBack;
   File? _passportImage;
@@ -54,43 +52,32 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
       ),
       body: Consumer<ClientVerificationProvider>(
         builder: (context, verificationProvider, child) {
-          // Si déjà vérifié
           if (verificationProvider.isVerified) {
-            return _buildVerifiedScreen(context);
+            return _buildVerifiedScreen(context, l10n);
           }
           
-          // Si en attente
           if (verificationProvider.isPending) {
-            return _buildPendingScreen(context, verificationProvider);
+            return _buildPendingScreen(context, l10n, verificationProvider);
           }
           
-          // Si rejeté
           if (verificationProvider.isRejected) {
-            return _buildRejectedScreen(context, verificationProvider);
+            return _buildRejectedScreen(context, l10n, verificationProvider);
           }
           
-          // Formulaire de vérification
-          return _buildVerificationForm(context, verificationProvider);
+          return _buildVerificationForm(context, l10n, verificationProvider);
         },
       ),
     );
   }
   
-  /// Écran : Compte déjà vérifié
-  Widget _buildVerifiedScreen(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
+  Widget _buildVerifiedScreen(BuildContext context, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.verified,
-              size: 100,
-              color: Colors.green,
-            ),
+            Icon(Icons.verified, size: 100, color: Colors.green),
             SizedBox(height: 24),
             Text(
               l10n.profileVerified,
@@ -101,7 +88,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              'Votre compte a été vérifié avec succès ! Vous pouvez maintenant utiliser toutes les fonctionnalités.',
+              l10n.profileVerifiedDescription,
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
@@ -116,9 +103,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     );
   }
   
-  /// Écran : En attente d'approbation
-  Widget _buildPendingScreen(BuildContext context, ClientVerificationProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildPendingScreen(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) {
     final verification = provider.verification;
     
     return Center(
@@ -127,11 +112,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.pending_outlined,
-              size: 100,
-              color: Colors.orange,
-            ),
+            Icon(Icons.pending_outlined, size: 100, color: Colors.orange),
             SizedBox(height: 24),
             Text(
               l10n.verificationInProgress,
@@ -142,13 +123,13 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              verification?.detailedMessage ?? 'Votre demande est en cours d\'examen.',
+              verification?.detailedMessage ?? l10n.verificationPendingDescription,
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
             Text(
-              'Délai habituel : 24-48 heures ouvrables',
+              l10n.processingTime,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -165,9 +146,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     );
   }
   
-  /// Écran : Vérification rejetée
-  Widget _buildRejectedScreen(BuildContext context, ClientVerificationProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildRejectedScreen(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) {
     final verification = provider.verification;
     
     return SingleChildScrollView(
@@ -175,11 +154,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            Icons.cancel_outlined,
-            size: 100,
-            color: Colors.red,
-          ),
+          Icon(Icons.cancel_outlined, size: 100, color: Colors.red),
           SizedBox(height: 24),
           Text(
             l10n.verificationRejected,
@@ -201,7 +176,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Raison du rejet :',
+                    '${l10n.rejectionReason}:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.red.shade900,
@@ -218,22 +193,18 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             SizedBox(height: 24),
           ],
           Text(
-            'Vous pouvez soumettre de nouveaux documents ci-dessous.',
+            l10n.verificationRejectedDescription,
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 32),
-          // Afficher le formulaire pour resoumettre
-          _buildVerificationForm(context, provider),
+          _buildVerificationForm(context, l10n, provider),
         ],
       ),
     );
   }
   
-  /// Formulaire de vérification
-  Widget _buildVerificationForm(BuildContext context, ClientVerificationProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
-    
+  Widget _buildVerificationForm(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) {
     return Column(
       children: [
         Expanded(
@@ -246,46 +217,42 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
               });
             },
             children: [
-              _buildStep1DocumentTypeSelection(context),
-              _buildStep2DocumentUpload(context),
-              _buildStep3Review(context),
+              _buildStep1DocumentTypeSelection(context, l10n),
+              _buildStep2DocumentUpload(context, l10n),
+              _buildStep3Review(context, l10n),
             ],
           ),
         ),
-        _buildNavigationButtons(context, provider),
+        _buildNavigationButtons(context, l10n, provider),
       ],
     );
   }
   
-  /// Étape 1 : Sélection du type de document
-  Widget _buildStep1DocumentTypeSelection(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
+  Widget _buildStep1DocumentTypeSelection(BuildContext context, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Type de document',
+            l10n.documentType,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 8),
           Text(
-            'Choisissez le type de document que vous souhaitez soumettre',
+            l10n.documentTypeDescription ?? 'Choisissez le type de document',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey[600],
             ),
           ),
           SizedBox(height: 32),
           
-          // Option 1 : Carte d'identité
           _buildDocumentTypeCard(
             context,
             title: l10n.idCard,
-            subtitle: 'Recto et verso de votre carte d\'identité',
+            subtitle: l10n.idCardFrontDescription ?? 'Recto et verso de votre carte d\'identité',
             icon: Icons.credit_card,
             value: 'id_card',
             isSelected: _documentType == 'id_card',
@@ -298,11 +265,10 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
           
           SizedBox(height: 16),
           
-          // Option 2 : Passeport
           _buildDocumentTypeCard(
             context,
             title: l10n.passport,
-            subtitle: 'Page principale de votre passeport',
+            subtitle: l10n.passportDescription ?? 'Page principale de votre passeport',
             icon: Icons.book,
             value: 'passport',
             isSelected: _documentType == 'passport',
@@ -363,7 +329,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -371,28 +337,21 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: Colors.blue,
-                size: 28,
-              ),
+              Icon(Icons.check_circle, color: Colors.blue, size: 28),
           ],
         ),
       ),
     );
   }
   
-  /// Étape 2 : Upload des documents
-  Widget _buildStep2DocumentUpload(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
+  Widget _buildStep2DocumentUpload(BuildContext context, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Documents requis',
+            l10n.identityDocuments,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -400,46 +359,45 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
           SizedBox(height: 24),
           
           if (_documentType == 'id_card') ...[
-            // Carte d'identité recto
             _buildDocumentUploadCard(
               context,
-              title: 'Carte d\'identité (recto)',
-              subtitle: 'Photo claire du recto de votre carte',
+              l10n,
+              title: l10n.idCardFront,
+              subtitle: l10n.idCardFrontDescription,
               file: _idCardFront,
               onTap: () => _pickImage('id_card_front'),
             ),
             SizedBox(height: 16),
             
-            // Carte d'identité verso
             _buildDocumentUploadCard(
               context,
-              title: 'Carte d\'identité (verso)',
-              subtitle: 'Photo claire du verso de votre carte',
+              l10n,
+              title: l10n.idCardBack,
+              subtitle: l10n.idCardBackDescription,
               file: _idCardBack,
               onTap: () => _pickImage('id_card_back'),
             ),
           ] else ...[
-            // Passeport
             _buildDocumentUploadCard(
               context,
-              title: 'Passeport',
-              subtitle: 'Photo de la page principale',
+              l10n,
+              title: l10n.passport,
+              subtitle: l10n.passportDescription,
               file: _passportImage,
               onTap: () => _pickImage('passport'),
             ),
           ],
           
           SizedBox(height: 24),
-          
-          // Conseils pour les photos
-          _buildPhotoTips(context),
+          _buildPhotoTips(context, l10n),
         ],
       ),
     );
   }
   
   Widget _buildDocumentUploadCard(
-    BuildContext context, {
+    BuildContext context,
+    AppLocalizations l10n, {
     required String title,
     required String subtitle,
     required File? file,
@@ -510,7 +468,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     );
   }
   
-  Widget _buildPhotoTips(BuildContext context) {
+  Widget _buildPhotoTips(BuildContext context, AppLocalizations l10n) {
     final provider = context.read<ClientVerificationProvider>();
     final tips = provider.getPhotoTips();
     
@@ -529,7 +487,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
               Icon(Icons.lightbulb_outline, color: Colors.blue),
               SizedBox(width: 8),
               Text(
-                'Conseils pour de bonnes photos',
+                l10n.photoTips,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.blue.shade900,
@@ -538,34 +496,36 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             ],
           ),
           SizedBox(height: 12),
-          ...tips.map((tip) => Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: Text(
-              tip,
-              style: TextStyle(fontSize: 13, color: Colors.blue.shade900),
-            ),
-          )).toList(),
+          Text(
+            l10n.photoTipsContent,
+            style: TextStyle(fontSize: 13, color: Colors.blue.shade900),
+          ),
         ],
       ),
     );
   }
   
-  /// Étape 3 : Revue et soumission
-  Widget _buildStep3Review(BuildContext context) {
+  Widget _buildStep3Review(BuildContext context, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Revue de vos documents',
+            l10n.informationReview,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
+          SizedBox(height: 8),
+          Text(
+            l10n.reviewDescription,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
           SizedBox(height: 24),
           
-          // Résumé
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -576,16 +536,15 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildReviewRow('Type de document', _documentType == 'id_card' ? 'Carte d\'identité' : 'Passeport'),
+                _buildReviewRow(l10n.documentType, _documentType == 'id_card' ? l10n.idCard : l10n.passport),
                 SizedBox(height: 12),
-                _buildReviewRow('Documents fournis', _getDocumentsCount()),
+                _buildReviewRow(l10n.documentsProvided, _getDocumentsCount()),
               ],
             ),
           ),
           
           SizedBox(height: 24),
           
-          // Avertissement
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -603,7 +562,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Important',
+                        l10n.important,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.orange.shade900,
@@ -611,7 +570,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Assurez-vous que toutes les informations sont exactes. Les documents fournis doivent être valides et lisibles.',
+                        l10n.importantWarning,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.orange.shade900,
@@ -655,17 +614,14 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     if (_documentType == 'id_card') {
       if (_idCardFront != null) count++;
       if (_idCardBack != null) count++;
-      return '$count/2 documents';
+      return '$count/2 ${AppLocalizations.of(context)!.documents}';
     } else {
       if (_passportImage != null) count++;
-      return '$count/1 document';
+      return '$count/1 ${AppLocalizations.of(context)!.documents}';
     }
   }
   
-  /// Boutons de navigation
-  Widget _buildNavigationButtons(BuildContext context, ClientVerificationProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
-    
+  Widget _buildNavigationButtons(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -695,7 +651,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
           if (_currentStep > 0) SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: provider.isLoading ? null : () => _handleNextOrSubmit(context, provider),
+              onPressed: provider.isLoading ? null : () => _handleNextOrSubmit(context, l10n, provider),
               child: provider.isLoading
                   ? SizedBox(
                       height: 20,
@@ -710,14 +666,12 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     );
   }
   
-  /// Gérer la navigation ou la soumission
-  void _handleNextOrSubmit(BuildContext context, ClientVerificationProvider provider) async {
+  void _handleNextOrSubmit(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) async {
     if (_currentStep < 2) {
-      // Validation avant de passer à l'étape suivante
       if (_currentStep == 1 && !_areDocumentsValid()) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Veuillez ajouter tous les documents requis'),
+            content: Text(l10n.pleaseSelectFile ?? 'Veuillez ajouter tous les documents requis'),
             backgroundColor: Colors.red,
           ),
         );
@@ -729,8 +683,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Soumettre
-      await _submitVerification(context, provider);
+      await _submitVerification(context, l10n, provider);
     }
   }
   
@@ -742,8 +695,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     }
   }
   
-  /// Soumettre la vérification
-  Future<void> _submitVerification(BuildContext context, ClientVerificationProvider provider) async {
+  Future<void> _submitVerification(BuildContext context, AppLocalizations l10n, ClientVerificationProvider provider) async {
     bool success = false;
     
     if (_documentType == 'id_card') {
@@ -760,7 +712,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Vos documents ont été soumis avec succès !'),
+          content: Text(l10n.verificationSubmitted ?? 'Documents soumis avec succès !'),
           backgroundColor: Colors.green,
         ),
       );
@@ -768,37 +720,39 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.errorMessage ?? 'Erreur lors de la soumission'),
+          content: Text(provider.errorMessage ?? l10n.errorOccurred ?? 'Erreur'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
   
-  /// Sélectionner une image
   Future<void> _pickImage(String type) async {
     final provider = context.read<ClientVerificationProvider>();
     
     final source = await showDialog<ImageSource>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Choisir une source'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Appareil photo'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Galerie'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.selectImageSource ?? 'Choisir une source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text(l10n.camera),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text(l10n.gallery),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
     );
     
     if (source == null) return;
@@ -813,7 +767,6 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
     if (pickedFile != null) {
       final file = File(pickedFile.path);
       
-      // Valider le fichier
       final isValid = await provider.isFileValid(file);
       if (!isValid) {
         ScaffoldMessenger.of(context).showSnackBar(

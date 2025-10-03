@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/phone_verification_provider.dart';
+import '../../../providers/client_verification_provider.dart';  // CHANGÉ
 import '../../screens/auth/login_screen.dart';
-import '../../screens/client/phone_verification_screen.dart';
+import '../../screens/verification/client_verification_screen.dart';  // CHANGÉ
 import '../../screens/provider/provider_verification_screen.dart';
 
 enum VerificationType {
-  auto,    // Déterminé automatiquement selon le rôle et l'action
-  phone,   // Vérification téléphone (clients)
-  provider, // Vérification documents (prestataires)
-  none,    // Aucune vérification requise
+  auto,
+  client,    // CHANGÉ de 'phone' à 'client'
+  provider,
+  none,
 }
 
 class ProtectedActionHandler {
@@ -24,23 +24,23 @@ class ProtectedActionHandler {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.currentUser;
 
-    // 1. Vérifier si l'utilisateur est connecté
+    // 1. Vérifier connexion
     if (!authProvider.isAuthenticated || user == null) {
       await _showLoginRequiredDialog(context, actionDescription, l10n);
       return false;
     }
 
-    // 2. Déterminer le type de vérification requis
+    // 2. Déterminer type de vérification
     final actualRequiredVerification = _determineRequiredVerification(
       user.role, 
       requiredVerification, 
       actionDescription
     );
 
-    // 3. Vérifier selon le type requis
+    // 3. Vérifier
     switch (actualRequiredVerification) {
-      case VerificationType.phone:
-        return await _checkPhoneVerification(context, actionDescription, l10n);
+      case VerificationType.client:  // CHANGÉ
+        return await _checkClientVerification(context, actionDescription, l10n);
       
       case VerificationType.provider:
         return await _checkProviderVerification(context, actionDescription, l10n);
@@ -64,7 +64,6 @@ class ProtectedActionHandler {
 
     final actionLower = actionDescription.toLowerCase();
 
-    // Actions spécifiquement prestataires
     final providerActions = [
       'créer un service', 'create service', 'criar serviço',
       'ajouter un service', 'add service', 'adicionar serviço',
@@ -73,7 +72,6 @@ class ProtectedActionHandler {
       'faire une offre', 'make offer', 'fazer oferta',
     ];
 
-    // Actions spécifiquement clients
     final clientActions = [
       'publier un projet', 'publish project', 'publicar projeto',
       'créer un projet', 'create project', 'criar projeto',
@@ -82,37 +80,35 @@ class ProtectedActionHandler {
       'ouvrir un litige', 'open dispute', 'abrir disputa',
     ];
 
-    // Vérifier les actions prestataires
     if (providerActions.any((action) => actionLower.contains(action.toLowerCase()))) {
       return VerificationType.provider;
     }
 
-    // Vérifier les actions clients
     if (clientActions.any((action) => actionLower.contains(action.toLowerCase()))) {
-      return VerificationType.phone;
+      return VerificationType.client;  // CHANGÉ
     }
 
-    // Par défaut selon le rôle utilisateur
-    return userRole == 'provider' ? VerificationType.provider : VerificationType.phone;
+    return userRole == 'provider' ? VerificationType.provider : VerificationType.client;  // CHANGÉ
   }
 
-  static Future<bool> _checkPhoneVerification(
+  // NOUVELLE MÉTHODE pour les clients
+  static Future<bool> _checkClientVerification(
     BuildContext context, 
     String actionDescription, 
     AppLocalizations l10n
   ) async {
     try {
-      final phoneProvider = Provider.of<PhoneVerificationProvider>(context, listen: false);
-      await phoneProvider.fetchVerificationStatus();
+      final clientProvider = Provider.of<ClientVerificationProvider>(context, listen: false);
+      await clientProvider.fetchVerificationStatus();
 
-      if (!phoneProvider.isVerified) {
-        await _showPhoneVerificationDialog(context, actionDescription, l10n);
+      if (!clientProvider.isVerified) {
+        await _showClientVerificationDialog(context, actionDescription, l10n, clientProvider);
         return false;
       }
       return true;
     } catch (e) {
-      print('Erreur vérification téléphone: $e');
-      await _showErrorDialog(context, l10n.verificationError, l10n);
+      print('Erreur vérification client: $e');
+      await _showErrorDialog(context, 'Erreur de vérification', l10n);
       return false;
     }
   }
@@ -126,7 +122,6 @@ class ProtectedActionHandler {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final user = authProvider.currentUser;
 
-      // Vérifier le statut de vérification prestataire
       final verificationDetails = user?.verificationDetails;
       final status = verificationDetails?['status'] ?? 'not_started';
       
@@ -137,12 +132,93 @@ class ProtectedActionHandler {
       return true;
     } catch (e) {
       print('Erreur vérification prestataire: $e');
-      await _showErrorDialog(context, l10n.verificationError, l10n);
+      await _showErrorDialog(context, 'Erreur de vérification', l10n);
       return false;
     }
   }
 
-  // Dialogues
+  // NOUVEAU DIALOG pour les clients
+  static Future<void> _showClientVerificationDialog(
+    BuildContext context, 
+    String actionDescription, 
+    AppLocalizations l10n,
+    ClientVerificationProvider clientProvider,
+  ) async {
+    String title;
+    String message;
+    String buttonText;
+
+    if (clientProvider.isPending) {
+      title = l10n.verificationInProgress;
+      message = 'Votre demande de vérification est en cours. Vous ne pouvez pas encore $actionDescription.';
+      buttonText = l10n.viewStatus;
+    } else if (clientProvider.isRejected) {
+      title = l10n.verificationRejected;
+      message = 'Votre demande a été rejetée. Veuillez soumettre de nouveaux documents pour $actionDescription.';
+      buttonText = l10n.submitNewDocuments;
+    } else {
+      title = 'Vérification requise';
+      message = 'Pour $actionDescription, vous devez vérifier votre compte avec vos documents d\'identité.';
+      buttonText = 'Vérifier mon compte';
+    }
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.shield_outlined, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cette vérification garantit la sécurité de la plateforme.',
+                        style: TextStyle(color: Colors.blue.shade900, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(context, '/client-verification');  // CHANGÉ
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              child: Text(buttonText),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   static Future<void> _showLoginRequiredDialog(
     BuildContext context, 
     String actionDescription, 
@@ -171,78 +247,8 @@ class ProtectedActionHandler {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/login');
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF142FE2),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142FE2)),
               child: Text(l10n.login),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  static Future<void> _showPhoneVerificationDialog(
-    BuildContext context, 
-    String actionDescription, 
-    AppLocalizations l10n
-  ) async {
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.phone_android, color: Colors.orange),
-              const SizedBox(width: 8),
-              Text(l10n.phoneVerificationRequired),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.phoneVerificationForAction(actionDescription)),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.security, color: Colors.orange[700], size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        l10n.phoneVerificationSecurityNote,
-                        style: TextStyle(color: Colors.orange[700], fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PhoneVerificationScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              child: Text(l10n.verifyPhone),
             ),
           ],
         );
@@ -274,9 +280,7 @@ class ProtectedActionHandler {
           Navigator.of(context).pop();
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProviderVerificationScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProviderVerificationScreen()),
           );
         };
         break;
@@ -291,9 +295,7 @@ class ProtectedActionHandler {
           Navigator.of(context).pop();
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProviderVerificationScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProviderVerificationScreen()),
           );
         };
         break;
@@ -308,9 +310,7 @@ class ProtectedActionHandler {
           Navigator.of(context).pop();
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProviderVerificationScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProviderVerificationScreen()),
           );
         };
         break;
@@ -345,18 +345,17 @@ class ProtectedActionHandler {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                      const Icon(Icons.info_outline, color: Colors.blue, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           l10n.providerVerificationBenefits,
-                          style: TextStyle(color: Colors.blue[700], fontSize: 12),
+                          style: TextStyle(color: Colors.blue.shade900, fontSize: 12),
                         ),
                       ),
                     ],
@@ -395,14 +394,14 @@ class ProtectedActionHandler {
             children: [
               const Icon(Icons.error, color: Colors.red),
               const SizedBox(width: 8),
-              Text(l10n.errorOccurred),
+              const Text('Erreur'),
             ],
           ),
           content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.ok),
+              child: const Text('OK'),
             ),
           ],
         );

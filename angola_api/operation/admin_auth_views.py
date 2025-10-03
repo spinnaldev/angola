@@ -11,14 +11,15 @@ from django.utils import timezone
 from datetime import timedelta
 from django.utils import timezone
 from datetime import timedelta
-from .models import AdminAction, Conversation, Message, Notification, PhoneVerification, Provider, ProviderVerification, User
-from .serializers import ConversationSerializer, MessageSerializer, NotificationSerializer, PhoneVerificationSerializer, ProviderVerificationAdminSerializer, ProviderVerificationListSerializer, ProviderVerificationSerializer
+from .models import AdminAction, ClientVerification, Conversation, Message, Notification, PhoneVerification, Provider, ProviderVerification, User
+from .serializers import ClientVerificationListSerializer, ClientVerificationSerializer, ConversationSerializer, MessageSerializer, NotificationSerializer, PhoneVerificationSerializer, ProviderVerificationAdminSerializer, ProviderVerificationListSerializer, ProviderVerificationSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q, Count, Prefetch
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 import logging
 from django.db.models import Q, Case, When, IntegerField 
+from django_filters.rest_framework import DjangoFilterBackend
 
 logger = logging.getLogger(__name__)
 

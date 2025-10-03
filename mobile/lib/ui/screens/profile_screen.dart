@@ -419,7 +419,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         forceReload(); // ✅ Rechargement au retour
       });
     } else if (role == 'client') {
-      Navigator.pushNamed(context, '/phone-verification').then((_) {
+      Navigator.pushNamed(context, '/client-verification').then((_) {
         forceReload(); // ✅ Rechargement au retour
       });
     }
@@ -833,7 +833,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   Text(
                     user.role == 'provider'
                         ? l10n.profileVerificationDescription
-                        : l10n.phoneVerificationDescription,
+                        : l10n.clientVerificationDescription,
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -848,7 +848,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Text(
                         user.role == 'provider'
                             ? l10n.verifyMyProfile
-                            : l10n.verifyMyPhone,
+                            : l10n.verifyMyProfile,
                       ),
                     ),
                   ),

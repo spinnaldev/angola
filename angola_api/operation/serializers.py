@@ -173,42 +173,42 @@ class UserSerializer(serializers.ModelSerializer):
         
 
 
-class UserDetailSerializer(UserSerializer):
-    """
-    Serializer détaillé pour les utilisateurs
-    Inclut les informations de vérification complètes
-    """
+# class UserDetailSerializer(UserSerializer):
+#     """
+#     Serializer détaillé pour les utilisateurs
+#     Inclut les informations de vérification complètes
+#     """
     
-    client_verification_details = serializers.SerializerMethodField()
-    provider_verification_details = serializers.SerializerMethodField()
+#     client_verification_details = serializers.SerializerMethodField()
+#     provider_verification_details = serializers.SerializerMethodField()
     
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + [
-            'client_verification_details',
-            'provider_verification_details',
-        ]
+#     class Meta(UserSerializer.Meta):
+#         fields = UserSerializer.Meta.fields + [
+#             'client_verification_details',
+#             'provider_verification_details',
+#         ]
     
-    def get_client_verification_details(self, obj):
-        """
-        Détails complets de la vérification client
-        """
-        if obj.role == 'client':
-            try:
-                verification = obj.client_verification
-                return ClientVerificationSerializer(verification).data
-            except ClientVerification.DoesNotExist:
-                return None
-        return None
+#     def get_client_verification_details(self, obj):
+#         """
+#         Détails complets de la vérification client
+#         """
+#         if obj.role == 'client':
+#             try:
+#                 verification = obj.client_verification
+#                 return ClientVerificationSerializer(verification).data
+#             except ClientVerification.DoesNotExist:
+#                 return None
+#         return None
     
-    def get_provider_verification_details(self, obj):
-        """
-        Détails complets de la vérification prestataire
-        """
-        if obj.role == 'provider':
-            provider = getattr(obj, 'provider_profile', None)
-            if provider and hasattr(provider, 'verification'):
-                return ProviderVerificationSerializer(provider.verification).data
-        return None
+#     def get_provider_verification_details(self, obj):
+#         """
+#         Détails complets de la vérification prestataire
+#         """
+#         if obj.role == 'provider':
+#             provider = getattr(obj, 'provider_profile', None)
+#             if provider and hasattr(provider, 'verification'):
+#                 return ProviderVerificationSerializer(provider.verification).data
+#         return None
 
 # ================================================================
 # 4. SERIALIZERS POUR LES STATISTIQUES ET RAPPORTS

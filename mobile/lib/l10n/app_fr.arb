@@ -1284,8 +1284,9 @@
   "submitNewDocuments": "Soumettre de nouveaux documents",
   "viewStatus": "Voir le statut",
   "backToProfile": "Retour au profil",
-  
+  "documentTypeDescription" : "Choisissez le type de document",
   "phoneVerificationDescription": "Vous devez vérifier votre numéro de téléphone",
+  "clientVerificationDescription": "Vous devez vérifier votre compte avec vos documents d'identité",
   "profileVerificationDescription": "Vous devez vérifier votre profil prestataire",
   "phoneVerifiedDescription": "Votre numéro de téléphone est vérifié",
   "profileVerifiedDescription": "Votre profil prestataire est vérifié",
