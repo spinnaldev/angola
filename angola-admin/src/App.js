@@ -22,7 +22,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import ConversationsList from './pages/ConversationsList';
 import ConversationDetail from './pages/ConversationDetail';
 import UserVerification from './pages/UserVerification';
-
+import ClientVerification from './pages/ClientVerification';
 // Route protégée SANS layout automatique
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -100,6 +100,15 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
+          <Route
+            path="/client-verification"
+            element={
+              <ProtectedRoute>
+                <ClientVerification />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/providers"
             element={

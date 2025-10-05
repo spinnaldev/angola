@@ -150,16 +150,16 @@ class ProtectedActionHandler {
 
     if (clientProvider.isPending) {
       title = l10n.verificationInProgress;
-      message = 'Votre demande de vérification est en cours. Vous ne pouvez pas encore $actionDescription.';
+      message = l10n.verificationInProgressCannotYet(actionDescription);
       buttonText = l10n.viewStatus;
     } else if (clientProvider.isRejected) {
       title = l10n.verificationRejected;
-      message = 'Votre demande a été rejetée. Veuillez soumettre de nouveaux documents pour $actionDescription.';
+      message = l10n.verificationRejectedResubmit(actionDescription);
       buttonText = l10n.submitNewDocuments;
     } else {
-      title = 'Vérification requise';
-      message = 'Pour $actionDescription, vous devez vérifier votre compte avec vos documents d\'identité.';
-      buttonText = 'Vérifier mon compte';
+      title = l10n.clientVerificationRequired;
+      message = l10n.clientVerificationForAction(actionDescription);
+      buttonText = l10n.verifyMyAccount;
     }
 
     await showDialog(
@@ -191,7 +191,7 @@ class ProtectedActionHandler {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Cette vérification garantit la sécurité de la plateforme.',
+                        l10n.verificationSecurityNote,
                         style: TextStyle(color: Colors.blue.shade900, fontSize: 12),
                       ),
                     ),

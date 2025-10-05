@@ -1,25 +1,18 @@
-// angola-admin/src/pages/UserVerification.js - VERSION MODIFIÉE AVEC ONGLETS
+// angola-admin/src/pages/ClientVerification.js
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { withAuth } from '../context/AuthContext';
-import VerificationDetailModal from '../components/VerificationDetailModal';
 import ClientVerificationDetailModal from '../components/ClientVerificationDetailModal';
-import verificationService from '../services/verificationService';
 import clientVerificationService from '../services/clientVerificationService';
 
-const UserVerification = () => {
-  // ✨ NOUVEAU : Onglet actif (provider ou client)
-  const [activeTab, setActiveTab] = useState('provider');
-  
+const ClientVerification = () => {
   const [verifications, setVerifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState({});
-  const [selectedItems, setSelectedItems] = useState(new Set());
   const [filters, setFilters] = useState({
     status: '',
     search: '',
-    is_business: undefined,
-    document_type: '' // Pour les clients
+    document_type: ''
   });
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -28,24 +21,18 @@ const UserVerification = () => {
     rejectionReason: '',
     adminNotes: ''
   });
-  
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedVerificationId, setSelectedVerificationId] = useState(null);
 
   useEffect(() => {
     fetchVerifications();
     fetchStatistics();
-  }, [filters, activeTab]); // ✨ Recharger quand on change d'onglet
+  }, [filters]);
 
   const fetchVerifications = async () => {
     setLoading(true);
     try {
-      let data;
-      if (activeTab === 'provider') {
-        data = await verificationService.getVerifications(filters);
-      } else {
-        data = await clientVerificationService.getVerifications(filters);
-      }
+      const data = await clientVerificationService.getVerifications(filters);
       setVerifications(data.results || data);
     } catch (error) {
       console.error('Erreur lors du chargement des vérifications:', error);
@@ -56,44 +43,11 @@ const UserVerification = () => {
 
   const fetchStatistics = async () => {
     try {
-      let rawStats;
-      if (activeTab === 'provider') {
-        rawStats = await verificationService.getStatistics();
-        // Normaliser les stats prestataires (elles sont dans status_distribution)
-        const normalized = {
-          total: rawStats.status_distribution?.total || 0,
-          pending: rawStats.status_distribution?.pending || 0,
-          verified: rawStats.status_distribution?.verified || 0,
-          rejected: rawStats.status_distribution?.rejected || 0,
-          urgent: rawStats.urgent_verifications || 0
-        };
-        setStatistics(normalized);
-      } else {
-        rawStats = await clientVerificationService.getStatistics();
-        // Les stats clients sont déjà au bon format
-        setStatistics(rawStats);
-      }
+      const stats = await clientVerificationService.getStatistics();
+      setStatistics(stats);
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
     }
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.size === verifications.length) {
-      setSelectedItems(new Set());
-    } else {
-      setSelectedItems(new Set(verifications.map(v => v.id)));
-    }
-  };
-
-  const handleSelectItem = (id) => {
-    const newSelected = new Set(selectedItems);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedItems(newSelected);
   };
 
   const openModal = (type, verification = null) => {
@@ -112,37 +66,20 @@ const UserVerification = () => {
   const handleAction = async () => {
     try {
       const { rejectionReason, adminNotes } = modalData;
-      const service = activeTab === 'provider' ? verificationService : clientVerificationService;
       
       switch (modalType) {
         case 'approve':
-          await service.approve(currentVerification.id, adminNotes);
+          await clientVerificationService.approve(currentVerification.id, adminNotes);
           break;
         case 'reject':
           if (!rejectionReason.trim()) {
             alert('La raison du rejet est obligatoire');
             return;
           }
-          await service.reject(currentVerification.id, rejectionReason, adminNotes);
-          break;
-        case 'bulk_approve':
-          if (activeTab === 'provider') {
-            await verificationService.bulkApprove(Array.from(selectedItems), adminNotes);
-          }
-          setSelectedItems(new Set());
-          break;
-        case 'bulk_reject':
-          if (activeTab === 'provider') {
-            if (!rejectionReason.trim()) {
-              alert('La raison du rejet est obligatoire');
-              return;
-            }
-            await verificationService.bulkReject(Array.from(selectedItems), rejectionReason, adminNotes);
-          }
-          setSelectedItems(new Set());
+          await clientVerificationService.reject(currentVerification.id, rejectionReason, adminNotes);
           break;
         case 'reset':
-          await service.reset(currentVerification.id);
+          await clientVerificationService.reset(currentVerification.id);
           break;
       }
       
@@ -160,13 +97,6 @@ const UserVerification = () => {
     setDetailModalOpen(true);
   };
 
-  const closeDetailModal = () => {
-    setDetailModalOpen(false);
-    setSelectedVerificationId(null);
-    fetchVerifications();
-    fetchStatistics();
-  };
-
   const getStatusBadge = (status) => {
     const statusConfig = {
       'pending': { color: 'bg-yellow-100 text-yellow-800', text: 'En attente', icon: '⏳' },
@@ -174,9 +104,24 @@ const UserVerification = () => {
       'rejected': { color: 'bg-red-100 text-red-800', text: 'Rejeté', icon: '❌' },
       'not_started': { color: 'bg-gray-100 text-gray-800', text: 'Non démarré', icon: '📋' }
     };
+
     const config = statusConfig[status] || statusConfig['not_started'];
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+        <span className="mr-1">{config.icon}</span>
+        {config.text}
+      </span>
+    );
+  };
+
+  const getDocumentTypeBadge = (docType) => {
+    const types = {
+      'id_card': { text: 'Carte d\'identité', icon: '🪪' },
+      'passport': { text: 'Passeport', icon: '📘' }
+    };
+    const config = types[docType] || { text: docType, icon: '📄' };
+    return (
+      <span className="text-sm text-gray-600">
         <span className="mr-1">{config.icon}</span>
         {config.text}
       </span>
@@ -201,68 +146,11 @@ const UserVerification = () => {
         <div className="sm:flex sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Gestion des Vérifications
+              Vérifications Clients
             </h1>
             <p className="mt-2 text-sm text-gray-700">
-              Gérer les vérifications d'identité des prestataires et clients
+              Gérer les vérifications d'identité des clients
             </p>
-          </div>
-        </div>
-
-        {/* ✨ ONGLETS PROVIDER / CLIENT */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => {
-                  setActiveTab('provider');
-                  setFilters({ status: '', search: '', is_business: undefined });
-                  setSelectedItems(new Set());
-                  setDetailModalOpen(false); // Fermer le modal
-                  setSelectedVerificationId(null);
-                }}
-                className={`
-                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                  ${activeTab === 'provider'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <span className="mr-2">⭐</span>
-                Prestataires
-                {statistics.pending > 0 && activeTab === 'provider' && (
-                  <span className="ml-2 bg-yellow-100 text-yellow-800 py-0.5 px-2 rounded-full text-xs font-medium">
-                    {statistics.pending}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('client');
-                  setFilters({ status: '', search: '', document_type: '' });
-                  setSelectedItems(new Set());
-                  setDetailModalOpen(false); // Fermer le modal
-                  setSelectedVerificationId(null);
-                }}
-                className={`
-                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                  ${activeTab === 'client'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <span className="mr-2">👤</span>
-                Clients
-                {statistics.pending > 0 && activeTab === 'client' && (
-                  <span className="ml-2 bg-yellow-100 text-yellow-800 py-0.5 px-2 rounded-full text-xs font-medium">
-                    {statistics.pending}
-                  </span>
-                )}
-              </button>
-            </nav>
           </div>
         </div>
 
@@ -369,38 +257,20 @@ const UserVerification = () => {
               </select>
             </div>
 
-            {/* Filtres spécifiques selon l'onglet */}
-            {activeTab === 'provider' ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type de compte
-                </label>
-                <select
-                  value={filters.is_business === undefined ? '' : filters.is_business}
-                  onChange={(e) => setFilters({...filters, is_business: e.target.value === '' ? undefined : e.target.value === 'true'})}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Tous les types</option>
-                  <option value="false">Individuel</option>
-                  <option value="true">Entreprise</option>
-                </select>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type de document
-                </label>
-                <select
-                  value={filters.document_type}
-                  onChange={(e) => setFilters({...filters, document_type: e.target.value})}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Tous les types</option>
-                  <option value="id_card">Carte d'identité</option>
-                  <option value="passport">Passeport</option>
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type de document
+              </label>
+              <select
+                value={filters.document_type}
+                onChange={(e) => setFilters({...filters, document_type: e.target.value})}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="">Tous les types</option>
+                <option value="id_card">Carte d'identité</option>
+                <option value="passport">Passeport</option>
+              </select>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -417,31 +287,6 @@ const UserVerification = () => {
           </div>
         </div>
 
-        {/* Actions en lot (uniquement pour prestataires) */}
-        {activeTab === 'provider' && selectedItems.size > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-900">
-                {selectedItems.size} élément(s) sélectionné(s)
-              </span>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => openModal('bulk_approve')}
-                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                >
-                  ✅ Approuver la sélection
-                </button>
-                <button
-                  onClick={() => openModal('bulk_reject')}
-                  className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                >
-                  ❌ Rejeter la sélection
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Tableau */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           {loading ? (
@@ -453,21 +298,11 @@ const UserVerification = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {activeTab === 'provider' && (
-                    <th className="px-6 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.size === verifications.length && verifications.length > 0}
-                        onChange={handleSelectAll}
-                        className="rounded border-gray-300"
-                      />
-                    </th>
-                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {activeTab === 'provider' ? 'Prestataire' : 'Client'}
+                    Client
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {activeTab === 'provider' ? 'Type' : 'Document'}
+                    Document
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
@@ -483,49 +318,25 @@ const UserVerification = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {verifications.map((verification) => (
                   <tr key={verification.id} className="hover:bg-gray-50">
-                    {activeTab === 'provider' && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.has(verification.id)}
-                          onChange={() => handleSelectItem(verification.id)}
-                          className="rounded border-gray-300"
-                        />
-                      </td>
-                    )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-xl">{activeTab === 'provider' ? '⭐' : '👤'}</span>
+                            <span className="text-xl">👤</span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {activeTab === 'provider' 
-                              ? verification.provider_name || 'N/A'
-                              : verification.full_name || 'N/A'
-                            }
+                            {verification.user_info?.username || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {activeTab === 'provider'
-                              ? verification.provider_email || 'N/A'
-                              : verification.client_email || 'N/A'
-                            }
+                            {verification.user_info?.email || 'N/A'}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {activeTab === 'provider' ? (
-                        <span className={`px-2 py-1 rounded ${verification.is_business ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {verification.is_business ? '🏢 Entreprise' : '👤 Individuel'}
-                        </span>
-                      ) : (
-                        <span className="text-sm">
-                          {verification.document_type === 'id_card' ? '🪪 Carte d\'identité' : '📘 Passeport'}
-                        </span>
-                      )}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getDocumentTypeBadge(verification.document_type)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(verification.verification_status)}
@@ -547,25 +358,25 @@ const UserVerification = () => {
                             onClick={() => openModal('approve', verification)}
                             className="text-green-600 hover:text-green-900"
                           >
-                            ✅
+                            ✅ Approuver
                           </button>
                           <button
                             onClick={() => openModal('reject', verification)}
                             className="text-red-600 hover:text-red-900"
                           >
-                            ❌
+                            ❌ Rejeter
                           </button>
                         </>
                       )}
 
-                      {/* {verification.verification_status === 'rejected' && (
+                      {verification.verification_status === 'rejected' && (
                         <button
                           onClick={() => openModal('reset', verification)}
                           className="text-orange-600 hover:text-orange-900"
                         >
-                          🔄
+                          🔄 Réinitialiser
                         </button>
-                      )} */}
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -596,12 +407,10 @@ const UserVerification = () => {
                       {modalType === 'approve' && '✅ Approuver la vérification'}
                       {modalType === 'reject' && '❌ Rejeter la vérification'}
                       {modalType === 'reset' && '🔄 Réinitialiser la vérification'}
-                      {modalType === 'bulk_approve' && '✅ Approuver la sélection'}
-                      {modalType === 'bulk_reject' && '❌ Rejeter la sélection'}
                     </h3>
                     
                     <div className="mt-2 space-y-4">
-                      {(modalType === 'reject' || modalType === 'bulk_reject') && (
+                      {modalType === 'reject' && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Raison du rejet *
@@ -611,7 +420,7 @@ const UserVerification = () => {
                             onChange={(e) => setModalData({...modalData, rejectionReason: e.target.value})}
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
                             rows="3"
-                            placeholder="Expliquez pourquoi..."
+                            placeholder="Expliquez pourquoi la vérification est rejetée..."
                           />
                         </div>
                       )}
@@ -626,7 +435,7 @@ const UserVerification = () => {
                             onChange={(e) => setModalData({...modalData, adminNotes: e.target.value})}
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                             rows="2"
-                            placeholder="Ajoutez des notes..."
+                            placeholder="Ajoutez des notes internes..."
                           />
                         </div>
                       )}
@@ -639,9 +448,9 @@ const UserVerification = () => {
                   type="button"
                   onClick={handleAction}
                   className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${
-                    modalType.includes('approve') ? 'bg-green-600 hover:bg-green-700' :
-                    modalType.includes('reject') ? 'bg-red-600 hover:bg-red-700' :
-                    'bg-orange-600 hover:bg-orange-700'
+                    modalType === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
+                    modalType === 'reject' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' :
+                    'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
                   }`}
                 >
                   Confirmer
@@ -649,7 +458,7 @@ const UserVerification = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   Annuler
                 </button>
@@ -659,23 +468,20 @@ const UserVerification = () => {
         </div>
       )}
 
-      {/* Modals de détail selon le type */}
+      {/* Modal de détail */}
       {detailModalOpen && (
-        activeTab === 'provider' ? (
-          <VerificationDetailModal
-            isOpen={detailModalOpen}
-            onClose={closeDetailModal}
-            verificationId={selectedVerificationId}
-          />
-        ) : (
-          <ClientVerificationDetailModal
-            verificationId={selectedVerificationId}
-            onClose={closeDetailModal}
-          />
-        )
+        <ClientVerificationDetailModal
+          verificationId={selectedVerificationId}
+          onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedVerificationId(null);
+            fetchVerifications();
+            fetchStatistics();
+          }}
+        />
       )}
     </DashboardLayout>
   );
 };
 
-export default withAuth(UserVerification);
+export default withAuth(ClientVerification);

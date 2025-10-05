@@ -25,7 +25,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
   File? _idCardFront;
   File? _idCardBack;
   File? _passportImage;
-  
+  bool _forceShowForm = false; 
   final ImagePicker _picker = ImagePicker();
   
   @override
@@ -60,7 +60,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             return _buildPendingScreen(context, l10n, verificationProvider);
           }
           
-          if (verificationProvider.isRejected) {
+          if (verificationProvider.isRejected && !_forceShowForm) {
             return _buildRejectedScreen(context, l10n, verificationProvider);
           }
           
@@ -79,20 +79,25 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
           children: [
             Icon(Icons.verified, size: 100, color: Colors.green),
             SizedBox(height: 24),
+            
+            // ✅ TITRE TRADUIT
             Text(
-              l10n.profileVerified,
+              l10n.verificationVerifiedTitle,  // "Compte vérifié !"
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16),
+            
+            // ✅ DESCRIPTION TRADUITE
             Text(
-              l10n.profileVerifiedDescription,
+              l10n.verificationVerifiedMessage,  // "Votre compte a été vérifié avec succès..."
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 32),
+            
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               child: Text(l10n.backToProfile),
@@ -114,28 +119,37 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
           children: [
             Icon(Icons.pending_outlined, size: 100, color: Colors.orange),
             SizedBox(height: 24),
+            
+            // ✅ UTILISER LES TRADUCTIONS
             Text(
-              l10n.verificationInProgress,
+              l10n.verificationInProgress,  // "Vérification en cours"
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16),
+            
+            // ✅ AFFICHER LE MESSAGE AVEC LES JOURS
             Text(
-              verification?.detailedMessage ?? l10n.verificationPendingDescription,
+              verification?.daysSinceSubmission != null && verification!.daysSinceSubmission! > 0
+                  ? 'Votre demande est en cours d\'examen depuis ${verification.daysSinceSubmission} jour(s).'
+                  : l10n.verificationPendingMessageNoDays,
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
+            
+            // ✅ TEMPS DE TRAITEMENT
             Text(
-              l10n.processingTime,
+              l10n.processingTime,  // "Temps habituel de traitement : 24-48 heures utiles"
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 32),
+            
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               child: Text(l10n.backToProfile),
@@ -156,6 +170,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
         children: [
           Icon(Icons.cancel_outlined, size: 100, color: Colors.red),
           SizedBox(height: 24),
+          
           Text(
             l10n.verificationRejected,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -164,7 +179,9 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
-          if (verification?.rejectionReason != null) ...[
+          
+          // Raison du rejet
+          if (verification?.rejectionReason != null && verification!.rejectionReason!.isNotEmpty) ...[
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -176,7 +193,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${l10n.rejectionReason}:',
+                    '${l10n.rejectionReason} :',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.red.shade900,
@@ -184,7 +201,7 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    verification!.rejectionReason!,
+                    verification.rejectionReason!,
                     style: TextStyle(color: Colors.red.shade900),
                   ),
                 ],
@@ -192,13 +209,64 @@ class _ClientVerificationScreenState extends State<ClientVerificationScreen> {
             ),
             SizedBox(height: 24),
           ],
+          
           Text(
             l10n.verificationRejectedDescription,
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 32),
-          _buildVerificationForm(context, l10n, provider),
+          
+          // ✅ BOUTON FONCTIONNEL POUR SOUMETTRE DE NOUVEAUX DOCUMENTS
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  // ✅ Activer le mode "forcer l'affichage du formulaire"
+                  _forceShowForm = true;
+                  
+                  // ✅ Réinitialiser l'étape à 0
+                  _currentStep = 0;
+                  
+                  // ✅ Réinitialiser les fichiers sélectionnés
+                  _idCardFront = null;
+                  _idCardBack = null;
+                  _passportImage = null;
+                  
+                  // ✅ Garder le même type de document qu'avant
+                  if (verification?.documentType != null) {
+                    _documentType = verification!.documentType;
+                  }
+                  
+                  // ✅ Revenir au début du PageController
+                  if (_pageController.hasClients) {
+                    _pageController.jumpToPage(0);
+                  }
+                });
+                
+                print('✅ Formulaire de resoumission activé');
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text(
+                l10n.submitNewDocuments,
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Bouton retour au profil
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: Text(l10n.backToProfile),
+          ),
         ],
       ),
     );

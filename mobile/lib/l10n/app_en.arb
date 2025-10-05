@@ -624,7 +624,7 @@
   "budgetTip": "99% of clients find a freelancer within their budget",
   
   "interventionLocation": "Intervention Location *",
-  "locationHint": "Ex: Paris, Lyon, France...",
+  "locationHint": "Ex: Luanda, Benguela, Huambo...",
   "locationRequired": "Location is required",
   "remoteWorkPossible": "Remote work possible",
   "remoteWorkDescription": "Provider can work remotely",
@@ -1270,6 +1270,50 @@
   "verificationPendingDescription": "Your verification request is under review",
   "verificationRejectedDescription": "Your request has been rejected. Contact support.",
   
+  "verificationVerified": "Account verified",
+  "verificationVerifiedTitle": "Account verified!",
+  "verificationVerifiedMessage": "Your account has been successfully verified. You can now use all features.",
+  
+  "verificationNotStarted": "Verification not started",
+  "verificationNotStartedTitle": "Verification required",
+  "verificationNotStartedMessage": "Complete your verification to access all features.",
+  
+  "verificationPendingMessageNoDays": "Your request is under review.",
+  "processingTime": "Typical processing time: 24-48 business hours",
+  "processingTimeShort": "Processing within 24-48h",
+  "verificationInProgressCannotYet": "Your verification request is under review. You cannot {action} yet.",
+  "@verificationInProgressCannotYet": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "verificationSecurityNote": "This verification ensures platform security.",
+  "verificationPendingWait": "Your verification is under review. Please wait or submit new documents.",
+  
+  "clientVerificationRequired": "Verification required",
+  "clientVerificationForAction": "To {action}, you must verify your account with your identity documents.",
+  "@clientVerificationForAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "clientVerificationBenefits": "This verification ensures trust and security on our platform.",
+  
+  "verificationRejectedResubmit": "Your request was rejected. Please submit new documents to {action}.",
+  "@verificationRejectedResubmit": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+
   "accountType": "Account type",
   "individual": "Individual",
   "business": "Business",
@@ -1409,7 +1453,7 @@
   "phoneVerificationProtection": "Phone verification protects against fake accounts",
   "cancel": "Cancel",
   "verifyMyPhone": "Verify my phone",
-  
+  "verifyMyAccount" : "Verify my account",
   "phoneVerificationForProjects": "To publish projects, you need to verify your phone number.",
   "phoneVerificationForOffers": "To make offers, you need to verify your phone number.",
   "phoneVerificationForMessages": "To send messages, you need to verify your phone number.",

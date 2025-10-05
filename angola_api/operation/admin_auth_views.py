@@ -1148,23 +1148,40 @@ class AdminClientVerificationViewSet(viewsets.ModelViewSet):
         
         logger.info(f"✅ Vérification client approuvée par {request.user.username} pour {verification.user.username}")
         
-        # OPTIONNEL : Envoyer une notification au client
+        # ✅ CORRECTION : Envoyer une notification FCM au client
         try:
             from .fcm_service import FCMService
-            FCMService.send_to_user(
-                user_id=verification.user.id,
+            
+            # Envoyer via FCM
+            fcm_success = FCMService.send_notification_to_user(
+                user=verification.user.id,
                 title="Compte vérifié ! ✅",
-                body="Votre compte a été vérifié. Vous pouvez maintenant utiliser toutes les fonctionnalités.",
-                data={'type': 'client_verification_approved'}
+                body="Votre compte a été vérifié avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités de l'application.",
+                notification_type='client_verification_approved',
+                data={
+                    'type': 'client_verification_approved',
+                    'verification_id': verification.id,
+                    'click_action': 'PROFILE'
+                },
+                click_action='FLUTTER_NOTIFICATION_CLICK'
             )
+            
+            if fcm_success:
+                logger.info(f"✅ Notification FCM envoyée au client {verification.user.username}")
+            else:
+                logger.warning(f"⚠️ Échec envoi notification FCM au client {verification.user.username}")
+                
         except Exception as e:
-            logger.error(f"Erreur envoi notification : {e}")
+            logger.error(f"❌ Erreur envoi notification FCM : {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
         
         serializer = self.get_serializer(verification)
         return Response({
             'message': 'Vérification client approuvée avec succès',
             'verification': serializer.data
         })
+
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -1172,25 +1189,32 @@ class AdminClientVerificationViewSet(viewsets.ModelViewSet):
         ❌ REJETER une vérification client
         """
         verification = self.get_object()
-        
-        if verification.verification_status == 'verified':
-            return Response({
-                'detail': 'Impossible de rejeter une vérification déjà approuvée'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Récupérer la raison du rejet
-        rejection_reason = request.data.get('rejection_reason', '')
+        rejection_reason = request.data.get('rejection_reason', '').strip()
         
         if not rejection_reason:
             return Response({
-                'detail': 'Veuillez fournir une raison de rejet'
+                'detail': 'La raison du rejet est requise'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if verification.verification_status == 'rejected':
+            return Response({
+                'detail': 'Cette vérification est déjà rejetée'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Rejeter la vérification
         verification.verification_status = 'rejected'
-        verification.rejection_reason = rejection_reason
         verification.verified_by = request.user
         verification.verified_at = None
+        verification.rejection_reason = rejection_reason
+        
+        # Ajouter notes admin si fournies
+        admin_notes = request.data.get('admin_notes', '')
+        if admin_notes:
+            existing_notes = verification.admin_notes or ''
+            timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+            new_note = f"[{timestamp} - {request.user.username}] {admin_notes}"
+            verification.admin_notes = f"{existing_notes}\n{new_note}".strip()
+        
         verification.save()
         
         # Mettre à jour le statut utilisateur
@@ -1203,28 +1227,46 @@ class AdminClientVerificationViewSet(viewsets.ModelViewSet):
             action_type='client_verification_rejected',
             target_model='ClientVerification',
             target_id=verification.id,
-            description=f"Vérification client rejetée pour {verification.user.username} : {rejection_reason}"
+            description=f"Vérification client rejetée pour {verification.user.username}: {rejection_reason}"
         )
         
         logger.info(f"❌ Vérification client rejetée par {request.user.username} pour {verification.user.username}")
         
-        # OPTIONNEL : Envoyer une notification au client
+        # ✅ CORRECTION : Envoyer une notification FCM au client
         try:
             from .fcm_service import FCMService
-            FCMService.send_to_user(
-                user_id=verification.user.id,
-                title="Vérification rejetée",
-                body=f"Votre demande de vérification a été rejetée : {rejection_reason}",
-                data={'type': 'client_verification_rejected', 'reason': rejection_reason}
+            
+            # Envoyer via FCM
+            fcm_success = FCMService.send_notification_to_user(
+                user=verification.user.id,
+                title="Vérification rejetée ❌",
+                body=f"Votre demande de vérification a été rejetée. Raison : {rejection_reason}",
+                notification_type='client_verification_rejected',
+                data={
+                    'type': 'client_verification_rejected',
+                    'verification_id': verification.id,
+                    'rejection_reason': rejection_reason,
+                    'click_action': 'CLIENT_VERIFICATION'
+                },
+                click_action='FLUTTER_NOTIFICATION_CLICK'
             )
+            
+            if fcm_success:
+                logger.info(f"✅ Notification FCM rejet envoyée au client {verification.user.username}")
+            else:
+                logger.warning(f"⚠️ Échec envoi notification FCM rejet au client {verification.user.username}")
+                
         except Exception as e:
-            logger.error(f"Erreur envoi notification : {e}")
+            logger.error(f"❌ Erreur envoi notification FCM rejet : {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
         
         serializer = self.get_serializer(verification)
         return Response({
             'message': 'Vérification client rejetée',
             'verification': serializer.data
         })
+
     
     @action(detail=True, methods=['post'])
     def reset(self, request, pk=None):

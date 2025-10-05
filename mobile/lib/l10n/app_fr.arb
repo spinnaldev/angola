@@ -625,7 +625,7 @@
   "budgetTip": "99% des clients trouvent un freelance dans leur budget",
   
   "interventionLocation": "Lieu d'intervention *",
-  "locationHint": "Ex: Paris, Lyon, France...",
+  "locationHint": "Ex: Luanda, Benguela, Huambo...",
   "locationRequired": "Le lieu est obligatoire",
   "remoteWorkPossible": "Télétravail possible",
   "remoteWorkDescription": "Le prestataire peut travailler à distance",
@@ -1292,7 +1292,48 @@
   "profileVerifiedDescription": "Votre profil prestataire est vérifié",
   "verificationPendingDescription": "Votre demande de vérification est en cours d'examen",
   "verificationRejectedDescription": "Votre demande a été rejetée. Contactez le support.",
+  "verificationVerified": "Compte vérifié",
+  "verificationVerifiedTitle": "Compte vérifié !",
+  "verificationVerifiedMessage": "Votre compte a été vérifié avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités.",
   
+  "verificationNotStarted": "Vérification non commencée",
+  "verificationNotStartedTitle": "Vérification requise",
+  "verificationNotStartedMessage": "Complétez votre vérification pour accéder à toutes les fonctionnalités.",
+  "verificationPendingMessageNoDays": "Votre demande est en cours d'examen.",
+  "processingTime": "Temps habituel de traitement : 24-48 heures utiles",
+  "processingTimeShort": "Traitement sous 24-48h",
+  "verificationInProgressCannotYet": "Votre demande de vérification est en cours. Vous ne pouvez pas encore {action}.",
+  "@verificationInProgressCannotYet": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "verificationSecurityNote": "Cette vérification garantit la sécurité de la plateforme.",
+  "verificationPendingWait": "Votre vérification est en cours. Patientez ou soumettez de nouveaux documents.",
+  
+  "clientVerificationRequired": "Vérification requise",
+  "clientVerificationForAction": "Pour {action}, vous devez vérifier votre compte avec vos documents d'identité.",
+  "@clientVerificationForAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "clientVerificationBenefits": "Cette vérification garantit la confiance et la sécurité sur notre plateforme.",
+  
+  "verificationRejectedResubmit": "Votre demande a été rejetée. Veuillez soumettre de nouveaux documents pour {action}.",
+  "@verificationRejectedResubmit": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
   "accountType": "Type de compte",
   "individual": "Particulier",
   "business": "Entreprise", 
@@ -1431,7 +1472,7 @@
   "phoneVerificationProtection": "La vérification téléphone protège contre les faux comptes",
   "cancel": "Annuler",
   "verifyMyPhone": "Vérifier mon téléphone",
-  
+  "verifyMyAccount" : "Vérifier mon compte",
   "phoneVerificationForProjects": "Pour publier des projets, vous devez vérifier votre numéro de téléphone.",
   "phoneVerificationForOffers": "Pour faire des offres, vous devez vérifier votre numéro de téléphone.",
   "phoneVerificationForMessages": "Pour envoyer des messages, vous devez vérifier votre numéro de téléphone.",

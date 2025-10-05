@@ -101,23 +101,23 @@ class VerificationGuardService {
   static String _getClientMessage(BuildContext context, String actionDescription, String status) {
     final l10n = AppLocalizations.of(context)!;
     
-    if (status == 'not_started') {
-      switch (actionDescription) {
-        case 'créer un projet':
-          return 'Pour publier un projet et recevoir des offres de prestataires, vous devez d\'abord vérifier votre compte avec vos documents d\'identité. Cela garantit la sécurité et la confiance sur notre plateforme.';
-        case 'faire une demande de devis':
-          return 'Pour demander un devis personnalisé, vous devez vérifier votre compte avec vos documents d\'identité.';
-        case 'ouvrir un litige':
-          return 'Pour ouvrir un litige et protéger vos intérêts, vous devez d\'abord vérifier votre compte.';
-        case 'laisser un avis':
-          return 'Pour laisser un avis sur un prestataire, vous devez vérifier votre compte afin d\'éviter les faux avis.';
-        case 'démarrer une conversation':
-          return 'Pour contacter un prestataire, vous devez vérifier votre compte.';
-        default:
-          return 'Pour utiliser cette fonctionnalité, vous devez vérifier votre compte avec vos documents d\'identité.';
-      }
+    if (status == 'pending') {
+      // ✅ UTILISER LA TRADUCTION
+      return l10n.verificationInProgressCannotYet(actionDescription);
     }
-    return 'Votre vérification est en cours. Patientez ou soumettez de nouveaux documents.';
+    
+    if (status == 'not_started') {
+      // ✅ UTILISER LA TRADUCTION
+      return l10n.clientVerificationForAction(actionDescription);
+    }
+    
+    if (status == 'rejected') {
+      // ✅ UTILISER LA TRADUCTION
+      return l10n.verificationRejectedResubmit(actionDescription);
+    }
+    
+    // Par défaut
+    return l10n.verificationPendingWait;
   }
   
   /// Messages spécifiques pour les PRESTATAIRES (inchangé)

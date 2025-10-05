@@ -1,5 +1,5 @@
 // mobile/lib/core/models/client_verification.dart
-// CRÉEZ ce nouveau fichier
+// VERSION CORRIGÉE - Sans messages codés en dur
 
 import 'package:flutter/material.dart';
 
@@ -75,7 +75,7 @@ class ClientVerification {
   }
 
   // ============================================================
-  // GETTERS UTILITAIRES
+  // GETTERS UTILITAIRES (sans texte codé en dur)
   // ============================================================
 
   bool get isNotStarted => verificationStatus == 'not_started';
@@ -85,21 +85,9 @@ class ClientVerification {
 
   bool get canSubmit => canBeModified;
 
-  String get statusText {
-    switch (verificationStatus) {
-      case 'not_started':
-        return 'Non commencé';
-      case 'pending':
-        return 'En attente';
-      case 'verified':
-        return 'Vérifié';
-      case 'rejected':
-        return 'Rejeté';
-      default:
-        return 'Inconnu';
-    }
-  }
-
+  // ❌ RETIRER TOUTES CES MÉTHODES QUI CONTIENNENT DU TEXTE
+  // Les textes doivent venir de AppLocalizations dans les widgets
+  
   Color get statusColor {
     switch (verificationStatus) {
       case 'not_started':
@@ -130,20 +118,20 @@ class ClientVerification {
     }
   }
 
-  /// Documents manquants
-  List<String> get missingDocuments {
+  /// Documents manquants (sans texte, juste les clés)
+  List<String> get missingDocumentKeys {
     List<String> missing = [];
 
     if (documentType == 'id_card') {
       if (idCardFrontUrl == null) {
-        missing.add('Carte d\'identité (recto)');
+        missing.add('id_card_front');
       }
       if (idCardBackUrl == null) {
-        missing.add('Carte d\'identité (verso)');
+        missing.add('id_card_back');
       }
     } else if (documentType == 'passport') {
       if (passportImageUrl == null) {
-        missing.add('Passeport');
+        missing.add('passport');
       }
     }
 
@@ -151,28 +139,7 @@ class ClientVerification {
   }
 
   /// Vérifie si tous les documents requis sont fournis
-  bool get hasAllRequiredDocuments => missingDocuments.isEmpty;
-
-  /// Obtient le message d'instruction selon l'état
-  String get instructionMessage {
-    if (isRejected) {
-      return 'Votre vérification a été rejetée. Veuillez soumettre de nouveaux documents.';
-    } else if (isPending) {
-      return 'Votre demande de vérification est en cours d\'examen.';
-    } else if (isVerified) {
-      return 'Votre compte est vérifié ! Vous pouvez maintenant utiliser toutes les fonctionnalités.';
-    } else {
-      return 'Complétez votre vérification pour accéder à toutes les fonctionnalités.';
-    }
-  }
-
-  /// Message détaillé avec nombre de jours
-  String get detailedMessage {
-    if (isPending && daysSinceSubmission != null) {
-      return 'Votre demande est en cours d\'examen depuis $daysSinceSubmission jour(s).';
-    }
-    return instructionMessage;
-  }
+  bool get hasAllRequiredDocuments => missingDocumentKeys.isEmpty;
 
   ClientVerification copyWith({
     int? id,

@@ -668,7 +668,7 @@
   "budgetTip": "99% dos clientes encontram um freelancer dentro do orçamento",
   
   "interventionLocation": "Local de Intervenção *",
-  "locationHint": "Ex: Paris, Lyon, França...",
+  "locationHint": "Ex: Luanda, Benguela, Huambo...",
   "locationRequired": "O local é obrigatório",
   "remoteWorkPossible": "Trabalho remoto possível",
   "remoteWorkDescription": "O prestador pode trabalhar remotamente",
@@ -1323,6 +1323,7 @@
   "verificationRequired": "Verificação necessária",
   
   "verifyMyPhone": "Verificar meu telefone",
+  "verifyMyAccount" : "Verificar a minha conta",
   "verifyMyProfile": "Verificar meu perfil",
   "submitNewDocuments": "Enviar novos documentos",
   "viewStatus": "Ver status",
@@ -1335,6 +1336,51 @@
   "profileVerifiedDescription": "Seu perfil de prestador está verificado",
   "verificationPendingDescription": "Sua solicitação de verificação está sendo analisada",
   "verificationRejectedDescription": "Sua solicitação foi rejeitada. Entre em contato com o suporte.",
+  
+  "verificationVerified": "Conta verificada",
+  "verificationVerifiedTitle": "Conta verificada!",
+  "verificationVerifiedMessage": "A sua conta foi verificada com sucesso. Agora pode utilizar todas as funcionalidades.",
+  
+  "verificationNotStarted": "Verificação não iniciada",
+  "verificationNotStartedTitle": "Verificação necessária",
+  "verificationNotStartedMessage": "Complete a sua verificação para aceder a todas as funcionalidades.",
+  
+  "verificationPendingMessageNoDays": "O seu pedido está em análise.",
+  "processingTime": "Tempo habitual de processamento: 24-48 horas úteis",
+  "processingTimeShort": "Processamento em 24-48h",
+
+  "verificationInProgressCannotYet": "O seu pedido de verificação está em análise. Ainda não pode {action}.",
+  "@verificationInProgressCannotYet": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "verificationSecurityNote": "Esta verificação garante a segurança da plataforma.",
+  "verificationPendingWait": "A sua verificação está em análise. Por favor, aguarde ou submeta novos documentos.",
+  
+  "clientVerificationRequired": "Verificação necessária",
+  "clientVerificationForAction": "Para {action}, deve verificar a sua conta com os seus documentos de identidade.",
+  "@clientVerificationForAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "clientVerificationBenefits": "Esta verificação garante a confiança e segurança na nossa plataforma.",
+  
+  "verificationRejectedResubmit": "O seu pedido foi rejeitado. Por favor, submeta novos documentos para {action}.",
+  "@verificationRejectedResubmit": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
   
   "accountType": "Tipo de conta",
   "individual": "Individual",

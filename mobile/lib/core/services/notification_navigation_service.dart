@@ -87,6 +87,8 @@ class NotificationNavigationService {
         case 'profile_rejected':
         case 'phone_verified':
         case 'account_verified':
+        case 'client_verification_approved':
+        case 'client_verification_rejected':
           await _navigateToProfile(context);
           break;
 
