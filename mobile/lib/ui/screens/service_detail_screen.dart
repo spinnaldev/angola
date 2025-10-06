@@ -17,6 +17,9 @@ import '../../../../providers/auth_provider.dart';
 import 'package:teyago/ui/widgets/verification/protected_action_button.dart';
 import 'package:teyago/ui/widgets/verification/verification_required_dialog.dart';
 
+import '../widgets/provider_favorite_button.dart';
+
+
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
   final int providerId;
@@ -703,31 +706,31 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         ),
         // ✅ AJOUT ICÔNE FAVORIS EN HAUT À DROITE (VERSION CORRIGÉE)
         actions: [
-          // Consumer2<AuthProvider, FavoritesProvider>(
-          //   builder: (context, authProvider, favoritesProvider, _) {
-          //     if (!authProvider.isAuthenticated) {
-          //       return SizedBox.shrink();
-          //     }
+          Consumer2<AuthProvider, FavoritesProvider>(
+            builder: (context, authProvider, favoritesProvider, _) {
+              if (!authProvider.isAuthenticated) {
+                return SizedBox.shrink();
+              }
 
-          //     final user = authProvider.currentUser;
+              final user = authProvider.currentUser;
               
-          //     // Cacher pour les prestataires (ils ne peuvent pas ajouter aux favoris)
-          //     if (user?.role == 'provider') {
-          //       return SizedBox.shrink();
-          //     }
+              // Cacher pour les prestataires (ils ne peuvent pas ajouter aux favoris)
+              if (user?.role == 'provider') {
+                return SizedBox.shrink();
+              }
 
-          //     final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+              final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
               
-          //     return IconButton(
-          //       onPressed: () => _toggleFavorite(),
-          //       icon: Icon(
-          //         isFavorite ? Icons.favorite : Icons.favorite_border,
-          //         color: isFavorite ? Colors.red : null,
-          //       ),
-          //       tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
-          //     );
-          //   },
-          // ),
+              return IconButton(
+                onPressed: () => _toggleFavorite(),
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : null,
+                ),
+                tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+              );
+            },
+          ),
         ],
       ),
       body: Consumer2<ServiceProvider, ProviderDetailProvider>(

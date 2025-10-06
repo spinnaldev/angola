@@ -1,12 +1,10 @@
-// mobile/lib/ui/widgets/project_card.dart - Version corrigée
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/client_project.dart';
 
 class ProjectCard extends StatelessWidget {
   final ClientProject project;
-  final VoidCallback? onTap; // ← CHANGER en VoidCallback simple
+  final VoidCallback? onTap;
   final VoidCallback? onFavoriteToggle;
 
   const ProjectCard({
@@ -18,15 +16,20 @@ class ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🧩 LOG pour suivre les valeurs à chaque rendu de la carte
+    print('🪶 [ProjectCard] Rendu pour projet: ${project.title}');
+    print('   → isFavorited: ${project.isFavorited}');
+
     return GestureDetector(
-      onTap: onTap ?? () {
-        // Navigation par défaut vers le détail du projet
-        Navigator.pushNamed(
-          context,
-          '/project-detail',
-          arguments: {'projectId': project.id},
-        );
-      },
+      onTap: onTap ??
+          () {
+            print('🧭 Navigation vers le détail du projet ID=${project.id}');
+            Navigator.pushNamed(
+              context,
+              '/project-detail',
+              arguments: {'projectId': project.id},
+            );
+          },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -59,22 +62,25 @@ class ProjectCard extends StatelessWidget {
                   ),
                   if (onFavoriteToggle != null)
                     IconButton(
-                      onPressed: onFavoriteToggle,
+                      onPressed: () {
+                        print('❤️ Clic sur favori pour ${project.title}');
+                        print('   Avant clic: ${project.isFavorited}');
+                        onFavoriteToggle!();
+                        print('   Après clic (attendu): devrait inverser la valeur dans le parent');
+                      },
                       icon: Icon(
-                        // ✅ CORRIGER ICI
-                        project.isFavorited == true 
-                            ? Icons.favorite        // Coeur plein si en favori
-                            : Icons.favorite_border, // Coeur vide sinon
-                        color: project.isFavorited == true 
-                            ? Colors.red   // Rouge si en favori
-                            : Colors.grey, // Gris sinon
+                        project.isFavorited == true
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color:
+                            project.isFavorited == true ? Colors.red : Colors.grey,
                       ),
                     ),
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Description
               Text(
                 project.description,
@@ -86,19 +92,14 @@ class ProjectCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Informations du projet
               Row(
                 children: [
-                  // Budget
                   if (project.budgetDisplay.isNotEmpty) ...[
-                    Icon(
-                      Icons.attach_money,
-                      size: 16,
-                      color: Colors.green,
-                    ),
+                    const Icon(Icons.attach_money, size: 16, color: Colors.green),
                     const SizedBox(width: 4),
                     Text(
                       project.budgetDisplay,
@@ -110,14 +111,8 @@ class ProjectCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
                   ],
-                  
-                  // Date limite
                   if (project.deadline != null) ...[
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: Colors.orange,
-                    ),
+                    const Icon(Icons.schedule, size: 16, color: Colors.orange),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('dd/MM/yyyy').format(project.deadline!),
@@ -129,9 +124,9 @@ class ProjectCard extends StatelessWidget {
                   ],
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Statut et nombre d'offres
               Row(
                 children: [

@@ -270,7 +270,8 @@ class ClientProject {
               ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
           timeSincePosted: json['time_since_posted'],
-          isFavorited: _parseBoolSafely(json['is_favorited']) ?? false,
+          // isFavorited: _parseBoolSafely(json['is_favorited']) ?? false,
+          isFavorited: json['is_favorited'] ?? false,
           hasUserOffered: _parseBoolSafely(json['has_user_offered']) ?? false,
           attachment1: json['attachment1'],
           attachment2: json['attachment2'],
