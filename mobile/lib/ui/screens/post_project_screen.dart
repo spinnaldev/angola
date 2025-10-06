@@ -1,9 +1,10 @@
 // mobile/lib/ui/screens/post_project_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ AJOUTÉ
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/models/category.dart';
 import '../../core/models/subcategory.dart';
 import '../../providers/category_provider.dart';
@@ -12,6 +13,29 @@ import '../../providers/subcategory_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
 import 'dart:io';
+
+// ✅ CLASSE AJOUTÉE - Formatter pour les prix
+class PriceInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+    
+    final number = int.parse(text);
+    final formatted = NumberFormat('#,###', 'fr_FR').format(number);
+    
+    return newValue.copyWith(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class PostProjectScreen extends StatefulWidget {
   const PostProjectScreen({Key? key}) : super(key: key);
@@ -63,6 +87,13 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     final categoryProvider =
         Provider.of<CategoryProvider>(context, listen: false);
     await categoryProvider.fetchCategories();
+  }
+
+  // ✅ FONCTION AJOUTÉE - Nettoyer les valeurs de budget
+  double? getCleanBudgetValue(TextEditingController controller) {
+    final text = controller.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (text.isEmpty) return null;
+    return double.tryParse(text);
   }
 
   @override
@@ -125,7 +156,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               const SizedBox(height: 24),
               _buildAttachmentsSection(),
               const SizedBox(height: 24),
-              // _buildContactPreferencesSection(),
               const SizedBox(height: 32),
             ],
           ),
@@ -260,6 +290,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     );
   }
 
+  // ✅ SECTION MODIFIÉE - Budget avec formatage des prix
   Widget _buildBudgetSection() {
     final l10n = AppLocalizations.of(context)!;
     
@@ -291,19 +322,71 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         ),
         if (_selectedBudgetRange != 'sur_devis') ...[
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _maxBudgetController,
-                  decoration: InputDecoration(
-                    labelText: l10n.maxBudget,
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
+          // ✅ BUDGET MINIMUM AVEC FORMATAGE
+          TextFormField(
+            controller: _minBudgetController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              PriceInputFormatter(),
             ],
+            decoration: InputDecoration(
+              labelText: 'Budget minimum (AOA)',
+              hintText: 'Ex: 5 000',
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.account_balance_wallet),
+              helperText: 'Montant minimum pour votre projet',
+            ),
+            validator: (value) {
+              if (value != null && value.isNotEmpty) {
+                final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+                if (cleanValue.isEmpty) {
+                  return 'Veuillez entrer un montant valide';
+                }
+                final amount = int.tryParse(cleanValue);
+                if (amount == null || amount <= 0) {
+                  return 'Le montant doit être supérieur à 0';
+                }
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // ✅ BUDGET MAXIMUM AVEC FORMATAGE
+          TextFormField(
+            controller: _maxBudgetController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              PriceInputFormatter(),
+            ],
+            decoration: InputDecoration(
+              labelText: l10n.maxBudget,
+              hintText: 'Ex: 10 000',
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+              helperText: 'Montant maximum pour votre projet',
+            ),
+            validator: (value) {
+              if (value != null && value.isNotEmpty) {
+                final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+                if (cleanValue.isEmpty) {
+                  return 'Veuillez entrer un montant valide';
+                }
+                final amount = int.tryParse(cleanValue);
+                if (amount == null || amount <= 0) {
+                  return 'Le montant doit être supérieur à 0';
+                }
+                
+                // ✅ Vérifier que max > min si les deux sont renseignés
+                final minText = _minBudgetController.text.replaceAll(RegExp(r'[^\d]'), '');
+                if (minText.isNotEmpty) {
+                  final minAmount = int.parse(minText);
+                  if (amount <= minAmount) {
+                    return 'Le budget max doit être supérieur au budget min';
+                  }
+                }
+              }
+              return null;
+            },
           ),
         ],
         const SizedBox(height: 16),
@@ -406,7 +489,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
             ),
             child: Text(
               _selectedDeadline != null
-                  // ? '${_selectedDeadline!.day}/${_selectedDeadline!.month}/${_selectedDeadline!.year}'
                   ? '${_selectedDeadline!.year}-${_selectedDeadline!.month}-${_selectedDeadline!.day}'
                   : l10n.chooseDate,
               style: TextStyle(
@@ -500,12 +582,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         const SizedBox(height: 16),
         _buildAttachmentTile(
             l10n.file1, _attachment1, (file) => _attachment1 = file),
-        // const SizedBox(height: 8),
-        // _buildAttachmentTile(
-        //     l10n.file2, _attachment2, (file) => _attachment2 = file),
-        // const SizedBox(height: 8),
-        // _buildAttachmentTile(
-        //     l10n.file3, _attachment3, (file) => _attachment3 = file),
       ],
     );
   }
@@ -554,49 +630,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
       ),
     );
   }
-
-  // Widget _buildContactPreferencesSection() {
-  //   final l10n = AppLocalizations.of(context)!;
-  //   
-  //   return _buildSection(
-  //     title: l10n.contactPreferences,
-  //     children: [
-  //       CheckboxListTile(
-  //         title: Text(l10n.platformPrivateMessaging),
-  //         subtitle: Text(l10n.recommendedForSecurity),
-  //         value: _contactViaPlatform,
-  //         onChanged: (bool? value) {
-  //           setState(() {
-  //             _contactViaPlatform = value ?? true;
-  //           });
-  //         },
-  //         controlAffinity: ListTileControlAffinity.leading,
-  //       ),
-  //       CheckboxListTile(
-  //         title: Text(l10n.showEmailAddress),
-  //         subtitle: Text(l10n.emailVisibleToProviders),
-  //         value: _showEmail,
-  //         onChanged: (bool? value) {
-  //           setState(() {
-  //             _showEmail = value ?? false;
-  //           });
-  //         },
-  //         controlAffinity: ListTileControlAffinity.leading,
-  //       ),
-  //       CheckboxListTile(
-  //         title: Text(l10n.showPhoneNumber),
-  //         subtitle: Text(l10n.phoneVisibleToProviders),
-  //         value: _showPhone,
-  //         onChanged: (bool? value) {
-  //           setState(() {
-  //             _showPhone = value ?? false;
-  //           });
-  //         },
-  //         controlAffinity: ListTileControlAffinity.leading,
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildSection(
       {required String title, required List<Widget> children}) {
@@ -674,11 +707,11 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     }
   }
 
+  // ✅ MÉTHODE MODIFIÉE - Utilisation de getCleanBudgetValue
   Future<void> _submitProject() async {
     final l10n = AppLocalizations.of(context)!;
     
     if (!_formKey.currentState!.validate()) {
-      // Défiler vers le premier champ avec erreur
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 300),
@@ -694,6 +727,10 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
 
+      // ✅ Nettoyer les valeurs de budget
+      final minBudget = getCleanBudgetValue(_minBudgetController);
+      final maxBudget = getCleanBudgetValue(_maxBudgetController);
+
       // Préparer les données du projet
       final projectData = {
         'title': _titleController.text.trim(),
@@ -701,15 +738,10 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         'category': _selectedCategory!.id,
         'subcategory': _selectedSubcategory?.id,
         'budget_range': _selectedBudgetRange,
-        'min_budget': _minBudgetController.text.isNotEmpty
-            ? double.parse(_minBudgetController.text)
-            : null,
-        'max_budget': _maxBudgetController.text.isNotEmpty
-            ? double.parse(_maxBudgetController.text)
-            : null,
+        'min_budget': minBudget, // ✅ Utilisation de la valeur nettoyée
+        'max_budget': maxBudget, // ✅ Utilisation de la valeur nettoyée
         'location': _locationController.text.trim(),
         'remote_possible': _remotePossible,
-        // 'deadline': _selectedDeadline?.toIso8601String(),
         'urgency': _selectedUrgency,
         'contact_via_platform': _contactViaPlatform,
         'show_email': _showEmail,
@@ -724,7 +756,6 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
       // Ajouter la date limite si sélectionnée
       if (_selectedDeadline != null) {
-        // Format correct YYYY-MM-DD demandé par l'API
         projectData['deadline'] =
             DateFormat('yyyy-MM-dd').format(_selectedDeadline!);
       }

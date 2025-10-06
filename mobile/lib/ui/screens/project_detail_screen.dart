@@ -833,8 +833,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                       _buildAttachments(),
                     if (isClient) ...[
                       _buildTabBar(),
-                      SizedBox(
-                        height: 400,
+                      Expanded(  // ✅ Utiliser Expanded au lieu de SizedBox fixe
                         child: _buildTabBarView(),
                       ),
                     ],
