@@ -410,19 +410,27 @@ class SideMenu extends StatelessWidget {
           icon: Icons.logout,
           text: 'Déconnexion',
           onTap: () async {
-            onClose();
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
+            // ✅ NE PAS APPELER onClose() ICI - on le fera après
+            // onClose(); ← SUPPRIMER CETTE LIGNE
+            
+            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            
+            // Sauvegarder une référence au Navigator avant la déconnexion
+            final navigator = Navigator.of(context);
+            
+            // Déconnexion (SANS passer le contexte)
             await authProvider.logout();
-            if (context.mounted) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                (route) => false,
-              );
-            }
+            
+            // ✅ Fermer le menu PUIS naviguer
+            navigator.pop(); // Ferme le menu/bottomSheet
+            
+            // Navigation vers l'accueil
+            navigator.pushNamedAndRemoveUntil(
+              '/home',
+              (route) => false,
+            );
           },
-        ),
+        )
       ],
     );
   }

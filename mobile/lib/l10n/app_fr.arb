@@ -1863,7 +1863,20 @@
   "completedProjects": "projets terminés",
   "commentAddedSuccessfully": "Commentaire ajouté avec succès",
   "errorAddingComment": "Erreur lors de l'ajout du commentaire",
-  "closeImage": "Fermer"
+  "closeImage": "Fermer",
+
+  "cannotCreateComplaint": "Impossible de créer une réclamation",
+  "cannotCreateComplaintMessage": "Pour pouvoir créer une réclamation contre un client, vous devez avoir au moins un service publié ou une offre acceptée sur un projet.",
+  "addFirstService": "Ajouter mon premier service",
+  
+  "cannotCreateDispute": "Impossible de créer un litige",
+  "cannotCreateDisputeMessage": "Pour pouvoir créer un litige contre un prestataire, vous devez avoir au moins un projet publié ou une demande de devis en cours.",
+  "postFirstProject": "Publier mon premier projet",
+  "noInteractedProviders": "Aucun prestataire avec qui vous avez déjà échangé. Faites d'abord une demande de devis ou publiez un projet.",
+  "noInteractedClients": "Aucun client avec qui vous avez déjà travaillé. Attendez de recevoir des demandes de devis ou des offres acceptées.",
+  "step1SelectClient": "Étape 1 : Sélectionner le client",
+  "concernedClient": "Client concerné",
+  "pleaseSelectClient": "Veuillez sélectionner un client"
   
 
   

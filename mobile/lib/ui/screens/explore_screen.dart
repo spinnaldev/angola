@@ -8,6 +8,7 @@ import '../widgets/category_card.dart';
 import 'service_list_screen.dart';
 import 'base_screen.dart';
 import 'search_results_screen.dart';
+import '../widgets/shared_header.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -86,33 +87,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // En-tête avec logo et icônes
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Logo
-              Image.asset(
-                'assets/images/logo.png',
-                height: 40,
-                width: 80,
-                errorBuilder: (context, error, stackTrace) => const Text(
-                  'LOGO',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.notifications_none),
-                onPressed: () {
-                  // Naviguer vers l'écran des notifications
-                },
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 20),
+        const SharedHeader(),
 
         // Champ de recherche
         Padding(

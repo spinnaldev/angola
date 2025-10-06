@@ -8,6 +8,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/api_service.dart';
 import '../widgets/project_card.dart';
+import '../widgets/shared_header.dart';
 import './base_screen.dart';
 import 'project_detail_screen.dart';
 import 'search_results_screen.dart';
@@ -100,7 +101,67 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       }
     }
   }
+  // Future<void> _loadProjects() async {
+  //   if (!mounted) return;
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
 
+  //   try {
+  //     final apiService = Provider.of<ApiService>(context, listen: false);
+  //     final result = await apiService.getProjects({
+  //       if (widget.categoryId != null) 'category': widget.categoryId,
+  //       'page': _currentPage,
+  //       'page_size': 10,
+  //     });
+
+  //     // ✅ AJOUTER CES PRINTS
+  //     print('📋 Projets reçus de l\'API: ${result['projects']?.length ?? 0}');
+      
+  //     if (result['projects'] != null && result['projects'].isNotEmpty) {
+  //       // Afficher les 3 premiers projets pour debug
+  //       for (var i = 0; i < (result['projects'].length > 3 ? 3 : result['projects'].length); i++) {
+  //         final projectJson = result['projects'][i];
+  //         print('  Projet $i:');
+  //         print('    - id: ${projectJson['id']}');
+  //         print('    - title: ${projectJson['title']}');
+  //         print('    - is_favorited: ${projectJson['is_favorited']}'); // ✅ Clé importante
+  //         print('    - isFavorited: ${projectJson['isFavorited']}');   // ✅ Alternative
+  //       }
+        
+  //       //Parser les projets
+  //       final projects = (result['projects'] as List)
+  //           .map((json) => ClientProject.fromJson(json))
+  //           .toList();
+        
+  //       // Vérifier après parsing
+  //       print('\n✅ Après parsing:');
+  //       for (var i = 0; i < (projects.length > 3 ? 3 : projects.length); i++) {
+  //         print('  Projet $i: id=${projects[i].id}, isFavorited=${projects[i].isFavorited}');
+  //       }
+  //     }
+
+  //     if (mounted) {
+  //       setState(() {
+  //         _projects = result['projects'] != null 
+  //             ? (result['projects'] as List)
+  //                 .map((json) => ClientProject.fromJson(json))
+  //                 .toList()
+  //             : _getMockProjects();
+  //         _hasMore = result['hasMore'] ?? false;
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print('❌ Erreur lors du chargement des projets: $e');
+  //     if (mounted) {
+  //       setState(() {
+  //         _projects = _getMockProjects();
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
   Future<void> _loadProjects() async {
     if (!mounted) return;
     setState(() {
@@ -115,6 +176,19 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         'page_size': 10,
       });
 
+      print('📋 Projets reçus de l\'API: ${result['projects']?.length ?? 0}');
+
+      // ✅ CORRECTION : Ce sont déjà des objets ClientProject
+      if (result['projects'] != null && result['projects'].isNotEmpty) {
+        for (var i = 0; i < (result['projects'].length > 3 ? 3 : result['projects'].length); i++) {
+          final project = result['projects'][i] as ClientProject; // ✅ Cast en ClientProject
+          print('  Projet $i:');
+          print('    - id: ${project.id}');
+          print('    - title: ${project.title}');
+          print('    - isFavorited: ${project.isFavorited}'); // ✅ Accès direct
+        }
+      }
+
       if (mounted) {
         setState(() {
           _projects = result['projects'] ?? _getMockProjects();
@@ -123,7 +197,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         });
       }
     } catch (e) {
-      print('Erreur lors du chargement des projets: $e');
+      print('❌ Erreur lors du chargement des projets: $e');
       if (mounted) {
         setState(() {
           _projects = _getMockProjects();
@@ -224,91 +298,99 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return BaseScreen(
-      currentIndex: 1, // Projets sélectionné
-      appBar: AppBar(
-        title: Text(l10n.availableProjects),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        titleTextStyle: const TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshProjects,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Carte promotionnelle pour les projets
-            // SliverToBoxAdapter(
-            //   child: _buildProjectsPromoCard(),
-            // ),
-
-            // // Statistiques prestataire
-            // SliverToBoxAdapter(
-            //   child: _buildProviderStatsSection(),
-            // ),
-
-            // Barre de recherche
-            SliverToBoxAdapter(
-              child: _buildSearchSection(),
-            ),
-
-            // Liste des projets
-            if (_isLoading)
+      currentIndex: 1,
+      // appBar: AppBar(
+      //   title: Text(l10n.availableProjects),
+      //   backgroundColor: Colors.white,
+      //   elevation: 0,
+      //   iconTheme: const IconThemeData(color: Colors.black),
+      //   titleTextStyle: const TextStyle(
+      //     color: Colors.black,
+      //     fontSize: 18,
+      //     fontWeight: FontWeight.w500,
+      //   ),
+      // ),
+      body: SafeArea( // ✅ AJOUTER SafeArea
+        child: RefreshIndicator(
+          onRefresh: _refreshProjects,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+            // En-tête partagé
               const SliverToBoxAdapter(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(50.0),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-              )
-            else if (_projects.isEmpty)
+                child: SharedHeader(),
+              ),
+              // Carte promotionnelle pour les projets
+              // SliverToBoxAdapter(
+              //   child: _buildProjectsPromoCard(),
+              // ),
+
+              // // Statistiques prestataire
+              // SliverToBoxAdapter(
+              //   child: _buildProviderStatsSection(),
+              // ),
+
+              
+              // Barre de recherche
+              
               SliverToBoxAdapter(
-                child: _buildEmptyState(),
-              )
-            else ...[
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index == _projects.length) {
-                        return _isLoadingMore
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: ProjectCard(
-                          project: _projects[index],
-                          onTap: () =>
-                              _navigateToProjectDetail(_projects[index]),
-                              onFavoriteToggle: () => _toggleProjectFavorite(_projects[index]),
-                          // onFavoriteToggle: (project) =>
-                          //     _toggleProjectFavorite(project),
-                        ),
-                      );
-                    },
-                    childCount: _projects.length + (_isLoadingMore ? 1 : 0),
+                child: _buildSearchSection(),
+              ),
+
+              // Liste des projets
+              if (_isLoading)
+                const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(50.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              else if (_projects.isEmpty)
+                SliverToBoxAdapter(
+                  child: _buildEmptyState(),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == _projects.length) {
+                          return _isLoadingMore
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: ProjectCard(
+                            project: _projects[index],
+                            onTap: () =>
+                                _navigateToProjectDetail(_projects[index]),
+                                onFavoriteToggle: () => _toggleProjectFavorite(_projects[index]),
+                            // onFavoriteToggle: (project) =>
+                            //     _toggleProjectFavorite(project),
+                          ),
+                        );
+                      },
+                      childCount: _projects.length + (_isLoadingMore ? 1 : 0),
+                    ),
                   ),
                 ),
+              ],
+
+              // Espacement en bas
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 100),
               ),
             ],
-
-            // Espacement en bas
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -413,7 +413,7 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print("👨‍💼 Récupération des services du prestataire $providerId...");
+      print("👨‍💼 Récupération 1 des services du prestataire $providerId...");
       _services = await _apiService.getProviderServices(providerId);
       _isLoading = false;
       notifyListeners();

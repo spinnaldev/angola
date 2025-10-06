@@ -61,8 +61,13 @@ class ProjectCard extends StatelessWidget {
                     IconButton(
                       onPressed: onFavoriteToggle,
                       icon: Icon(
-                        Icons.favorite, // Toujours rouge car c'est dans les favoris
-                        color: Colors.red,
+                        // ✅ CORRIGER ICI
+                        project.isFavorited == true 
+                            ? Icons.favorite        // Coeur plein si en favori
+                            : Icons.favorite_border, // Coeur vide sinon
+                        color: project.isFavorited == true 
+                            ? Colors.red   // Rouge si en favori
+                            : Colors.grey, // Gris sinon
                       ),
                     ),
                 ],

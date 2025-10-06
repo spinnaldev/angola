@@ -6,6 +6,7 @@ import '../base_screen.dart';
 import 'conversation_detail_screen.dart';
 import '../../../core/models/conversation.dart';
 import '../../widgets/app_bottom_navigation.dart';
+import '../../widgets/shared_header.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({Key? key}) : super(key: key);
@@ -42,7 +43,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      currentIndex: 2, // messaging est sélectionné
+      currentIndex: 2, 
       body: _buildMessagingContent(),
     );
   }
@@ -52,28 +53,31 @@ class _MessagesScreenState extends State<MessagesScreen> {
     
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          l10n.messaging,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {
-              // Action pour les notifications
-            },
-          ),
-        ],
-      ),
+      
+      // appBar: AppBar(
+      //   title: Text(
+      //     l10n.messaging,
+      //     style: const TextStyle(
+      //       color: Colors.black,
+      //       fontSize: 20,
+      //       fontWeight: FontWeight.w600,
+      //     ),
+      //   ),
+      //   backgroundColor: Colors.white,
+      //   elevation: 0.5,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.notifications_none, color: Colors.black),
+      //       onPressed: () {
+      //         // Action pour les notifications
+      //       },
+      //     ),
+      //   ],
+      // ),
       body: Column(
         children: [
+          const SizedBox(height: 20),
+          const SharedHeader(),
           // Barre de recherche
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -82,7 +86,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
-              ),
+              ),  
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(

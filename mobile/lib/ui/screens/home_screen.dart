@@ -12,14 +12,12 @@ import '../../providers/service_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
-import '../../core/models/category.dart';
 import '../../core/models/service.dart';
 import '../../core/services/api_service.dart';
 import '../screens/service_list_screen.dart';
 import '../screens/service_detail_screen.dart';
 import '../screens/projects_list_screen.dart';
 import '../screens/project_detail_screen.dart';
-import '../widgets/app_bottom_navigation.dart';
 import '../widgets/map_filter_screen.dart';
 import 'dart:math' as math;
 import 'base_screen.dart';
@@ -36,6 +34,7 @@ import '../screens/provider/quote_requests_screen.dart';
 import '../screens/provider/my_offers_screen.dart';
 import '../screens/messaging/messages_screen.dart';
 import '../screens/profile_screen.dart';
+import '../widgets/shared_header.dart';
 
 import 'dart:math' show Random;
 
@@ -960,32 +959,19 @@ class _HomeScreenState extends State<HomeScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // En-tête avec logo et icônes - MODIFIÉ
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Logo - utiliser un logo local
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 40,
-                  width: 80,
-                  errorBuilder: (context, error, stackTrace) => const Text(
-                    'LOGO',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    _buildLocationIcon(context), // NOUVELLE ICÔNE INTELLIGENTE
-                    _buildNotificationIcon(context),
-                  ],
-                ),
-              ],
-            ),
+          // ✅ EN-TÊTE AVEC LOCALISATION (uniquement pour l'accueil)
+          SharedHeader(
+            showLocationIcon: true, // ← Active l'icône de localisation
+            locationPermissionDenied: _locationPermissionDenied,
+            isLocationLoading: _isLocationLoading,
+            onLocationTap: () {
+              setState(() {
+                _showMapView = true;
+              });
+            },
+            onLocationPermissionDenied: () {
+              _showLocationPermissionDialog();
+            },
           ),
 
           // NOUVEAU WIDGET - Statut de localisation

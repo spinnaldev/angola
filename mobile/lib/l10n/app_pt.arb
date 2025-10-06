@@ -1914,7 +1914,20 @@
   "completedProjects": "projetos concluídos",
   "commentAddedSuccessfully": "Comentário adicionado com sucesso",
   "errorAddingComment": "Erro ao adicionar comentário", 
-  "closeImage": "Fechar"
+  "closeImage": "Fechar",
+
+  "cannotCreateComplaint": "Não é possível criar uma reclamação",
+  "cannotCreateComplaintMessage": "Para criar uma reclamação contra um cliente, você deve ter pelo menos um serviço publicado ou uma oferta aceita em um projeto.",
+  "addFirstService": "Adicionar meu primeiro serviço",
+  
+  "cannotCreateDispute": "Não é possível criar uma disputa",
+  "cannotCreateDisputeMessage": "Para criar uma disputa contra um prestador de serviços, você deve ter pelo menos um projeto publicado ou uma solicitação de cotação em andamento.",
+  "postFirstProject": "Publicar meu primeiro projeto",
+  "noInteractedProviders": "Nenhum prestador com quem você já interagiu. Faça primeiro uma solicitação de cotação ou publique um projeto.",
+  "noInteractedClients": "Nenhum cliente com quem você já trabalhou. Aguarde receber solicitações de cotação ou ofertas aceitas.",
+  "step1SelectClient": "Passo 1: Selecionar o cliente",
+  "concernedClient": "Cliente em questão",
+  "pleaseSelectClient": "Por favor, selecione um cliente"
 
 
 }

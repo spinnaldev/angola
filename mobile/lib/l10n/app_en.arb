@@ -1843,7 +1843,20 @@
   "completedProjects": "completed projects",
   "commentAddedSuccessfully": "Comment added successfully",
   "errorAddingComment": "Error adding comment",
-  "closeImage": "Close"
+  "closeImage": "Close",
+
+  "cannotCreateComplaint": "Unable to create a complaint",
+  "cannotCreateComplaintMessage": "To create a complaint against a client, you must have at least one published service or an accepted offer on a project.",
+  "addFirstService": "Add my first service",
+  
+  "cannotCreateDispute": "Unable to create a dispute",
+  "cannotCreateDisputeMessage": "To create a dispute against a service provider, you must have at least one published project or an ongoing quote request.",
+  "postFirstProject": "Post my first project",
+  "noInteractedProviders": "No providers you have interacted with. Please make a quote request or publish a project first.",
+  "noInteractedClients": "No clients you have worked with. Wait to receive quote requests or accepted offers.",
+  "step1SelectClient": "Step 1: Select client",
+  "concernedClient": "Concerned client",
+  "pleaseSelectClient": "Please select a client"
   
 
 }
