@@ -232,14 +232,26 @@ class ReviewImage(TimeStampMixin):
         return f"Image for review {self.review.id}"
 
 class Favorite(TimeStampMixin):
+    """
+    Favoris : les clients peuvent ajouter des SERVICES en favoris
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
-    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='favorited_by')
+    service = models.ForeignKey(
+        'ProviderService', 
+        on_delete=models.CASCADE, 
+        related_name='favorited_by',
+        help_text="Le service ajouté en favori",
+        null=True, blank=True
+    )
     
-    # class Meta:
-    #     unique_together = ('user', 'provider')
+    class Meta:
+        unique_together = ('user', 'service')  # Un user ne peut ajouter un service qu'une fois
+        verbose_name = "Favori"
+        verbose_name_plural = "Favoris"
+        ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} favorited {self.provider.user.username}"
+        return f"{self.user.username} ❤️ {self.service.title}"
 
 class Conversation(TimeStampMixin):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_conversations')

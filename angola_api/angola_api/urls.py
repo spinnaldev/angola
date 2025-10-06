@@ -46,7 +46,7 @@ router.register(r'api/services', views.ProviderServiceViewSet)
 router.register(r'api/portfolio', views.PortfolioViewSet)
 router.register(r'api/certificates', views.CertificateViewSet)
 router.register(r'api/reviews', views.ReviewViewSet)
-router.register(r'api/favorites', views.FavoriteViewSet)
+router.register(r'api/favorites', views.FavoriteViewSet , basename='favorites')
 router.register(r'api/conversations', views.ConversationViewSet, basename='conversation')
 router.register(r'api/messages', views.MessageViewSet, basename='message')
 router.register(r'api/disputes', views.DisputeViewSet)
@@ -120,7 +120,8 @@ urlpatterns = [
     path('api/users/profile_stats/', views.get_profile_stats, name='profile-stats'),
     path('api/projects/<int:pk>/offers/', views.ClientProjectViewSet.as_view({'get': 'offers', 'post': 'offers'}), name='project-offers'),
 
-    path('api/providers-public/<int:pk>/stats/', views.stats, name='provider-stats'),
+    # path('api/providers-public/<int:pk>/stats/', views.stats, name='provider-stats'),
+    path('api/providers-public/<int:pk>/stats/', views.provider_public_stats, name='provider-stats'),
 
     # path('api/projects/<int:project_id>/offers/', views.ProjectOfferViewSet.as_view({'get': 'by_project', 'post': 'create'}), name='project-offers-by-project'),
     

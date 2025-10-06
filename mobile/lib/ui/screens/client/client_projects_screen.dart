@@ -405,19 +405,9 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (project.status == 'open')
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _closeProject(project),
-                      icon: const Icon(Icons.close, size: 16),
-                      label: Text(l10n.close),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                if (project.status != 'open') ...[
+                if (project.status == 'open') ...[
+                  // Projet OUVERT → CLÔTURER et SUPPRIMER
+                  
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _deleteProject(project),
@@ -429,6 +419,22 @@ class _ClientProjectsScreenState extends State<ClientProjectsScreen>
                       ),
                     ),
                   ),
+                ] else if (project.status == 'in_progress' || project.status == 'paused') ...[
+                  // Projet EN COURS ou EN PAUSE → SEULEMENT CLÔTURER
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _closeProject(project),
+                      icon: const Icon(Icons.lock, size: 16),
+                      label: Text(l10n.close),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // Projet CLÔTURÉ ou TERMINÉ → Pas d'actions supplémentaires
+                  const Expanded(child: SizedBox()),
                 ],
               ],
             ),

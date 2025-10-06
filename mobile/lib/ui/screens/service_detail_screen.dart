@@ -184,14 +184,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
 
+    // Vérifier l'authentification
     if (!authProvider.isAuthenticated) {
       _checkAuthAndExecute(context, () {});
       return;
     }
 
     final user = authProvider.currentUser;
+    
+    // Seuls les clients peuvent ajouter aux favoris
     if (user?.role == 'provider') {
-      // Les prestataires ne peuvent pas ajouter des services aux favoris
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Seuls les clients peuvent ajouter des services aux favoris'),
@@ -201,28 +203,29 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       return;
     }
 
-    // ✅ DEBUG - Afficher l'état actuel des favoris
-    final currentlyFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
-    print('🔍 DEBUG - Service ${widget.serviceId} est favori: $currentlyFavorite');
-    print('🔍 DEBUG - Nombre de services favoris: ${favoritesProvider.favoriteServices.length}');
-    print('🔍 DEBUG - IDs des services favoris: ${favoritesProvider.favoriteServices.map((s) => s.id).toList()}');
+    print('🔍 Toggle favori pour service ${widget.serviceId}');
 
-    // ✅ CORRIGÉ : Passer le providerId au toggleServiceFavorite
-    favoritesProvider.toggleServiceFavorite(widget.serviceId, providerId: widget.providerId).then((success) {
-      if (success) {
-        final isNowFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
-        print('🔍 DEBUG - Après toggle, service ${widget.serviceId} est favori: $isNowFavorite');
-        
+    // ✅ Toggle le service en favoris
+    favoritesProvider.toggleServiceFavorite(widget.serviceId).then((isNowFavorite) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isNowFavorite ? l10n.addedToFavorites : l10n.removedFromFavorites),
+            content: Text(
+              isNowFavorite 
+                ? 'Service ajouté aux favoris ❤️' 
+                : 'Service retiré des favoris'
+            ),
             backgroundColor: isNowFavorite ? Colors.green : Colors.grey,
+            duration: const Duration(seconds: 2),
           ),
         );
-      } else {
+      }
+    }).catchError((error) {
+      if (mounted) {
+        print('❌ Erreur toggle: $error');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la modification du favori'),
+            content: Text('Erreur lors de la modification'),
             backgroundColor: Colors.red,
           ),
         );
@@ -708,29 +711,34 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         actions: [
           Consumer2<AuthProvider, FavoritesProvider>(
             builder: (context, authProvider, favoritesProvider, _) {
+              // Ne pas afficher si non connecté
               if (!authProvider.isAuthenticated) {
                 return SizedBox.shrink();
               }
 
               final user = authProvider.currentUser;
               
-              // Cacher pour les prestataires (ils ne peuvent pas ajouter aux favoris)
+              // Cacher pour les prestataires
               if (user?.role == 'provider') {
                 return SizedBox.shrink();
               }
 
+              // ✅ Vérifier si le SERVICE est en favoris (pas le prestataire)
               final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
               
               return IconButton(
                 onPressed: () => _toggleFavorite(),
                 icon: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : null,
+                  color: isFavorite ? Colors.red : Colors.grey,
                 ),
-                tooltip: isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                tooltip: isFavorite 
+                  ? 'Retirer des favoris' 
+                  : 'Ajouter aux favoris',
               );
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Consumer2<ServiceProvider, ProviderDetailProvider>(

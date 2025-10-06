@@ -808,9 +808,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
     if (_isLoadingProject || _project == null) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -823,24 +821,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         },
         body: Column(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildProjectHeader(),
-                    _buildProjectDetails(),
-                    if (_project!.attachments?.isNotEmpty == true)
-                      _buildAttachments(),
-                    if (isClient) ...[
-                      _buildTabBar(),
-                      Expanded(  // ✅ Utiliser Expanded au lieu de SizedBox fixe
-                        child: _buildTabBarView(),
-                      ),
-                    ],
-                  ],
-                ),
+            // Partie scrollable (header du projet)
+            SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(), // Désactive le scroll ici
+              child: Column(
+                children: [
+                  _buildProjectHeader(),
+                  _buildProjectDetails(),
+                  if (_project!.attachments?.isNotEmpty == true)
+                    _buildAttachments(),
+                  // TabBar pour les clients
+                  if (isClient) _buildTabBar(),
+                ],
               ),
             ),
+            
+            // TabBarView prend tout l'espace restant
+            if (isClient)
+              Expanded(
+                child: _buildTabBarView(),
+              ),
           ],
         ),
       ),

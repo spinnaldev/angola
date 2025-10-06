@@ -1,13 +1,16 @@
+// mobile/lib/ui/screens/favorites_screen.dart
+// VERSION ADAPTÉE - Les clients voient des SERVICES favoris
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../core/services/profile_manager.dart';
+import '../../core/models/service.dart';
 import '../widgets/project_card.dart';
-import '../widgets/provider_card.dart';
+import '../widgets/service_image.dart';
 import 'project_detail_screen.dart';
-import 'provider_detail_screen.dart';
+import 'service_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -16,33 +19,15 @@ class FavoritesScreen extends StatefulWidget {
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen>
-    with SingleTickerProviderStateMixin {
-  TabController? _tabController;
-
+class _FavoritesScreenState extends State<FavoritesScreen> {
+  
   @override
   void initState() {
     super.initState();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeTabs();
       _loadFavorites();
     });
-  }
-
-  void _initializeTabs() {
-    // Déterminer le nombre d'onglets selon le rôle de l'utilisateur
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.currentUser;
-    final isProviderMode = user?.role == 'provider'; // ✅ Utiliser le rôle réel
-    
-    if (isProviderMode) {
-      // Prestataires voient seulement les projets favoris
-      _tabController = TabController(length: 1, vsync: this);
-    } else {
-      // Clients voient seulement les prestataires favoris  
-      _tabController = TabController(length: 1, vsync: this);
-    }
   }
 
   void _loadFavorites() {
@@ -53,17 +38,11 @@ class _FavoritesScreenState extends State<FavoritesScreen>
   }
 
   @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.currentUser;
-    final isProviderMode = user?.role == 'provider'; // ✅ Utiliser le rôle réel
+    final isProviderMode = user?.role == 'provider';
     
     return Scaffold(
       appBar: AppBar(
@@ -105,32 +84,33 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadFavorites,
-                    child: Text(l10n.retry), // ✅ TRADUCTION
+                    child: Text('Réessayer'),
                   ),
                 ],
               ),
             );
           }
 
-          // ✅ Affichage selon le rôle réel de l'utilisateur
+          // ✅ Affichage selon le rôle
           if (isProviderMode) {
             // Prestataires voient les projets favoris
             return _buildProjectsTab(favoritesProvider, l10n);
           } else {
-            // Clients voient les prestataires favoris
-            return _buildProvidersTab(favoritesProvider, l10n);
+            // ✅ CHANGEMENT : Clients voient les SERVICES favoris
+            return _buildServicesTab(favoritesProvider, l10n);
           }
         },
       ),
     );
   }
 
+  // ✅ Onglet PROJETS pour les prestataires (inchangé)
   Widget _buildProjectsTab(FavoritesProvider provider, AppLocalizations l10n) {
     if (provider.favoriteProjects.isEmpty) {
       return _buildEmptyState(
         icon: Icons.bookmark_border,
         title: l10n.noFavoriteProjects,
-        subtitle: 'Parcourez les projets disponibles et marquez ceux qui vous intéressent comme favoris pour les retrouver facilement', // ✅ MESSAGE PLUS DESCRIPTIF
+        subtitle: 'Parcourez les projets disponibles et marquez ceux qui vous intéressent comme favoris',
       );
     }
 
@@ -165,46 +145,229 @@ class _FavoritesScreenState extends State<FavoritesScreen>
     );
   }
 
-  Widget _buildProvidersTab(FavoritesProvider provider, AppLocalizations l10n) {
-    if (provider.favoriteProviders.isEmpty) {
+  // ✅ NOUVEAU : Onglet SERVICES pour les clients
+  Widget _buildServicesTab(FavoritesProvider provider, AppLocalizations l10n) {
+    if (provider.favoriteServices.isEmpty) {
       return _buildEmptyState(
-        icon: Icons.people_outline,
-        title: l10n.noFavoriteProviders,
-        subtitle: 'Explorez les prestataires de services et ajoutez vos favoris pour les retrouver rapidement', // ✅ MESSAGE PLUS DESCRIPTIF
+        icon: Icons.favorite_border,
+        title: 'Aucun service favori',
+        subtitle: 'Explorez les services et ajoutez vos préférés pour les retrouver facilement',
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () => provider.loadFavoriteProviders(),
+      onRefresh: () => provider.loadFavoriteServices(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: provider.favoriteProviders.length,
+        itemCount: provider.favoriteServices.length,
         itemBuilder: (context, index) {
-          final providerModel = provider.favoriteProviders[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: ProviderCard(
-              provider: providerModel,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProviderDetailScreen(
-                      providerId: providerModel.id,
-                    ),
-                  ),
-                );
-              },
-              onFavoriteToggle: () {
-                provider.toggleProviderFavorite(providerModel.id);
-              },
-            ),
-          );
+          final service = provider.favoriteServices[index];
+          return _buildServiceCard(context, service, provider);
         },
       ),
     );
   }
 
+  // ✅ Card pour afficher un service favori
+  Widget _buildServiceCard(
+    BuildContext context, 
+    Service service,
+    FavoritesProvider provider
+  ) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServiceDetailScreen(
+                serviceId: service.id,
+                providerId: service.provider_id ?? 0,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image du service
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              child: ServiceImage(
+                imageUrl: service.imageUrl,
+                width: double.infinity,
+                height: 100,
+              ),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Titre et bouton favoris
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          service.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // Bouton retirer des favoris
+                      IconButton(
+                        onPressed: () => _showRemoveDialog(context, service, provider),
+                        icon: Icon(Icons.favorite, color: Colors.red),
+                        tooltip: 'Retirer des favoris',
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Prix
+                  Row(
+                    children: [
+                      Text(
+                        '${service.price} FCFA',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF142FE2),
+                        ),
+                      ),
+                      if (service.priceType != null && service.priceType!.isNotEmpty) ...[
+                        Text(
+                          ' / ${service.priceType}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Description
+                  Text(
+                    service.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Catégorie et note
+                  Row(
+                    children: [
+                      // if (service.categoryName != null) ...[
+                      //   Container(
+                      //     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.blue[50],
+                      //       borderRadius: BorderRadius.circular(4),
+                      //     ),
+                      //     child: Text(
+                      //       service.categoryId!,
+                      //       style: TextStyle(
+                      //         fontSize: 12,
+                      //         color: Colors.blue[700],
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ],
+                      const Spacer(),
+                      if (service.rating != null && service.rating! > 0) ...[
+                        Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          service.rating!.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (service.reviewCount != null && service.reviewCount! > 0) ...[
+                          Text(
+                            ' (${service.reviewCount})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Dialog de confirmation pour retirer des favoris
+  Future<void> _showRemoveDialog(
+    BuildContext context,
+    Service service,
+    FavoritesProvider provider
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Retirer des favoris'),
+        content: Text('Voulez-vous retirer "${service.title}" de vos favoris ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: Text('Retirer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await provider.toggleServiceFavorite(service.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Service retiré des favoris'),
+            backgroundColor: Colors.grey,
+          ),
+        );
+      }
+    }
+  }
+
+  // État vide
   Widget _buildEmptyState({
     required IconData icon,
     required String title,
@@ -217,15 +380,15 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           Icon(
             icon,
             size: 80,
-            color: Colors.grey[300],
+            color: Colors.grey[400],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -235,7 +398,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
               subtitle,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: Colors.grey[500],
               ),
               textAlign: TextAlign.center,
             ),

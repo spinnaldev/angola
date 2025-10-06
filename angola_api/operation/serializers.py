@@ -562,12 +562,18 @@ class ProviderDetailSerializer(serializers.ModelSerializer):
         return instance
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    provider_details = ProviderListSerializer(source='provider', read_only=True)
+    service_details = ProviderServiceSerializer(source='service', read_only=True)
     
     class Meta:
         model = Favorite
-        fields = ('id', 'provider', 'created_at', 'provider_details')
-        read_only_fields = ('user',)
+        fields = ('id', 'service', 'created_at', 'service_details')
+        read_only_fields = ('user', 'created_at')
+    
+    def validate_service(self, value):
+        """Vérifier que le service existe et est disponible"""
+        if not value.is_available:
+            raise serializers.ValidationError("Ce service n'est plus disponible")
+        return value
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_id = serializers.IntegerField(source='sender.id')

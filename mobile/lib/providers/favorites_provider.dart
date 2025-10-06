@@ -1,8 +1,8 @@
-// lib/providers/favorites_provider.dart - CORRECTION DE L'ERREUR
+// mobile/lib/providers/favorites_provider.dart
+// REMPLACER COMPLÈTEMENT le fichier par cette version :
 
 import 'package:flutter/material.dart';
 import '../core/models/client_project.dart';
-import '../core/models/provider_model.dart';
 import '../core/models/service.dart';
 import '../core/services/api_service.dart';
 import '../core/api/api_client.dart';
@@ -12,7 +12,6 @@ class FavoritesProvider with ChangeNotifier {
   late final ApiClient _apiClient;
 
   List<ClientProject> _favoriteProjects = [];
-  List<ProviderModel> _favoriteProviders = [];
   List<Service> _favoriteServices = [];
   bool _isLoading = false;
   String _error = '';
@@ -23,11 +22,10 @@ class FavoritesProvider with ChangeNotifier {
 
   // Getters
   List<ClientProject> get favoriteProjects => _favoriteProjects;
-  List<ProviderModel> get favoriteProviders => _favoriteProviders;
   List<Service> get favoriteServices => _favoriteServices;
   bool get isLoading => _isLoading;
   String get error => _error;
-  int get totalFavorites => _favoriteProjects.length + _favoriteProviders.length + _favoriteServices.length;
+  int get totalFavorites => _favoriteProjects.length + _favoriteServices.length;
 
   /// Charger tous les favoris
   Future<void> loadAllFavorites() async {
@@ -38,7 +36,6 @@ class FavoritesProvider with ChangeNotifier {
     try {
       await Future.wait([
         loadFavoriteProjects(),
-        loadFavoriteProviders(),
         loadFavoriteServices(),
       ]);
     } catch (e) {
@@ -50,7 +47,7 @@ class FavoritesProvider with ChangeNotifier {
     }
   }
 
-  /// Charger les projets favoris
+  /// Charger les projets favoris (pour les prestataires)
   Future<void> loadFavoriteProjects() async {
     try {
       print('📋 Chargement des projets favoris...');
@@ -62,10 +59,10 @@ class FavoritesProvider with ChangeNotifier {
     }
   }
 
-  /// ✅ CORRECTION : Charger les prestataires favoris
-  Future<void> loadFavoriteProviders() async {
+  /// Charger les services favoris (pour les clients)
+  Future<void> loadFavoriteServices() async {
     try {
-      print('👥 Chargement des prestataires favoris...');
+      print('🛍️ Chargement des services favoris...');
       
       final responseData = await _apiClient.get('favorites/', requireAuth: true);
       
@@ -78,87 +75,18 @@ class FavoritesProvider with ChangeNotifier {
           data = responseData;
         }
         
-        _favoriteProviders = [];
-        Set<int> seenProviderIds = {};
+        _favoriteServices = [];
         
         for (var item in data) {
-          if (item is Map<String, dynamic>) {
-            ProviderModel? provider;
-            int? providerId;
-            
-            // ✅ CORRECTION : Gérer correctement les différentes structures
-            if (item['provider_details'] != null) {
-              // Structure : {provider: 1, provider_details: {...}}
-              try {
-                provider = ProviderModel.fromJson(item['provider_details']);
-                providerId = provider.id;
-              } catch (e) {
-                print('❌ Erreur parsing provider_details: $e');
-              }
-            } else if (item['provider'] is Map<String, dynamic>) {
-              // Structure : {provider: {...}}
-              try {
-                provider = ProviderModel.fromJson(item['provider']);
-                providerId = provider.id;
-              } catch (e) {
-                print('❌ Erreur parsing provider objet: $e');
-              }
-            } else if (item['provider'] is int) {
-              // ✅ NOUVEAU : Structure {provider: 1} (juste l'ID)
-              providerId = item['provider'] as int;
-              print('⚠️ Provider ID seulement trouvé: $providerId, récupération des détails...');
-              
-              // Récupérer les détails du prestataire via l'API
-              try {
-                final providerData = await _apiClient.get('providers/$providerId/', requireAuth: true);
-                if (providerData != null) {
-                  provider = ProviderModel.fromJson(providerData);
-                }
-              } catch (e) {
-                print('❌ Erreur récupération provider $providerId: $e');
-              }
-            }
-            
-            if (provider != null && providerId != null && !seenProviderIds.contains(providerId)) {
-              _favoriteProviders.add(provider);
-              seenProviderIds.add(providerId);
-              // print('✅ Prestataire unique ajouté: ${provider.id} - ${provider.f} ${provider.lastName}');
-            } else if (providerId != null && seenProviderIds.contains(providerId)) {
-              print('⚠️ Doublon ignoré pour prestataire ID: $providerId');
+          if (item is Map<String, dynamic> && item['service_details'] != null) {
+            try {
+              final service = Service.fromJson(item['service_details']);
+              _favoriteServices.add(service);
+            } catch (e) {
+              print('⚠️ Erreur parsing service favori: $e');
             }
           }
         }
-        
-        print('✅ ${_favoriteProviders.length} prestataires favoris uniques chargés');
-      } else {
-        _favoriteProviders = [];
-      }
-    } catch (e) {
-      print('❌ Erreur loadFavoriteProviders: $e');
-      _favoriteProviders = [];
-    }
-  }
-
-  /// Charger les services favoris
-  Future<void> loadFavoriteServices() async {
-    try {
-      print('🔧 Chargement des services favoris...');
-      
-      final responseData = await _apiClient.get('favorites/', requireAuth: true);
-      
-      if (responseData != null) {
-        List<dynamic> data = [];
-        
-        if (responseData is Map<String, dynamic>) {
-          data = responseData['results'] ?? [];
-        } else if (responseData is List) {
-          data = responseData;
-        }
-        
-        _favoriteServices = data
-            .where((item) => item['service'] != null)
-            .map((item) => Service.fromJson(item['service']))
-            .toList();
         
         print('✅ ${_favoriteServices.length} services favoris chargés');
       } else {
@@ -168,9 +96,10 @@ class FavoritesProvider with ChangeNotifier {
       print('❌ Erreur loadFavoriteServices: $e');
       _favoriteServices = [];
     }
+    notifyListeners();
   }
 
-  /// Basculer favori projet
+  /// Basculer favori projet (pour les prestataires)
   Future<bool> toggleProjectFavorite(int projectId) async {
     try {
       final result = await _apiService.toggleProjectFavorite(projectId);
@@ -183,125 +112,28 @@ class FavoritesProvider with ChangeNotifier {
     }
   }
 
-  /// ✅ CORRECTION : Basculer favori prestataire
-  Future<bool> toggleProviderFavorite(int providerId) async {
+  /// ✅ Basculer favori SERVICE (pour les clients)
+  Future<bool> toggleServiceFavorite(int serviceId) async {
     try {
-      final isCurrentlyFavorite = _favoriteProviders
-          .any((provider) => provider.id == providerId);
-
-      if (isCurrentlyFavorite) {
-        // Retirer des favoris
-        final responseData = await _apiClient.get('favorites/', requireAuth: true);
-        
-        if (responseData != null) {
-          List<dynamic> data = [];
-          if (responseData is Map<String, dynamic>) {
-            data = responseData['results'] ?? [];
-          } else if (responseData is List) {
-            data = responseData;
-          }
-          
-          // ✅ CORRECTION : Gérer différentes structures pour trouver l'ID du favori
-          Map<String, dynamic>? favoriteItem;
-          
-          for (var item in data) {
-            if (item is Map<String, dynamic>) {
-              // Structure 1: provider_details existe
-              if (item['provider_details'] != null && 
-                  item['provider_details']['id'] == providerId) {
-                favoriteItem = item;
-                break;
-              }
-              // Structure 2: provider est un objet
-              else if (item['provider'] is Map<String, dynamic> && 
-                       item['provider']['id'] == providerId) {
-                favoriteItem = item;
-                break;
-              }
-              // ✅ Structure 3: provider est juste l'ID
-              else if (item['provider'] is int && 
-                       item['provider'] == providerId) {
-                favoriteItem = item;
-                break;
-              }
-            }
-          }
-          
-          if (favoriteItem != null) {
-            final favoriteId = favoriteItem['id'];
-            await _apiClient.delete('favorites/$favoriteId/', requireAuth: true);
-            print('✅ Prestataire retiré des favoris');
-          } else {
-            print('⚠️ Favori non trouvé pour le prestataire $providerId');
-          }
-        }
-      } else {
-        // Ajouter aux favoris
-        await _apiClient.post(
-          'favorites/', 
-          data: {'provider_id': providerId}, 
-          requireAuth: true
-        );
-        print('✅ Prestataire ajouté aux favoris');
-      }
-
-      await loadFavoriteProviders();
-      return !isCurrentlyFavorite;
-    } catch (e) {
-      _error = 'Erreur lors de la modification du favori: $e';
-      notifyListeners();
-      print('❌ Erreur toggleProviderFavorite: $e');
-      return false;
-    }
-  }
-
-  /// Basculer favori service
-  Future<bool> toggleServiceFavorite(int serviceId, {int? providerId}) async {
-    try {
-      final isCurrentlyFavorite = _favoriteServices
-          .any((service) => service.id == serviceId);
-
-      if (isCurrentlyFavorite) {
-        // Retirer des favoris
-        final responseData = await _apiClient.get('favorites/', requireAuth: true);
-        
-        if (responseData != null) {
-          List<dynamic> data = [];
-          if (responseData is Map<String, dynamic>) {
-            data = responseData['results'] ?? [];
-          } else if (responseData is List) {
-            data = responseData;
-          }
-          
-          final favoriteItem = data.cast<Map<String, dynamic>>().firstWhere(
-            (item) => item['service'] != null && item['service']['id'] == serviceId,
-            orElse: () => {},
-          );
-          
-          if (favoriteItem.isNotEmpty) {
-            final favoriteId = favoriteItem['id'];
-            await _apiClient.delete('favorites/$favoriteId/', requireAuth: true);
-            print('✅ Service retiré des favoris');
-          }
-        }
-      } else {
-        // Ajouter aux favoris
-        Map<String, dynamic> requestData = {'service_id': serviceId};
-        
-        if (providerId != null) {
-          requestData['provider_id'] = providerId;
-        }
-        
-        await _apiClient.post(
-          'favorites/', 
-          data: requestData, 
-          requireAuth: true
-        );
-        print('✅ Service ajouté aux favoris');
-      }
-
+      print('🔄 Toggle favori service $serviceId...');
+      
+      // Utiliser l'endpoint toggle qui attend service_id
+      final response = await _apiClient.post(
+        'favorites/toggle/',
+        data: {'service_id': serviceId},
+        requireAuth: true,
+      );
+      
+      print('✅ Réponse toggle: $response');
+      
+      // Recharger les favoris
       await loadFavoriteServices();
-      return !isCurrentlyFavorite;
+      
+      // Retourner le nouvel état
+      final isNowFavorite = isServiceFavorite(serviceId);
+      print('🔍 Service $serviceId est maintenant favori: $isNowFavorite');
+      
+      return isNowFavorite;
     } catch (e) {
       _error = 'Erreur lors de la modification du favori: $e';
       notifyListeners();
@@ -315,14 +147,10 @@ class FavoritesProvider with ChangeNotifier {
     return _favoriteProjects.any((project) => project.id == projectId);
   }
 
-  /// Vérifier si un prestataire est en favori
-  bool isProviderFavorite(int providerId) {
-    return _favoriteProviders.any((provider) => provider.id == providerId);
-  }
-
-  /// Vérifier si un service est en favori
+  /// ✅ Vérifier si un SERVICE est en favori
   bool isServiceFavorite(int serviceId) {
     final isFavorite = _favoriteServices.any((service) => service.id == serviceId);
+    print('🔍 Vérification favori service $serviceId: $isFavorite');
     return isFavorite;
   }
 

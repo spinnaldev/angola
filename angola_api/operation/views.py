@@ -942,6 +942,38 @@ def stats(self, request, pk=None):
         'total_reviews': total_reviews,
     })
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def provider_public_stats(request, pk):
+    """
+    Vue publique pour les statistiques d'un prestataire
+    Wrapper autour de ProviderViewSet.stats
+    """
+    try:
+        provider = Provider.objects.get(pk=pk)
+        
+        # Compter les projets terminés
+        total_completed_projects = ProjectOffer.objects.filter(
+            provider=provider,
+            status='completed'
+        ).count()
+        
+        # Autres statistiques
+        avg_rating = provider.avg_rating or 0.0
+        total_reviews = provider.reviews_received.count()
+        
+        return Response({
+            'total_completed_projects': total_completed_projects,
+            'avg_rating': float(avg_rating),
+            'total_reviews': total_reviews,
+        })
+    except Provider.DoesNotExist:
+        return Response(
+            {'error': 'Prestataire non trouvé'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = Provider.objects.all()
     serializer_class = ProviderListSerializer
@@ -1796,31 +1828,149 @@ class ReviewViewSet(viewsets.ModelViewSet):
     #     return Response(serializer.data)
 
 class FavoriteViewSet(viewsets.ModelViewSet):
-    queryset = Favorite.objects.all()
+    """
+    ViewSet pour la gestion des services favoris des CLIENTS
+    
+    Endpoints:
+    - GET /api/favorites/ : Liste des services favoris
+    - POST /api/favorites/ : Ajouter un service en favoris
+    - DELETE /api/favorites/{id}/ : Retirer un service des favoris
+    - POST /api/favorites/toggle/ : Basculer un favori (ajouter/retirer)
+    - GET /api/favorites/check/?service_id=X : Vérifier si un service est en favoris
+    """
     serializer_class = FavoriteSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
     
     def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user)
+        """Retourner uniquement les favoris de l'utilisateur connecté"""
+        return Favorite.objects.filter(user=self.request.user).select_related(
+            'service',
+            'service__provider',
+            'service__provider__user',
+            'service__subcategory',
+            'service__subcategory__category'
+        ).order_by('-created_at')
     
     def perform_create(self, serializer):
+        """Associer automatiquement l'utilisateur connecté"""
         serializer.save(user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Ajouter un service aux favoris
+        Body: {"service": 123}
+        """
+        service_id = request.data.get('service')
+        
+        if not service_id:
+            return Response(
+                {'error': 'service est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier que le service existe
+        try:
+            service = ProviderService.objects.get(id=service_id)
+        except ProviderService.DoesNotExist:
+            return Response(
+                {'error': 'Service non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Vérifier si déjà en favoris
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user,
+            service=service
+        )
+        
+        if created:
+            serializer = self.get_serializer(favorite)
+            return Response(
+                {
+                    'message': 'Service ajouté aux favoris',
+                    'favorite': serializer.data,
+                    'is_favorited': True
+                },
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(
+                {
+                    'message': 'Service déjà en favoris',
+                    'is_favorited': True
+                },
+                status=status.HTTP_200_OK
+            )
     
     @action(detail=False, methods=['post'])
     def toggle(self, request):
-        provider_id = request.data.get('provider_id')
-        if not provider_id:
-            return Response({"detail": "provider_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        """
+        Basculer un favori (ajouter si absent, retirer si présent)
+        Body: {"service_id": 123}
+        Returns: {"is_favorited": true/false, "message": "..."}
+        """
+        service_id = request.data.get('service_id')
         
-        provider = get_object_or_404(Provider, id=provider_id)
-        favorite = Favorite.objects.filter(user=request.user, provider=provider).first()
+        if not service_id:
+            return Response(
+                {'error': 'service_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier que le service existe
+        service = get_object_or_404(ProviderService, id=service_id)
+        
+        # Chercher si le favori existe
+        favorite = Favorite.objects.filter(
+            user=request.user,
+            service=service
+        ).first()
         
         if favorite:
+            # Retirer des favoris
             favorite.delete()
-            return Response({"status": "removed from favorites"})
+            return Response({
+                'is_favorited': False,
+                'message': 'Service retiré des favoris'
+            }, status=status.HTTP_200_OK)
         else:
-            Favorite.objects.create(user=request.user, provider=provider)
-            return Response({"status": "added to favorites"})
+            # Ajouter aux favoris
+            favorite = Favorite.objects.create(
+                user=request.user,
+                service=service
+            )
+            serializer = self.get_serializer(favorite)
+            return Response({
+                'is_favorited': True,
+                'message': 'Service ajouté aux favoris',
+                'favorite': serializer.data
+            }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        """
+        Vérifier si un service est en favoris
+        Query param: ?service_id=123
+        Returns: {"is_favorited": true/false}
+        """
+        service_id = request.query_params.get('service_id')
+        
+        if not service_id:
+            return Response(
+                {'error': 'service_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        is_favorited = Favorite.objects.filter(
+            user=request.user,
+            service_id=service_id
+        ).exists()
+        
+        return Response({
+            'is_favorited': is_favorited,
+            'service_id': int(service_id)
+        })
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all().order_by('-updated_at')
