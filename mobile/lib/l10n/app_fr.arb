@@ -1876,7 +1876,13 @@
   "noInteractedClients": "Aucun client avec qui vous avez déjà travaillé. Attendez de recevoir des demandes de devis ou des offres acceptées.",
   "step1SelectClient": "Étape 1 : Sélectionner le client",
   "concernedClient": "Client concerné",
-  "pleaseSelectClient": "Veuillez sélectionner un client"
+  "pleaseSelectClient": "Veuillez sélectionner un client",
+  "providerBio": "Biographie du prestataire",
+  "completedProjects": "Projets réalisés",
+  "projectsCompleted": "projets terminés",
+  "noDataAvailable": "Aucune donnée disponible",
+  "verifiedEvaluations": "Évaluations vérifiées",
+  "noImagesAvailable": "Aucune image disponible"
   
 
   

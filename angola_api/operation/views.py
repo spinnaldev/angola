@@ -8,13 +8,13 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import Q, Count, Avg
+from django.db.models import Q, Count, Avg , OuterRef , Exists
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
-
+from rest_framework.filters import SearchFilter, OrderingFilter
 from .signals import send_bulk_notification, send_test_fcm_notification ,create_offer_status_notification_with_extradata
 
 from .sms_service import InfobipSMSService, check_sms_rate_limit, increment_sms_rate_limit
@@ -27,7 +27,7 @@ import random
 import string
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 import logging
 from django.utils.translation import gettext_lazy as _
@@ -121,46 +121,231 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
+    
     def create(self, request, *args, **kwargs):
+        # 📝 LOG: Début de la requête d'inscription
+        logger.info("=" * 50)
+        logger.info("📝 NOUVELLE INSCRIPTION - Début du processus")
+        logger.info(f"📧 Email: {request.data.get('email', 'Non fourni')}")
+        logger.info(f"👤 Username: {request.data.get('username', 'Non fourni')}")
+        logger.info(f"🎭 Role: {request.data.get('role', 'Non fourni')}")
+        logger.info(f"📍 Location: {request.data.get('location', 'Non fourni')}")
+        logger.info(f"📱 Phone: {request.data.get('phone_number', 'Non fourni')}")
+        
         try:
+            # 📝 LOG: Validation des données
+            logger.info("🔍 Étape 1: Validation des données...")
             serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
             
-            # Créer l'utilisateur
+            try:
+                serializer.is_valid(raise_exception=True)
+                logger.info("✅ Validation réussie")
+            except serializers.ValidationError as validation_error:
+                logger.warning("❌ Échec de validation")
+                logger.warning(f"📋 Erreurs de validation: {validation_error.detail}")
+                
+                # Transformer les erreurs pour les rendre plus lisibles
+                friendly_errors = self._format_validation_errors(validation_error.detail)
+                
+                logger.error(f"📤 Réponse d'erreur envoyée: {friendly_errors}")
+                return Response(friendly_errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 📝 LOG: Création de l'utilisateur
+            logger.info("👤 Étape 2: Création de l'utilisateur...")
             user = serializer.save()
+            logger.info(f"✅ Utilisateur créé avec succès - ID: {user.id}, Username: {user.username}")
             
-            # Le serializer s'occupe déjà de retourner le bon format
+            # 📝 LOG: Vérification du profil prestataire
+            if request.data.get('role') == 'provider':
+                if hasattr(user, 'provider_profile'):
+                    logger.info(f"🏢 Profil prestataire créé - ID: {user.provider_profile.id}")
+                    categories = request.data.get('categories', [])
+                    if categories:
+                        logger.info(f"📂 Catégories associées: {categories}")
+                else:
+                    logger.warning("⚠️ Profil prestataire non créé")
+            
+            # 📝 LOG: Génération des tokens
+            logger.info("🔑 Étape 3: Génération des tokens...")
             response_data = serializer.to_representation(user)
+            logger.info("✅ Tokens générés avec succès")
+            
+            # 📝 LOG: Succès final
+            logger.info("=" * 50)
+            logger.info(f"🎉 INSCRIPTION RÉUSSIE - User ID: {user.id}")
+            logger.info("=" * 50)
             
             return Response(response_data, status=status.HTTP_201_CREATED)
             
         except serializers.ValidationError as e:
-            # Personnaliser les messages d'erreur
-            errors = e.detail
+            logger.error("=" * 50)
+            logger.error("❌ ERREUR DE VALIDATION")
+            logger.error(f"📋 Détails: {e.detail}")
+            logger.error("=" * 50)
             
-            # Transformer les erreurs pour les rendre plus conviviales
-            friendly_errors = {}
-            
-            if 'email' in errors:
-                friendly_errors['email'] = "Cette adresse email est déjà utilisée par un autre compte."
-                
-            if 'username' in errors:
-                friendly_errors['username'] = "Ce nom d'utilisateur est déjà pris."
-                
-            # Garder les autres erreurs telles quelles
-            for field, message in errors.items():
-                if field not in friendly_errors:
-                    friendly_errors[field] = message
-            
+            friendly_errors = self._format_validation_errors(e.detail)
             return Response(friendly_errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        except IntegrityError as e:
+            logger.error("=" * 50)
+            logger.error("❌ ERREUR D'INTÉGRITÉ BASE DE DONNÉES")
+            logger.error(f"📋 Erreur brute: {str(e)}")
+            logger.error("=" * 50)
             
+            # Analyser l'erreur d'intégrité pour donner un message précis
+            error_message = str(e).lower()
+            
+            if 'email' in error_message or 'unique constraint' in error_message and 'email' in error_message:
+                logger.error("📧 Conflit: Email déjà utilisé")
+                return Response({
+                    'email': ['Cette adresse email est déjà utilisée par un autre compte.']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif 'username' in error_message or 'unique constraint' in error_message and 'username' in error_message:
+                logger.error("👤 Conflit: Username déjà pris")
+                return Response({
+                    'username': ['Ce nom d\'utilisateur est déjà pris. Veuillez en choisir un autre.']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif 'phone' in error_message:
+                logger.error("📱 Conflit: Numéro de téléphone déjà utilisé")
+                return Response({
+                    'phone_number': ['Ce numéro de téléphone est déjà associé à un compte.']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            else:
+                logger.error("⚠️ Erreur d'intégrité non identifiée")
+                return Response({
+                    'detail': 'Une erreur s\'est produite lors de la création du compte. Vérifiez que toutes les informations sont uniques.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
         except Exception as e:
-            logger.error(f"Erreur inattendue lors de l'inscription: {str(e)}")
+            logger.error("=" * 50)
+            logger.error("❌ ERREUR INATTENDUE LORS DE L'INSCRIPTION")
+            logger.error(f"🔥 Type d'erreur: {type(e).__name__}")
+            logger.error(f"📋 Message: {str(e)}")
+            logger.error(f"📚 Traceback complet:")
+            
+            import traceback
+            logger.error(traceback.format_exc())
+            logger.error("=" * 50)
+            
             return Response(
-                {"detail": "Une erreur inattendue s'est produite. Veuillez réessayer."},
+                {
+                    'detail': 'Une erreur inattendue s\'est produite lors de l\'inscription.',
+                    'error_type': type(e).__name__
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    def _format_validation_errors(self, errors):
+        """
+        Formatte les erreurs de validation pour les rendre plus conviviales
+        
+        Args:
+            errors: Dict des erreurs de validation
+            
+        Returns:
+            Dict avec des messages d'erreur formatés
+        """
+        logger.info("🔄 Formatage des erreurs de validation...")
+        
+        friendly_errors = {}
+        
+        # Mapping des champs vers des messages personnalisés
+        field_messages = {
+            'email': {
+                'required': 'L\'adresse email est obligatoire.',
+                'invalid': 'L\'adresse email n\'est pas valide.',
+                'unique': 'Cette adresse email est déjà utilisée par un autre compte.',
+                'blank': 'L\'adresse email ne peut pas être vide.',
+            },
+            'username': {
+                'required': 'Le nom d\'utilisateur est obligatoire.',
+                'invalid': 'Le nom d\'utilisateur contient des caractères invalides.',
+                'unique': 'Ce nom d\'utilisateur est déjà pris. Veuillez en choisir un autre.',
+                'blank': 'Le nom d\'utilisateur ne peut pas être vide.',
+                'min_length': 'Le nom d\'utilisateur doit contenir au moins 3 caractères.',
+                'max_length': 'Le nom d\'utilisateur ne peut pas dépasser 150 caractères.',
+            },
+            'password': {
+                'required': 'Le mot de passe est obligatoire.',
+                'blank': 'Le mot de passe ne peut pas être vide.',
+                'min_length': 'Le mot de passe doit contenir au moins 8 caractères.',
+                'weak': 'Le mot de passe est trop faible. Utilisez un mélange de lettres, chiffres et caractères spéciaux.',
+            },
+            'first_name': {
+                'required': 'Le prénom est obligatoire.',
+                'blank': 'Le prénom ne peut pas être vide.',
+            },
+            'last_name': {
+                'required': 'Le nom de famille est obligatoire.',
+                'blank': 'Le nom de famille ne peut pas être vide.',
+            },
+            'phone_number': {
+                'invalid': 'Le numéro de téléphone n\'est pas valide.',
+                'unique': 'Ce numéro de téléphone est déjà associé à un compte.',
+            },
+            'role': {
+                'invalid_choice': 'Le rôle sélectionné n\'est pas valide. Choisissez "client" ou "provider".',
+            },
+            'categories': {
+                'invalid': 'Les catégories sélectionnées ne sont pas valides.',
+                'required': 'Veuillez sélectionner au moins une catégorie d\'expertise.',
+            }
+        }
+        
+        # Traiter chaque erreur
+        for field, messages in errors.items():
+            logger.info(f"  📌 Champ '{field}': {messages}")
+            
+            if field == 'non_field_errors':
+                # Erreurs globales
+                friendly_errors['detail'] = messages if isinstance(messages, str) else messages[0]
+                continue
+            
+            # Obtenir le premier message d'erreur
+            if isinstance(messages, list):
+                error_message = str(messages[0]) if messages else 'Erreur de validation'
+            else:
+                error_message = str(messages)
+            
+            error_message_lower = error_message.lower()
+            
+            # Essayer de trouver un message personnalisé
+            if field in field_messages:
+                custom_message = None
+                
+                # Chercher un message correspondant au type d'erreur
+                for error_type, message in field_messages[field].items():
+                    if error_type in error_message_lower or error_type.replace('_', ' ') in error_message_lower:
+                        custom_message = message
+                        break
+                
+                # Vérifications spécifiques
+                if not custom_message:
+                    if 'already exists' in error_message_lower or 'déjà' in error_message_lower:
+                        custom_message = field_messages[field].get('unique')
+                    elif 'required' in error_message_lower or 'obligatoire' in error_message_lower:
+                        custom_message = field_messages[field].get('required')
+                    elif 'invalid' in error_message_lower or 'invalide' in error_message_lower:
+                        custom_message = field_messages[field].get('invalid')
+                    elif 'blank' in error_message_lower or 'vide' in error_message_lower:
+                        custom_message = field_messages[field].get('blank')
+                
+                if custom_message:
+                    friendly_errors[field] = [custom_message]
+                    logger.info(f"    ✅ Message personnalisé appliqué: {custom_message}")
+                else:
+                    friendly_errors[field] = [error_message]
+                    logger.info(f"    ℹ️ Message original conservé: {error_message}")
+            else:
+                # Pour les champs sans mapping, garder le message original
+                friendly_errors[field] = messages if isinstance(messages, list) else [messages]
+                logger.info(f"    ℹ️ Pas de mapping pour ce champ, message original conservé")
+        
+        logger.info(f"✅ Formatage terminé: {len(friendly_errors)} champ(s) avec erreur(s)")
+        return friendly_errors
 class PasswordResetRequestView(APIView):
     """
     Vue pour demander un code de réinitialisation de mot de passe
@@ -368,98 +553,100 @@ class PasswordResetConfirmView(APIView):
         )
     
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
-    # def get_permissions(self):
-    #     if self.action == 'create':
-    #         return [AllowAny()]
-    #     elif self.action in ['update', 'partial_update', 'destroy']:
-    #         return [IsOwnerOrReadOnly()]
-    #     return [IsAuthenticated()]
+    # Configuration pour la recherche et les filtres
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    # Champs de recherche
+    search_fields = [
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'phone_number'
+    ]
+    
+    # Filtres exacts
+    filterset_fields = ['role', 'is_active', 'is_verified']
+    
+    # Champs pour le tri
+    ordering_fields = ['date_joined', 'username', 'email']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """
+        Personnaliser le queryset pour gérer les filtres personnalisés
+        """
+        queryset = super().get_queryset()
+        
+        # Filtre personnalisé pour verification_status
+        verification_status = self.request.query_params.get('verification_status')
+        
+        if not verification_status:
+            return queryset
+        
+        # Import du modèle ProviderVerification
+        try:
+            from operation.models import ProviderVerification
+        except ImportError:
+            logger.warning("ProviderVerification model not found")
+            return queryset
+        
+        if verification_status == 'verified':
+            # Vérifiés : utilise le champ is_verified du User directement
+            queryset = queryset.filter(is_verified=True)
+            
+        elif verification_status == 'pending':
+            # En attente : prestataires avec documents en attente
+            # ✅ CORRECTION: utiliser verification_status au lieu de status
+            pending_subquery = ProviderVerification.objects.filter(
+                provider__user_id=OuterRef('pk'),
+                verification_status='pending'
+            )
+            queryset = queryset.filter(
+                role='provider'
+            ).annotate(
+                has_pending_verification=Exists(pending_subquery)
+            ).filter(has_pending_verification=True)
+            
+        elif verification_status == 'rejected':
+            # Rejetés : prestataires avec documents rejetés
+            # ✅ CORRECTION: utiliser verification_status au lieu de status
+            rejected_subquery = ProviderVerification.objects.filter(
+                provider__user_id=OuterRef('pk'),
+                verification_status='rejected'
+            )
+            queryset = queryset.filter(
+                role='provider'
+            ).annotate(
+                has_rejected_verification=Exists(rejected_subquery)
+            ).filter(has_rejected_verification=True)
+            
+        elif verification_status == 'not_started':
+            # Non démarrés : utilisateurs sans vérification
+            # ✅ CORRECTION: utiliser provider__user_id pour la relation
+            has_verification_subquery = ProviderVerification.objects.filter(
+                provider__user_id=OuterRef('pk')
+            )
+            
+            queryset = queryset.annotate(
+                has_verification=Exists(has_verification_subquery)
+            ).filter(
+                Q(role='provider', has_verification=False) |
+                Q(role='client', is_verified=False) |
+                Q(role='admin', is_verified=False)
+            )
+        
+        return queryset
     
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
         return UserSerializer
     
-    # @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    # def me(self, request):
-    #     """Récupérer le profil de l'utilisateur connecté"""
-    #     try:
-    #         logger.debug("=== ACTION ME DEBUG ===")
-    #         logger.debug(f"Request: {request}")
-    #         logger.debug(f"Request user: {request.user}")
-    #         logger.debug(f"User type: {type(request.user)}")
-    #         logger.debug(f"Is authenticated: {request.user.is_authenticated}")
-    #         logger.debug(f"Is anonymous: {request.user.is_anonymous}")
-    #         logger.debug(f"User ID: {getattr(request.user, 'id', 'None')}")
-    #         logger.debug(f"Username: {getattr(request.user, 'username', 'None')}")
-            
-    #         # Vérifier les headers
-    #         auth_header = request.META.get('HTTP_AUTHORIZATION', 'None')
-    #         logger.debug(f"Authorization header: {auth_header[:50] if auth_header != 'None' else 'None'}...")
-            
-    #         # Debug des métadonnées de la requête
-    #         logger.debug(f"Request META keys: {list(request.META.keys())}")
-            
-    #         # Vérification explicite de l'authentification
-    #         if not hasattr(request, 'user'):
-    #             logger.error("❌ request.user n'existe pas")
-    #             return Response(
-    #                 {"detail": "Authentication error: no user in request"}, 
-    #                 status=status.HTTP_401_UNAUTHORIZED
-    #             )
-            
-    #         if request.user is None:
-    #             logger.error("❌ request.user est None")
-    #             return Response(
-    #                 {"detail": "Authentication error: user is None"}, 
-    #                 status=status.HTTP_401_UNAUTHORIZED
-    #             )
-            
-    #         if not request.user.is_authenticated:
-    #             logger.warning("❌ Utilisateur non authentifié dans l'action me")
-    #             return Response(
-    #                 {"detail": "Authentication credentials were not provided."}, 
-    #                 status=status.HTTP_401_UNAUTHORIZED
-    #             )
-            
-    #         if request.user.is_anonymous:
-    #             logger.warning("❌ Utilisateur anonyme dans l'action me")
-    #             return Response(
-    #                 {"detail": "Anonymous user not allowed."}, 
-    #                 status=status.HTTP_401_UNAUTHORIZED
-    #             )
-            
-    #         # Vérifier que l'utilisateur existe en base
-    #         try:
-    #             user = User.objects.get(id=request.user.id)
-    #             logger.debug(f"✅ Utilisateur trouvé en base: {user}")
-    #         except User.DoesNotExist:
-    #             logger.error(f"❌ Utilisateur {request.user.id} non trouvé en base")
-    #             return Response(
-    #                 {"detail": "User not found in database"}, 
-    #                 status=status.HTTP_404_NOT_FOUND
-    #             )
-            
-    #         logger.debug(f"✅ Sérialisation de l'utilisateur: {request.user}")
-    #         serializer = self.get_serializer(request.user)
-    #         logger.debug(f"✅ Données sérialisées: {serializer.data}")
-            
-    #         return Response(serializer.data)
-            
-    #     except Exception as e:
-    #         logger.error(f"❌ Erreur dans l'action me: {str(e)}")
-    #         logger.error(f"Type d'erreur: {type(e)}")
-    #         import traceback
-    #         logger.error(f"Traceback: {traceback.format_exc()}")
-            
-    #         return Response(
-    #             {"detail": f"Internal server error: {str(e)}"}, 
-    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #         )
     
     @action(detail=False, methods=['put', 'patch'])
     def update_me(self, request):
@@ -4207,7 +4394,7 @@ class ProjectOfferViewSet(viewsets.ModelViewSet):
 
             logger.info("NOTIFICATION pour le prestataire de l'offre modifiée")
             # ✅ NOTIFICATION pour le prestataire de l'offre modifiée
-            create_offer_status_notification_with_extradata(offer, new_status)
+            # create_offer_status_notification_with_extradata(offer, new_status)
         
         serializer = self.get_serializer(offer)
         return Response(serializer.data)

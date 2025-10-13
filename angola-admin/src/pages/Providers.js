@@ -1,315 +1,298 @@
+// admin/src/pages/Providers.js
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { providerService } from '../services/api';
 import { withAuth } from '../context/AuthContext';
 
-// Icônes
-import SearchIcon from '@mui/icons-material/Search';
-import StarIcon from '@mui/icons-material/Star';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-
+// Composant Carte de Prestataire
 const ProviderCard = ({ provider, onVerify, onView }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden">
-      <div className="p-4">
-        <div className="flex items-start justify-between">
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden">
+      <div className="p-5">
+        {/* En-tête avec photo et statut */}
+        <div className="flex items-start justify-between mb-4">
           <div className="flex items-center">
-            <div className="h-10 w-10 flex-shrink-0">
-              {provider.user?.profile_picture ? (
+            {/* Photo de profil */}
+            <div className="h-12 w-12 flex-shrink-0">
+              {provider.user?.profile_picture || provider.profile_picture ? (
                 <img
-                  className="h-10 w-10 rounded-full object-cover"
-                  src={provider.profile_picture}
-                  alt={provider.full_name}
+                  className="h-12 w-12 rounded-full object-cover ring-2 ring-gray-100"
+                  src={provider.user?.profile_picture || provider.profile_picture}
+                  alt={provider.full_name || provider.company_name}
                 />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-medium">
-                  {provider.full_name?.charAt(0) || 'P'}
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-semibold text-lg ring-2 ring-indigo-200">
+                  {(provider.full_name || provider.company_name || 'P').charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
+            
+            {/* Nom et entreprise */}
             <div className="ml-3">
-              <div className="font-medium text-gray-800">
-                {provider.full_name}
+              <div className="font-semibold text-gray-900">
+                {provider.full_name || provider.user?.username || 'Sans nom'}
               </div>
               {provider.company_name && (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-600">
                   {provider.company_name}
                 </div>
               )}
             </div>
           </div>
+          
+          {/* Badge de vérification */}
           <div>
             {provider.is_verified ? (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
-                <VerifiedIcon className="mr-1 h-3 w-3" /> Vérifié
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                <span>✅</span> Vérifié
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
-                En attente
+              <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-semibold text-yellow-700">
+                <span>⏳</span> En attente
               </span>
             )}
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-          <div className="flex items-center">
-            <StarIcon className="h-4 w-4 text-yellow-500" />
-            <span className="ml-1">
-              {provider.avg_rating ? Number(provider.avg_rating).toFixed(1) : 'N/A'}
+        {/* Informations détaillées */}
+        <div className="space-y-2 mb-4">
+          {/* Note moyenne */}
+          <div className="flex items-center text-sm">
+            <span className="text-yellow-500 mr-1">⭐</span>
+            <span className="font-medium text-gray-900">
+              {provider.average_rating ? Number(provider.average_rating).toFixed(1) : '0.0'}
+            </span>
+            <span className="text-gray-500 ml-1">
+              ({provider.total_reviews || 0} avis)
             </span>
           </div>
-          <div className="flex items-center">
-            <span className="font-medium">{provider.services_count || 0}</span>
-            <span className="ml-1">services</span>
-          </div>
-          <div className="flex items-center">
-            <span className="font-medium">{provider.reviews_count || 0}</span>
-            <span className="ml-1">avis</span>
-          </div>
+
+          {/* Services et localisation */}
+          {provider.services_count !== undefined && (
+            <div className="flex items-center text-sm text-gray-600">
+              <span className="mr-1">📦</span>
+              <span>{provider.services_count} service{provider.services_count > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          
+          {provider.city && (
+            <div className="flex items-center text-sm text-gray-600">
+              <span className="mr-1">📍</span>
+              <span>{provider.city}</span>
+            </div>
+          )}
         </div>
 
-        {provider.address && (
-          <div className="mt-2 flex items-center text-sm text-gray-500">
-            <LocationOnIcon className="mr-1 h-4 w-4" />
-            <span className="truncate">{provider.address}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between border-t bg-gray-50 px-4 py-3">
-        <button
-          onClick={() => onVerify(provider)}
-          className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium ${
-            provider.is_verified
-              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-          }`}
-        >
-          {provider.is_verified ? (
-            <>
-              <CancelIcon className="mr-1.5 h-4 w-4" /> Retirer vérification
-            </>
-          ) : (
-            <>
-              <CheckCircleIcon className="mr-1.5 h-4 w-4" /> Vérifier
-            </>
-          )}
-        </button>
-        <button
-          onClick={() => onView(provider)}
-          className="inline-flex items-center rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200"
-        >
-          <VisibilityIcon className="mr-1.5 h-4 w-4" /> Voir détails
-        </button>
+        {/* Actions */}
+        <div className="flex gap-2 pt-4 border-t border-gray-100">
+          <button
+            onClick={() => onView(provider)}
+            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <span className="mr-1">👁️</span>
+            Voir détails
+          </button>
+          
+          <button
+            onClick={() => onVerify(provider)}
+            className={`flex-1 inline-flex items-center justify-center px-3 py-2 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              provider.is_verified
+                ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500'
+                : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
+            }`}
+          >
+            {provider.is_verified ? (
+              <>
+                <span className="mr-1">❌</span>
+                Retirer
+              </>
+            ) : (
+              <>
+                <span className="mr-1">✅</span>
+                Vérifier
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
+// Modal détail du prestataire
 const ProviderDetail = ({ provider, onClose }) => {
+  if (!provider) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50">
-      <div className="relative mx-auto my-6 w-full max-w-4xl p-4">
-        <div className="relative rounded-lg bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b px-6 py-4">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Détails du prestataire
-            </h3>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black bg-opacity-30" onClick={onClose}></div>
+
+        {/* Modal */}
+        <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="border-b bg-gray-50 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Détails du prestataire</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
             >
-              &times;
+              ×
             </button>
           </div>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <div className="md:col-span-1">
-                <div className="flex flex-col items-center rounded-lg border p-4 text-center">
-                  <div className="h-24 w-24">
-                    {provider.user?.profile_picture ? (
-                      <img
-                        className="h-24 w-24 rounded-full object-cover"
-                        src={provider.profile_picture}
-                        alt={provider.full_name}
-                      />
-                    ) : (
-                      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 text-gray-600 text-2xl">
-                        {provider.full_name?.charAt(0) || 'P'}
-                      </div>
-                    )}
+          {/* Content */}
+          <div className="px-6 py-6">
+            {/* En-tête avec photo */}
+            <div className="flex items-center mb-6">
+              <div className="h-20 w-20 flex-shrink-0">
+                {provider.user?.profile_picture || provider.profile_picture ? (
+                  <img
+                    className="h-20 w-20 rounded-full object-cover ring-4 ring-gray-100"
+                    src={provider.user?.profile_picture || provider.profile_picture}
+                    alt={provider.full_name}
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-2xl ring-4 ring-indigo-200">
+                    {(provider.full_name || provider.company_name || 'P').charAt(0).toUpperCase()}
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-gray-800">
-                    {provider.full_name}
-                  </h3>
-                  {provider.company_name && (
-                    <p className="text-gray-500">{provider.company_name}</p>
-                  )}
-                  <div className="mt-2 flex items-center">
-                    <StarIcon className="h-5 w-5 text-yellow-500" />
-                    <span className="ml-1 font-medium">
-                      {provider.avg_rating ? Number(provider.avg_rating).toFixed(1) : 'N/A'}
+                )}
+              </div>
+              <div className="ml-4">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {provider.full_name || provider.user?.username || 'Sans nom'}
+                </h3>
+                {provider.company_name && (
+                  <p className="text-lg text-gray-600">{provider.company_name}</p>
+                )}
+                {provider.is_verified && (
+                  <span className="inline-flex items-center gap-1 mt-2 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+                    <span>✅</span> Prestataire vérifié
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Grille d'informations */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Informations de base */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 text-lg mb-3">Informations de base</h4>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Email</label>
+                  <p className="text-gray-900">{provider.user?.email || provider.email || 'Non renseigné'}</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Téléphone</label>
+                  <p className="text-gray-900">{provider.phone_number || provider.user?.phone_number || 'Non renseigné'}</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Localisation</label>
+                  <p className="text-gray-900">
+                    {provider.city || 'Non renseignée'}
+                    {provider.address && ` - ${provider.address}`}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Membre depuis</label>
+                  <p className="text-gray-900">
+                    {provider.created_at
+                      ? new Date(provider.created_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      : 'Date inconnue'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiques */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 text-lg mb-3">Statistiques</h4>
+                
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Note moyenne</span>
+                    <div className="flex items-center">
+                      <span className="text-2xl font-bold text-yellow-600">
+                        {provider.average_rating ? Number(provider.average_rating).toFixed(1) : '0.0'}
+                      </span>
+                      <span className="text-yellow-500 ml-1">⭐</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Nombre d'avis</span>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {provider.total_reviews || 0}
                     </span>
                   </div>
-                  <div className="mt-4">
-                    {provider.is_verified ? (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                        <VerifiedIcon className="mr-1 h-4 w-4" /> Vérifié
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
-                        En attente de vérification
-                      </span>
-                    )}
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Services proposés</span>
+                    <span className="text-2xl font-bold text-green-600">
+                      {provider.services_count || 0}
+                    </span>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border p-4">
-                  <h4 className="mb-2 font-medium text-gray-800">
-                    Informations de contact
-                  </h4>
-                  <div className="space-y-2 text-gray-500">
-                    <p>
-                      <span className="font-medium">Email:</span>{' '}
-                      {provider.user?.email || 'Non spécifié'}
-                    </p>
-                    <p>
-                      <span className="font-medium">Téléphone:</span>{' '}
-                      {provider.user?.phone_number || 'Non spécifié'}
-                    </p>
-                    <p>
-                      <span className="font-medium">Adresse:</span>{' '}
-                      {provider.address || 'Non spécifiée'}
-                    </p>
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Projets complétés</span>
+                    <span className="text-2xl font-bold text-purple-600">
+                      {provider.completed_projects || 0}
+                    </span>
                   </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="rounded-lg border p-4">
-                  <h4 className="mb-4 font-medium text-gray-800">Services</h4>
-                  {provider.services && provider.services.length > 0 ? (
-                    <div className="space-y-4">
-                      {provider.services.map((service) => (
-                        <div
-                          key={service.id}
-                          className="rounded-lg border p-3 transition-colors hover:bg-gray-50"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h5 className="font-medium text-gray-800">
-                                {service.title}
-                              </h5>
-                              <p className="mt-1 text-sm text-gray-500">
-                                {service.description &&
-                                  service.description.substring(0, 100)}
-                                {service.description &&
-                                  service.description.length > 100 &&
-                                  '...'}
-                              </p>
-                              <div className="mt-2 text-sm">
-                                <span className="font-medium">Catégorie:</span>{' '}
-                                {service.category_name}
-                              </div>
-                              <div className="mt-1 text-sm">
-                                <span className="font-medium">Sous-catégorie:</span>{' '}
-                                {service.subcategory_name}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="rounded-md bg-blue-50 px-2 py-1 text-sm font-medium text-blue-700">
-                                {service.price
-                                  ? `${service.price} AOA`
-                                  : service.price_type === 'quote'
-                                  ? 'Sur devis'
-                                  : 'Prix non spécifié'}
-                              </div>
-                              <div className="mt-2 text-xs text-gray-500">
-                                {service.price_type === 'fixed'
-                                  ? 'Prix fixe'
-                                  : service.price_type === 'hourly'
-                                  ? 'Prix horaire'
-                                  : service.price_type === 'daily'
-                                  ? 'Prix journalier'
-                                  : service.price_type === 'negotiable'
-                                  ? 'Prix négociable'
-                                  : 'Sur devis'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">
-                      Ce prestataire n'a pas encore ajouté de services.
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-4 rounded-lg border p-4">
-                  <h4 className="mb-4 font-medium text-gray-800">
-                    Certificats et qualifications
-                  </h4>
-                  {provider.certificates && provider.certificates.length > 0 ? (
-                    <div className="space-y-3">
-                      {provider.certificates.map((cert) => (
-                        <div
-                          key={cert.id}
-                          className="flex items-center justify-between rounded-lg border p-3"
-                        >
-                          <div>
-                            <div className="font-medium text-gray-800">
-                              {cert.title}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {cert.issuing_organization}
-                            </div>
-                            <div className="mt-1 text-xs text-gray-500">
-                              Délivré le:{' '}
-                              {new Date(cert.issue_date).toLocaleDateString('fr-FR')}
-                            </div>
-                          </div>
-                          <div>
-                            {cert.is_verified ? (
-                              <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                Vérifié
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-                                Non vérifié
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">
-                      Ce prestataire n'a pas encore ajouté de certificats.
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
+
+            {/* Bio / Description */}
+            {(provider.bio || provider.description) && (
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 text-lg mb-3">À propos</h4>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {provider.bio || provider.description}
+                </p>
+              </div>
+            )}
+
+            {/* Compétences */}
+            {provider.skills && provider.skills.length > 0 && (
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 text-lg mb-3">Compétences</h4>
+                <div className="flex flex-wrap gap-2">
+                  {provider.skills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="border-t bg-gray-50 px-6 py-4">
-            <div className="flex justify-end">
-              <button
-                onClick={onClose}
-                className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Fermer
-              </button>
-            </div>
+          {/* Footer */}
+          <div className="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Fermer
+            </button>
           </div>
         </div>
       </div>
@@ -317,35 +300,69 @@ const ProviderDetail = ({ provider, onClose }) => {
   );
 };
 
+// Composant principal
 const Providers = () => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
   const [error, setError] = useState('');
   const [selectedProvider, setSelectedProvider] = useState(null);
+
+  const itemsPerPage = 9; // 3x3 grid
+
+  // Debounce pour la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Réinitialiser la page lors du changement de filtre
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [verificationFilter]);
+
+  // Charger les prestataires
+  useEffect(() => {
+    fetchProviders();
+  }, [currentPage, debouncedSearch, verificationFilter]);
 
   const fetchProviders = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await providerService.getAll(currentPage);
+      const params = {
+        page: currentPage,
+        page_size: itemsPerPage,
+      };
+
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      if (verificationFilter) {
+        params.is_verified = verificationFilter === 'verified';
+      }
+
+      const response = await providerService.getAll(params.page, params.page_size);
+      
       setProviders(response.data.results || []);
-      setTotalPages(Math.ceil(response.data.count / 10));
+      setTotalCount(response.data.count || 0);
+      setTotalPages(Math.ceil((response.data.count || 0) / itemsPerPage));
     } catch (err) {
       console.error('Erreur lors du chargement des prestataires', err);
       setError('Impossible de charger les prestataires. Veuillez réessayer.');
+      setProviders([]);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProviders();
-  }, [currentPage]);
 
   const handleVerifyProvider = async (provider) => {
     try {
@@ -355,16 +372,13 @@ const Providers = () => {
         await providerService.verify(provider.id);
       }
       
-      // Mettre à jour l'état local
-      setProviders(providers.map(p => {
-        if (p.id === provider.id) {
-          return { ...p, is_verified: !p.is_verified };
-        }
-        return p;
-      }));
+      // Mettre à jour localement
+      setProviders(providers.map(p => 
+        p.id === provider.id ? { ...p, is_verified: !p.is_verified } : p
+      ));
     } catch (err) {
-      console.error('Erreur lors de la vérification du prestataire', err);
-      setError('Une erreur est survenue lors de la mise à jour du statut de vérification.');
+      console.error('Erreur lors de la vérification', err);
+      alert('Une erreur est survenue lors de la mise à jour du statut de vérification.');
     }
   };
 
@@ -372,85 +386,164 @@ const Providers = () => {
     setSelectedProvider(provider);
   };
 
-  const filteredProviders = providers.filter((provider) => {
-    const searchTerm = search.toLowerCase();
-    const matchesSearch =
-      (provider.full_name && provider.full_name.toLowerCase().includes(searchTerm)) ||
-      (provider.company_name && provider.company_name.toLowerCase().includes(searchTerm)) ||
-      (provider.username && provider.username.toLowerCase().includes(searchTerm));
+  const resetFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setVerificationFilter('');
+    setCurrentPage(1);
+  };
 
-    const matchesVerification =
-      verificationFilter === ''
-        ? true
-        : verificationFilter === 'verified'
-        ? provider.is_verified
-        : !provider.is_verified;
-
-    const matchesCategory =
-      categoryFilter === ''
-        ? true
-        : provider.main_category && provider.main_category.category_id.toString() === categoryFilter;
-
-    return matchesSearch && matchesVerification && matchesCategory;
-  });
+  // Calcul des stats
+  const stats = {
+    total: totalCount,
+    verified: providers.filter(p => p.is_verified).length,
+    pending: providers.filter(p => !p.is_verified).length,
+  };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Erreur</h3>
-                <div className="mt-2 text-sm text-red-700">{error}</div>
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        {/* En-tête */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des prestataires</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Un total de {totalCount} prestataire{totalCount > 1 ? 's' : ''} trouvé{totalCount > 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {/* Statistiques */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+          <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-indigo-100 text-indigo-600 text-2xl">
+                    📋
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Total</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{stats.total}</dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Gestion des prestataires
-          </h1>
-          <div className="mt-4 flex flex-col space-y-2 md:mt-0 md:flex-row md:space-y-0 md:space-x-4">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                className="w-full rounded-md border border-gray-300 pl-10 py-2 pr-3 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 md:w-64"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-green-100 text-green-600 text-2xl">
+                    ✅
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Vérifiés</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{stats.verified}</dd>
+                  </dl>
+                </div>
+              </div>
             </div>
-            <select
-              className="rounded-md border border-gray-300 py-2 pl-3 pr-8 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              value={verificationFilter}
-              onChange={(e) => setVerificationFilter(e.target.value)}
-            >
-              <option value="">Tous les statuts</option>
-              <option value="verified">Vérifiés</option>
-              <option value="unverified">Non vérifiés</option>
-            </select>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-yellow-100 text-yellow-600 text-2xl">
+                    ⏳
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">En attente</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{stats.pending}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Filtres */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Recherche */}
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400">🔍</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Rechercher un prestataire..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Filtre vérification */}
+              <div className="sm:w-48">
+                <select
+                  value={verificationFilter}
+                  onChange={(e) => setVerificationFilter(e.target.value)}
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Tous les statuts</option>
+                  <option value="verified">Vérifiés</option>
+                  <option value="pending">En attente</option>
+                </select>
+              </div>
+
+              {/* Bouton réinitialiser */}
+              {(search || verificationFilter) && (
+                <button
+                  onClick={resetFilters}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Réinitialiser
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Liste des prestataires */}
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-500">
-                Chargement des prestataires...
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+              <p className="mt-2 text-gray-500">Chargement des prestataires...</p>
+            </div>
+          </div>
+        ) : providers.length === 0 ? (
+          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+            <div className="text-center">
+              <span className="text-6xl mb-4 block">🔍</span>
+              <p className="text-lg font-medium text-gray-900">Aucun prestataire trouvé</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {search || verificationFilter
+                  ? 'Essayez de modifier vos critères de recherche'
+                  : 'Aucun prestataire n\'est encore inscrit'}
               </p>
             </div>
           </div>
-        ) : filteredProviders.length === 0 ? (
-          <div className="flex h-64 items-center justify-center rounded-lg border border-gray-200 bg-white">
-            <p className="text-gray-500">Aucun prestataire trouvé</p>
-          </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProviders.map((provider) => (
+            {providers.map((provider) => (
               <ProviderCard
                 key={provider.id}
                 provider={provider}
@@ -463,39 +556,109 @@ const Providers = () => {
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-center space-x-2 pt-6">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((old) => Math.max(old - 1, 1))}
-              className={`flex items-center justify-center rounded-md border px-3 py-2 ${
-                currentPage === 1
-                  ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ChevronLeftIcon className="h-5 w-5" />
-            </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} sur {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage((old) => Math.min(old + 1, totalPages))
-              }
-              className={`flex items-center justify-center rounded-md border px-3 py-2 ${
-                currentPage === totalPages
-                  ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ChevronRightIcon className="h-5 w-5" />
-            </button>
+          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-8 rounded-lg shadow-sm">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((old) => Math.max(old - 1, 1))}
+                className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${
+                  currentPage === 1
+                    ? 'cursor-not-allowed text-gray-400'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Précédent
+              </button>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((old) => Math.min(old + 1, totalPages))}
+                className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'cursor-not-allowed text-gray-400'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Suivant
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Affichage de{' '}
+                  <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, totalCount)}
+                  </span>{' '}
+                  sur <span className="font-medium">{totalCount}</span> résultats
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((old) => Math.max(old - 1, 1))}
+                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${
+                      currentPage === 1
+                        ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    } ring-1 ring-inset ring-gray-300 focus:z-20`}
+                  >
+                    <span>⬅️</span>
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      // Afficher les 5 premières pages, la page actuelle ±2, et les 2 dernières
+                      return (
+                        page <= 3 ||
+                        page >= totalPages - 1 ||
+                        Math.abs(page - currentPage) <= 2
+                      );
+                    })
+                    .map((page, index, array) => {
+                      // Ajouter "..." si nécessaire
+                      const showEllipsis = index > 0 && page - array[index - 1] > 1;
+                      
+                      return (
+                        <React.Fragment key={page}>
+                          {showEllipsis && (
+                            <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+                              ...
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                              page === currentPage
+                                ? 'z-10 bg-indigo-600 text-white focus:z-20'
+                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                  
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((old) => Math.min(old + 1, totalPages))}
+                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${
+                      currentPage === totalPages
+                        ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    } ring-1 ring-inset ring-gray-300 focus:z-20`}
+                  >
+                    <span>➡️</span>
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Provider Detail Modal */}
+      {/* Modal détail prestataire */}
       {selectedProvider && (
         <ProviderDetail
           provider={selectedProvider}

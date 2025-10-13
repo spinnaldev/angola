@@ -248,42 +248,38 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
 
   Widget _buildCategorySection() {
     final l10n = AppLocalizations.of(context)!;
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    final languageCode = Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode;
     
     return _buildSection(
       title: l10n.category,
       children: [
-        Consumer<CategoryProvider>(
-          builder: (context, categoryProvider, child) {
-            return DropdownButtonFormField<Category>(
-              value: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: l10n.chooseCategory,
-                border: const OutlineInputBorder(),
-              ),
-              items: categoryProvider.categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category.getLocalizedName(
-                    Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode
-                  )),
-                );
-              }).toList(),
-              onChanged: (Category? value) {
-                setState(() {
-                  _selectedCategory = value;
-                  _selectedSubcategory = null;
-                });
-                if (value != null) {
-                  _loadSubcategories(value.id);
-                }
-              },
-              validator: (value) {
-                if (value == null) {
-                  return l10n.chooseCategoryValidation;
-                }
-                return null;
-              },
+        DropdownButtonFormField<Category>(
+          value: _selectedCategory,
+          decoration: InputDecoration(
+            labelText: l10n.chooseCategory,
+            border: const OutlineInputBorder(),
+          ),
+          items: categoryProvider.categories.map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(category.getLocalizedName(languageCode)),
             );
+          }).toList(),
+          onChanged: (Category? value) {
+            setState(() {
+              _selectedCategory = value;
+              _selectedSubcategory = null;
+            });
+            if (value != null) {
+              _loadSubcategories(value.id);
+            }
+          },
+          validator: (value) {
+            if (value == null) {
+              return l10n.chooseCategoryValidation;
+            }
+            return null;
           },
         ),
       ],

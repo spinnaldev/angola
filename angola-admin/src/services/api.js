@@ -314,6 +314,37 @@ const projectService = {
   getOffers: async (projectId) => {
     return api.get(`/admin/projects/${projectId}/offers/`);
   },
+
+  getStats: async (filters = {}) => {
+    try {
+      // Si votre backend a un endpoint dédié /admin/projects/stats/
+      const params = new URLSearchParams();
+      if (filters.search) params.append('search', filters.search);
+      
+      const response = await api.get(`/admin/projects/stats/?${params.toString()}`);
+      return response;
+    } catch (error) {
+      // Si l'endpoint n'existe pas, faire des requêtes séparées
+      console.warn('Endpoint stats non disponible, calcul manuel...');
+      
+      const [totalRes, openRes, inProgressRes, completedRes, closedRes] = await Promise.all([
+        api.get(`/admin/projects/?page=1&page_size=1${filters.search ? '&search=' + filters.search : ''}`),
+        api.get(`/admin/projects/?page=1&page_size=1&status=open${filters.search ? '&search=' + filters.search : ''}`),
+        api.get(`/admin/projects/?page=1&page_size=1&status=in_progress${filters.search ? '&search=' + filters.search : ''}`),
+        api.get(`/admin/projects/?page=1&page_size=1&status=completed${filters.search ? '&search=' + filters.search : ''}`),
+        api.get(`/admin/projects/?page=1&page_size=1&status=closed${filters.search ? '&search=' + filters.search : ''}`),
+      ]);
+      
+      return {
+        data: {
+          total: totalRes.data.count || 0,
+          open: openRes.data.count || 0,
+          in_progress: inProgressRes.data.count || 0,
+          completed: (completedRes.data.count || 0) + (closedRes.data.count || 0),
+        }
+      };
+    }
+  },
   
   updateStatus: async (id, status, adminNotes = '') => {
     return api.patch(`/admin/projects/${id}/`, { 

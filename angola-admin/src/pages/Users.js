@@ -1,4 +1,4 @@
-// src/pages/Users.js - Version mise à jour avec intégration de la vérification
+// src/pages/Users.js - Version avec filtres fonctionnels
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -19,7 +19,6 @@ const EyeIcon = () => <span>👁️</span>;
 const UserRow = ({ user, onEdit, onDelete, onToggleStatus, onToggleVerification, onViewVerification }) => {
   const getVerificationStatus = () => {
     if (user.role === 'provider') {
-      // Pour les prestataires, on regarde le statut de vérification des documents
       if (user.provider_verification?.status === 'verified') {
         return { status: 'verified', label: '✅ Vérifié', color: 'bg-green-100 text-green-800' };
       } else if (user.provider_verification?.status === 'rejected') {
@@ -30,14 +29,12 @@ const UserRow = ({ user, onEdit, onDelete, onToggleStatus, onToggleVerification,
         return { status: 'not_started', label: '📋 Non démarré', color: 'bg-gray-100 text-gray-800' };
       }
     } else if (user.role === 'client') {
-      // Pour les clients, on regarde la vérification téléphone
       if (user.is_phone_verified) {
         return { status: 'verified', label: '📱 Téléphone vérifié', color: 'bg-green-100 text-green-800' };
       } else {
         return { status: 'not_verified', label: '📱 Non vérifié', color: 'bg-gray-100 text-gray-800' };
       }
     } else {
-      // Pour les admins ou autres rôles
       return { status: 'admin', label: '👑 Admin', color: 'bg-purple-100 text-purple-800' };
     }
   };
@@ -122,7 +119,6 @@ const UserRow = ({ user, onEdit, onDelete, onToggleStatus, onToggleVerification,
       </td>
       <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500">
         <div className="flex space-x-2">
-          {/* Bouton pour voir les détails de vérification (seulement pour les prestataires) */}
           {user.role === 'provider' && user.provider_verification?.exists && (
             <button
               onClick={() => onViewVerification(user)}
@@ -159,38 +155,71 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
+  const [error, setError] = useState('');
   
-  // 🆕 États pour le modal de vérification
+  // États pour le modal de vérification
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [selectedVerificationId, setSelectedVerificationId] = useState(null);
 
   const itemsPerPage = 10;
 
+  // Réinitialiser la page lors du changement de filtres
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [roleFilter, verificationFilter]);
+
+  // Charger les utilisateurs
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm, roleFilter, verificationFilter]);
+  }, [currentPage, roleFilter, verificationFilter]);
 
   const fetchUsers = async () => {
     setLoading(true);
+    setError('');
     try {
-      const data = await userService.getAll({
+      const params = {
         page: currentPage,
-        search: searchTerm,
-        role: roleFilter,
-        verification_status: verificationFilter,
         page_size: itemsPerPage,
-      });
+      };
+
+      // Ajouter les paramètres seulement s'ils ne sont pas vides
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      if (roleFilter) {
+        params.role = roleFilter;
+      }
+      if (verificationFilter) {
+        params.verification_status = verificationFilter;
+      }
+
+      console.log('Fetching users with params:', params);
+      
+      const data = await userService.getAll(params);
+      
+      console.log('Users data received:', data);
       
       setUsers(data.results || []);
+      setTotalCount(data.count || 0);
       setTotalPages(Math.ceil((data.count || 0) / itemsPerPage));
     } catch (error) {
       console.error('Erreur lors du chargement des utilisateurs:', error);
+      setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction pour gérer la recherche avec le bouton
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    fetchUsers();
   };
 
   const handleEdit = (user) => {
@@ -230,7 +259,6 @@ const Users = () => {
     }
   };
 
-  // 🆕 Fonction pour ouvrir le modal de détail de vérification
   const handleViewVerification = (user) => {
     if (user.provider_verification?.id) {
       setSelectedVerificationId(user.provider_verification.id);
@@ -249,6 +277,8 @@ const Users = () => {
     setRoleFilter('');
     setVerificationFilter('');
     setCurrentPage(1);
+    // Recharger immédiatement après réinitialisation
+    setTimeout(() => fetchUsers(), 0);
   };
 
   const getVerificationStats = () => {
@@ -276,7 +306,7 @@ const Users = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
             <p className="mt-1 text-sm text-gray-500">
-              Un total de {users.length} utilisateurs trouvés
+              Un total de {totalCount} utilisateurs trouvés
             </p>
           </div>
           <div className="mt-4 sm:mt-0">
@@ -356,55 +386,85 @@ const Users = () => {
           </div>
         </div>
 
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filtres */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-4 py-3 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon />
+            <form onSubmit={handleSearch}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 flex-1">
+                  <div className="relative flex-1 sm:max-w-xs">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <SearchIcon />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Rechercher des utilisateurs..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Rechercher des utilisateurs..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
-                  />
+
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-auto px-3 py-2 border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">Tous les rôles</option>
+                    <option value="client">Client</option>
+                    <option value="provider">Prestataire</option>
+                    <option value="admin">Admin</option>
+                  </select>
+
+                  <select
+                    value={verificationFilter}
+                    onChange={(e) => setVerificationFilter(e.target.value)}
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-auto px-3 py-2 border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">Toutes les vérifications</option>
+                    <option value="verified">Vérifiés</option>
+                    <option value="pending">En attente</option>
+                    <option value="rejected">Rejetés</option>
+                    <option value="not_started">Non démarrés</option>
+                  </select>
                 </div>
 
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-auto px-3 py-2 border-gray-300 rounded-md text-sm"
-                >
-                  <option value="">Tous les rôles</option>
-                  <option value="client">Client</option>
-                  <option value="provider">Prestataire</option>
-                  <option value="admin">Admin</option>
-                </select>
-
-                <select
-                  value={verificationFilter}
-                  onChange={(e) => setVerificationFilter(e.target.value)}
-                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-auto px-3 py-2 border-gray-300 rounded-md text-sm"
-                >
-                  <option value="">Toutes les vérifications</option>
-                  <option value="verified">Vérifiés</option>
-                  <option value="pending">En attente</option>
-                  <option value="rejected">Rejetés</option>
-                  <option value="not_started">Non démarrés</option>
-                </select>
+                <div className="flex space-x-2">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Rechercher
+                  </button>
+                  
+                  {(searchTerm || roleFilter || verificationFilter) && (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
               </div>
-
-              <button
-                onClick={resetFilters}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Réinitialiser
-              </button>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -455,7 +515,7 @@ const Users = () => {
                 ) : users.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
-                      Aucun utilisateur trouvé
+                      {error ? 'Erreur lors du chargement' : 'Aucun utilisateur trouvé'}
                     </td>
                   </tr>
                 ) : (
@@ -501,9 +561,9 @@ const Users = () => {
                   Affichage de{' '}
                   <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à{' '}
                   <span className="font-medium">
-                    {Math.min(currentPage * itemsPerPage, users.length)}
+                    {Math.min(currentPage * itemsPerPage, totalCount)}
                   </span>{' '}
-                  sur <span className="font-medium">{users.length}</span> résultats
+                  sur <span className="font-medium">{totalCount}</span> résultats
                 </p>
               </div>
               <div>
@@ -530,7 +590,7 @@ const Users = () => {
         )}
       </div>
 
-      {/* 🆕 Modal de détail de vérification */}
+      {/* Modal de détail de vérification */}
       <VerificationDetailModal
         isOpen={verificationModalOpen}
         onClose={() => setVerificationModalOpen(false)}

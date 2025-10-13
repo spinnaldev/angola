@@ -3,6 +3,7 @@ class ProviderModel {
   final String name;
   final String businessType;
   final String profileImageUrl;
+  final String coverImageUrl; 
   final double rating;
   final int reviewCount;
   final String description;
@@ -20,6 +21,7 @@ class ProviderModel {
     required this.name,
     required this.businessType,
     required this.profileImageUrl,
+    this.coverImageUrl = '',
     required this.rating,
     required this.reviewCount,
     required this.description,

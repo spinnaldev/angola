@@ -1927,7 +1927,13 @@
   "noInteractedClients": "Nenhum cliente com quem você já trabalhou. Aguarde receber solicitações de cotação ou ofertas aceitas.",
   "step1SelectClient": "Passo 1: Selecionar o cliente",
   "concernedClient": "Cliente em questão",
-  "pleaseSelectClient": "Por favor, selecione um cliente"
+  "pleaseSelectClient": "Por favor, selecione um cliente",
+  "providerBio": "Biografia do Prestador",
+  "completedProjects": "Projetos Concluídos",
+  "projectsCompleted": "projetos concluídos",
+  "noDataAvailable": "Nenhum dado disponível",
+  "verifiedEvaluations": "Avaliações Verificadas",
+  "noImagesAvailable": "Nenhuma imagem disponível"
 
 
 }

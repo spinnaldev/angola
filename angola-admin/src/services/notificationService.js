@@ -12,13 +12,13 @@ export const notificationService = {
   // Récupérer les notifications avec pagination
   getNotifications: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    const response = await api.get(`/notifications/?${queryString}`);
+    const response = await api.get(`/admin/notifications/?${queryString}`);
     return response.data;
   },
 
   // Obtenir une notification spécifique
   getNotification: async (notificationId) => {
-    const response = await api.get(`/notifications/${notificationId}/`);
+    const response = await api.get(`/admin/notifications/${notificationId}/`);
     return response.data;
   },
 
@@ -30,42 +30,41 @@ export const notificationService = {
 
   // Mettre à jour une notification
   updateNotification: async (notificationId, data) => {
-    const response = await api.patch(`/notifications/${notificationId}/`, data);
+    const response = await api.patch(`/admin/notifications/${notificationId}/`, data);
     return response.data;
   },
 
   // Supprimer une notification
   deleteNotification: async (notificationId) => {
-    const response = await api.delete(`/notifications/${notificationId}/`);
+    const response = await api.delete(`/admin/notifications/${notificationId}/`);
     return response.data;
   },
 
-  // Marquer une notification comme lue
+  // ✅ CORRIGÉ: Marquer une notification comme lue
+  // Endpoint: /api/admin/notifications/{id}/mark_read/ (avec underscore, pas tiret)
+  // Méthode: PATCH (pas POST)
   markAsRead: async (notificationId) => {
-    const response = await api.post(`/notifications/${notificationId}/mark_read/`);
+    const response = await api.patch(`/admin/notifications/${notificationId}/mark_read/`);
     return response.data;
   },
 
   // Marquer toutes les notifications comme lues
-  markAllAsRead: async (userId = null) => {
-    const data = userId ? { user_id: userId } : {};
-    const response = await api.post('/notifications/mark_all_read/', data);
+  markAllAsRead: async () => {
+    const response = await api.post('/admin/notifications/mark_all_read/');
     return response.data;
   },
 
   // Supprimer plusieurs notifications (admin)
   bulkDelete: async (notificationIds) => {
-    const response = await api.post('/notifications/bulk_delete/', {
+    const response = await api.post('/admin/notifications/bulk_delete/', {
       notification_ids: notificationIds
     });
     return response.data;
   },
 
   // Obtenir le nombre de notifications non lues
-  getUnreadCount: async (userId = null) => {
-    const params = userId ? { user_id: userId } : {};
-    const queryString = new URLSearchParams(params).toString();
-    const response = await api.get(`/notifications/count/?${queryString}`);
+  getUnreadCount: async () => {
+    const response = await api.get('/admin/notifications/unread_count/');
     return response.data;
   },
 

@@ -48,7 +48,7 @@ const DashboardLayout = ({ children }) => {
     },
     {
       // 🆕 NOUVEAU MENU: Vérification des utilisateurs
-      // path: '/user-verification', 
+      path: '/user-verification', 
       label: 'Vérifications', 
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

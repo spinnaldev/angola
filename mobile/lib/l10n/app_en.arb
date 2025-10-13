@@ -1856,7 +1856,13 @@
   "noInteractedClients": "No clients you have worked with. Wait to receive quote requests or accepted offers.",
   "step1SelectClient": "Step 1: Select client",
   "concernedClient": "Concerned client",
-  "pleaseSelectClient": "Please select a client"
+  "pleaseSelectClient": "Please select a client",
+  "providerBio": "Provider Bio",
+  "completedProjects": "Completed Projects",
+  "projectsCompleted": "completed projects",
+  "noDataAvailable": "No data available",
+  "verifiedEvaluations": "Verified Reviews",
+  "noImagesAvailable": "No images available"
   
 
 }

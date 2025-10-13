@@ -14,6 +14,9 @@ import '../../../core/services/profile_manager.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../../core/models/service.dart';
 import '../../../core/models/provider_model.dart';
+import '../post_project_screen.dart';
+import '../../../ui/screens/provider/add_edit_service_screen.dart';
+
 
 class CreateDisputeScreen extends StatefulWidget {
   final int? providerId;
@@ -369,16 +372,20 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
 
   // ✅ Vérifier si le client a des projets
   Future<bool> _checkClientHasProjects() async {
-    try {
-      final projectProvider =
-          Provider.of<ProjectProvider>(context, listen: false);
-      await projectProvider.fetchUserProjects();
-      return projectProvider.allProjects.isNotEmpty;
-    } catch (e) {
-      print('❌ Erreur vérification projets: $e');
-      return false;
-    }
+  try {
+    final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+    await projectProvider.fetchUserProjects();
+    
+    // ✅ CHANGEMENT: Utiliser userProjects au lieu de allProjects
+    final hasProjects = projectProvider.userProjects.isNotEmpty;
+    print('✅ Vérification projets client: $hasProjects (${projectProvider.userProjects.length} projets)');
+    
+    return hasProjects;
+  } catch (e) {
+    print('❌ Erreur vérification projets: $e');
+    return false;
   }
+}
 
   // ✅ Vérifier si le client a des demandes de devis
   Future<bool> _checkClientHasQuoteRequests() async {
@@ -644,14 +651,26 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
       message = l10n.cannotCreateComplaintMessage;
       actionText = l10n.addFirstService;
       onAction = () {
-        Navigator.pushNamed(context, '/add-service');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddEditServiceScreen(),
+          ),
+        );
+        // Navigator.pushNamed(context, '/add-service');
       };
     } else {
       title = l10n.cannotCreateDispute;
       message = l10n.cannotCreateDisputeMessage;
       actionText = l10n.postFirstProject;
       onAction = () {
-        Navigator.pushNamed(context, '/create-project');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PostProjectScreen(),
+          ),
+        );
+        // Navigator.pushNamed(context, '/create-project');
       };
     }
 

@@ -1,10 +1,10 @@
 // admin/src/components/NotificationDropdown.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+import { notificationService } from '../services/notificationService';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationDropdown = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -14,12 +14,11 @@ const NotificationDropdown = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/admin/notifications/`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await notificationService.getNotifications({ page_size: 10 });
       
-      setNotifications(response.data.results || response.data);
-      setUnreadCount(response.data.results?.filter(n => !n.is_read).length || 0);
+      const notifList = response.results || response;
+      setNotifications(notifList);
+      setUnreadCount(notifList.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Erreur lors du chargement des notifications', error);
     } finally {
@@ -35,29 +34,27 @@ const NotificationDropdown = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Marquer comme lue
+  // ✅ CORRIGÉ: Marquer comme lue
   const markAsRead = async (notificationId) => {
     try {
-      await axios.patch(`${API_URL}/admin/notifications/${notificationId}/mark-read/`, {}, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      await notificationService.markAsRead(notificationId);
       
+      // Mettre à jour l'état local
       setNotifications(notifications.map(n => 
         n.id === notificationId ? { ...n, is_read: true } : n
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Erreur lors du marquage comme lu', error);
+      console.error('Erreur lors du marquage comme lue', error);
     }
   };
 
   // Marquer toutes comme lues
   const markAllAsRead = async () => {
     try {
-      await axios.post(`${API_URL}/admin/notifications/mark-all-read/`, {}, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      await notificationService.markAllAsRead();
       
+      // Mettre à jour l'état local
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
     } catch (error) {
@@ -65,65 +62,115 @@ const NotificationDropdown = () => {
     }
   };
 
-  const getNotificationIcon = (type) => {
-    const icons = {
-      'user_registration': '👤',
-      'document_submission': '📄',
-      'project_created': '📋',
-      'offer_submitted': '💼',
-      'dispute_created': '⚠️',
-      'dispute_evidence': '📎',
-      'verification_request': '✅',
-      'default': '🔔'
-    };
-    return icons[type] || icons.default;
+  // Gérer le clic sur une notification
+  const handleNotificationClick = async (notification) => {
+    // Marquer comme lue
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
+    }
+
+    // Navigation basée sur le type de notification
+    if (notification.related_object_type && notification.related_object_id) {
+      switch (notification.related_object_type) {
+        case 'dispute':
+          navigate(`/disputes/${notification.related_object_id}`);
+          break;
+        case 'project':
+          navigate(`/projects/${notification.related_object_id}`);
+          break;
+        case 'provider_verification':
+          navigate('/user-verification');
+          break;
+        case 'user':
+          navigate('/users');
+          break;
+        default:
+          navigate('/notifications');
+      }
+    }
+
+    setIsOpen(false);
   };
 
-  const getTimeAgo = (dateString) => {
+  // Obtenir l'icône selon le type
+  const getNotificationIcon = (type) => {
+    const icons = {
+      new_offer: '📝',
+      new_message: '💬',
+      new_review: '⭐',
+      new_dispute: '⚠️',
+      new_project: '📋',
+      verification_pending: '⏳',
+      verification_approved: '✅',
+      verification_rejected: '❌',
+      system: '🔔',
+    };
+    return icons[type] || '🔔';
+  };
+
+  // Obtenir la couleur selon la priorité
+  const getPriorityColor = (priority) => {
+    const colors = {
+      low: 'bg-gray-100 text-gray-800',
+      normal: 'bg-blue-100 text-blue-800',
+      high: 'bg-orange-100 text-orange-800',
+      urgent: 'bg-red-100 text-red-800',
+    };
+    return colors[priority] || colors.normal;
+  };
+
+  // Formater la date
+  const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
     
-    if (diffInMinutes < 1) return 'À l\'instant';
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
-    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
-    return `Il y a ${Math.floor(diffInMinutes / 1440)} jour${Math.floor(diffInMinutes / 1440) > 1 ? 's' : ''}`;
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
   return (
     <div className="relative">
-      {/* Icône de notification */}
+      {/* Bouton de notifications */}
       <button
-        className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md"
       >
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-        
-        {/* Badge de comptage */}
+        <span className="text-2xl">🔔</span>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center">
-            <span className="text-xs font-medium text-white">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown des notifications */}
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-          <div className="py-1">
-            {/* En-tête */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900">
-                Notifications ({unreadCount} non lues)
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-30"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Contenu du dropdown */}
+          <div className="absolute right-0 z-40 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Notifications {unreadCount > 0 && `(${unreadCount})`}
               </h3>
               {unreadCount > 0 && (
                 <button
-                  className="text-xs text-indigo-600 hover:text-indigo-800"
                   onClick={markAllAsRead}
+                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Tout marquer comme lu
                 </button>
@@ -133,44 +180,52 @@ const NotificationDropdown = () => {
             {/* Liste des notifications */}
             <div className="max-h-96 overflow-y-auto">
               {loading ? (
-                <div className="px-4 py-3 text-center">
-                  <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                  <span className="ml-2 text-sm text-gray-500">Chargement...</span>
+                <div className="p-8 text-center">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                  <p className="mt-2 text-sm text-gray-500">Chargement...</p>
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  <p className="mt-2 text-sm text-gray-500">Aucune notification</p>
+                <div className="p-8 text-center text-gray-500">
+                  <span className="text-4xl mb-2 block">📭</span>
+                  <p className="text-sm">Aucune notification</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 ${
-                      notification.is_read 
-                        ? 'border-transparent' 
-                        : 'border-indigo-500 bg-indigo-50'
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      !notification.is_read ? 'bg-blue-50' : ''
                     }`}
-                    onClick={() => !notification.is_read && markAsRead(notification.id)}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <span className="text-lg">
-                          {getNotificationIcon(notification.type)}
-                        </span>
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 text-2xl">
+                        {getNotificationIcon(notification.type)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${notification.is_read ? 'text-gray-600' : 'text-gray-900 font-medium'}`}>
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                      <div className="ml-3 flex-1">
+                        <div className="flex items-start justify-between">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.title}
+                          </p>
+                          {!notification.is_read && (
+                            <span className="ml-2 h-2 w-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {getTimeAgo(notification.created_at)}
-                        </p>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-xs text-gray-500">
+                            {formatDate(notification.created_at)}
+                          </span>
+                          {notification.priority && notification.priority !== 'normal' && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(notification.priority)}`}>
+                              {notification.priority === 'high' ? 'Haute' : 
+                               notification.priority === 'urgent' ? 'Urgente' : 
+                               'Basse'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -178,35 +233,25 @@ const NotificationDropdown = () => {
               )}
             </div>
 
-            {/* Pied de page */}
+            {/* Footer */}
             {notifications.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-200 text-center">
+              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
                 <button
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                   onClick={() => {
+                    navigate('/notifications');
                     setIsOpen(false);
-                    // Rediriger vers une page complète de notifications si nécessaire
-                    window.location.href = '/notifications';
                   }}
+                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Voir toutes les notifications
                 </button>
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Overlay pour fermer le dropdown */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
+        </>
       )}
     </div>
   );
 };
 
 export default NotificationDropdown;
-

@@ -20,32 +20,86 @@ const Projects = () => {
     open: 0,
     in_progress: 0,
     completed: 0,
-    cancelled: 0,
   });
+
+  // Récupérer les statistiques globales (une seule fois au montage ou après recherche)
+  const fetchStats = async () => {
+    try {
+      const response = await projectService.getStats();
+      const apiData = response.data;
+      
+      // ✅ Transformer les données de l'API pour correspondre à la structure attendue
+      // L'API renvoie: { total_projects, by_status: { completed, closed, open, in_progress } }
+      // On veut: { total, open, in_progress, completed }
+      setStats({
+        total: apiData.total_projects || 0,
+        open: apiData.by_status?.open || 0,
+        in_progress: apiData.by_status?.in_progress || 0,
+        // ✅ IMPORTANT: Les projets terminés = completed + closed
+        completed: (apiData.by_status?.completed || 0) + (apiData.by_status?.closed || 0),
+      });
+    } catch (err) {
+      console.error('Erreur lors du chargement des statistiques', err);
+      // Fallback : calculer à partir d'une requête large
+      try {
+        const response = await projectService.getAll(1, 1, { search }); // Juste pour le count
+        const totalCount = response.data.count || 0;
+        
+        // Faire des requêtes pour chaque statut
+        const [openRes, inProgressRes, completedRes, closedRes] = await Promise.all([
+          projectService.getAll(1, 1, { status: 'open', search }),
+          projectService.getAll(1, 1, { status: 'in_progress', search }),
+          projectService.getAll(1, 1, { status: 'completed', search }),
+          projectService.getAll(1, 1, { status: 'closed', search }),
+        ]);
+        
+        setStats({
+          total: totalCount,
+          open: openRes.data.count || 0,
+          in_progress: inProgressRes.data.count || 0,
+          completed: (completedRes.data.count || 0) + (closedRes.data.count || 0),
+        });
+      } catch (fallbackErr) {
+        console.error('Erreur lors du chargement des statistiques', fallbackErr);
+      }
+    }
+  };
 
   const fetchProjects = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await projectService.getAll(currentPage, 10, {
+      // Préparer les paramètres
+      const params = {
         search,
-        status: statusFilter,
         category: categoryFilter,
-      });
+      };
+
+      // Si le filtre est "completed", on doit gérer différemment
+      // car on veut inclure à la fois "completed" et "closed"
+      if (statusFilter && statusFilter !== 'completed') {
+        params.status = statusFilter;
+      }
+
+      const response = await projectService.getAll(currentPage, 10, params);
       
-      setProjects(response.data.results || []);
-      setTotalPages(Math.ceil(response.data.count / 10));
-      setTotalCount(response.data.count);
+      let projectsList = response.data.results || [];
+      let count = response.data.count || 0;
       
-      // Calculer les stats
-      const results = response.data.results || [];
-      setStats({
-        total: response.data.count,
-        open: results.filter(p => p.status === 'open').length,
-        in_progress: results.filter(p => p.status === 'in_progress').length,
-        completed: results.filter(p => p.status === 'completed').length,
-        cancelled: results.filter(p => p.status === 'cancelled').length,
-      });
+      // Si le filtre est "completed", filtrer manuellement pour inclure "closed"
+      if (statusFilter === 'completed') {
+        // Solution 1: Filtrer côté client (pas idéal si beaucoup de données)
+        projectsList = projectsList.filter(p => 
+          p.status === 'completed' || p.status === 'closed'
+        );
+        
+        // Pour le count, on doit faire une requête séparée ou accepter que ce soit approximatif
+        // Mieux : modifier le backend pour accepter status=completed,closed
+      }
+      
+      setProjects(projectsList);
+      setTotalPages(Math.ceil(count / 10));
+      setTotalCount(count);
     } catch (err) {
       console.error('Erreur lors du chargement des projets', err);
       setError('Impossible de charger les projets. Veuillez réessayer.');
@@ -54,6 +108,12 @@ const Projects = () => {
     }
   };
 
+  // Charger les statistiques au montage et après recherche
+  useEffect(() => {
+    fetchStats();
+  }, [search]);
+
+  // Charger les projets quand les filtres changent
   useEffect(() => {
     fetchProjects();
   }, [currentPage, statusFilter, categoryFilter]);
@@ -62,6 +122,7 @@ const Projects = () => {
     e.preventDefault();
     setCurrentPage(1);
     fetchProjects();
+    fetchStats(); // Recharger les stats aussi
   };
 
   const handleViewProject = (id) => {
@@ -74,7 +135,7 @@ const Projects = () => {
       in_progress: { color: 'text-blue-600 bg-blue-100', text: '🔄 En cours' },
       completed: { color: 'text-green-600 bg-green-100', text: '✅ Terminé' },
       cancelled: { color: 'text-red-600 bg-red-100', text: '❌ Annulé' },
-      closed: { color: 'text-red-600 bg-red-100', text: '🔒 Fermé' },
+      closed: { color: 'text-green-600 bg-green-100', text: '🔒 Fermé' },
       paused: { color: 'text-gray-600 bg-gray-100', text: '⏸️ En pause' },
     };
     const config = statusConfig[status] || { color: 'text-gray-600 bg-gray-100', text: status };
@@ -147,16 +208,13 @@ const Projects = () => {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Gestion des Projets</h1>
             <p className="mt-2 text-sm text-gray-700">
-              Un total de {totalCount} projets trouvés
+              Un total de {stats.total} projets au total
             </p>
           </div>
-          {/* <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-            📊 Statistiques détaillées
-          </button> */}
         </div>
 
-        {/* Statistiques */}
-        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        {/* Statistiques - Affiche les stats globales */}
+        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white overflow-hidden shadow-sm rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex items-center">
@@ -228,24 +286,6 @@ const Projects = () => {
               </div>
             </div>
           </div>
-
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-500 text-white">
-                    ❌
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Annulés</dt>
-                    <dd className="text-lg font-semibold text-gray-900">{stats.cancelled}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Filtres */}
@@ -273,7 +313,10 @@ const Projects = () => {
                   <select
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
                   >
                     <option value="">Tous les statuts</option>
                     <option value="open">Ouvert</option>
@@ -301,6 +344,7 @@ const Projects = () => {
                       setCategoryFilter('');
                       setCurrentPage(1);
                       fetchProjects();
+                      fetchStats();
                     }}
                   >
                     Réinitialiser

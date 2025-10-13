@@ -101,6 +101,46 @@ class AdminProjectViewSet(viewsets.ModelViewSet):
         
         return Response(data)
     
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Retourne les statistiques globales des projets
+        GET /api/admin/projects/stats/
+        """
+        # Récupérer le filtre de recherche si présent
+        search = request.query_params.get('search', '')
+        
+        # Construire la requête de base
+        queryset = self.get_queryset()
+        
+        # Appliquer le filtre de recherche si présent
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(client_name__icontains=search)
+            )
+        
+        # Compter par statut
+        total = queryset.count()
+        open_count = queryset.filter(status='open').count()
+        in_progress_count = queryset.filter(status='in_progress').count()
+        
+        # ✅ IMPORTANT: Les projets terminés incluent "completed" ET "closed"
+        completed_count = queryset.filter(
+            Q(status='completed') | Q(status='closed')
+        ).count()
+        
+        cancelled_count = queryset.filter(status='cancelled').count()
+        
+        return Response({
+            'total': total,
+            'open': open_count,
+            'in_progress': in_progress_count,
+            'completed': completed_count,  # Inclut completed + closed
+            'cancelled': cancelled_count,
+        })
+    
     @action(detail=True, methods=['get'])
     def offers(self, request, pk=None):
         """Récupérer les offres d'un projet"""

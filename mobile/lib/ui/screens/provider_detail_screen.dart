@@ -1,19 +1,18 @@
 // lib/ui/screens/provider_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/models/provider_model.dart';
-import '../../../../providers/provider_detail_provider.dart';
-import '../../../../providers/auth_provider.dart';
-import '../widgets/rating_stars.dart';
-// import '../../../widgets/review_card.dart';
-import '../widgets/review_card.dart';
-import '../widgets/quote_request_form.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../core/models/provider_model.dart';
+import '../../core/models/service.dart';
+import '../../core/services/api_service.dart';
+import '../../providers/provider_detail_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../widgets/review_form.dart';
+import '../widgets/quote_request_form.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
   final int providerId;
-
+  
   const ProviderDetailScreen({
     Key? key,
     required this.providerId,
@@ -23,106 +22,76 @@ class ProviderDetailScreen extends StatefulWidget {
   State<ProviderDetailScreen> createState() => _ProviderDetailScreenState();
 }
 
-class _ProviderDetailScreenState extends State<ProviderDetailScreen> with SingleTickerProviderStateMixin {
+class _ProviderDetailScreenState extends State<ProviderDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isQuoteRequestOpen = false;
   bool _isReviewFormOpen = false;
+  bool _isLoading = true;
+  List<Service> _providerServices = [];
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    print('🔍 ProviderDetailScreen initState pour providerId: ${widget.providerId}');
     
-    // Charger les détails du prestataire
+    // Charger les données dès l'initialisation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ProviderDetailProvider>(context, listen: false).fetchProviderDetails(widget.providerId);
+      _loadProviderData(widget.providerId);
     });
   }
-  
+
+  Future<void> _loadProviderData(int providerId) async {
+    print('📥 _loadProviderData pour providerId: $providerId');
+    
+    try {
+      // Charger le prestataire
+      final providerDetailProvider = Provider.of<ProviderDetailProvider>(context, listen: false);
+      await providerDetailProvider.fetchProviderDetails(providerId);
+      
+      print('✅ Prestataire chargé: ${providerDetailProvider.currentProvider?.name}');
+
+      // Charger les services
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final services = await apiService.getProviderServices(providerId);
+      
+      print('✅ Services chargés: ${services.length}');
+
+      if (mounted) {
+        setState(() {
+          _providerServices = services;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Erreur chargement: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
-  void _checkAuthAndProceed(Function action) {
-    // Récupérer le provider d'authentification
+
+  Future<void> _checkAuthAndExecute(BuildContext context, VoidCallback action) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
     if (authProvider.isAuthenticated) {
       action();
     } else {
-      // Sinon, afficher une boîte de dialogue pour l'inviter à se connecter
-      _showLoginDialog();
+      final result = await Navigator.pushNamed(context, '/login');
+      if (result == true) {
+        action();
+      }
     }
   }
-  void _checkAuthAndExecute(BuildContext context, VoidCallback action) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
-    if (!authProvider.isAuthenticated) {
-      // Afficher un dialogue pour rediriger vers la connexion
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Connexion requise'),
-            content: const Text(
-              'Vous devez vous connecter pour accéder à cette fonctionnalité.'
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Rediriger vers la page de connexion
-                  Navigator.pushNamed(context, '/login');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF142FE2),
-                ),
-                child: const Text('Se connecter'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      // L'utilisateur est connecté, exécuter l'action
-      action();
-    }
-  }
-  
-  // Méthode pour afficher la boîte de dialogue de connexion
-  void _showLoginDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Connexion requise'),
-          content: const Text('Vous devez être connecté pour effectuer cette action.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Rediriger vers la page de connexion
-                Navigator.pushNamed(context, '/login');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF142FE2),
-              ),
-              child: const Text('Se connecter'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+
   void _openQuoteRequestForm() {
     setState(() {
       _isQuoteRequestOpen = true;
@@ -147,234 +116,356 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
     });
   }
 
-  void _onRequestQuotePressed() {
+  void _onReviewFormPressed() {
     _checkAuthAndExecute(context, () {
-      _openQuoteRequestForm();
+      _openReviewForm();
     });
   }
 
-  // Utilisation pour le bouton "Signaler un problème"
-  void _onReviewFormPressed() {
-    print("Non connecté");
+  void _onReportPressed() {
     _checkAuthAndExecute(context, () {
-      _openReviewForm(); // Cette méthode sera à implémenter
+      print("Signaler un problème");
     });
+  }
+
+  int _getCompletedJobs(ProviderModel provider) {
+    try {
+      return (provider as dynamic).completedJobs ?? 0;
+    } catch (e) {
+      return 0;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          l10n.providerProfile,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border, color: Colors.grey),
+            onPressed: () {
+              // Logique favoris prestataire
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Consumer<ProviderDetailProvider>(
         builder: (context, providerDetailProvider, _) {
-          if (providerDetailProvider.isLoading) {
+          if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final provider = providerDetailProvider.currentProvider;
 
           if (provider == null) {
-            return const Center(child: Text('Données non disponibles'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.noDataAvailable,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            );
           }
+
+          // DEBUG: Afficher les infos dans la console
+          print('👤 Provider: ${provider.name}');
+          print('⭐ Rating: ${provider.rating}');
+          print('💬 Reviews: ${provider.reviewCount}');
+          print('📦 Services: ${_providerServices.length}');
 
           return Stack(
             children: [
-              // Contenu principal
               Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec le titre du profil
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Profil prestataire',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(width: 48), // Pour équilibrer avec le bouton retour
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Image d'en-tête et info prestataire
+                  // Image du prestataire avec photo de profil débordante
                   Stack(
+                    clipBehavior: Clip.none,
                     children: [
+                      // Image principale
                       Container(
-                        height: 200,
+                        height: 180,
                         width: double.infinity,
+                        color: const Color(0xFF142FE2),
                         child: provider.profileImageUrl.isNotEmpty
                             ? Image.network(
                                 provider.profileImageUrl,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Icon(
+                                      Icons.business,
+                                      size: 80,
+                                      color: Colors.white.withOpacity(0.5),
+                                    ),
+                                  );
+                                },
                               )
-                            : Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(Icons.image, size: 50, color: Colors.grey),
+                            : Center(
+                                child: Icon(
+                                  Icons.business,
+                                  size: 80,
+                                  color: Colors.white.withOpacity(0.5),
                                 ),
                               ),
                       ),
-                      
-                      // Info du prestataire sur l'image
+
+                      // Photo de profil débordante À GAUCHE
                       Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
+                        left: 16,
+                        bottom: -30,
                         child: Container(
-                          padding: const EdgeInsets.all(16),
-                          color: Colors.black.withOpacity(0.5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: const Color(0xFF142FE2).withOpacity(0.1),
+                            backgroundImage: provider.profileImageUrl.isNotEmpty
+                                ? NetworkImage(provider.profileImageUrl)
+                                : null,
+                            child: provider.profileImageUrl.isEmpty
+                                ? Text(
+                                    provider.name.isNotEmpty
+                                        ? provider.name.substring(0, 1).toUpperCase()
+                                        : "P",
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF142FE2),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Espace pour l'avatar qui déborde
+                  const SizedBox(height: 40),
+
+                  // Nom du prestataire et informations
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nom avec badge vérifié
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                provider.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            if (provider.isVerified)
+                              const Icon(
+                                Icons.verified,
+                                color: Color(0xFF142FE2),
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        
+                        // Type d'entreprise
+                        Text(
+                          _getBusinessType(provider, l10n),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Statistiques
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            // Note
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF142FE2),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  CircleAvatar(
-                                    radius: 20,
-                                    backgroundImage: provider.profileImageUrl.isNotEmpty
-                                        ? NetworkImage(provider.profileImageUrl)
-                                        : null,
-                                    child: provider.profileImageUrl.isEmpty
-                                        ? Text(
-                                            provider.name.substring(0, 1),
-                                            style: const TextStyle(fontSize: 20),
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        provider.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        provider.businessType,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF142FE2),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.star, color: Colors.white, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          provider.rating.toString(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
+                                  const Icon(Icons.star, color: Colors.white, size: 16),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    '(${provider.reviewCount})',
+                                    provider.rating.toStringAsFixed(1),
                                     style: const TextStyle(
                                       color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                            
+                            // Nombre d'avis
+                            Text(
+                              '(${provider.reviewCount} ${l10n.reviews})',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                              ),
+                            ),
+                            
+                            // Projets complétés
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_getCompletedJobs(provider)} ${l10n.completedProjects}',
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Bouton Demander un devis
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _onRequestQuotePressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF142FE2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+
+                        const SizedBox(height: 16),
+
+                        // Boutons d'action
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _onReportPressed,
+                                icon: const Icon(Icons.report_problem, size: 16, color: Colors.orange),
+                                label: Flexible(
+                                  child: Text(
+                                    l10n.reportProblem,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.orange,
+                                  side: const BorderSide(color: Colors.orange),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => _checkAuthAndExecute(context, _openQuoteRequestForm),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF142FE2),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.requestQuote,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Text(
-                          'Demander un devis',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      ],
                     ),
                   ),
-                  
-                  // TabBar pour naviguer entre les sections
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: const Color(0xFF142FE2),
-                    unselectedLabelColor: Colors.grey,
-                    indicatorColor: const Color(0xFF142FE2),
-                    tabs: const [
-                      Tab(text: 'Présentation'),
-                      Tab(text: 'Évaluations'),
-                      Tab(text: 'Galerie'),
-                    ],
+
+                  const SizedBox(height: 16),
+
+                  // TabBar
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey[300]!),
+                      ),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: const Color(0xFF142FE2),
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: const Color(0xFF142FE2),
+                      indicatorWeight: 3,
+                      tabs: [
+                        Tab(text: l10n.presentation),
+                        Tab(text: l10n.evaluations),
+                        Tab(text: l10n.gallery),
+                      ],
+                    ),
                   ),
-                  
+
                   // Contenu des tabs
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        // Tab Présentation
-                        _buildPresentationTab(provider),
-                        
-                        // Tab Évaluations
-                        _buildEvaluationsTab(provider),
-                        
-                        // Tab Galerie
-                        _buildGalleryTab(provider),
+                        _buildPresentationTab(provider, l10n),
+                        _buildEvaluationsTab(provider, l10n),
+                        _buildGalleryTab(provider, l10n),
                       ],
                     ),
                   ),
                 ],
               ),
-              
-              // Modal de demande de devis (s'affiche par-dessus si _isQuoteRequestOpen est true)
+
+              // Modals
               if (_isQuoteRequestOpen)
                 QuoteRequestForm(
                   providerId: provider.id,
                   onClose: _closeQuoteRequestForm,
                 ),
-              
-              // Modal d'ajout d'avis
+
               if (_isReviewFormOpen)
                 ReviewForm(
                   providerId: provider.id,
@@ -386,582 +477,218 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
       ),
     );
   }
-  
-  Widget _buildPresentationTab(ProviderModel provider) {
+
+  String _getBusinessType(ProviderModel provider, AppLocalizations l10n) {
+    switch (provider.businessType.toLowerCase()) {
+      case 'entreprise':
+      case 'company':
+        return l10n.company;
+      case 'freelance':
+      case 'freelancer':
+        return l10n.freelance;
+      case 'particulier':
+      case 'individual':
+        return l10n.individual;
+      default:
+        return provider.businessType.isNotEmpty ? provider.businessType : l10n.unknown;
+    }
+  }
+
+  Widget _buildPresentationTab(ProviderModel provider, AppLocalizations l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section À propos
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'À propos',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF142FE2),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  provider.description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-              ],
+          // Section Biographie
+          Text(
+            l10n.providerBio,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF142FE2),
             ),
           ),
-          
-          const SizedBox(height: 20),
-          
-          // Section Services proposés
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(16.0),
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+              border: Border.all(color: Colors.grey[200]!),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Services proposés',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF142FE2),
-                  ),
+            child: Text(
+              provider.description.isNotEmpty
+                  ? provider.description
+                  : l10n.noDescriptionAvailable,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Section Services proposés
+          Text(
+            l10n.servicesOffered,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF142FE2),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          if (_providerServices.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  l10n.noServicesListed,
+                  style: TextStyle(color: Colors.grey[600]),
                 ),
-                const SizedBox(height: 10),
-                ...provider.services.map((service) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          service.title,
-                          style: const TextStyle(
-                            fontSize: 16,
+              ),
+            )
+          else
+            ..._providerServices.map((service) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/service-detail',
+                        arguments: {
+                          'serviceId': service.id,
+                          'providerId': provider.id,
+                        },
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            service.title,
+                            style: const TextStyle(fontSize: 14),
                           ),
                         ),
-                      ),
-                      Text(
-                        service.priceType,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                        Text(
+                          service.priceType == 'quote'
+                              ? 'Sur devis'
+                              : '${service.price.toStringAsFixed(0)} AOA',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: Color(0xFF142FE2),
+                        ),
+                      ],
+                    ),
                   ),
-                )).toList(),
-              ],
-            ),
-          ),
+                )),
         ],
       ),
     );
   }
-  
-  Widget _buildEvaluationsTab(ProviderModel provider) {
-    // Simuler quelques avis pour l'exemple
+
+  Widget _buildEvaluationsTab(ProviderModel provider, AppLocalizations l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bouton pour ajouter un avis
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: OutlinedButton.icon(
-              onPressed: () => _checkAuthAndProceed(_onReviewFormPressed),
-              icon: const Icon(Icons.rate_review),
-              label: const Text('Écrire un avis'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF142FE2),
-                side: const BorderSide(color: Color(0xFF142FE2)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.verifiedEvaluations,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF142FE2),
+                ),
               ),
-            ),
+              TextButton(
+                onPressed: _onReviewFormPressed,
+                child: Text(l10n.writeReview),
+              ),
+            ],
           ),
-          
-          // Liste des avis (exemple simplifié)
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Évaluations vérifiées',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF142FE2),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Exemple d'avis - utiliser une liste dynamique des avis du prestataire
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage('https://randomuser.me/api/portraits/women/23.jpg'),
-                  ),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hélène Moove',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: List.generate(5, (index) => 
-                          Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
-                          )
-                        ),
-                      ),
-                      Text(
-                        'Juin 5, 2023',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      'Je tiens à remercier chaleureusement l\'équipe de No:m de Quinto Offie pour leur travail exceptionnel dans la construction de ma maison. Dès le début du projet, ils ont fait preuve d\'un grand professionnalisme, de réactivité et d\'une expertise irréprochable. Le suivi de chantier a été précis et les délais ont été respectés, ce qui est très appréciable.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  isThreeLine: true,
-                ),
-                
-                Align(
-                  alignment: Alignment.centerRight,
-                  
-                  child: TextButton(
-                    onPressed: () => _onReviewFormPressed,
-                    child: Text('Écrire un avis'),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Color(0xFF142FE2),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Avis à venir depuis l\'API',
+              style: TextStyle(color: Colors.grey[600]),
             ),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildGalleryTab(ProviderModel provider) {
-    // Images d'exemple pour la galerie
-    List<String> galleryImages = [
-      'https://picsum.photos/id/1018/300/300',
-      'https://picsum.photos/id/1015/300/300',
-      'https://picsum.photos/id/1019/300/300',
-      'https://picsum.photos/id/1020/300/300',
-      'https://picsum.photos/id/1021/300/300',
-      'https://picsum.photos/id/1022/300/300',
-    ];
+
+  Widget _buildGalleryTab(ProviderModel provider, AppLocalizations l10n) {
+    List<String> allImages = [];
+    for (var service in _providerServices) {
+      if (service.galleryImages != null) {
+        allImages.addAll(
+          service.galleryImages.map<String>((img) => img.imageUrl as String),
+        );
+      }
+    }
+
+    if (allImages.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.photo_library_outlined, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                l10n.noImagesAvailable,
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
-      itemCount: galleryImages.length,
+      itemCount: allImages.length,
       itemBuilder: (context, index) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            galleryImages[index],
+            allImages[index],
             fit: BoxFit.cover,
-          ),
-        );
-      },
-    );
-  }
-  
-  Widget _buildQuoteRequestModal() {
-    final TextEditingController _subjectController = TextEditingController();
-    final TextEditingController _budgetController = TextEditingController();
-    final TextEditingController _descriptionController = TextEditingController();
-    
-    return GestureDetector(
-      onTap: _closeQuoteRequestForm, // Ferme le modal si on clique en dehors
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: GestureDetector(
-            onTap: () {}, // Empêche la fermeture si on clique sur le modal
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header avec titre et bouton fermer
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Demander un devis',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close),
-                          onPressed: _closeQuoteRequestForm,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
-                  
-                  // Formulaire
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Objet de demande'),
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _subjectController,
-                          decoration: InputDecoration(
-                            hintText: 'Objet...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                        
-                        SizedBox(height: 16),
-                        Text('Votre budget'),
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _budgetController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: 'Budget...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                        
-                        SizedBox(height: 16),
-                        Text('Votre demande'),
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _descriptionController,
-                          maxLines: 5,
-                          decoration: InputDecoration(
-                            hintText: 'Saisissez une description...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                        
-                        SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Logique d'envoi de la demande de devis
-                              _closeQuoteRequestForm();
-                              // Afficher un message de confirmation
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Demande de devis envoyée')),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF142FE2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Envoyer',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildReviewFormModal() {
-    int _rating = 0;
-    final TextEditingController _reviewController = TextEditingController();
-    List<Image> _selectedImages = [];
-    
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return GestureDetector(
-          onTap: _closeReviewForm, // Ferme le modal si on clique en dehors
-          child: Container(
-            color: Colors.black54,
-            child: Center(
-              child: GestureDetector(
-                onTap: () {}, // Empêche la fermeture si on clique sur le modal
-                child: Container(
-                  margin: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header avec titre et bouton fermer
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Quelle est votre note ?',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.close),
-                              onPressed: _closeReviewForm,
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Système de notation avec étoiles
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (index) => 
-                            IconButton(
-                              icon: Icon(
-                                index < _rating ? Icons.star : Icons.star_border,
-                                color: index < _rating ? Colors.amber : Colors.grey,
-                                size: 32,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _rating = index + 1;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      SizedBox(height: 16),
-                      
-                      // Champ pour le commentaire
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'N\'hésitez pas à partager votre opinion\nà propos du produit',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            TextField(
-                              controller: _reviewController,
-                              maxLines: 5,
-                              decoration: InputDecoration(
-                                hintText: 'Votre avis',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      SizedBox(height: 16),
-                      
-                      // Bouton pour ajouter des photos
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                // Logique pour ajouter des photos (simulée pour l'exemple)
-                                setState(() {
-                                  _selectedImages.add(Image.network('https://picsum.photos/id/1018/300/300'));
-                                });
-                              },
-                              icon: Icon(Icons.camera_alt),
-                              label: Text('Ajouter des photos'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.blue,
-                                side: BorderSide(color: Colors.blue),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            // Afficher les miniatures des images sélectionnées
-                            ..._selectedImages.map((image) => 
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: SizedBox(
-                                    width: 40,
-                                    height: 40,
-                                    child: image,
-                                  ),
-                                ),
-                              ),
-                            ).toList(),
-                          ],
-                        ),
-                      ),
-                      
-                      SizedBox(height: 24),
-                      
-                      // Bouton d'envoi
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Logique d'envoi de l'avis
-                              _closeReviewForm();
-                              // Afficher un message de confirmation
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Avis envoyé avec succès')),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF142FE2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: Text(
-                              'ENVOYER UN AVIS',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              );
+            },
           ),
         );
       },

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ AJOUT
 import 'package:teyago/ui/widgets/verification/protected_floating_action_button.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/dispute_provider.dart';
 import '../../../core/services/profile_manager.dart';
 import '../../../core/models/dispute.dart';
@@ -73,7 +74,99 @@ class _DisputesScreenState extends State<DisputesScreen>
       _buildDisputesList(resolvedDisputes),
     ];
   }
+  void _handleDisputeButtonAction() {
+    final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
 
+    if (user?.isVerified == true) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CreateDisputeScreen(),
+        ),
+      ).then((_) => _loadData());
+    } else {
+      _showVerificationRequiredDialog(l10n);
+    }
+  }
+
+  void _showVerificationRequiredDialog(AppLocalizations l10n) {
+    // Déterminer le type de vérification selon le profil
+    final isProvider = ProfileManager.isProviderMode();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.verified_user, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text(l10n.verificationRequired),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isProvider 
+                ? l10n.verify_provider_open_dispute
+                : l10n.verify_phone_open_dispute
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isProvider
+                        ? l10n.completeVerificationFirst
+                        : l10n.verificationSecurityNote,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              // Rediriger vers la bonne page selon le profil
+              Navigator.pushNamed(
+                context,
+                isProvider ? '/provider-verification' : '/client-verification'
+              );
+            },
+            icon: Icon(Icons.verified_user, size: 18),
+            label: Text(l10n.verify),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!; // ✅ AJOUT
@@ -106,19 +199,13 @@ class _DisputesScreenState extends State<DisputesScreen>
         },
       ),
       
-      floatingActionButton : ProtectedFloatingActionButton(
-        actionDescription: l10n.newComplaint,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateDisputeScreen(),
-            ),
-          ).then((_) => _loadData());
-        },
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.white,
-      )
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _handleDisputeButtonAction,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text(_getFabLabel(l10n)),
+      ),
       
       // floatingActionButton: FloatingActionButton.extended(
       //   onPressed: () {

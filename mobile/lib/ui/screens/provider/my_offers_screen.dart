@@ -1,12 +1,12 @@
-// lib/ui/screens/provider/my_offers_screen.dart - NAVIGATION AVEC OBJET PROJET COMPLET
+// lib/ui/screens/provider/my_offers_screen.dart - VERSION RESPONSIVE
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/ui/screens/project_detail_screen.dart';
 import '../../../core/models/project_offer.dart';
-import '../../../core/models/client_project.dart'; // AJOUT
+import '../../../core/models/client_project.dart';
 import '../../../providers/offers_provider.dart';
-import '../../../providers/project_provider.dart'; // AJOUT
+import '../../../providers/project_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -26,7 +26,6 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     
-    // Charger les offres au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OffersProvider>().fetchMyOffers();
     });
@@ -58,11 +57,36 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
                 labelColor: const Color(0xFF142FE2),
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: const Color(0xFF142FE2),
+                isScrollable: true, // ✅ AJOUT : Tabs scrollables si trop longs
                 tabs: [
-                  Tab(text: '${l10n.allOffers} (${offersProvider.offers.length})'),
-                  Tab(text: '${l10n.pendingOffers} (${offersProvider.pendingOffers.length})'),
-                  Tab(text: '${l10n.acceptedOffers} (${offersProvider.acceptedOffers.length})'),
-                  Tab(text: '${l10n.rejectedOffers} (${offersProvider.rejectedOffers.length})'),
+                  Tab(
+                    child: Text(
+                      '${l10n.allOffers} (${offersProvider.offers.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      '${l10n.pendingOffers} (${offersProvider.pendingOffers.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      '${l10n.acceptedOffers} (${offersProvider.acceptedOffers.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      '${l10n.rejectedOffers} (${offersProvider.rejectedOffers.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               );
             },
@@ -132,7 +156,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En-tête avec statut
+          // En-tête avec statut - ✅ RESPONSIVE
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -152,8 +176,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
+                    maxLines: 2, // ✅ AJOUT : Max 2 lignes
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8), // ✅ AJOUT : Espacement
                 _buildStatusBadge(offer.status, l10n),
               ],
             ),
@@ -165,7 +192,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Prix et délai
+                // Prix et délai - ✅ RESPONSIVE
                 Row(
                   children: [
                     Expanded(
@@ -176,7 +203,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
                         color: Colors.green,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12), // ✅ Réduit de 16 à 12
                     Expanded(
                       child: _buildInfoItem(
                         icon: Icons.schedule,
@@ -188,49 +215,57 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12), // ✅ Réduit de 16 à 12
 
-                // Message (extrait)
+                // Message (extrait) - ✅ RESPONSIVE avec hauteur limitée
                 if (offer.message?.isNotEmpty == true) ...[
                   Text(
                     '${l10n.message}:',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Colors.grey[700],
-                      fontSize: 14,
+                      fontSize: 13, // ✅ Réduit de 14 à 13
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    offer.message!.length > 100 
-                        ? '${offer.message!.substring(0, 100)}...'
-                        : offer.message!,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 60), // ✅ AJOUT : Limite hauteur
+                    child: SingleChildScrollView(
+                      child: Text(
+                        offer.message!,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13, // ✅ Réduit de 14 à 13
+                          height: 1.4,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                 ],
 
-                // Options incluses
+                // Options incluses - ✅ RESPONSIVE avec Wrap
                 _buildOptionsRow(offer, l10n),
 
-                const SizedBox(height: 16),
+                if (_hasOptions(offer)) const SizedBox(height: 12),
 
-                // Date et actions
+                // Date et actions - ✅ RESPONSIVE
                 Row(
                   children: [
                     Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
                     const SizedBox(width: 4),
-                    Text(
-                      _formatDate(offer.createdAt, l10n),
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
+                    Flexible(
+                      child: Text(
+                        _formatDate(offer.createdAt, l10n),
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8), // ✅ AJOUT : Espacement
                     _buildActionButtons(offer, l10n),
                   ],
                 ),
@@ -247,7 +282,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     final text = _getStatusText(status, l10n);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // ✅ Padding réduit
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
@@ -256,9 +291,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
         text,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 11, // ✅ Réduit de 12 à 11
           fontWeight: FontWeight.w600,
         ),
+        maxLines: 1, // ✅ AJOUT
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -282,23 +319,31 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
             children: [
               Icon(icon, size: 16, color: color),
               const SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+              Flexible( // ✅ AJOUT : Flexible pour éviter débordement
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11, // ✅ Réduit de 12 à 11
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2, // ✅ AJOUT
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
+          FittedBox( // ✅ AJOUT : Auto-redimensionnement
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -317,19 +362,20 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
 
     if (options.isEmpty) return const SizedBox.shrink();
 
+    // ✅ Utilisation de Wrap au lieu de Row pour éviter débordements
     return Wrap(
       spacing: 8,
-      runSpacing: 4,
+      runSpacing: 6,
       children: options.map((option) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // ✅ Padding ajusté
         decoration: BoxDecoration(
           color: const Color(0xFF142FE2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           option,
-          style: TextStyle(
-            fontSize: 11,
+          style: const TextStyle(
+            fontSize: 10, // ✅ Réduit de 11 à 10
             color: Colors.white,
             fontWeight: FontWeight.w500,
           ),
@@ -338,121 +384,146 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildActionButtons(ProjectOffer offer, AppLocalizations l10n) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ✅ Voir le projet avec chargement
-        Consumer<ProjectProvider>(
-          builder: (context, projectProvider, child) {
-            final isLoadingProject = projectProvider.isLoading;
-            
-            return InkWell(
-              onTap: isLoadingProject ? null : () => _viewProject(offer, l10n),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isLoadingProject ? Colors.grey : const Color(0xFF142FE2),
-                  ),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isLoadingProject) ...[
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    Text(
-                      l10n.viewProject,
-                      style: TextStyle(
-                        color: isLoadingProject ? Colors.grey : const Color(0xFF142FE2),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        
-        const SizedBox(width: 8),
-        
-        // Retirer l'offre (si en attente)
-        if (offer.status == 'pending') ...[
-          InkWell(
-            onTap: () => _showWithdrawDialog(offer, l10n),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                l10n.withdrawOffer,
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
+  // ✅ Helper pour vérifier si des options existent
+  bool _hasOptions(ProjectOffer offer) {
+    return (offer.includesMaterials == true) ||
+           (offer.travelCostsIncluded == true) ||
+           (offer.warrantyPeriod != null && offer.warrantyPeriod! > 0);
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildActionButtons(ProjectOffer offer, AppLocalizations l10n) {
+    return Flexible( // ✅ AJOUT : Flexible pour éviter débordement
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.work_outline,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noOffersFound,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.yourSubmittedOffers,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
+          // Voir le projet avec chargement
+          Consumer<ProjectProvider>(
+            builder: (context, projectProvider, child) {
+              final isLoadingProject = projectProvider.isLoading;
+              
+              return InkWell(
+                onTap: isLoadingProject ? null : () => _viewProject(offer, l10n),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // ✅ Padding réduit
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isLoadingProject ? Colors.grey : const Color(0xFF142FE2),
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isLoadingProject) ...[
+                        const SizedBox(
+                          width: 10, // ✅ Réduit de 12 à 10
+                          height: 10,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Flexible( // ✅ AJOUT : Flexible
+                        child: Text(
+                          l10n.viewProject,
+                          style: TextStyle(
+                            color: isLoadingProject ? Colors.grey : const Color(0xFF142FE2),
+                            fontSize: 11, // ✅ Réduit de 12 à 11
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
             },
-            child: Text(l10n.backButton),
           ),
+          
+          // Retirer l'offre (si en attente)
+          if (offer.status == 'pending') ...[
+            const SizedBox(width: 6), // ✅ Réduit de 8 à 6
+            
+            Flexible( // ✅ AJOUT : Flexible
+              child: InkWell(
+                onTap: () => _showWithdrawDialog(offer, l10n),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // ✅ Padding réduit
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    l10n.withdrawOffer,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 11, // ✅ Réduit de 12 à 11
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  // ✅ CORRECTION COMPLÈTE : Récupérer l'objet projet complet avant navigation
+  Widget _buildEmptyState(AppLocalizations l10n) {
+    return Center(
+      child: Padding( // ✅ AJOUT : Padding pour éviter débordement sur petits écrans
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.work_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noOffersFound,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center, // ✅ AJOUT
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.yourSubmittedOffers,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center, // ✅ AJOUT
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(l10n.backButton),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _viewProject(ProjectOffer offer, AppLocalizations l10n) async {
     if (offer.projectId == null) {
       _showErrorSnackBar('ID du projet manquant', l10n);
@@ -460,22 +531,16 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     }
 
     try {
-      // Afficher un indicateur de chargement
       _showLoadingSnackBar('Chargement du projet...', l10n);
 
-      // Récupérer l'objet projet complet via le ProjectProvider
       final projectProvider = context.read<ProjectProvider>();
-      
-      // Option 1: Si vous avez une méthode pour récupérer un projet par ID
       final project = await projectProvider.getProjectById(offer.projectId!);
       
       if (!mounted) return;
       
-      // Masquer le loading
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       
       if (project != null) {
-        // Navigation avec l'objet projet complet
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -488,16 +553,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     } catch (e) {
       if (!mounted) return;
       
-      // Masquer le loading
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      
-      
       _showErrorSnackBar('Impossible de charger le projet: ${e.toString()}', l10n);
-      
     }
   }
 
-  // ✅ Créer un objet projet minimal si l'API échoue
   ClientProject? _createFallbackProject(ProjectOffer offer) {
     if (offer.projectId == null) return null;
     
@@ -505,24 +565,24 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
       id: offer.projectId!,
       title: offer.projectTitle ?? 'Projet sans titre',
       description: offer.projectDescription ?? 'Description non disponible',
-      clientName: 'Client', // Valeur par défaut
+      clientName: 'Client',
       categoryName: 'Catégorie inconnue',
       budgetRange: 'budget_unknown',
       budgetDisplay: 'Budget à discuter',
       location: 'Localisation non spécifiée',
       remotePossible: false,
       urgency: 'medium',
-      status: 'open', // Supposer que c'est ouvert si on peut faire une offre
+      status: 'open',
       contactViaPlatform: true,
       showEmail: false,
       showPhone: false,
       requiredSkills: [],
-      offersCount: 1, // Au moins notre offre
+      offersCount: 1,
       viewsCount: 0,
       createdAt: offer.createdAt ?? DateTime.now(),
       timeSincePosted: 'Récemment',
       isFavorited: false,
-      hasUserOffered: true, // Nous avons fait une offre
+      hasUserOffered: true,
     );
   }
 
@@ -531,7 +591,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
       SnackBar(
         content: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
@@ -540,10 +600,16 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
               ),
             ),
             const SizedBox(width: 12),
-            Text(message),
+            Expanded( // ✅ AJOUT : Expanded pour texte responsive
+              child: Text(
+                message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
-        duration: Duration(seconds: 30), // Long pour permettre le chargement
+        duration: const Duration(seconds: 30),
         backgroundColor: const Color(0xFF142FE2),
       ),
     );
@@ -553,8 +619,16 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.withdrawOfferTitle),
-        content: Text(l10n.withdrawOfferConfirm),
+        title: Text(
+          l10n.withdrawOfferTitle,
+          maxLines: 2, // ✅ AJOUT
+          overflow: TextOverflow.ellipsis,
+        ),
+        content: Text(
+          l10n.withdrawOfferConfirm,
+          maxLines: 5, // ✅ AJOUT
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -598,7 +672,6 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
     } catch (e) {
       if (!mounted) return;
       
-      // Fallback: marquer localement comme retiré
       context.read<OffersProvider>().updateOfferStatus(offer.id!, 'withdrawn');
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -613,7 +686,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> with SingleTickerProvid
   void _showErrorSnackBar(String message, AppLocalizations l10n) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${l10n.error}: $message'),
+        content: Text(
+          '${l10n.error}: $message',
+          maxLines: 3, // ✅ AJOUT
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: Colors.red,
         action: SnackBarAction(
           label: 'OK',
