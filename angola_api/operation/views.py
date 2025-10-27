@@ -1172,7 +1172,12 @@ class ProviderViewSet(viewsets.ModelViewSet):
     
 
     def get_queryset(self):
-        queryset = Provider.objects.all().order_by('user__username')
+        """Optimise les requêtes avec select_related et prefetch_related"""
+        queryset = Provider.objects.select_related('user').prefetch_related(
+            'provider_services__subcategory__category',
+            'reviews_received',
+            'expertise_categories'
+        ).order_by('-created_at')
         
         # Filtrage par catégorie
         category_id = self.request.query_params.get('category_id')
@@ -1205,15 +1210,45 @@ class ProviderViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def expertise_categories(self, request):
+        """Retourne les catégories d'expertise du prestataire connecté"""
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Vous n'êtes pas un prestataire"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
             
         provider = user.provider_profile
-        categories = provider.expertise_categories.all() # Ajustez l'import selon votre structure
+        categories = provider.expertise_categories.all()
+        # Utilisez votre CategorySerializer
+        from .serializers import CategorySerializer  # Ajustez l'import
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def verify(self, request, pk=None):
+        """Vérifier un prestataire (admin uniquement)"""
+        provider = self.get_object()
+        provider.is_verified = True
+        provider.save()
+        serializer = self.get_serializer(provider)
+        return Response({
+            'message': 'Prestataire vérifié avec succès',
+            'data': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def unverify(self, request, pk=None):
+        """Retirer la vérification d'un prestataire (admin uniquement)"""
+        provider = self.get_object()
+        provider.is_verified = False
+        provider.save()
+        serializer = self.get_serializer(provider)
+        return Response({
+            'message': 'Vérification retirée avec succès',
+            'data': serializer.data
+        })
+    
     @action(detail=False, methods=['put'])
     def update_expertise_categories(self, request):
         user = request.user

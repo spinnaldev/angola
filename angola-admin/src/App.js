@@ -60,7 +60,7 @@ const ProtectedPageWithLayout = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/admin">
         <Routes>
           {/* Route publique (sans layout) */}
           <Route path="/login" element={<Login />} />

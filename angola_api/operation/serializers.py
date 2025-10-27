@@ -497,9 +497,18 @@ class ReviewSerializer(serializers.ModelSerializer):
             ReviewImage.objects.create(review=review, image=image)
         
         return review
-
+    
 class ProviderListSerializer(serializers.ModelSerializer):
+    # Champs du User
     username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone_number = serializers.CharField(source='user.phone_number', read_only=True)
+    bio = serializers.CharField(source='user.bio', read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+    city = serializers.CharField(source='user.location', read_only=True)
+    created_at = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    
+    # Champs calculés
     full_name = serializers.SerializerMethodField()
     services_count = serializers.SerializerMethodField()
     reviews_count = serializers.SerializerMethodField()
@@ -507,22 +516,46 @@ class ProviderListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Provider
-        fields = ('id', 'username', 'full_name', 'company_name', 'avg_rating', 
-                 'is_verified', 'is_featured', 'services_count', 'reviews_count',
-                 'main_category', 'address', 'latitude', 'longitude')
+        fields = (
+            'id', 'username', 'email', 'full_name', 'company_name', 
+            'phone_number', 'city', 'address', 'latitude', 'longitude',
+            'profile_picture', 'bio', 'avg_rating', 'is_verified', 
+            'is_featured', 'services_count', 'reviews_count',
+            'main_category', 'created_at', 'trust_score'
+        )
     
     def get_full_name(self, obj):
-        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+        """Construit le nom complet depuis first_name et last_name"""
+        full = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return full if full else obj.user.username
+    
+    def get_profile_picture(self, obj):
+        """Retourne l'URL complète de la photo de profil"""
+        if obj.user.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.user.profile_picture.url)
+            return obj.user.profile_picture.url
+        return None
     
     def get_services_count(self, obj):
+        """Compte le nombre de services du prestataire"""
         return obj.provider_services.count()
     
     def get_reviews_count(self, obj):
+        """Compte le nombre d'avis reçus"""
         return obj.reviews_received.count()
     
     def get_main_category(self, obj):
-        # Returns the most used category by this provider
-        service = obj.provider_services.first()
+        """Retourne la catégorie principale (la première catégorie d'expertise)"""
+        category = obj.expertise_categories.first()
+        if category:
+            return {
+                'category_id': category.id,
+                'category_name': category.name
+            }
+        # Sinon, chercher via les services
+        service = obj.provider_services.select_related('subcategory__category').first()
         if service:
             return {
                 'category_id': service.subcategory.category.id,
@@ -530,36 +563,71 @@ class ProviderListSerializer(serializers.ModelSerializer):
             }
         return None
 
+    
 class ProviderDetailSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    services = ProviderServiceSerializer(source='provider_services', many=True, read_only=True)
-    portfolio = PortfolioSerializer(many=True, read_only=True)
-    certificates = CertificateSerializer(many=True, read_only=True)
-    reviews = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField()
+    # Champs du User
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone_number = serializers.CharField(source='user.phone_number', read_only=True)
+    bio = serializers.CharField(source='user.bio', read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+    city = serializers.CharField(source='user.location', read_only=True)
+    created_at = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    
+    # Champs calculés
+    full_name = serializers.SerializerMethodField()
+    services_count = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
+    expertise_categories = serializers.SerializerMethodField()
+    skills = serializers.SerializerMethodField()
     
     class Meta:
         model = Provider
-        fields = ('id', 'user', 'company_name', 'is_verified', 'is_featured', 
-                 'avg_rating', 'trust_score', 'address', 'latitude', 'longitude',
-                 'services', 'portfolio', 'certificates', 'reviews', 'is_favorited')
+        fields = (
+            'id', 'username', 'email', 'full_name', 'company_name',
+            'phone_number', 'city', 'address', 'latitude', 'longitude',
+            'profile_picture', 'bio', 'avg_rating', 'is_verified',
+            'is_featured', 'services_count', 'reviews_count',
+            'expertise_categories', 'skills', 'created_at', 'trust_score',
+            'verification_documents'
+        )
     
-    def get_reviews(self, obj):
-        reviews = obj.reviews_received.all().order_by('-created_at')[:5]
-        return ReviewSerializer(reviews, many=True).data
+    def get_full_name(self, obj):
+        """Construit le nom complet depuis first_name et last_name"""
+        full = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return full if full else obj.user.username
     
-    def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.favorited_by.filter(user=request.user).exists()
-        return False
-        
-    def update(self, instance, validated_data):
-        # Permettre la mise à jour de company_name
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-        instance.save()
-        return instance
+    def get_profile_picture(self, obj):
+        """Retourne l'URL complète de la photo de profil"""
+        if obj.user.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.user.profile_picture.url)
+            return obj.user.profile_picture.url
+        return None
+    
+    def get_services_count(self, obj):
+        """Compte le nombre de services du prestataire"""
+        return obj.provider_services.count()
+    
+    def get_reviews_count(self, obj):
+        """Compte le nombre d'avis reçus"""
+        return obj.reviews_received.count()
+    
+    def get_expertise_categories(self, obj):
+        """Retourne toutes les catégories d'expertise"""
+        categories = obj.expertise_categories.all()
+        return [{'id': cat.id, 'name': cat.name} for cat in categories]
+    
+    def get_skills(self, obj):
+        """
+        Retourne les compétences (skills).
+        Puisque vous n'avez pas de champ skills dans vos modèles,
+        on peut retourner les sous-catégories de services comme compétences
+        """
+        services = obj.provider_services.select_related('subcategory').all()
+        skills = [service.subcategory.name for service in services]
+        return list(set(skills))  # Supprimer les doublons
 
 class FavoriteSerializer(serializers.ModelSerializer):
     service_details = ProviderServiceSerializer(source='service', read_only=True)

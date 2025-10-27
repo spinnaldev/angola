@@ -5,7 +5,7 @@ import { providerService } from '../services/api';
 import { withAuth } from '../context/AuthContext';
 
 // Composant Carte de Prestataire
-const ProviderCard = ({ provider, onVerify, onView }) => {
+const ProviderCard = ({ provider, onView }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden">
       <div className="p-5">
@@ -14,10 +14,10 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
           <div className="flex items-center">
             {/* Photo de profil */}
             <div className="h-12 w-12 flex-shrink-0">
-              {provider.user?.profile_picture || provider.profile_picture ? (
+              {provider.profile_picture ? (
                 <img
                   className="h-12 w-12 rounded-full object-cover ring-2 ring-gray-100"
-                  src={provider.user?.profile_picture || provider.profile_picture}
+                  src={provider.profile_picture}
                   alt={provider.full_name || provider.company_name}
                 />
               ) : (
@@ -30,7 +30,7 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
             {/* Nom et entreprise */}
             <div className="ml-3">
               <div className="font-semibold text-gray-900">
-                {provider.full_name || provider.user?.username || 'Sans nom'}
+                {provider.full_name || provider.username || 'Sans nom'}
               </div>
               {provider.company_name && (
                 <div className="text-sm text-gray-600">
@@ -60,20 +60,18 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
           <div className="flex items-center text-sm">
             <span className="text-yellow-500 mr-1">⭐</span>
             <span className="font-medium text-gray-900">
-              {provider.average_rating ? Number(provider.average_rating).toFixed(1) : '0.0'}
+              {provider.avg_rating ? Number(provider.avg_rating).toFixed(1) : '0.0'}
             </span>
             <span className="text-gray-500 ml-1">
-              ({provider.total_reviews || 0} avis)
+              ({provider.reviews_count || 0} avis)
             </span>
           </div>
 
           {/* Services et localisation */}
-          {provider.services_count !== undefined && (
-            <div className="flex items-center text-sm text-gray-600">
-              <span className="mr-1">📦</span>
-              <span>{provider.services_count} service{provider.services_count > 1 ? 's' : ''}</span>
-            </div>
-          )}
+          <div className="flex items-center text-sm text-gray-600">
+            <span className="mr-1">📦</span>
+            <span>{provider.services_count || 0} service{provider.services_count > 1 ? 's' : ''}</span>
+          </div>
           
           {provider.city && (
             <div className="flex items-center text-sm text-gray-600">
@@ -81,37 +79,23 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
               <span>{provider.city}</span>
             </div>
           )}
+          
+          {provider.trust_score > 0 && (
+            <div className="flex items-center text-sm text-gray-600">
+              <span className="mr-1">🛡️</span>
+              <span>Score de confiance: {Number(provider.trust_score).toFixed(1)}</span>
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t border-gray-100">
+        {/* Actions - Un seul bouton */}
+        <div className="pt-4 border-t border-gray-100">
           <button
             onClick={() => onView(provider)}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full inline-flex items-center justify-center px-4 py-2 border border-indigo-300 shadow-sm text-sm font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
           >
             <span className="mr-1">👁️</span>
             Voir détails
-          </button>
-          
-          <button
-            onClick={() => onVerify(provider)}
-            className={`flex-1 inline-flex items-center justify-center px-3 py-2 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              provider.is_verified
-                ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500'
-                : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
-            }`}
-          >
-            {provider.is_verified ? (
-              <>
-                <span className="mr-1">❌</span>
-                Retirer
-              </>
-            ) : (
-              <>
-                <span className="mr-1">✅</span>
-                Vérifier
-              </>
-            )}
           </button>
         </div>
       </div>
@@ -120,8 +104,13 @@ const ProviderCard = ({ provider, onVerify, onView }) => {
 };
 
 // Modal détail du prestataire
-const ProviderDetail = ({ provider, onClose }) => {
+const ProviderDetail = ({ provider, onClose, onVerify }) => {
   if (!provider) return null;
+
+  const handleVerifyProvider = async (prov) => {
+    await onVerify(prov);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -147,10 +136,10 @@ const ProviderDetail = ({ provider, onClose }) => {
             {/* En-tête avec photo */}
             <div className="flex items-center mb-6">
               <div className="h-20 w-20 flex-shrink-0">
-                {provider.user?.profile_picture || provider.profile_picture ? (
+                {provider.profile_picture ? (
                   <img
                     className="h-20 w-20 rounded-full object-cover ring-4 ring-gray-100"
-                    src={provider.user?.profile_picture || provider.profile_picture}
+                    src={provider.profile_picture}
                     alt={provider.full_name}
                   />
                 ) : (
@@ -161,7 +150,7 @@ const ProviderDetail = ({ provider, onClose }) => {
               </div>
               <div className="ml-4">
                 <h3 className="text-2xl font-bold text-gray-900">
-                  {provider.full_name || provider.user?.username || 'Sans nom'}
+                  {provider.full_name || provider.username || 'Sans nom'}
                 </h3>
                 {provider.company_name && (
                   <p className="text-lg text-gray-600">{provider.company_name}</p>
@@ -182,12 +171,12 @@ const ProviderDetail = ({ provider, onClose }) => {
                 
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-gray-900">{provider.user?.email || provider.email || 'Non renseigné'}</p>
+                  <p className="text-gray-900">{provider.email || 'Non renseigné'}</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">Téléphone</label>
-                  <p className="text-gray-900">{provider.phone_number || provider.user?.phone_number || 'Non renseigné'}</p>
+                  <p className="text-gray-900">{provider.phone_number || 'Non renseigné'}</p>
                 </div>
 
                 <div>
@@ -210,6 +199,13 @@ const ProviderDetail = ({ provider, onClose }) => {
                       : 'Date inconnue'}
                   </p>
                 </div>
+
+                {provider.main_category && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Catégorie principale</label>
+                    <p className="text-gray-900">{provider.main_category.category_name}</p>
+                  </div>
+                )}
               </div>
 
               {/* Statistiques */}
@@ -221,7 +217,7 @@ const ProviderDetail = ({ provider, onClose }) => {
                     <span className="text-sm font-medium text-gray-600">Note moyenne</span>
                     <div className="flex items-center">
                       <span className="text-2xl font-bold text-yellow-600">
-                        {provider.average_rating ? Number(provider.average_rating).toFixed(1) : '0.0'}
+                        {provider.avg_rating ? Number(provider.avg_rating).toFixed(1) : '0.0'}
                       </span>
                       <span className="text-yellow-500 ml-1">⭐</span>
                     </div>
@@ -232,7 +228,7 @@ const ProviderDetail = ({ provider, onClose }) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-600">Nombre d'avis</span>
                     <span className="text-2xl font-bold text-blue-600">
-                      {provider.total_reviews || 0}
+                      {provider.reviews_count || 0}
                     </span>
                   </div>
                 </div>
@@ -246,23 +242,23 @@ const ProviderDetail = ({ provider, onClose }) => {
                   </div>
                 </div>
 
-                <div className="bg-purple-50 rounded-lg p-4">
+                {/* <div className="bg-purple-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Projets complétés</span>
-                    <span className="text-2xl font-bold text-purple-600">
-                      {provider.completed_projects || 0}
+                    <span className="text-sm font-medium text-gray-600">Mis en avant</span>
+                    <span className="text-xl font-bold text-purple-600">
+                      {provider.is_featured ? '⭐ Oui' : 'Non'}
                     </span>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
             {/* Bio / Description */}
-            {(provider.bio || provider.description) && (
+            {provider.bio && (
               <div className="mt-6">
                 <h4 className="font-semibold text-gray-900 text-lg mb-3">À propos</h4>
                 <p className="text-gray-700 whitespace-pre-wrap">
-                  {provider.bio || provider.description}
+                  {provider.bio}
                 </p>
               </div>
             )}
@@ -283,10 +279,38 @@ const ProviderDetail = ({ provider, onClose }) => {
                 </div>
               </div>
             )}
+
+            {/* Catégories d'expertise */}
+            {provider.expertise_categories && provider.expertise_categories.length > 0 && (
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 text-lg mb-3">Catégories d'expertise</h4>
+                <div className="flex flex-wrap gap-2">
+                  {provider.expertise_categories.map((category) => (
+                    <span
+                      key={category.id}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
+                    >
+                      {category.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          <div className="border-t bg-gray-50 px-6 py-4 flex justify-between gap-3">
+            {/* <button
+              onClick={() => handleVerifyProvider(provider)}
+              className={`px-6 py-2 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                provider.is_verified
+                  ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500'
+                  : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
+              }`}
+            >
+              {provider.is_verified ? '❌ Retirer la vérification' : '✅ Vérifier le prestataire'}
+            </button> */}
+            
             <button
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -376,6 +400,11 @@ const Providers = () => {
       setProviders(providers.map(p => 
         p.id === provider.id ? { ...p, is_verified: !p.is_verified } : p
       ));
+      
+      // Mettre à jour le provider sélectionné si c'est le même
+      if (selectedProvider && selectedProvider.id === provider.id) {
+        setSelectedProvider({ ...selectedProvider, is_verified: !selectedProvider.is_verified });
+      }
     } catch (err) {
       console.error('Erreur lors de la vérification', err);
       alert('Une erreur est survenue lors de la mise à jour du statut de vérification.');
@@ -547,7 +576,6 @@ const Providers = () => {
               <ProviderCard
                 key={provider.id}
                 provider={provider}
-                onVerify={handleVerifyProvider}
                 onView={handleViewProvider}
               />
             ))}
@@ -663,6 +691,7 @@ const Providers = () => {
         <ProviderDetail
           provider={selectedProvider}
           onClose={() => setSelectedProvider(null)}
+          onVerify={handleVerifyProvider}
         />
       )}
     </DashboardLayout>
