@@ -314,18 +314,18 @@ def new_message_created(sender, instance, created, **kwargs):
             
             # ✅ NOUVEAU: ENVOYER UNE NOTIFICATION FCM POUR LE NOUVEAU MESSAGE
             try:
-                FCMService.send_notification_to_user(
-                    recipient.id,
-                    f"💬 Nouveau message de {sender_name}",
-                    instance.content[:100] + ('...' if len(instance.content) > 100 else ''),
-                    'new_message',
-                    {
-                        'conversation_id': str(conversation.id),
-                        'sender_id': str(instance.sender.id),
-                        'message_id': str(instance.id),
-                        'click_action': 'FLUTTER_NOTIFICATION_CLICK'
-                    }
-                )
+                # FCMService.send_notification_to_user(
+                #     recipient.id,
+                #     f"💬 Nouveau message de {sender_name}",
+                #     instance.content[:100] + ('...' if len(instance.content) > 100 else ''),
+                #     'new_message',
+                #     {
+                #         'conversation_id': str(conversation.id),
+                #         'sender_id': str(instance.sender.id),
+                #         'message_id': str(instance.id),
+                #         'click_action': 'FLUTTER_NOTIFICATION_CLICK'
+                #     }
+                # )
                 print(f"✅ Notification FCM message envoyée pour user {recipient.id}")
             except Exception as fcm_error:
                 print(f"⚠️ Erreur FCM message: {fcm_error}")
@@ -436,7 +436,7 @@ def create_message_notification_with_extradata(message, conversation):
     create_and_send_notification(
         user=recipient,
         title="Nouveau message",
-        message=f"Vous avez reçu un nouveau message de {sender_display}",
+        message=f"Vous avez reçu un nouveau messaeege de {sender_display}",
         notification_type='new_message',
         related_object_id=conversation.id,
         extra_data=extra_data  # ✅ NOUVEAU

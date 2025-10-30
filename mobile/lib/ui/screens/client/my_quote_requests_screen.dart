@@ -309,7 +309,7 @@ class _MyQuoteRequestsScreenState extends State<MyQuoteRequestsScreen> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          l10n.providerName, // ✅ TRADUIT - À remplacer par le vrai nom
+                          request.providerName ?? 'Prestataire non assigné',
                           style: TextStyle(
                             color: Colors.grey[600],
                           ),
@@ -519,7 +519,7 @@ class _MyQuoteRequestsScreenState extends State<MyQuoteRequestsScreen> {
                       // Prestataire
                       _buildDetailRow(
                         l10n.provider, // ✅ TRADUIT
-                        l10n.providerName, // ✅ TRADUIT - À remplacer par le vrai nom
+                        request.providerName ?? 'Prestataire non assigné',
                         Icons.business,
                       ),
                       

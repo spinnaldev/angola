@@ -141,7 +141,7 @@ class Review {
       id: json['id'] as int?,
       clientId: json['client_id'] as int? ?? json['client'] as int? ?? 0,
       providerId: json['provider_id'] as int? ?? json['provider'] as int? ?? 0,
-      serviceId: json['service_id'] as int?,
+      serviceId: json['service'] as int? ?? 0,
       rating: parseRating(json['overall_rating'] ?? json['rating'] ?? 0),
       comment: json['comment']?.toString() ?? '',
       imageUrls: images,

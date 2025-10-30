@@ -196,24 +196,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     if (user?.role == 'provider') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Seuls les clients peuvent ajouter des services aux favoris'),
+          content: Text('Seuls les clients peuvent ajouter des prestataires aux favoris'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    print('🔍 Toggle favori pour service ${widget.serviceId}');
+    print('🔍 Toggle favori pour prestataire ${widget.providerId}');
 
-    // ✅ Toggle le service en favoris
-    favoritesProvider.toggleServiceFavorite(widget.serviceId).then((isNowFavorite) {
+    // ✅ CHANGÉ : Toggle le PRESTATAIRE en favoris (pas le service)
+    favoritesProvider.toggleProviderFavorite(widget.providerId).then((isNowFavorite) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isNowFavorite 
-                ? 'Service ajouté aux favoris ❤️' 
-                : 'Service retiré des favoris'
+                ? 'Prestataire ajouté aux favoris ❤️' 
+                : 'Prestataire retiré des favoris'
             ),
             backgroundColor: isNowFavorite ? Colors.green : Colors.grey,
             duration: const Duration(seconds: 2),
@@ -711,20 +711,18 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         actions: [
           Consumer2<AuthProvider, FavoritesProvider>(
             builder: (context, authProvider, favoritesProvider, _) {
-              // Ne pas afficher si non connecté
               if (!authProvider.isAuthenticated) {
                 return SizedBox.shrink();
               }
 
               final user = authProvider.currentUser;
               
-              // Cacher pour les prestataires
               if (user?.role == 'provider') {
                 return SizedBox.shrink();
               }
 
-              // ✅ Vérifier si le SERVICE est en favoris (pas le prestataire)
-              final isFavorite = favoritesProvider.isServiceFavorite(widget.serviceId);
+              // ✅ CHANGÉ : Vérifier si le PRESTATAIRE est en favoris (pas le service)
+              final isFavorite = favoritesProvider.isProviderFavorite(widget.providerId);
               
               return IconButton(
                 onPressed: () => _toggleFavorite(),
@@ -733,8 +731,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                   color: isFavorite ? Colors.red : Colors.grey,
                 ),
                 tooltip: isFavorite 
-                  ? 'Retirer des favoris' 
-                  : 'Ajouter aux favoris',
+                  ? 'Retirer ce prestataire des favoris' 
+                  : 'Ajouter ce prestataire aux favoris',
               );
             },
           ),

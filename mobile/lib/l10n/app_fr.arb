@@ -224,7 +224,7 @@
   "atLeastOneLowercase": "Au moins une lettre minuscule",
   "atLeastOneDigit": "Au moins un chiffre",
   "atLeastOneSpecialChar": "Au moins un caractère spécial",
-   "editProfile": "Modifier le profil",
+  "editProfile": "Modifier le profil",
   "changePhoto": "Changer la photo",
   "companyName": "Nom de l'entreprise",
   "firstName": "Prénom",
@@ -1882,8 +1882,19 @@
   "projectsCompleted": "projets terminés",
   "noDataAvailable": "Aucune donnée disponible",
   "verifiedEvaluations": "Évaluations vérifiées",
-  "noImagesAvailable": "Aucune image disponible"
-  
-
+  "noImagesAvailable": "Aucune image disponible",
+  "reportProblem": "Signaler un problème",
+  "reportIssue": "Signaler un problème",
+  "today": "Aujourd'hui",
+  "yesterday": "Hier",
+  "daysAgo": "Il y a {count} jours",
+  "weeksAgo": "Il y a {count} semaine",
+  "weeksAgoPlural": "Il y a {count} semaines",
+  "monthsAgo": "Il y a {count} mois",
+  "monthsAgoPlural": "Il y a {count} mois",
+  "yearsAgo": "Il y a {count} an",
+  "yearsAgoPlural": "Il y a {count} ans",
+  "noReviewsYet": "Aucun avis pour le moment",
+  "beFirstToReview": "Soyez le premier à laisser un avis !"
   
 }

@@ -643,6 +643,37 @@ class FavoriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ce service n'est plus disponible")
         return value
 
+class FavoriteProviderSerializer(serializers.ModelSerializer):
+    """Serializer pour les prestataires favoris avec détails complets"""
+    provider_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = FavoriteProvider
+        fields = ['id', 'provider', 'provider_details', 'created_at']
+        read_only_fields = ['id', 'created_at']
+    
+    def get_provider_details(self, obj):
+        """Retourner les détails complets du prestataire"""
+        provider = obj.provider
+        
+        # Importer ici pour éviter les imports circulaires
+       
+        # Ou créer un dict manuellement
+        return {
+            'id': provider.id,
+            'username': provider.user.username,
+            'email': provider.user.email,
+            'first_name': provider.user.first_name,
+            'last_name': provider.user.last_name,
+            'name': f"{provider.user.first_name} {provider.user.last_name}".strip() or provider.user.username,
+            'profile_image_url': provider.user.profile_image.url if hasattr(provider, 'profile_image') and provider.user.profile_image else '',
+            'business_name': getattr(provider, 'business_name', ''),
+            'business_type': getattr(provider, 'business_type', ''),
+            'is_verified': getattr(provider, 'is_verified', False),
+            'rating': getattr(provider, 'rating', 0.0),
+            'review_count': getattr(provider, 'review_count', 0),
+            'services_count': provider.provider_services.count() if hasattr(provider, 'provider_services') else 0,
+        }
 class MessageSerializer(serializers.ModelSerializer):
     sender_id = serializers.IntegerField(source='sender.id')
     sender_name = serializers.SerializerMethodField()

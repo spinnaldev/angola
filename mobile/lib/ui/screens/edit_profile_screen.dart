@@ -136,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     
     return Scaffold(
       backgroundColor: Colors.white,
-      // ✅ AJOUT CRITIQUE : Permet au contenu de remonter quand le clavier apparaît
+      // ✅ SOLUTION 1: Permet au contenu de remonter quand le clavier apparaît
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -155,165 +155,159 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
       ),
-      // ✅ MODIFICATION CRITIQUE : Ajout de SafeArea et padding bottom pour le clavier
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // ✅ Permet de scroller même quand le clavier est ouvert
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          physics: const BouncingScrollPhysics(),
-          // ✅ MODIFICATION : Padding ajusté avec bottom pour le clavier
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20, // Espace pour le clavier + padding
-          ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Photo de profil
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF142FE2),
-                            width: 3,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundImage: _selectedImage != null
-                              ? FileImage(_selectedImage!)
-                              : (user?.profilePicture != null && user!.profilePicture!.isNotEmpty
-                                  ? NetworkImage(user.profilePicture!)
-                                  : null) as ImageProvider?,
-                          child: _selectedImage == null && 
-                                 (user?.profilePicture == null || user!.profilePicture!.isEmpty)
-                              ? Text(
-                                  user?.firstName[0].toUpperCase() ?? 'U',
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.camera_alt, color: Color(0xFF142FE2)),
-                        label: Text(
-                          l10n.changePhoto,
-                          style: const TextStyle(
-                            color: Color(0xFF142FE2),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Prénom
-                AppTextField(
-                  label: l10n.firstName,
-                  controller: _firstNameController,
-                  keyboardType: TextInputType.text,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return l10n.pleaseEnterFirstName;
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Nom
-                AppTextField(
-                  label: l10n.lastName,
-                  controller: _lastNameController,
-                  keyboardType: TextInputType.text,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre nom';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Téléphone
-                AppTextField(
-                  label: l10n.phone,
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-                
-                // Adresse
-                AppTextField(
-                  label: l10n.address,
-                  controller: _locationController,
-                  keyboardType: TextInputType.text,
-                ),
-                const SizedBox(height: 16),
-                
-                // Bio
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      // ✅ SOLUTION 2: Structure simplifiée et fonctionnelle
+      body: SingleChildScrollView(
+        // Ferme le clavier quand on scroll
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        physics: const AlwaysScrollableScrollPhysics(),
+        // ✅ SOLUTION 3: Padding simple et fixe (pas de MediaQuery.viewInsets)
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Photo de profil
+              Center(
+                child: Column(
                   children: [
-                    Text(
-                      l10n.bio,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF142FE2),
+                          width: 3,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _selectedImage != null
+                            ? FileImage(_selectedImage!)
+                            : (user?.profilePicture != null && user!.profilePicture!.isNotEmpty
+                                ? NetworkImage(user.profilePicture!)
+                                : null) as ImageProvider?,
+                        child: _selectedImage == null && 
+                               (user?.profilePicture == null || user!.profilePicture!.isEmpty)
+                            ? Text(
+                                user?.firstName[0].toUpperCase() ?? 'U',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _bioController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: l10n.bioHint,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 14.0,
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.camera_alt, color: Color(0xFF142FE2)),
+                      label: Text(
+                        l10n.changePhoto,
+                        style: const TextStyle(
+                          color: Color(0xFF142FE2),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 32),
-                
-                // Bouton sauvegarder
-                AppButton(
-                  text: l10n.saveButton,
-                  onPressed: _saveProfile,
-                  isLoading: _isLoading,
-                ),
-                
-                // ✅ AJOUT CRITIQUE : Espace supplémentaire en bas pour garantir l'accès au bouton
-                const SizedBox(height: 40),
-              ],
-            ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Prénom
+              AppTextField(
+                label: l10n.firstName,
+                controller: _firstNameController,
+                keyboardType: TextInputType.text,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return l10n.pleaseEnterFirstName;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Nom
+              AppTextField(
+                label: l10n.lastName,
+                controller: _lastNameController,
+                keyboardType: TextInputType.text,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez entrer votre nom';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Téléphone
+              AppTextField(
+                label: l10n.phone,
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              
+              // Adresse
+              AppTextField(
+                label: l10n.address,
+                controller: _locationController,
+                keyboardType: TextInputType.text,
+              ),
+              const SizedBox(height: 16),
+              
+              // Bio
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.bio,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _bioController,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: l10n.bioHint,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 14.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Bouton sauvegarder
+              AppButton(
+                text: l10n.saveButton,
+                onPressed: _saveProfile,
+                isLoading: _isLoading,
+              ),
+              
+              // ✅ SOLUTION 4: Espace GÉNÉREUX en bas pour garantir l'accessibilité
+              // Permet de toujours avoir le bouton accessible même avec la navigation system
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+            ],
           ),
         ),
       ),

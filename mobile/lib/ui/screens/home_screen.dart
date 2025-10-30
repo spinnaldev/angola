@@ -208,7 +208,8 @@ class _HomeScreenState extends State<HomeScreen>
       final reviewProvider =
           Provider.of<ReviewProvider>(context, listen: false);
       _topReviews = reviewProvider.topReviews;
-
+      print("ON a recuperer les top reviews unh");
+      print(_topReviews);
       setState(() {
         _isLoading = false;
       });

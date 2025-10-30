@@ -1,8 +1,17 @@
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 
 android {
     namespace = "com.teyago.services"
@@ -19,6 +28,15 @@ android {
         jvmTarget = "1.8"
     }
 
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
     defaultConfig {
         applicationId = "com.teyago.services"
         // ✅ IMPORTANT : minSdk doit être au moins 21 pour desugaring
@@ -32,19 +50,23 @@ android {
 
     buildTypes {
         release {
-            // ✅ SOLUTION : Utiliser la signature debug pour tester
-            signingConfig signingConfigs.debug
-            
-            // ✅ CORRECTION : Désactiver complètement toute optimisation
+            // ✅ Utilise ta clé RELEASE, pas la debug !
+            signingConfig signingConfigs.release
+
+            // ✅ Active l’optimisation pour le Play Store
             minifyEnabled false
             shrinkResources false
             debuggable false
             
-            // ✅ AJOUT : Configuration spécifique pour éviter l'erreur zip
-            zipAlignEnabled false
+            // ✅ Fichiers Proguard par défaut
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Ces deux lignes peuvent être supprimées ou laissées par précaution
+            zipAlignEnabled true
             crunchPngs false
         }
         debug {
+            signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
             debuggable true

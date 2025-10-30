@@ -1862,7 +1862,20 @@
   "projectsCompleted": "completed projects",
   "noDataAvailable": "No data available",
   "verifiedEvaluations": "Verified Reviews",
-  "noImagesAvailable": "No images available"
+  "noImagesAvailable": "No images available",
+  "reportProblem": "Report a problem",
+  "reportIssue": "Report Issue",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "daysAgo": "{count} days ago",
+  "weeksAgo": "{count} week ago",
+  "weeksAgoPlural": "{count} weeks ago",
+  "monthsAgo": "{count} month ago",
+  "monthsAgoPlural": "{count} months ago",
+  "yearsAgo": "{count} year ago",
+  "yearsAgoPlural": "{count} years ago",
+  "noReviewsYet": "No reviews yet",
+  "beFirstToReview": "Be the first to leave a review!"
   
 
 }

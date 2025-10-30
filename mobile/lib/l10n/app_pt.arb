@@ -1933,7 +1933,20 @@
   "projectsCompleted": "projetos concluídos",
   "noDataAvailable": "Nenhum dado disponível",
   "verifiedEvaluations": "Avaliações Verificadas",
-  "noImagesAvailable": "Nenhuma imagem disponível"
+  "noImagesAvailable": "Nenhuma imagem disponível",
+  "reportProblem": "Reportar un problema",
+  "reportIssue": "Relatar problema",
+  "today": "Hoje",
+  "yesterday": "Ontem",
+  "daysAgo": "Há {count} dias",
+  "weeksAgo": "Há {count} semana",
+  "weeksAgoPlural": "Há {count} semanas",
+  "monthsAgo": "Há {count} mês",
+  "monthsAgoPlural": "Há {count} meses",
+  "yearsAgo": "Há {count} ano",
+  "yearsAgoPlural": "Há {count} anos",
+  "noReviewsYet": "Ainda não há avaliações",
+  "beFirstToReview": "Seja o primeiro a deixar uma avaliação!"
 
 
 }

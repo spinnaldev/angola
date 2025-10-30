@@ -253,6 +253,36 @@ class Favorite(TimeStampMixin):
     def __str__(self):
         return f"{self.user.username} ❤️ {self.service.title}"
 
+
+class FavoriteProvider(models.Model):
+    """
+    Modèle pour les prestataires favoris des CLIENTS
+    Un client peut marquer des prestataires en favoris
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_providers'
+    )
+    provider = models.ForeignKey(
+        Provider,  # Le prestataire est aussi un User
+        on_delete=models.CASCADE,
+        related_name='favorited_by',
+        # limit_choices_to={'role': 'provider'}  # Seulement les prestataires
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'favorite_providers'
+        unique_together = ('user', 'provider')  # Un client ne peut pas ajouter le même prestataire 2 fois
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'provider']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} → {self.provider.username}"
 class Conversation(TimeStampMixin):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_conversations')
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='provider_conversations')

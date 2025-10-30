@@ -2032,7 +2032,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         from django.db.models import Q
         queryset = Review.objects.filter(
             Q(overall_rating__gte=4.0) & Q(is_verified=True)
-        ).order_by('-overall_rating', '-created_at')[:10]
+        ).order_by('-overall_rating', 'created_at')[:10]
         
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
@@ -2194,6 +2194,206 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             'service_id': int(service_id)
         })
 
+
+class FavoriteProviderViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour la gestion des prestataires favoris des CLIENTS
+    
+    Endpoints:
+    - GET /api/favorites/providers/ : Liste des prestataires favoris
+    - POST /api/favorites/providers/ : Ajouter un prestataire en favoris
+    - DELETE /api/favorites/providers/{providerId}/ : Retirer un prestataire des favoris
+    """
+    serializer_class = FavoriteProviderSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
+    
+    def get_queryset(self):
+        """Retourner uniquement les favoris de l'utilisateur connecté"""
+        return FavoriteProvider.objects.filter(
+            user=self.request.user
+        ).select_related('provider').order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """
+        GET /api/favorites/providers/
+        Retourne la liste des prestataires favoris
+        """
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+            'count': queryset.count()
+        })
+    
+    def create(self, request, *args, **kwargs):
+        """
+        POST /api/favorites/providers/
+        Body: {"provider_id": 123}
+        Ajouter un prestataire aux favoris
+        """
+        provider_id = request.data.get('provider_id')
+        logger.info("Le provider id est:" + str(provider_id))
+        if not provider_id:
+            return Response(
+                {'error': 'provider_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier que le prestataire existe
+        try:
+            provider = Provider.objects.get(id=provider_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Prestataire non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Empêcher un prestataire d'ajouter un autre prestataire
+        if request.user.role == 'provider':
+            return Response(
+                {'error': 'Les prestataires ne peuvent pas ajouter d\'autres prestataires en favoris'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Vérifier si déjà en favoris
+        favorite, created = FavoriteProvider.objects.get_or_create(
+            user=request.user,
+            provider=provider
+        )
+        
+        if created:
+            serializer = self.get_serializer(favorite)
+            return Response(
+                {
+                    'status': 'success',
+                    'message': 'Prestataire ajouté aux favoris',
+                    'data': serializer.data,
+                    'is_favorited': True
+                },
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            serializer = self.get_serializer(favorite)
+            return Response(
+                {
+                    'status': 'success',
+                    'message': 'Prestataire déjà en favoris',
+                    'data': serializer.data,
+                    'is_favorited': True
+                },
+                status=status.HTTP_200_OK
+            )
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        DELETE /api/favorites/providers/{providerId}/
+        Retirer un prestataire des favoris
+        """
+        provider_id = kwargs.get('pk')
+        
+        # Trouver le favori
+        favorite = FavoriteProvider.objects.filter(
+            user=request.user,
+            provider_id=provider_id
+        ).first()
+        
+        if not favorite:
+            return Response(
+                {'error': 'Ce prestataire n\'est pas dans vos favoris'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        favorite.delete()
+        
+        return Response(
+            {
+                'status': 'success',
+                'message': 'Prestataire retiré des favoris',
+                'is_favorited': False
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        """
+        GET /api/favorites/providers/check/?provider_id=123
+        Vérifier si un prestataire est en favoris
+        """
+        provider_id = request.query_params.get('provider_id')
+        
+        if not provider_id:
+            return Response(
+                {'error': 'provider_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        is_favorited = FavoriteProvider.objects.filter(
+            user=request.user,
+            provider_id=provider_id
+        ).exists()
+        
+        return Response({
+            'is_favorited': is_favorited,
+            'provider_id': int(provider_id)
+        })
+
+
+
+class ProviderReviewsViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet pour récupérer tous les avis d'un prestataire
+    
+    Endpoints:
+    - GET /api/providers/{provider_id}/reviews/ : Tous les avis du prestataire
+    """
+    permission_classes = [AllowAny]  # Public pour que tout le monde puisse voir les avis
+    http_method_names = ['get']
+    
+    def list(self, request, provider_id=None):
+        """
+        GET /api/providers/{provider_id}/reviews/
+        Retourne tous les avis de tous les services du prestataire
+        """
+        if not provider_id:
+            return Response(
+                {'error': 'provider_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Récupérer tous les services du prestataire
+        provider_services = ProviderService.objects.filter(provider_id=provider_id)
+        
+        # Récupérer tous les avis de ces services
+        reviews = Review.objects.filter(
+            service__in=provider_services
+        ).select_related(
+            'user',
+            'service'
+        ).order_by('-created_at')
+        
+        # Serializer les avis
+        from .serializers import ReviewSerializer  # Ajustez l'import
+        serializer = ReviewSerializer(reviews, many=True)
+        
+        # Calculer les statistiques
+        stats = reviews.aggregate(
+            average_rating=Avg('rating'),
+            total_reviews=Count('id')
+        )
+        
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+            'stats': {
+                'average_rating': round(stats['average_rating'] or 0, 1),
+                'total_reviews': stats['total_reviews']
+            },
+            'count': reviews.count()
+        })
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all().order_by('-updated_at')
     serializer_class = ConversationSerializer
@@ -5991,18 +6191,18 @@ def send_new_message_notification(conversation, message, sender):
         # Déterminer le destinataire
         recipient = conversation.client if sender != conversation.client else conversation.provider.user
         
-        FCMService.send_notification_to_user(
-            user=recipient,
-            title=f"💬 Nouveau message de {sender.first_name}",
-            body=message.content[:100] + ('...' if len(message.content) > 100 else ''),
-            notification_type='new_message',
-            data={
-                'conversation_id': str(conversation.id),
-                'sender_id': str(sender.id),
-                'message_id': str(message.id),
-            },
-            click_action='FLUTTER_NOTIFICATION_CLICK'
-        )
+        # FCMService.send_notification_to_user(
+        #     user=recipient,
+        #     title=f"💬 Nouveau message de {sender.first_name}",
+        #     body=message.content[:100] + ('...' if len(message.content) > 100 else ''),
+        #     notification_type='new_message',
+        #     data={
+        #         'conversation_id': str(conversation.id),
+        #         'sender_id': str(sender.id),
+        #         'message_id': str(message.id),
+        #     },
+        #     click_action='FLUTTER_NOTIFICATION_CLICK'
+        # )
         
     except Exception as e:
         logger.error(f"Erreur notification nouveau message: {e}")

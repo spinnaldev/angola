@@ -6,6 +6,7 @@ import '../../core/models/client_project.dart';
 import '../../core/models/category.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/favorites_provider.dart'; // ✅ AJOUT
 import '../../core/services/api_service.dart';
 import '../widgets/project_card.dart';
 import '../widgets/shared_header.dart';
@@ -57,6 +58,14 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   Future<void> _loadData() async {
+    // ✅ IMPORTANT : Charger les favoris EN PREMIER pour avoir l'état à jour
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAuthenticated) {
+      await Provider.of<FavoritesProvider>(context, listen: false).loadFavoriteProjects();
+      print('✅ Favoris chargés avant les projets');
+    }
+    
+    // Ensuite charger le reste en parallèle
     await Future.wait([
       _loadProviderStats(),
       _loadProjects(),
@@ -170,6 +179,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
+      final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+      
       final result = await apiService.getProjects({
         if (widget.categoryId != null) 'category': widget.categoryId,
         'page': _currentPage,
@@ -178,20 +189,19 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
       print('📋 Projets reçus de l\'API: ${result['projects']?.length ?? 0}');
 
-      // ✅ CORRECTION : Ce sont déjà des objets ClientProject
-      if (result['projects'] != null && result['projects'].isNotEmpty) {
-        for (var i = 0; i < (result['projects'].length > 3 ? 3 : result['projects'].length); i++) {
-          final project = result['projects'][i] as ClientProject; // ✅ Cast en ClientProject
-          print('  Projet $i:');
-          print('    - id: ${project.id}');
-          print('    - title: ${project.title}');
-          print('    - isFavorited: ${project.isFavorited}'); // ✅ Accès direct
-        }
+      // ✅ Synchroniser l'état des favoris avec le FavoritesProvider
+      List<ClientProject> projects = result['projects'] ?? [];
+      if (projects.isNotEmpty) {
+        projects = projects.map((project) {
+          final isFavorite = favoritesProvider.isProjectFavorite(project.id);
+          print('  Projet ${project.id} (${project.title}): isFavorited=$isFavorite');
+          return project.copyWith(isFavorited: isFavorite);
+        }).toList();
       }
 
       if (mounted) {
         setState(() {
-          _projects = result['projects'] ?? _getMockProjects();
+          _projects = projects.isEmpty ? _getMockProjects() : projects;
           _hasMore = result['hasMore'] ?? false;
           _isLoading = false;
         });
@@ -239,15 +249,26 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     try {
       _currentPage++;
       final apiService = Provider.of<ApiService>(context, listen: false);
+      final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+      
       final result = await apiService.getProjects({
         if (widget.categoryId != null) 'category': widget.categoryId,
         'page': _currentPage,
         'page_size': 10,
       });
 
+      // ✅ Synchroniser l'état des favoris
+      List<ClientProject> newProjects = result['projects'] ?? [];
+      if (newProjects.isNotEmpty) {
+        newProjects = newProjects.map((project) {
+          final isFavorite = favoritesProvider.isProjectFavorite(project.id);
+          return project.copyWith(isFavorited: isFavorite);
+        }).toList();
+      }
+
       if (mounted) {
         setState(() {
-          _projects.addAll(result['projects'] ?? []);
+          _projects.addAll(newProjects);
           _hasMore = result['hasMore'] ?? false;
           _isLoadingMore = false;
         });
@@ -262,13 +283,13 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     }
   }
 
-  Future<void> _refreshProjects() async {
-    setState(() {
-      _currentPage = 1;
-      _projects.clear();
-    });
-    await _loadProjects();
-  }
+  // Future<void> _refreshProjects() async {
+  //   setState(() {
+  //     _currentPage = 1;
+  //     _projects.clear();
+  //   });
+  //   await _loadProjects();
+  // }
 
   void _performSearch(String query) {
     final searchQuery = query.trim();
@@ -683,19 +704,29 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      await apiService.toggleProjectFavorite(project.id);
+      // ✅ Utiliser FavoritesProvider pour gérer l'état des favoris
+      final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+      final result = await favoritesProvider.toggleProjectFavorite(project.id);
+
+      // ✅ Mettre à jour l'état local immédiatement
+      setState(() {
+        final index = _projects.indexWhere((p) => p.id == project.id);
+        if (index != -1) {
+          _projects[index] = _projects[index].copyWith(
+            isFavorited: result,
+          );
+        }
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(project.isFavorited ?? false
-                ? l10n.projectRemovedFromFavorites
-                : l10n.projectAddedToFavorites),
+            content: Text(result
+                ? l10n.projectAddedToFavorites
+                : l10n.projectRemovedFromFavorites),
+            duration: const Duration(seconds: 2),
           ),
         );
-
-        _refreshProjects();
       }
     } catch (e) {
       if (mounted) {
@@ -704,6 +735,16 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         );
       }
     }
+  }
+
+  // ✅ Méthode pour rafraîchir la liste des projets
+  Future<void> _refreshProjects() async {
+    setState(() {
+      _currentPage = 1;
+      _projects = [];
+      _hasMore = true;
+    });
+    await _loadProjects();
   }
 
   // Données mock pour les tests

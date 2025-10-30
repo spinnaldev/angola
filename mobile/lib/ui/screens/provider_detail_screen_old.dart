@@ -5,15 +5,11 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/favorites_provider.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/models/service.dart';
-import '../../core/models/review.dart';
 import '../../core/services/api_service.dart';
 import '../../providers/provider_detail_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/review_provider.dart';
 import '../widgets/review_form.dart';
 import '../widgets/quote_request_form.dart';
-import '../widgets/review_card.dart';
-import '../widgets/rating_stars.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
   final int providerId;
@@ -34,8 +30,6 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
   bool _isReviewFormOpen = false;
   bool _isLoading = true;
   List<Service> _providerServices = [];
-  List<Review> _providerReviews = [];
-  bool _isLoadingReviews = true;
   
   @override
   void initState() {
@@ -64,14 +58,10 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
       
       print('✅ Prestataire chargé: ${providerDetailProvider.currentProvider?.name}');
 
-      // ✅ CHARGEMENT DES SERVICES
       final apiService = Provider.of<ApiService>(context, listen: false);
       final services = await apiService.getProviderServices(providerId);
       
       print('✅ Services chargés: ${services.length}');
-
-      // ✅ NOUVEAU : CHARGEMENT DES AVIS DU PRESTATAIRE
-      await _loadProviderReviews(providerId);
 
       if (mounted) {
         setState(() {
@@ -84,39 +74,6 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
       if (mounted) {
         setState(() {
           _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // ✅ NOUVELLE MÉTHODE : Charger tous les avis du prestataire
-  Future<void> _loadProviderReviews(int providerId) async {
-    setState(() {
-      _isLoadingReviews = true;
-    });
-
-    try {
-      print('⭐ Chargement des avis du prestataire $providerId...');
-      
-      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
-      await reviewProvider.fetchProviderReviews(providerId);
-      
-      final reviews = reviewProvider.reviews;
-      
-      print('✅ ${reviews.length} avis chargés avec succès');
-      
-      if (mounted) {
-        setState(() {
-          _providerReviews = reviews;
-          _isLoadingReviews = false;
-        });
-      }
-    } catch (e) {
-      print('❌ Erreur lors du chargement des avis: $e');
-      if (mounted) {
-        setState(() {
-          _providerReviews = [];
-          _isLoadingReviews = false;
         });
       }
     }
@@ -215,8 +172,6 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
     setState(() {
       _isReviewFormOpen = false;
     });
-    // ✅ AJOUTÉ : Recharger les avis après avoir fermé le formulaire
-    _loadProviderReviews(widget.providerId);
   }
 
   void _onReviewFormPressed() {
@@ -301,9 +256,33 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
           }
 
           final provider = providerDetailProvider.currentProvider;
+
           if (provider == null) {
-            return const Center(child: Text('Prestataire non trouvé'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.noDataAvailable,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            );
           }
+
+          // DEBUG: Afficher les infos dans la console
+          print('👤 Provider: ${provider.name}');
+          print('⭐ Rating: ${provider.rating}');
+          print('💬 Reviews: ${provider.reviewCount}');
+          print('📦 Services: ${_providerServices.length}');
 
           return Stack(
             children: [
@@ -656,24 +635,16 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
               ),
             )
           else
-            // ✅ DESIGN AMÉLIORÉ - Cards plus grandes avec description
             ..._providerServices.map((service) => Container(
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey[200]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: InkWell(
                     onTap: () {
-                      print('🔍 Navigation vers service ${service.id}');
                       Navigator.pushNamed(
                         context,
                         '/service-detail',
@@ -683,67 +654,30 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
                         },
                       );
                     },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Partie gauche: Titre + Description
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Titre du service
-                                Text(
-                                  service.title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                // Description du service
-                                if (service.description.isNotEmpty)
-                                  Text(
-                                    service.description,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      height: 1.4,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            service.title,
+                            style: const TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(width: 16),
-                          // Partie droite: Prix
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                service.priceType == 'quote'
-                                    ? 'Sur devis'
-                                    : '${service.price.toStringAsFixed(0)} AOA',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF142FE2),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                                color: Colors.grey[400],
-                              ),
-                            ],
+                        ),
+                        Text(
+                          service.priceType == 'quote'
+                              ? 'Sur devis'
+                              : '${service.price.toStringAsFixed(0)} AOA',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: Color(0xFF142FE2),
+                        ),
+                      ],
                     ),
                   ),
                 )),
@@ -752,7 +686,6 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
     );
   }
 
-  // ✅ CORRIGÉ : Affichage des avis chargés depuis l'API
   Widget _buildEvaluationsTab(ProviderModel provider, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -776,231 +709,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          
-          // ✅ AFFICHAGE DES AVIS
-          if (_isLoadingReviews)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (_providerReviews.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(Icons.rate_review_outlined, 
-                      size: 64, 
-                      color: Colors.grey[400]
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.noReviewsYet,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.beFirstToReview,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            // ✅ LISTE DES AVIS
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _providerReviews.length,
-              itemBuilder: (context, index) {
-                final review = _providerReviews[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Nom du client et date
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: const Color(0xFF142FE2),
-                              child: Text(
-                                review.clientName.isNotEmpty 
-                                  ? review.clientName[0].toUpperCase()
-                                  : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    review.clientName,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    _formatDate(review.createdAt),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // Note avec étoiles
-                        RatingStars(
-                          rating: review.rating,
-                          size: 18,
-                        ),
-                        
-                        const SizedBox(height: 12),
-                        
-                        // Titre de l'avis (si disponible)
-                        if (review.reviewTitle != null && review.reviewTitle!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              review.reviewTitle!,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        
-                        // Commentaire
-                        Text(
-                          review.comment,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[800],
-                            height: 1.5,
-                          ),
-                        ),
-                        
-                        // Images de l'avis (si disponibles)
-                        if (review.imageUrls.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: SizedBox(
-                              height: 80,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: review.imageUrls.length,
-                                itemBuilder: (context, imgIndex) {
-                                  return Container(
-                                    width: 80,
-                                    height: 80,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          review.imageUrls[imgIndex]
-                                        ),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Avis à venir depuis l\'API',
+              style: TextStyle(color: Colors.grey[600]),
             ),
+          ),
         ],
       ),
     );
   }
 
-  // ✅ Méthode utilitaire pour formater la date avec traductions
-  String _formatDate(DateTime date) {
-    final l10n = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final difference = now.difference(date);
-    
-    if (difference.inDays == 0) {
-      return l10n.today;
-    } else if (difference.inDays == 1) {
-      return l10n.yesterday;
-    } else if (difference.inDays < 7) {
-      return l10n.daysAgo(difference.inDays.toString() as int);
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      if (weeks == 1) {
-        return l10n.weeksAgo(weeks.toString());
-      } else {
-        return l10n.weeksAgoPlural(weeks.toString());
-      }
-    } else if (difference.inDays < 365) {
-      final months = (difference.inDays / 30).floor();
-      if (months == 1) {
-        return l10n.monthsAgo(months.toString() as int);
-      } else {
-        return l10n.monthsAgoPlural(months.toString() as int);
-      }
-    } else {
-      final years = (difference.inDays / 365).floor();
-      if (years == 1) {
-        return l10n.yearsAgo(years.toString());
-      } else {
-        return l10n.yearsAgoPlural(years.toString());
-      }
-    }
-  }
-
-  // ✅ GALERIE : Toutes les images de tous les services
   Widget _buildGalleryTab(ProviderModel provider, AppLocalizations l10n) {
-    // ✅ Récupérer TOUTES les images de TOUS les services
     List<String> allImages = [];
     for (var service in _providerServices) {
-      if (service.galleryImages != null && service.galleryImages.isNotEmpty) {
+      if (service.galleryImages != null) {
         allImages.addAll(
           service.galleryImages.map<String>((img) => img.imageUrl as String),
         );
       }
-      
-      // ✅ AJOUT : Ajouter aussi l'image principale du service si elle existe
-      if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
-        allImages.add(service.imageUrl!);
-      }
     }
-
-    print('📸 Total images dans la galerie: ${allImages.length}');
 
     if (allImages.isEmpty) {
       return Center(
@@ -1030,76 +759,20 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
       ),
       itemCount: allImages.length,
       itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            // ✅ BONUS : Ouvrir l'image en plein écran
-            _showImageFullScreen(context, allImages, index);
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              allImages[index],
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: Colors.grey[300],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.broken_image, color: Colors.grey),
-                );
-              },
-            ),
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            allImages[index],
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              );
+            },
           ),
         );
       },
-    );
-  }
-
-  // ✅ BONUS : Voir l'image en plein écran
-  void _showImageFullScreen(BuildContext context, List<String> images, int initialIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            PageView.builder(
-              itemCount: images.length,
-              controller: PageController(initialPage: initialIndex),
-              itemBuilder: (context, index) {
-                return InteractiveViewer(
-                  child: Center(
-                    child: Image.network(
-                      images[index],
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                );
-              },
-            ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -14,16 +14,18 @@ class Category {
 
   Category({
     required this.id,
-    required this.name,      // PORTUGAIS par défaut
+    required this.name,     
     required this.nameEn,
     required this.nameFr,
     required this.imageUrl,
-    required this.description, // PORTUGAIS par défaut
+    required this.description, 
     required this.descriptionEn,
     required this.descriptionFr,
     this.icon,
     this.serviceCount = 0,
   });
+
+
 
   // Méthode pour obtenir le nom selon la langue
   String getLocalizedName(String locale) {
