@@ -716,6 +716,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           _isSubmittingOffer = false;
         });
         _clearOfferForm();
+        await _loadProject(); 
+        
         await Future.delayed(const Duration(milliseconds: 300));
         _showSuccessSnackBar(l10n.offerSentSuccessfully);
       }

@@ -1,6 +1,7 @@
 class ProviderModel {
   final int id;
   final String name;
+  final String? companyName; 
   final String businessType;
   final String profileImageUrl;
   final String coverImageUrl; 
@@ -19,6 +20,7 @@ class ProviderModel {
   ProviderModel({
     required this.id,
     required this.name,
+    this.companyName,
     required this.businessType,
     required this.profileImageUrl,
     this.coverImageUrl = '',
@@ -112,6 +114,7 @@ class ProviderModel {
       id: parseIntSafely(json['id']),
       // ✅ Parsing sécurisé pour tous les champs String requis
       name: parseStringSafely(json['name'] ?? json['username'] ?? json['company_name'], 'Prestataire sans nom'),
+      companyName: json['company_name'] != null ? parseStringSafely(json['company_name'], '') : null,
       businessType: parseStringSafely(json['business_type'], 'Entreprise'),
       profileImageUrl: parseStringSafely(json['profile_image_url'] ?? json['avatar'] ?? json['profile_picture'], ''),
       description: parseStringSafely(json['description'] ?? json['bio'], ''),
@@ -134,6 +137,7 @@ class ProviderModel {
     return {
       'id': id,
       'name': name,
+      'company_name': companyName,
       'business_type': businessType,
       'profile_image_url': profileImageUrl,
       'rating': rating,

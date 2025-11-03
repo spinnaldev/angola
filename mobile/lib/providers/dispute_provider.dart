@@ -116,10 +116,10 @@ class DisputeProvider with ChangeNotifier {
         file,
       );
       
-      // Mettre à jour le litige actuel si c'est celui auquel on ajoute la preuve
-      if (_currentDispute != null && _currentDispute!.id == disputeId) {
-        _currentDispute!.evidence.add(evidence);
-      }
+      // // Mettre à jour le litige actuel si c'est celui auquel on ajoute la preuve
+      // if (_currentDispute != null && _currentDispute!.id == disputeId) {
+      //   _currentDispute!.evidence.add(evidence);
+      // }
       
       // Mettre à jour le litige dans la liste complète
       final index = _disputes.indexWhere((d) => d.id == disputeId);
@@ -148,9 +148,9 @@ class DisputeProvider with ChangeNotifier {
       final commentEvidence = await _disputeService.addComment(disputeId, commentText);
       
       // Mettre à jour le litige actuel si c'est celui auquel on ajoute le commentaire
-      if (_currentDispute != null && _currentDispute!.id == disputeId) {
-        _currentDispute!.evidence.add(commentEvidence);
-      }
+      // if (_currentDispute != null && _currentDispute!.id == disputeId) {
+      //   _currentDispute!.evidence.add(commentEvidence);
+      // }
       
       // Mettre à jour le litige dans la liste complète
       final index = _disputes.indexWhere((d) => d.id == disputeId);

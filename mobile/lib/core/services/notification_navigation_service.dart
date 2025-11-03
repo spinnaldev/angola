@@ -13,6 +13,8 @@ import '../../core/models/conversation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/profile_manager.dart';
+import '../../ui/screens/disputes/dispute_detail_screen.dart';
+import '../../ui/screens/disputes/disputes_screen.dart'; 
 
 class NotificationNavigationService {
   /// Service principal pour gérer la navigation selon le type de notification
@@ -383,24 +385,33 @@ class NotificationNavigationService {
   }
 
   /// Navigation vers un litige
-  static Future<void> _navigateToDispute(BuildContext context, int? disputeId,
-      Map<String, dynamic>? extraData) async {
-    try {
-      print('🔄 Navigation vers litige (dispute_id: $disputeId)');
+ static Future<void> _navigateToDispute(BuildContext context, int? disputeId,
+    Map<String, dynamic>? extraData) async {
+  try {
+    print('🔄 Navigation vers litige (dispute_id: $disputeId)');
 
-      // Pour l'instant, rediriger vers les quote requests qui semblent gérer les litiges
-      // Vous pourriez créer un DisputeDetailScreen spécifique
+    if (disputeId != null) {
+      // Navigation vers le détail du litige
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const QuoteRequestsScreen(),
+          builder: (context) => DisputeDetailScreen(disputeId: disputeId),
         ),
       );
-    } catch (e) {
-      print('❌ Erreur navigation litige: $e');
-      _showNavigationError(context);
+    } else {
+      // Fallback vers la liste des litiges
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const DisputesScreen(), // ou ton écran de liste
+        ),
+      );
     }
+  } catch (e) {
+    print('❌ Erreur navigation litige: $e');
+    _showNavigationError(context);
   }
+}
 
   /// Navigation vers le profil
   static Future<void> _navigateToProfile(BuildContext context) async {

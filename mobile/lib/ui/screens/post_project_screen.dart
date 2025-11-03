@@ -250,29 +250,29 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
     final l10n = AppLocalizations.of(context)!;
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     final languageCode = Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode;
-    
+
     return _buildSection(
       title: l10n.category,
       children: [
-        DropdownButtonFormField<Category>(
-          value: _selectedCategory,
+        DropdownButtonFormField<int>( // ✅ CHANGÉ : int au lieu de Category
+          value: _selectedCategory?.id, // ✅ CHANGÉ : utilise l'ID
           decoration: InputDecoration(
             labelText: l10n.chooseCategory,
             border: const OutlineInputBorder(),
           ),
           items: categoryProvider.categories.map((category) {
-            return DropdownMenuItem(
-              value: category,
+            return DropdownMenuItem<int>( // ✅ CHANGÉ : int
+              value: category.id, // ✅ CHANGÉ : value = ID
               child: Text(category.getLocalizedName(languageCode)),
             );
           }).toList(),
-          onChanged: (Category? value) {
-            setState(() {
-              _selectedCategory = value;
-              _selectedSubcategory = null;
-            });
+          onChanged: (int? value) { // ✅ CHANGÉ : int?
             if (value != null) {
-              _loadSubcategories(value.id);
+              setState(() {
+                _selectedCategory = categoryProvider.categories.firstWhere((c) => c.id == value);
+                _selectedSubcategory = null;
+              });
+              _loadSubcategories(value);
             }
           },
           validator: (value) {
@@ -284,7 +284,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         ),
       ],
     );
-  }
+    }
 
   // ✅ SECTION MODIFIÉE - Budget avec formatage des prix
   Widget _buildBudgetSection() {

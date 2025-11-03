@@ -273,8 +273,7 @@ class _QuoteRequestsScreenState extends State<QuoteRequestsScreen>
   }
 
   String _getClientName(QuoteRequest request) {
-    // TODO: Récupérer le vrai nom du client depuis l'API
-    return 'John Doe'; // Placeholder pour le moment
+    return request.clientDisplayName; // ✅ C'est tout !
   }
 
   String _getBudgetDisplay(QuoteRequest request, AppLocalizations l10n) {

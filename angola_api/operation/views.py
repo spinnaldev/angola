@@ -3094,33 +3094,51 @@ class DisputeViewSet(viewsets.ModelViewSet):
     
     #@require_verification("ouvrir un litige")
     def perform_create(self, serializer):
+        user = self.request.user
         service_id = self.request.data.get('service_id') or self.request.data.get('service')
         provider_id = self.request.data.get('provider_id') or self.request.data.get('provider')
         
-        provider = None
-        
-        # 1. Si service_id fourni, récupérer le provider automatiquement
-        if service_id:
+        # Détecter si c'est un prestataire ou un client qui crée le litige
+        if hasattr(user, 'provider_profile'):
+            # PRESTATAIRE crée une réclamation contre un CLIENT
+            provider = user.provider_profile  # Le provider c'est lui
+            
+            # provider_id contient en fait le client_id
+            if not provider_id:
+                raise ValidationError({"client": "Client ID is required"})
+            
             try:
-                from .models import ProviderService
-                service = ProviderService.objects.get(id=service_id)
-                provider = service.provider
-            except ProviderService.DoesNotExist:
-                raise ValidationError({"service": "Service not found"})
+                client = User.objects.get(id=provider_id)
+            except User.DoesNotExist:
+                raise ValidationError({"client": "Client not found"})
+            
+            serializer.save(client=client, provider=provider)
         
-        # 2. Si pas de service mais provider_id fourni
-        elif provider_id:
-            try:
-                provider = Provider.objects.get(id=provider_id)
-            except Provider.DoesNotExist:
-                raise ValidationError({"provider": "Provider not found"})
-        
-        # 3. Si aucun des deux n'est fourni
         else:
-            raise ValidationError({"error": "Either service_id or provider_id is required"})
-        
-        # Sauvegarder avec client et provider automatiquement définis
-        serializer.save(client=self.request.user, provider=provider)
+            # CLIENT crée un litige contre un PRESTATAIRE
+            provider = None
+            
+            # 1. Si service_id fourni, récupérer le provider automatiquement
+            if service_id:
+                try:
+                    from .models import ProviderService
+                    service = ProviderService.objects.get(id=service_id)
+                    provider = service.provider
+                except ProviderService.DoesNotExist:
+                    raise ValidationError({"service": "Service not found"})
+            
+            # 2. Si pas de service mais provider_id fourni
+            elif provider_id:
+                try:
+                    provider = Provider.objects.get(id=provider_id)
+                except Provider.DoesNotExist:
+                    raise ValidationError({"provider": "Provider not found"})
+            
+            # 3. Si aucun des deux n'est fourni
+            else:
+                raise ValidationError({"error": "Either service_id or provider_id is required"})
+            
+            serializer.save(client=user, provider=provider)
         
     @method_decorator(csrf_exempt)
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])

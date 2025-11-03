@@ -9,6 +9,7 @@ import '../../../core/models/dispute.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/dispute_comment_form.dart';
 import 'add_evidence_screen.dart';
+import '../../../core/services/api_service.dart';
 
 class DisputeDetailScreen extends StatefulWidget {
   final int disputeId;
@@ -665,7 +666,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.network(evidence.fileUrl!),
+                          Image.network(_getFullUrl(evidence.fileUrl!)),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
                             child: Text(l10n.closeImage ?? 'Fermer'),
@@ -765,6 +766,14 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
         ],
       ),
     );
+  }
+  String _getFullUrl(String path) {
+    if (path.startsWith('http')) return path;
+    
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final baseUrl = apiService.baseUrl.replaceAll('/api', ''); // Enlève /api
+    
+    return '$baseUrl$path';
   }
 
   Widget _buildStatusChip(String status, AppLocalizations l10n) {

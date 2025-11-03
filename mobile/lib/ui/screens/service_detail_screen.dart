@@ -274,14 +274,20 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
 
   String _getCompanyName(provider, AppLocalizations l10n) {
-    // ✅ Afficher le nom de la compagnie/prestataire s'il existe et n'est pas le fallback par défaut
+    // ✅ Priorité 1: Afficher companyName s'il existe
+    if (provider.companyName != null && 
+        provider.companyName!.trim().isNotEmpty) {
+      return provider.companyName!;
+    }
+    
+    // ✅ Priorité 2: Afficher name si ce n'est pas le fallback par défaut
     if (provider.name != null && 
         provider.name!.trim().isNotEmpty && 
         provider.name != 'Prestataire sans nom') {
       return provider.name!;
     }
     
-    // ✅ Sinon, ne rien afficher (au lieu de "Entreprise")
+    // ✅ Sinon, ne rien afficher
     return '';
   }
 
@@ -693,7 +699,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         elevation: 0,
         centerTitle: true,
         title: Text(
-          l10n.providerProfile,
+          l10n.serviceDetails,
           style: const TextStyle(
             color: Colors.black,
             fontSize: 18,

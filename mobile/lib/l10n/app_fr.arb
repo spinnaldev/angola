@@ -1950,6 +1950,11 @@
   "providerRemovedFromFavorites": "Prestataire retiré des favoris",
   "@providerRemovedFromFavorites": {
     "description": "Message de confirmation après retrait d'un prestataire des favoris"
-  }
+  },
+"selectAccountTypeDescription": "Sélectionnez le type de compte qui correspond à votre activité.",
+"sendDocumentsDescription": "Envoyez-nous vos documents pour vérifier votre identité.",
+"notProvided": "Non renseigné",
+"submissionError": "Erreur lors de la soumission",
+"serviceDetails": "Détails du service"
   
 }

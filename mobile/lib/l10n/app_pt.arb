@@ -2001,7 +2001,13 @@
   "providerRemovedFromFavorites": "Prestador removido dos favoritos",
   "@providerRemovedFromFavorites": {
     "description": "Message de confirmation après retrait d'un prestataire des favoris"
-  }
+  },
+
+  "selectAccountTypeDescription": "Selecione o tipo de conta que corresponde à sua atividade.",
+  "sendDocumentsDescription": "Envie-nos seus documentos para verificar sua identidade.",
+  "notProvided": "Não fornecido",
+  "submissionError": "Erro ao enviar",
+  "serviceDetails": "Detalhes do serviço"
 
 
 }

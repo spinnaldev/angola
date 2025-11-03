@@ -1930,7 +1930,12 @@
   "providerRemovedFromFavorites": "Provider removed from favorites",
   "@providerRemovedFromFavorites": {
     "description": "Confirmation message after removing a provider from favorites"
-  }
+  },
+  "selectAccountTypeDescription": "Select the account type that matches your activity.",
+  "sendDocumentsDescription": "Send us your documents to verify your identity.",
+  "notProvided": "Not provided",
+  "submissionError": "Submission error",
+  "serviceDetails": "Service Details"
   
 
 }

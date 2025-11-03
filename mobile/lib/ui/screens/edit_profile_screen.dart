@@ -18,7 +18,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Contrôleurs
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -26,7 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _bioController = TextEditingController();
   final _locationController = TextEditingController();
   final _companyNameController = TextEditingController();
-  
+
   File? _selectedImage;
   bool _isLoading = false;
 
@@ -67,7 +67,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       maxWidth: 400,
       imageQuality: 70,
     );
-    
+
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -77,7 +77,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -130,12 +130,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final user = Provider.of<AuthProvider>(context).currentUser;
-    
+    print("Le role de l'utilisateur est");
+    print(user?.role); // Pour vérifier le rôle de l'utilisateur
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
@@ -181,11 +182,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         radius: 50,
                         backgroundImage: _selectedImage != null
                             ? FileImage(_selectedImage!)
-                            : (user?.profilePicture != null && user!.profilePicture!.isNotEmpty
+                            : (user?.profilePicture != null &&
+                                    user!.profilePicture!.isNotEmpty
                                 ? NetworkImage(user.profilePicture!)
                                 : null) as ImageProvider?,
-                        child: _selectedImage == null && 
-                               (user?.profilePicture == null || user!.profilePicture!.isEmpty)
+                        child: _selectedImage == null &&
+                                (user?.profilePicture == null ||
+                                    user!.profilePicture!.isEmpty)
                             ? Text(
                                 user?.firstName[0].toUpperCase() ?? 'U',
                                 style: const TextStyle(
@@ -200,7 +203,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 16),
                     TextButton.icon(
                       onPressed: _pickImage,
-                      icon: const Icon(Icons.camera_alt, color: Color(0xFF142FE2)),
+                      icon: const Icon(Icons.camera_alt,
+                          color: Color(0xFF142FE2)),
                       label: Text(
                         l10n.changePhoto,
                         style: const TextStyle(
@@ -212,9 +216,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Prénom
               AppTextField(
                 label: l10n.firstName,
@@ -228,7 +232,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Nom
               AppTextField(
                 label: l10n.lastName,
@@ -242,17 +246,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // ✅ NOM DE L'ENTREPRISE - AJOUTÉ ICI
               if (user?.role == 'provider') ...[
                 AppTextField(
-                  label: "Nom de l'entreprise",
+                  label: l10n.companyName,
                   controller: _companyNameController,
                   keyboardType: TextInputType.text,
                 ),
                 const SizedBox(height: 16),
               ],
-              
+
               // Téléphone
               AppTextField(
                 label: l10n.phone,
@@ -260,7 +264,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-              
+
               // Adresse
               AppTextField(
                 label: l10n.address,
@@ -268,7 +272,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 16),
-              
+
               // Bio
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,16 +306,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Bouton sauvegarder
               AppButton(
                 text: l10n.saveButton,
                 onPressed: _saveProfile,
                 isLoading: _isLoading,
               ),
-              
+
               SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
             ],
           ),

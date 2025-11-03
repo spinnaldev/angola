@@ -278,6 +278,11 @@ class _CreateDisputeScreenState extends State<CreateDisputeScreen> {
         print('  - QuoteRequest: clientId=${quoteRequest.clientId}, subject=${quoteRequest.subject}');
         if (quoteRequest.clientId > 0) {
           clientIds.add(quoteRequest.clientId);
+          
+          // ✅ AJOUTE CES 3 LIGNES :
+          if (quoteRequest.clientName != null && quoteRequest.clientName!.isNotEmpty) {
+            clientNames[quoteRequest.clientId] = quoteRequest.clientName!;
+          }
         }
       }
       print('✅ ${clientIds.length} clients depuis devis');

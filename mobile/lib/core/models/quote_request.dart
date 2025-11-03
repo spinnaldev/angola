@@ -38,10 +38,13 @@ class QuoteRequest {
       id: json['id'],
       clientId: _parseIntSafely(
         json['client_id'] ?? 
+        (clientData is int ? clientData : null) ?? // ← AJOUTE CETTE LIGNE
         (clientData is Map ? clientData['id'] : null)
       ),
+      
       providerId: _parseIntSafely(
         json['provider_id'] ?? 
+        (providerData is int ? providerData : null) ?? // ← PAREIL ICI
         (providerData is Map ? providerData['id'] : null)
       ),
       subject: json['subject'] ?? '',

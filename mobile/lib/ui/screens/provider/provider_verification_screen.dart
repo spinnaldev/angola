@@ -465,7 +465,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Sélectionnez le type de compte qui correspond à votre activité.',
+            l10n.selectAccountTypeDescription,
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,
@@ -658,8 +658,8 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Envoyez-nous vos documents pour vérifier votre identité.',
+          Text(
+            l10n.sendDocumentsDescription,
             style: TextStyle(
               fontSize: 14,
               color: Colors.black87,
@@ -905,7 +905,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
                   
                   if (_isBusiness) ...[
                     const Divider(),
-                    _buildInfoRow(l10n.businessName, _businessNameController.text.isNotEmpty ? _businessNameController.text : 'Non renseigné'),
+                    _buildInfoRow(l10n.businessName, _businessNameController.text.isNotEmpty ? _businessNameController.text : l10n.notProvided),
                     if (_businessNifController.text.isNotEmpty) ...[
                       const Divider(),
                       _buildInfoRow('NIF', _businessNifController.text),
@@ -1212,7 +1212,7 @@ class _ProviderVerificationScreenState extends State<ProviderVerificationScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.errorMessage ?? 'Erreur lors de la soumission'),
+          content: Text(provider.errorMessage ?? l10n.submissionError),
           backgroundColor: Colors.red,
         ),
       );
