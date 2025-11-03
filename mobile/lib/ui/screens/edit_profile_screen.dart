@@ -44,6 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _phoneController.text = user.phoneNumber ?? '';
       _bioController.text = user.bio ?? '';
       _locationController.text = user.location ?? '';
+      _companyNameController.text = user.companyName ?? ''; // ✅ AJOUTÉ
     }
   }
 
@@ -99,6 +100,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         phoneNumber: _phoneController.text.trim(),
         bio: _bioController.text.trim(),
         location: _locationController.text.trim(),
+        companyName: _companyNameController.text.trim(), // ✅ AJOUTÉ
         profileImage: _selectedImage,
       );
 
@@ -136,7 +138,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     
     return Scaffold(
       backgroundColor: Colors.white,
-      // ✅ SOLUTION 1: Permet au contenu de remonter quand le clavier apparaît
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -155,12 +156,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
       ),
-      // ✅ SOLUTION 2: Structure simplifiée et fonctionnelle
       body: SingleChildScrollView(
-        // Ferme le clavier quand on scroll
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const AlwaysScrollableScrollPhysics(),
-        // ✅ SOLUTION 3: Padding simple et fixe (pas de MediaQuery.viewInsets)
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Form(
           key: _formKey,
@@ -245,6 +243,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 16),
               
+              // ✅ NOM DE L'ENTREPRISE - AJOUTÉ ICI
+              if (user?.role == 'provider') ...[
+                AppTextField(
+                  label: "Nom de l'entreprise",
+                  controller: _companyNameController,
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 16),
+              ],
+              
               // Téléphone
               AppTextField(
                 label: l10n.phone,
@@ -304,8 +312,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 isLoading: _isLoading,
               ),
               
-              // ✅ SOLUTION 4: Espace GÉNÉREUX en bas pour garantir l'accessibilité
-              // Permet de toujours avoir le bouton accessible même avec la navigation system
               SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
             ],
           ),

@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import ajouté
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/service.dart';
-import '../../core/models/client_project.dart'; // Import ajouté pour ClientProject
-import '../widgets/service_card.dart';
+import '../../core/models/client_project.dart';
+import '../widgets/service_card.dart'; // ✅ IMPORTÉ
 import 'base_screen.dart';
 import 'service_detail_screen.dart';
 import 'project_detail_screen.dart';
@@ -65,11 +65,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         _isLoading = false;
       });
 
-      // Log final
+      // Log final avec détails des ratings
       if (_results.isEmpty) {
         print('⚠️ Aucun résultat trouvé pour "${widget.query}"');
       } else {
         print('✅ ${_results.length} résultat(s) trouvé(s)');
+        if (widget.type == 'services' && _results.isNotEmpty) {
+          print('🔍 Exemple de données reçues:');
+          final firstResult = _results[0];
+          print('   avg_rating: ${firstResult['avg_rating']}');
+          print('   review_count: ${firstResult['review_count']}');
+        }
       }
     } catch (e) {
       print('❌ Erreur complète dans _performSearch: $e');
@@ -78,6 +84,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // ✅ SIMPLIFIÉE : Utiliser directement fromJson() du modèle Service
+  // Le modèle Service a déjà toutes les protections nécessaires
+  Service _mapToService(Map<String, dynamic> data) {
+    // La méthode fromJson() du modèle Service gère déjà :
+    // - Le parsing de avg_rating et review_count
+    // - La protection contre les valeurs null
+    // - Les conversions de types
+    // - Les valeurs par défaut
+    return Service.fromJson(data);
   }
 
   // Helper method to convert Map to ClientProject
@@ -241,15 +258,33 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     );
   }
 
+  // ✅ MODIFIÉ : Utiliser ServiceCard au lieu de carte custom
   Widget _buildServicesList() {
     return ListView.builder(
       itemCount: _results.length,
       itemBuilder: (context, index) {
         final serviceData = _results[index];
-        // Convertir en objet Service si nécessaire
+        
+        // ✅ Convertir les données en objet Service
+        final service = _mapToService(serviceData);
+        
+        // ✅ Utiliser le widget ServiceCard existant
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildServiceCard(serviceData),
+          child: ServiceCard(
+            service: service,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ServiceDetailScreen(
+                    serviceId: service.id,
+                    providerId: service.provider_id,
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -265,106 +300,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           child: _buildProjectCard(projectData),
         );
       },
-    );
-  }
-
-  Widget _buildServiceCard(Map<String, dynamic> serviceData) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ServiceDetailScreen(
-                serviceId: serviceData['id'],
-                providerId: serviceData['provider_id'] ??
-                    serviceData['provider']?['id'],
-              ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Image du service
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  serviceData['image_url'] ?? serviceData['imageUrl'] ?? '',
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image, color: Colors.grey),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Détails du service
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      serviceData['title'] ?? l10n.serviceWithoutName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      serviceData['description'] ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${serviceData['rating'] ?? 0.0}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          serviceData['price_type'] == 'quote'
-                              ? l10n.onQuotePrice
-                              : '${serviceData['price'] ?? 0} AOA',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF142FE2),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

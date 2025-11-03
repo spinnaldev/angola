@@ -1895,6 +1895,61 @@
   "yearsAgo": "Il y a {count} an",
   "yearsAgoPlural": "Il y a {count} ans",
   "noReviewsYet": "Aucun avis pour le moment",
-  "beFirstToReview": "Soyez le premier à laisser un avis !"
+  "beFirstToReview": "Soyez le premier à laisser un avis !",
+  "retry": "Réessayer",
+  "@retry": {
+    "description": "Bouton pour réessayer une action"
+  },
+
+  "noFavoriteProviders": "Aucun prestataire favori",
+  "@noFavoriteProviders": {
+    "description": "Message quand il n'y a pas de prestataires favoris"
+  },
+
+  "exploreProvidersToAddFavorites": "Explorez les prestataires et ajoutez vos préférés pour les retrouver facilement",
+  "@exploreProvidersToAddFavorites": {
+    "description": "Message pour encourager à ajouter des prestataires favoris"
+  },
+
+  "browseProjectsToAddFavorites": "Parcourez les projets disponibles et marquez ceux qui vous intéressent comme favoris",
+  "@browseProjectsToAddFavorites": {
+    "description": "Message pour encourager à ajouter des projets favoris"
+  },
+
+  "reviews": "avis",
+  "@reviews": {
+    "description": "Mot reviews/avis au pluriel"
+  },
+
+  "removeFromFavorites": "Retirer des favoris",
+  "@removeFromFavorites": {
+    "description": "Action de retirer des favoris"
+  },
+
+  "confirmRemoveProviderFromFavorites": "Voulez-vous retirer \"{name}\" de vos prestataires favoris ?",
+  "@confirmRemoveProviderFromFavorites": {
+    "description": "Message de confirmation pour retirer un prestataire des favoris",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Jean Dupont"
+      }
+    }
+  },
+
+  "cancel": "Annuler",
+  "@cancel": {
+    "description": "Bouton annuler"
+  },
+
+  "remove": "Retirer",
+  "@remove": {
+    "description": "Bouton retirer/supprimer"
+  },
+
+  "providerRemovedFromFavorites": "Prestataire retiré des favoris",
+  "@providerRemovedFromFavorites": {
+    "description": "Message de confirmation après retrait d'un prestataire des favoris"
+  }
   
 }

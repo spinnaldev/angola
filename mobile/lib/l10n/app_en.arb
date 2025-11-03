@@ -1875,7 +1875,62 @@
   "yearsAgo": "{count} year ago",
   "yearsAgoPlural": "{count} years ago",
   "noReviewsYet": "No reviews yet",
-  "beFirstToReview": "Be the first to leave a review!"
+  "beFirstToReview": "Be the first to leave a review!",
+  "retry": "Retry",
+  "@retry": {
+    "description": "Button to retry an action"
+  },
+
+  "noFavoriteProviders": "No favorite providers",
+  "@noFavoriteProviders": {
+    "description": "Message when there are no favorite providers"
+  },
+
+  "exploreProvidersToAddFavorites": "Explore providers and add your favorites to find them easily",
+  "@exploreProvidersToAddFavorites": {
+    "description": "Message to encourage adding favorite providers"
+  },
+
+  "browseProjectsToAddFavorites": "Browse available projects and mark those that interest you as favorites",
+  "@browseProjectsToAddFavorites": {
+    "description": "Message to encourage adding favorite projects"
+  },
+
+  "reviews": "reviews",
+  "@reviews": {
+    "description": "Word reviews (plural)"
+  },
+
+  "removeFromFavorites": "Remove from favorites",
+  "@removeFromFavorites": {
+    "description": "Action to remove from favorites"
+  },
+
+  "confirmRemoveProviderFromFavorites": "Do you want to remove \"{name}\" from your favorite providers?",
+  "@confirmRemoveProviderFromFavorites": {
+    "description": "Confirmation message to remove a provider from favorites",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "John Doe"
+      }
+    }
+  },
+
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+
+  "remove": "Remove",
+  "@remove": {
+    "description": "Remove/Delete button"
+  },
+
+  "providerRemovedFromFavorites": "Provider removed from favorites",
+  "@providerRemovedFromFavorites": {
+    "description": "Confirmation message after removing a provider from favorites"
+  }
   
 
 }

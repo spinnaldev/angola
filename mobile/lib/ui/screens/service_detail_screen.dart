@@ -274,19 +274,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
 
 
   String _getCompanyName(provider, AppLocalizations l10n) {
-  // Utiliser businessType s'il existe
-  if (provider.businessType != null && provider.businessType.isNotEmpty) {
-    return provider.businessType;
+    // ✅ Afficher le nom de la compagnie/prestataire s'il existe et n'est pas le fallback par défaut
+    if (provider.name != null && 
+        provider.name!.trim().isNotEmpty && 
+        provider.name != 'Prestataire sans nom') {
+      return provider.name!;
+    }
+    
+    // ✅ Sinon, ne rien afficher (au lieu de "Entreprise")
+    return '';
   }
-  
-  // Sinon le nom du provider
-  if (provider.compa != null && provider.name.isNotEmpty) {
-    return provider.name;
-  }
-  
-  // Fallback
-  return l10n.company;
-}
 
 
   Widget _buildProviderStatsRow(provider, service, AppLocalizations l10n) {
@@ -828,14 +825,17 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          _getCompanyName(provider, l10n), // ✅ NOUVEAU : Nom de compagnie ou fallback
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[700],
+                        // ✅ Afficher le nom de compagnie seulement s'il existe
+                        if (_getCompanyName(provider, l10n).isNotEmpty) ...[
+                          Text(
+                            _getCompanyName(provider, l10n),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[700],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
+                        ],
                         _buildProviderStatsRow(provider, service, l10n),
                         // Row(
                         //   children: [

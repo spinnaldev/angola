@@ -38,10 +38,26 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
   }
 
+  // ✅ CORRIGÉ : Meilleur chargement initial des favoris
   void _loadFavorites() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.isAuthenticated) {
-      Provider.of<FavoritesProvider>(context, listen: false).loadAllFavorites();
+      final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+      
+      // ✅ IMPORTANT : Injecter l'AuthProvider si ce n'est pas déjà fait
+      favoritesProvider.setAuthProvider(authProvider);
+      
+      // ✅ Charger les favoris selon le rôle
+      final user = authProvider.currentUser;
+      if (user?.role == 'provider') {
+        // Prestataires : charger les projets
+        print('👷 Chargement des projets favoris pour prestataire');
+        favoritesProvider.loadFavoriteProjects();
+      } else {
+        // Clients : charger les prestataires
+        print('👤 Chargement des prestataires favoris pour client');
+        favoritesProvider.loadFavoriteProviders();
+      }
     }
   }
 
@@ -92,7 +108,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadFavorites,
-                    child: Text('Réessayer'),
+                    child: Text(l10n.retry), // ✅ TRADUIT
                   ),
                 ],
               ),
@@ -118,7 +134,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       return _buildEmptyState(
         icon: Icons.bookmark_border,
         title: l10n.noFavoriteProjects,
-        subtitle: 'Parcourez les projets disponibles et marquez ceux qui vous intéressent comme favoris',
+        subtitle: l10n.browseProjectsToAddFavorites, // ✅ TRADUIT
       );
     }
 
@@ -158,8 +174,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (provider.favoriteProviders.isEmpty) {
       return _buildEmptyState(
         icon: Icons.favorite_border,
-        title: 'Aucun prestataire favori',
-        subtitle: 'Explorez les prestataires et ajoutez vos préférés pour les retrouver facilement',
+        title: l10n.noFavoriteProviders, // ✅ TRADUIT
+        subtitle: l10n.exploreProvidersToAddFavorites, // ✅ TRADUIT
       );
     }
 
@@ -170,7 +186,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         itemCount: provider.favoriteProviders.length,
         itemBuilder: (context, index) {
           final favoriteProvider = provider.favoriteProviders[index];
-          return _buildProviderCard(context, favoriteProvider, provider);
+          return _buildProviderCard(context, favoriteProvider, provider, l10n); // ✅ AJOUT l10n
         },
       ),
     );
@@ -180,7 +196,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget _buildProviderCard(
     BuildContext context, 
     ProviderModel favoriteProvider,
-    FavoritesProvider provider
+    FavoritesProvider provider,
+    AppLocalizations l10n // ✅ AJOUTÉ
   ) {
     return Card(
       elevation: 2,
@@ -301,7 +318,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           if (favoriteProvider.reviewCount != null && 
                               favoriteProvider.reviewCount! > 0)
                             Text(
-                              '(${favoriteProvider.reviewCount} avis)',
+                              '(${favoriteProvider.reviewCount} ${l10n.reviews})', // ✅ TRADUIT
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -310,30 +327,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         ],
                         
                         const Spacer(),
-                        
-                        // Nombre de services si disponible
-                        // if (favoriteProvider.servicesCount != null && 
-                        //     favoriteProvider.servicesCount! > 0)
-                        //   Container(
-                        //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        //     decoration: BoxDecoration(
-                        //       color: Colors.grey[100],
-                        //       borderRadius: BorderRadius.circular(12),
-                        //     ),
-                        //     child: Row(
-                        //       children: [
-                        //         Icon(Icons.work_outline, size: 14, color: Colors.grey[700]),
-                        //         const SizedBox(width: 4),
-                        //         Text(
-                        //           '${favoriteProvider.servicesCount} services',
-                        //           style: TextStyle(
-                        //             fontSize: 12,
-                        //             color: Colors.grey[700],
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
                       ],
                     ),
                   ],
@@ -342,9 +335,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               
               // Bouton retirer des favoris
               IconButton(
-                onPressed: () => _showRemoveDialog(context, favoriteProvider, provider),
+                onPressed: () => _showRemoveDialog(context, favoriteProvider, provider, l10n),
                 icon: const Icon(Icons.favorite, color: Colors.red),
-                tooltip: 'Retirer des favoris',
+                tooltip: l10n.removeFromFavorites, // ✅ TRADUIT
               ),
             ],
           ),
@@ -357,24 +350,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Future<void> _showRemoveDialog(
     BuildContext context,
     ProviderModel favoriteProvider,
-    FavoritesProvider provider
+    FavoritesProvider provider,
+    AppLocalizations l10n // ✅ AJOUTÉ
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Retirer des favoris'),
-        content: Text('Voulez-vous retirer "${favoriteProvider.name}" de vos prestataires favoris ?'),
+        title: Text(l10n.removeFromFavorites), // ✅ TRADUIT
+        content: Text(l10n.confirmRemoveProviderFromFavorites(favoriteProvider.name)), // ✅ TRADUIT
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler'),
+            child: Text(l10n.cancel), // ✅ TRADUIT
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
-            child: Text('Retirer'),
+            child: Text(l10n.remove), // ✅ TRADUIT
           ),
         ],
       ),
@@ -386,7 +380,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Prestataire retiré des favoris'),
+            content: Text(l10n.providerRemovedFromFavorites), // ✅ TRADUIT
             backgroundColor: Colors.grey,
           ),
         );

@@ -801,14 +801,14 @@ class _OfferCardState extends State<OfferCard> {
   }
 
   double _parseRating(dynamic rating) {
-    if (rating == null) return 5.0;
+    if (rating == null) return 0.0;
     try {
       if (rating is double) return rating;
       if (rating is int) return rating.toDouble();
       if (rating is String) return double.parse(rating);
-      return double.tryParse(rating.toString()) ?? 5.0;
+      return double.tryParse(rating.toString()) ?? 0.0;
     } catch (e) {
-      return 5.0;
+      return 0.0;
     }
   }
 

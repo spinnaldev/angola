@@ -1946,7 +1946,62 @@
   "yearsAgo": "Há {count} ano",
   "yearsAgoPlural": "Há {count} anos",
   "noReviewsYet": "Ainda não há avaliações",
-  "beFirstToReview": "Seja o primeiro a deixar uma avaliação!"
+  "beFirstToReview": "Seja o primeiro a deixar uma avaliação!",
+  "retry": "Tentar novamente",
+  "@retry": {
+    "description": "Bouton pour réessayer une action"
+  },
+
+  "noFavoriteProviders": "Nenhum prestador favorito",
+  "@noFavoriteProviders": {
+    "description": "Message quand il n'y a pas de prestataires favoris"
+  },
+
+  "exploreProvidersToAddFavorites": "Explore os prestadores e adicione seus favoritos para encontrá-los facilmente",
+  "@exploreProvidersToAddFavorites": {
+    "description": "Message pour encourager à ajouter des prestataires favoris"
+  },
+
+  "browseProjectsToAddFavorites": "Navegue pelos projetos disponíveis e marque aqueles que lhe interessam como favoritos",
+  "@browseProjectsToAddFavorites": {
+    "description": "Message pour encourager à ajouter des projets favoris"
+  },
+
+  "reviews": "avaliações",
+  "@reviews": {
+    "description": "Mot reviews/avis au pluriel"
+  },
+
+  "removeFromFavorites": "Remover dos favoritos",
+  "@removeFromFavorites": {
+    "description": "Action de retirer des favoris"
+  },
+
+  "confirmRemoveProviderFromFavorites": "Deseja remover \"{name}\" dos seus prestadores favoritos?",
+  "@confirmRemoveProviderFromFavorites": {
+    "description": "Message de confirmation pour retirer un prestataire des favoris",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "João Silva"
+      }
+    }
+  },
+
+  "cancel": "Cancelar",
+  "@cancel": {
+    "description": "Bouton annuler"
+  },
+
+  "remove": "Remover",
+  "@remove": {
+    "description": "Bouton retirer/supprimer"
+  },
+
+  "providerRemovedFromFavorites": "Prestador removido dos favoritos",
+  "@providerRemovedFromFavorites": {
+    "description": "Message de confirmation après retrait d'un prestataire des favoris"
+  }
 
 
 }
