@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/core/services/api_service.dart';
 import 'package:teyago/providers/quote_provider.dart';
+import 'package:teyago/ui/screens/provider_detail_screen.dart';
 import '../../providers/service_provider.dart';
 import '../../providers/provider_detail_provider.dart';
 import '../../providers/review_provider.dart';
@@ -792,22 +793,34 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                       Positioned(
                         left: 16,
                         bottom: -30,
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
+                        child: GestureDetector( // ✅ AJOUT du GestureDetector
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProviderDetailScreen(
+                                  providerId: provider.id,
+                                ),
+                              ),
+                            );
+                          },
                           child: CircleAvatar(
-                            radius: 28,
-                            backgroundImage: provider.profileImageUrl.isNotEmpty
-                                ? NetworkImage(provider.profileImageUrl)
-                                : null,
-                            child: provider.profileImageUrl.isEmpty
-                                ? Text(
-                                    provider.name.isNotEmpty
-                                        ? provider.name.substring(0, 1)
-                                        : "P",
-                                    style: const TextStyle(fontSize: 24),
-                                  )
-                                : null,
+                            radius: 30,
+                            backgroundColor: Colors.white,
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundImage: provider.profileImageUrl.isNotEmpty
+                                  ? NetworkImage(provider.profileImageUrl)
+                                  : null,
+                              child: provider.profileImageUrl.isEmpty
+                                  ? Text(
+                                      provider.name.isNotEmpty
+                                          ? provider.name.substring(0, 1)
+                                          : "P",
+                                      style: const TextStyle(fontSize: 24),
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
                       ),
@@ -833,11 +846,34 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                         const SizedBox(height: 4),
                         // ✅ Afficher le nom de compagnie seulement s'il existe
                         if (_getCompanyName(provider, l10n).isNotEmpty) ...[
-                          Text(
-                            _getCompanyName(provider, l10n),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[700],
+                          GestureDetector( // ✅ AJOUT du GestureDetector
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProviderDetailScreen(
+                                    providerId: provider.id,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                Text(
+                                  _getCompanyName(provider, l10n),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[700],
+                                    decoration: TextDecoration.underline, // ✅ Indication visuelle que c'est cliquable
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),

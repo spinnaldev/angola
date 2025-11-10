@@ -4296,13 +4296,7 @@ class ApiService {
         reviewCount: 5 + index * 3,
         description:
             'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
-        services: List.generate(
-            3,
-            (i) => ServiceItem(
-                  id: i + 1,
-                  title: 'Service ${i + 1}',
-                  priceType: i % 2 == 0 ? 'fixed' : 'quote',
-                )),
+        services: _generateMockServices(index), // ✅ Liste de services mockés
       );
     });
   }
@@ -4324,20 +4318,50 @@ class ApiService {
         reviewCount: 5 + index * 3,
         description:
             'Description du prestataire ${index + 1}. Service de qualité proposé par des professionnels expérimentés.',
-        services: List.generate(
-            3,
-            (i) => ServiceItem(
-                  id: i + 1,
-                  title: 'Service ${i + 1}',
-                  priceType: i % 2 == 0 ? 'fixed' : 'quote',
-                )),
+        services: _generateMockServices(index), // ✅ Liste de services mockés
         latitude: centerLatitude + latOffset,
         longitude: centerLongitude + lngOffset,
         address: 'Adresse du prestataire ${index + 1}, Cotonou',
       );
     });
   }
+  List<Service> _generateMockServices(int providerIndex) {
+  final serviceNames = [
+    'Plomberie',
+    'Électricité',
+    'Peinture',
+    'Menuiserie',
+    'Jardinage',
+    'Nettoyage',
+    'Réparation',
+    'Installation',
+    'Maintenance',
+    'Rénovation',
+  ];
 
+  // Générer 1 à 3 services par prestataire
+  final random = math.Random(providerIndex);
+  final serviceCount = 1 + random.nextInt(3);
+
+  return List.generate(serviceCount, (index) {
+    final serviceId = (providerIndex * 10) + index;
+    final serviceName = serviceNames[serviceId % serviceNames.length];
+    
+    return Service(
+      id: serviceId,
+      title: '$serviceName ${providerIndex + 1}',
+      description: 'Service professionnel de $serviceName de qualité supérieure.',
+      imageUrl: 'https://picsum.photos/id/${500 + serviceId}/300/200',
+      rating: 3.5 + (serviceId % 5) * 0.3,
+      reviewCount: random.nextInt(20) + 5,
+      provider_id: providerIndex + 1,
+      businessType: providerIndex % 2 == 0 ? 'Entreprise' : 'Freelance',
+      price: 1000.0 + random.nextInt(5000).toDouble(),
+      categoryId: 1 + (serviceId % 10),
+      priceType: random.nextBool() ? 'fixed' : 'quote',
+    );
+  });
+}
   List<Category> _getMockCategories() {
     return [
       // Category(
@@ -4512,22 +4536,6 @@ class ApiService {
       description:
           'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
       services: [
-        ServiceItem(
-          id: 1,
-          title: 'Construction neuve',
-          priceType: 'Sur devis',
-        ),
-        ServiceItem(
-          id: 2,
-          title:
-              'Construction complète de maisons individuelles et bâtiments professionnels',
-          priceType: 'Sur devis',
-        ),
-        ServiceItem(
-          id: 3,
-          title: 'Rénovation',
-          priceType: 'Sur devis',
-        ),
       ],
     );
   }
@@ -4543,22 +4551,6 @@ class ApiService {
       description:
           'Spécialiste dans les travaux de construction, rénovation et aménagement. Notre équipe qualifiée intervient sur tout type de chantier avec un engagement fort autour de la qualité des finitions et le respect des délais.',
       services: [
-        ServiceItem(
-          id: 1,
-          title: 'Construction neuve',
-          priceType: 'Sur devis',
-        ),
-        ServiceItem(
-          id: 2,
-          title:
-              'Construction complète de maisons individuelles et bâtiments professionnels',
-          priceType: 'Sur devis',
-        ),
-        ServiceItem(
-          id: 3,
-          title: 'Rénovation',
-          priceType: 'Sur devis',
-        ),
       ],
     );
   }

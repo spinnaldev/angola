@@ -1955,6 +1955,93 @@
 "sendDocumentsDescription": "Envoyez-nous vos documents pour vérifier votre identité.",
 "notProvided": "Non renseigné",
 "submissionError": "Erreur lors de la soumission",
-"serviceDetails": "Détails du service"
+"serviceDetails": "Détails du service",
+"email": "Email",
+"username": "Nom d'utilisateur",
+"password": "Mot de passe",
+"confirmPassword": "Confirmation mot de passe",
+"firstName": "Prénom",
+"lastName": "Nom",
+"phoneNumber": "Téléphone",
+"categories": "Catégories",
+"role": "Rôle",
+"location": "Localisation",
+"title": "Titre",
+"description": "Description",
+"budget": "Budget",
+"deadline": "Date limite",
+"category": "Catégorie",
+
+"errorUnauthorized": "Non autorisé. Veuillez vous reconnecter.",
+"errorServer": "Erreur serveur: {code}",
+"@errorServer": {
+  "placeholders": {
+    "code": {
+      "type": "String"
+    }
+  }
+},
+"error": "Erreur",
+"minBudgetLabel": "Budget minimum (AOA)",
+"maxBudgetLabel": "Budget maximum (AOA)",
+
+"budgetHintMin": "Ex: 5 000",
+"budgetHintMax": "Ex: 10 000",
+
+"minBudgetHelper": "Montant minimum pour votre projet",
+"maxBudgetHelper": "Montant maximum pour votre projet",
+
+"validAmountRequired": "Veuillez entrer un montant valide",
+"amountMustBePositive": "Le montant doit être supérieur à 0",
+"maxBudgetMustBeGreater": "Le budget max doit être supérieur au budget min",
+
+"titleRequired": "Le titre est requis",
+"titleMinLength": "Le titre doit contenir au moins 10 caractères",
+"descriptionRequired": "La description est requise",
+"descriptionMinLength": "La description doit contenir au moins 50 caractères",
+"chooseCategoryValidation": "Veuillez choisir une catégorie",
+"locationRequired": "La localisation est requise",
+
+"approximateBudget": "Budget approximatif",
+"requestQuote": "Sur devis",
+"interventionLocation": "Lieu d'intervention",
+"locationHint": "Ex: Luanda, Angola",
+"remoteWorkPossible": "Travail à distance possible",
+"remoteWorkDescription": "Le prestataire peut travailler à distance",
+"projectUrgency": "Urgence du projet",
+"notUrgent": "Pas urgent",
+"moderatelyUrgent": "Modérément urgent",
+"urgent": "Urgent",
+"veryUrgent": "Très urgent",
+"desiredDeadline": "Date limite souhaitée",
+"chooseDate": "Choisir une date",
+"requiredSkills": "Compétences requises",
+"addSkill": "Ajouter une compétence",
+"skillHint": "Ex: Plomberie, Électricité",
+"add": "Ajouter",
+"noSkillsAdded": "Aucune compétence ajoutée",
+"attachments": "Pièces jointes",
+"attachmentsDescription": "Ajoutez des documents ou images pour mieux décrire votre projet",
+"file1": "Fichier 1",
+"change": "Modifier",
+"choose": "Choisir",
+"fileSelectionError": "Erreur lors de la sélection du fichier : {error}",
+"@fileSelectionError": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"projectPublishedSuccess": "Projet publié avec succès !",
+"publishingError": "Erreur lors de la publication : {error}",
+"@publishingError": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+}
+
   
 }

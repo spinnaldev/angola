@@ -377,8 +377,8 @@ const Projects = () => {
             <div className="space-y-4">
               {projects.map((project, index) => (
                 <div key={project.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4 flex-1 min-w-0 overflow-hidden">
                       <div className="flex-shrink-0">
                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
                           <span className="text-sm font-medium text-indigo-600">
@@ -386,39 +386,46 @@ const Projects = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center space-x-3 flex-wrap">
                           <p className="text-sm font-medium text-gray-900 truncate">
                             {project.title}
                           </p>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                             {project.category_name || 'N/A'}
                           </span>
-                          {getStatusBadge(project.status)}
+                          <span className="flex-shrink-0">
+                            {getStatusBadge(project.status)}
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-4 mt-1">
-                          <p className="text-sm text-gray-500">
+                        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-1">
+                          <p className="text-sm text-gray-500 whitespace-nowrap">
                             👤 {project.client_name || 'Utilisateur'}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 whitespace-nowrap">
                             💰 {getBudgetDisplay(project)}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 whitespace-nowrap">
                             📝 {project.offers_count || 0} offres
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 whitespace-nowrap">
                             👀 {project.views_count || 0} vues
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 whitespace-nowrap">
                             📅 {new Date(project.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1 truncate">
+                        <p className="text-sm text-gray-600 mt-1 overflow-hidden" style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          wordBreak: 'break-word'
+                        }}>
                           {project.description}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
                       <button
                         onClick={() => handleViewProject(project.id)}
                         className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"

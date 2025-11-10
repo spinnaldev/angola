@@ -1,6 +1,7 @@
 // lib/ui/widgets/provider_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:teyago/core/models/service.dart';
 import '../../core/models/provider_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -661,7 +662,7 @@ class _ProviderBottomSheetState extends State<ProviderBottomSheet>
     );
   }
 
-  Widget _buildServiceItem(ServiceItem service) {
+  Widget _buildServiceItem(Service service) {
     final localizations = AppLocalizations.of(context)!;
     
     return Container(

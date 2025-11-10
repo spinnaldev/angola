@@ -1935,7 +1935,93 @@
   "sendDocumentsDescription": "Send us your documents to verify your identity.",
   "notProvided": "Not provided",
   "submissionError": "Submission error",
-  "serviceDetails": "Service Details"
+  "serviceDetails": "Service Details",
+  "email": "Email",
+  "username": "Username",
+  "password": "Password",
+  "confirmPassword": "Password confirmation",
+  "firstName": "First name",
+  "lastName": "Last name",
+  "phoneNumber": "Phone number",
+  "categories": "Categories",
+  "role": "Role",
+  "location": "Location",
+  "title": "Title",
+  "description": "Description",
+  "budget": "Budget",
+  "deadline": "Deadline",
+  "category": "Category",
   
+  "errorUnauthorized": "Unauthorized. Please log in again.",
+  "errorServer": "Server error: {code}",
+  "@errorServer": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Error",
+
+"minBudgetLabel": "Minimum budget (AOA)",
+"maxBudgetLabel": "Maximum budget (AOA)",
+
+"budgetHintMin": "E.g: 5,000",
+"budgetHintMax": "E.g: 10,000",
+
+"minBudgetHelper": "Minimum amount for your project",
+"maxBudgetHelper": "Maximum amount for your project",
+
+"validAmountRequired": "Please enter a valid amount",
+"amountMustBePositive": "Amount must be greater than 0",
+"maxBudgetMustBeGreater": "Max budget must be greater than min budget",
+
+"titleRequired": "Title is required",
+"titleMinLength": "Title must be at least 10 characters",
+"descriptionRequired": "Description is required",
+"descriptionMinLength": "Description must be at least 50 characters",
+"chooseCategoryValidation": "Please choose a category",
+"locationRequired": "Location is required",
+
+"approximateBudget": "Approximate budget",
+"requestQuote": "Request a quote",
+"interventionLocation": "Location of intervention",
+"locationHint": "E.g: Luanda, Angola",
+"remoteWorkPossible": "Remote work possible",
+"remoteWorkDescription": "Provider can work remotely",
+"projectUrgency": "Project urgency",
+"notUrgent": "Not urgent",
+"moderatelyUrgent": "Moderately urgent",
+"urgent": "Urgent",
+"veryUrgent": "Very urgent",
+"desiredDeadline": "Desired deadline",
+"chooseDate": "Choose a date",
+"requiredSkills": "Required skills",
+"addSkill": "Add a skill",
+"skillHint": "E.g: Plumbing, Electricity",
+"add": "Add",
+"noSkillsAdded": "No skills added",
+"attachments": "Attachments",
+"attachmentsDescription": "Add documents or images to better describe your project",
+"file1": "File 1",
+"change": "Change",
+"choose": "Choose",
+"fileSelectionError": "File selection error: {error}",
+"@fileSelectionError": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"projectPublishedSuccess": "Project published successfully!",
+"publishingError": "Publishing error: {error}",
+"@publishingError": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+}
 
 }

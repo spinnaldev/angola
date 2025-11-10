@@ -1,3 +1,5 @@
+import 'package:teyago/core/models/service.dart';
+
 class ProviderModel {
   final int id;
   final String name;
@@ -8,7 +10,7 @@ class ProviderModel {
   final double rating;
   final int reviewCount;
   final String description;
-  final List<ServiceItem> services;
+  final List<Service> services;
   final String? address;
   final double? latitude;
   final double? longitude;
@@ -38,12 +40,12 @@ class ProviderModel {
   });
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) {
-    List<ServiceItem> servicesList = [];
+    List<Service> servicesList = [];
     
     if (json['services'] != null) {
       try {
-        servicesList = List<ServiceItem>.from(
-          json['services'].map((service) => ServiceItem.fromJson(service))
+        servicesList = List<Service>.from(
+          json['services'].map((service) => Service.fromJson(service))
         );
       } catch (e) {
         print('⚠️ Erreur parsing services: $e');

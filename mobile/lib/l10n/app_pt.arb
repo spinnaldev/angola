@@ -2007,7 +2007,93 @@
   "sendDocumentsDescription": "Envie-nos seus documentos para verificar sua identidade.",
   "notProvided": "Não fornecido",
   "submissionError": "Erro ao enviar",
-  "serviceDetails": "Detalhes do serviço"
+  "serviceDetails": "Detalhes do serviço",
+  "email": "Email",
+  "username": "Nome de usuário",
+  "password": "Senha",
+  "confirmPassword": "Confirmação de senha",
+  "firstName": "Nome",
+  "lastName": "Sobrenome",
+  "phoneNumber": "Telefone",
+  "categories": "Categorias",
+  "role": "Função",
+  "location": "Localização",
+  "title": "Título",
+  "description": "Descrição",
+  "budget": "Orçamento",
+  "deadline": "Prazo",
+  "category": "Categoria",
+  
+  "errorUnauthorized": "Não autorizado. Por favor, faça login novamente.",
+  "errorServer": "Erro do servidor: {code}",
+  "@errorServer": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Erro",
+  "minBudgetLabel": "Orçamento mínimo (AOA)",
+  "maxBudgetLabel": "Orçamento máximo (AOA)",
+  
+  "budgetHintMin": "Ex: 5.000",
+  "budgetHintMax": "Ex: 10.000",
+  
+  "minBudgetHelper": "Valor mínimo para seu projeto",
+  "maxBudgetHelper": "Valor máximo para seu projeto",
+  
+  "validAmountRequired": "Por favor, insira um valor válido",
+  "amountMustBePositive": "O valor deve ser maior que 0",
+  "maxBudgetMustBeGreater": "O orçamento máx deve ser maior que o mínimo",
+  
+  "titleRequired": "O título é obrigatório",
+  "titleMinLength": "O título deve ter pelo menos 10 caracteres",
+  "descriptionRequired": "A descrição é obrigatória",
+  "descriptionMinLength": "A descrição deve ter pelo menos 50 caracteres",
+  "chooseCategoryValidation": "Por favor, escolha uma categoria",
+  "locationRequired": "A localização é obrigatória",
+  
+  "approximateBudget": "Orçamento aproximado",
+  "requestQuote": "Solicitar orçamento",
+  "interventionLocation": "Local de intervenção",
+  "locationHint": "Ex: Luanda, Angola",
+  "remoteWorkPossible": "Trabalho remoto possível",
+  "remoteWorkDescription": "O prestador pode trabalhar remotamente",
+  "projectUrgency": "Urgência do projeto",
+  "notUrgent": "Não urgente",
+  "moderatelyUrgent": "Moderadamente urgente",
+  "urgent": "Urgente",
+  "veryUrgent": "Muito urgente",
+  "desiredDeadline": "Prazo desejado",
+  "chooseDate": "Escolher uma data",
+  "requiredSkills": "Habilidades necessárias",
+  "addSkill": "Adicionar habilidade",
+  "skillHint": "Ex: Encanamento, Eletricidade",
+  "add": "Adicionar",
+  "noSkillsAdded": "Nenhuma habilidade adicionada",
+  "attachments": "Anexos",
+  "attachmentsDescription": "Adicione documentos ou imagens para descrever melhor seu projeto",
+  "file1": "Arquivo 1",
+  "change": "Alterar",
+  "choose": "Escolher",
+  "fileSelectionError": "Erro ao selecionar arquivo: {error}",
+  "@fileSelectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "projectPublishedSuccess": "Projeto publicado com sucesso!",
+  "publishingError": "Erro ao publicar: {error}",
+  "@publishingError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 
 
 }

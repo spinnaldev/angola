@@ -223,15 +223,35 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _convertProvidersToServices(List<ProviderModel> providers) {
     _nearbyServices = providers.take(6).map((provider) {
+      // ✅ Récupérer l'image du service (pas du provider)
+      String serviceImageUrl = '';
+      
+      if (provider.services.isNotEmpty) {
+        final service = provider.services.first;
+        // Essayer d'obtenir l'image du service
+        if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
+          serviceImageUrl = service.imageUrl;
+        } else if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
+          serviceImageUrl = service.imageUrl!;
+        }
+      }
+      
+      // ✅ Fallback: image du profil du provider ou image par défaut
+      if (serviceImageUrl.isEmpty) {
+        if (provider.profileImageUrl.isNotEmpty) {
+          serviceImageUrl = provider.profileImageUrl;
+        } else {
+          serviceImageUrl = 'https://picsum.photos/id/${1010 + provider.id}/300/200';
+        }
+      }
+
       return Service(
         id: 200 + provider.id,
         title: provider.services.isNotEmpty
             ? provider.services.first.title
             : provider.name,
         description: provider.description,
-        imageUrl: provider.profileImageUrl.isNotEmpty
-            ? provider.profileImageUrl
-            : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
+        imageUrl: serviceImageUrl, // ✅ Utiliser l'image du service
         rating: provider.rating,
         reviewCount: provider.reviewCount,
         provider_id: provider.id,
@@ -417,43 +437,63 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadServicesWithoutLocation() async {
-    final providerListProvider =
-        Provider.of<ProviderListProvider>(context, listen: false);
+  final providerListProvider =
+      Provider.of<ProviderListProvider>(context, listen: false);
 
-    try {
-      // Charger tous les prestataires sans filtre de proximité
-      await providerListProvider.fetchProviders();
+  try {
+    // Charger tous les prestataires sans filtre de proximité
+    await providerListProvider.fetchProviders();
 
-      // Générer quelques services par défaut
-      if (providerListProvider.providers.isNotEmpty) {
-        _nearbyServices =
-            providerListProvider.providers.take(6).map((provider) {
-          return Service(
-            id: 200 + provider.id,
-            title: provider.services.isNotEmpty
-                ? provider.services.first.title
-                : provider.name,
-            description: provider.description,
-            imageUrl: provider.profileImageUrl.isNotEmpty
-                ? provider.profileImageUrl
-                : 'https://picsum.photos/id/${1010 + provider.id}/300/200',
-            rating: provider.rating,
-            reviewCount: provider.reviewCount,
-            provider_id: provider.id,
-            businessType: provider.businessType,
-            price: 50.0 + random.nextInt(150) * 1.0,
-            categoryId: 1 + random.nextInt(5),
-            priceType: random.nextBool() ? 'quote' : 'fixed',
-          );
-        }).toList();
-      } else {
-        _nearbyServices = [];
-      }
-    } catch (e) {
-      print('Erreur lors du chargement des prestataires: $e');
+    // Générer quelques services par défaut
+    if (providerListProvider.providers.isNotEmpty) {
+      _nearbyServices =
+          providerListProvider.providers.take(6).map((provider) {
+        // ✅ Récupérer l'image du service (pas du provider)
+        String serviceImageUrl = '';
+        
+        if (provider.services.isNotEmpty) {
+          final service = provider.services.first;
+          // Essayer d'obtenir l'image du service
+          if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
+            serviceImageUrl = service.imageUrl!;
+          } else if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
+            serviceImageUrl = service.imageUrl!;
+          }
+        }
+        
+        // ✅ Fallback: image du profil du provider ou image par défaut
+        if (serviceImageUrl.isEmpty) {
+          if (provider.profileImageUrl.isNotEmpty) {
+            serviceImageUrl = provider.profileImageUrl;
+          } else {
+            serviceImageUrl = 'https://picsum.photos/id/${1010 + provider.id}/300/200';
+          }
+        }
+
+        return Service(
+          id: 200 + provider.id,
+          title: provider.services.isNotEmpty
+              ? provider.services.first.title
+              : provider.name,
+          description: provider.description,
+          imageUrl: serviceImageUrl, // ✅ Utiliser l'image du service
+          rating: provider.rating,
+          reviewCount: provider.reviewCount,
+          provider_id: provider.id,
+          businessType: provider.businessType,
+          price: 50.0 + random.nextInt(150) * 1.0,
+          categoryId: 1 + random.nextInt(5),
+          priceType: random.nextBool() ? 'quote' : 'fixed',
+        );
+      }).toList();
+    } else {
       _nearbyServices = [];
     }
+  } catch (e) {
+    print('Erreur lors du chargement des prestataires: $e');
+    _nearbyServices = [];
   }
+}
 
   // MÉTHODE AMÉLIORÉE _loadProjectsData avec gestion de la localisation
   Future<void> _loadProjectsData() async {

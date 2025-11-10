@@ -79,6 +79,44 @@ class MessagingProvider with ChangeNotifier {
       // Ne pas afficher d'erreur à l'utilisateur pour les mises à jour automatiques
     }
   }
+  Future<Conversation?> getOrCreateConversation(int otherUserId) async {
+    try {
+      print('🔍 Recherche conversation avec utilisateur $otherUserId');
+      
+      // Vérifier si une conversation existe déjà avec cet utilisateur
+      final existingConversation = _conversations.firstWhere(
+        (conv) => conv.otherPerson.id == otherUserId,
+        orElse: () => throw Exception('Not found'),
+      );
+      
+      print('✅ Conversation existante trouvée: ${existingConversation.id}');
+      return existingConversation;
+      
+    } catch (e) {
+      // Aucune conversation n'existe, en créer une nouvelle
+      print('📝 Aucune conversation existante, création d\'une nouvelle...');
+      
+      try {
+        // Utiliser la méthode existante startConversationWithProvider
+        final newConversation = await startConversationWithProvider(
+          otherUserId,
+          initialMessage: null, // Pas de message initial
+        );
+        
+        if (newConversation != null) {
+          print('✅ Nouvelle conversation créée: ${newConversation.id}');
+          return newConversation;
+        } else {
+          print('❌ Échec de la création de conversation');
+          return null;
+        }
+        
+      } catch (error) {
+        print('❌ Erreur lors de la création de conversation: $error');
+        return null;
+      }
+    }
+  }
 
   // ✅ NOUVEAU : Initialiser le compteur (appelé par le WebSocket)
   void initializeUnreadCount(int count) {

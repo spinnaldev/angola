@@ -1,16 +1,19 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../providers/localization_provider.dart';
 import 'package:teyago/providers/language_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class ApiClient {
   final String baseUrl;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   ApiClient({required this.baseUrl});
-
+  BuildContext? _context;
   // Future<Map<String, String>> getHeaders({bool requireAuth = true}) async {  // Enlever le _
   //   Map<String, String> headers = {
   //     'Content-Type': 'application/json; charset=utf-8',
@@ -161,26 +164,20 @@ class ApiClient {
 
   dynamic _handleResponse(http.Response response) {
     try {
-      // ✅ SOLUTION PRINCIPALE : Décoder correctement la réponse
       String responseBody;
       
-      // Vérifier l'encodage dans les headers de réponse
       final contentType = response.headers['content-type'] ?? '';
       
       if (contentType.contains('charset=utf-8') || contentType.contains('application/json')) {
-        // Décoder en UTF-8
         responseBody = utf8.decode(response.bodyBytes);
       } else {
-        // Fallback : essayer UTF-8 par défaut
         try {
           responseBody = utf8.decode(response.bodyBytes);
         } catch (e) {
-          // Si échec UTF-8, utiliser la méthode normale
           responseBody = response.body;
         }
       }
 
-      // ✅ NETTOYAGE SUPPLÉMENTAIRE
       responseBody = _cleanEncodingIssues(responseBody);
 
       print('📥 Status: ${response.statusCode}');
@@ -190,7 +187,6 @@ class ApiClient {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseBody.isNotEmpty) {
           try {
-            // Supprimer le BOM si présent
             final cleanBody = responseBody.replaceAll('\uFEFF', '');
             return json.decode(cleanBody);
           } catch (e) {
@@ -202,16 +198,158 @@ class ApiClient {
         return null;
       } else if (response.statusCode == 401) {
         _refreshToken();
-        throw Exception('Non autorisé. Veuillez vous reconnecter.');
+        throw Exception(_getLocalizedMessage('error_unauthorized'));
       } else {
-        print('❌ Erreur HTTP ${response.statusCode}: $responseBody');
-        throw Exception('Erreur serveur: ${response.statusCode}');
+        // 🔥 Gestion multilingue des erreurs
+        String errorMessage = _getLocalizedMessage('error_server', args: {'code': response.statusCode.toString()});
+        
+        try {
+          final errorData = json.decode(responseBody);
+          
+          if (errorData is Map<String, dynamic>) {
+            if (errorData.containsKey('detail')) {
+              errorMessage = errorData['detail'].toString();
+            } 
+            else if (errorData.containsKey('message')) {
+              errorMessage = errorData['message'].toString();
+            }
+            else {
+              List<String> errors = [];
+              
+              errorData.forEach((key, value) {
+                if (key == 'non_field_errors') {
+                  if (value is List && value.isNotEmpty) {
+                    errors.add(value.first.toString());
+                  }
+                } else {
+                  String fieldLabel = _getFieldLabel(key);
+                  if (value is List && value.isNotEmpty) {
+                    errors.add('$fieldLabel: ${value.first}');
+                  }
+                }
+              });
+              
+              if (errors.isNotEmpty) {
+                errorMessage = errors.join('\n');
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ Parse error: $e');
+        }
+        
+        print('❌ Erreur: $errorMessage');
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('❌ Erreur dans _handleResponse: $e');
       rethrow;
     }
   }
+  
+  String _getFallbackFieldLabel(String fieldKey) {
+    const fieldLabels = {
+      'email': 'Email',
+      'username': 'Nom d\'utilisateur',
+      'password': 'Mot de passe',
+      'password2': 'Confirmation mot de passe',
+      'first_name': 'Prénom',
+      'last_name': 'Nom',
+      'phone_number': 'Téléphone',
+      'categories': 'Catégories',
+      'role': 'Rôle',
+      'location': 'Localisation',
+    };
+    return fieldLabels[fieldKey] ?? fieldKey;
+  }
+
+  // ✅ Helper pour récupérer les messages traduits
+  String _getLocalizedMessage(String key, {Map<String, String>? args}) {
+    if (_context != null) {
+      try {
+        final l10n = AppLocalizations.of(_context!);
+        if (l10n != null) {
+          switch (key) {
+            case 'error_unauthorized':
+              return l10n.error ?? 'Non autorisé. Veuillez vous reconnecter.';
+            case 'error_server':
+              return 'Erreur serveur: ${args?['code'] ?? ''}';
+            default:
+              return key;
+          }
+        }
+      } catch (e) {
+        print('⚠️ Erreur traduction: $e');
+      }
+    }
+    
+    // Fallback français
+    switch (key) {
+      case 'error_unauthorized':
+        return 'Non autorisé. Veuillez vous reconnecter.';
+      case 'error_server':
+        return 'Erreur serveur: ${args?['code'] ?? ''}';
+      default:
+        return key;
+    }
+  }
+
+  String _getFieldLabel(String fieldKey) {
+    // Si on a un contexte, utiliser les traductions
+    if (_context != null) {
+      try {
+        final l10n = AppLocalizations.of(_context!);
+        if (l10n != null) {
+          return _getLocalizedFieldLabel(fieldKey, l10n);
+        }
+      } catch (e) {
+        print('⚠️ Erreur récupération traductions: $e');
+      }
+    }
+    
+    // Fallback : labels en français si pas de contexte
+    return _getFallbackFieldLabel(fieldKey);
+  }
+
+  // ✅ Traductions depuis AppLocalizations
+  String _getLocalizedFieldLabel(String fieldKey, AppLocalizations l10n) {
+    switch (fieldKey) {
+      case 'email':
+        return l10n.email ?? 'Email';
+      case 'username':
+        return l10n.username ?? 'Nom d\'utilisateur';
+      case 'password':
+        return l10n.password ?? 'Mot de passe';
+      case 'password2':
+        return l10n.confirmPassword ?? 'Confirmation mot de passe';
+      case 'first_name':
+        return l10n.firstName ?? 'Prénom';
+      case 'last_name':
+        return l10n.lastName ?? 'Nom';
+      case 'phone_number':
+        return l10n.phoneNumber ?? 'Téléphone';
+      case 'categories':
+        return l10n.categories ?? 'Catégories';
+      case 'role':
+        return l10n.role ?? 'Rôle';
+      case 'location':
+        return l10n.location ?? 'Localisation';
+      case 'title':
+        return l10n.title ?? 'Titre';
+      case 'description':
+        return l10n.description ?? 'Description';
+      case 'budget':
+        return l10n.budget ?? 'Budget';
+      case 'deadline':
+        return l10n.deadline ?? 'Date limite';
+      case 'category':
+        return l10n.category ?? 'Catégorie';
+      default:
+        return fieldKey;
+    }
+  }
+
+  
 
   // ✅ MÉTHODE POUR CORRIGER LES PROBLÈMES D'ENCODAGE COURANTS
   String _cleanEncodingIssues(String text) {

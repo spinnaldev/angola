@@ -1,8 +1,14 @@
 // lib/ui/screens/provider_detail_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:teyago/providers/favorites_provider.dart';
+import 'package:teyago/providers/messaging_provider.dart';
+import 'package:teyago/providers/quote_provider.dart';
+import 'package:teyago/ui/screens/messaging/conversation_detail_screen.dart';
+import 'package:teyago/ui/screens/service_detail_screen.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/models/service.dart';
 import '../../core/models/review.dart';
@@ -36,6 +42,16 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
   List<Service> _providerServices = [];
   List<Review> _providerReviews = [];
   bool _isLoadingReviews = true;
+  
+  final _subjectController = TextEditingController();
+  final _budgetController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _reviewController = TextEditingController();
+  final _titleController = TextEditingController();
+  int _rating = 0;
+  List<File> _selectedReviewImages = [];
+  bool _isSubmittingReview = false;
+  bool _isSubmittingQuote = false;
   
   @override
   void initState() {
@@ -178,6 +194,11 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _subjectController.dispose();
+    _budgetController.dispose();
+    _descriptionController.dispose();
+    _reviewController.dispose();
+    _titleController.dispose();
     super.dispose();
   }
 
@@ -481,12 +502,10 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
                               child: OutlinedButton.icon(
                                 onPressed: _onReportPressed,
                                 icon: const Icon(Icons.report_problem, size: 16, color: Colors.orange),
-                                label: Flexible(
-                                  child: Text(
-                                    l10n.reportProblem,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                label: Text(
+                                  l10n.reportProblem,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.orange,
@@ -500,21 +519,22 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => _checkAuthAndExecute(context, _openQuoteRequestForm),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF142FE2),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: Text(
-                                  l10n.requestQuote,
+                              child: ElevatedButton.icon( // ✅ CHANGÉ en ElevatedButton.icon pour avoir une icône
+                                onPressed: () => _checkAuthAndExecute(context, _contactProvider),
+                                icon: const Icon(Icons.message, size: 18), // ✅ AJOUT icône message
+                                label: Text(
+                                  l10n.contactProvider, // ✅ CHANGÉ le texte
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF142FE2),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
                                 ),
                               ),
                             ),
@@ -579,7 +599,242 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
       ),
     );
   }
+  Future<void> _contactProvider() async {
+    final provider = Provider.of<ProviderDetailProvider>(context, listen: false).currentProvider;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messagingProvider = Provider.of<MessagingProvider>(context, listen: false);
+    
+    if (provider == null) return;
+    
+    // Vérifier l'authentification
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connectez-vous pour contacter ce prestataire'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    print('📱 Ouverture conversation avec ${provider.name}');
+    
+    try {
+      // Afficher un loader
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      // ✅ Créer ou récupérer la conversation avec ce prestataire
+      final conversation = await messagingProvider.getOrCreateConversation(provider.id);
+      
+      // Fermer le loader
+      if (mounted) Navigator.pop(context);
+      
+      if (conversation != null && mounted) {
+        // ✅ Navigation vers la conversation
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConversationDetailScreen(
+              conversationId: conversation.id,
+              otherPerson: conversation.otherPerson,
+            ),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible d\'ouvrir la conversation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Erreur lors de l\'ouverture du chat: $e');
+      
+      // Fermer le loader si encore ouvert
+      if (mounted) Navigator.pop(context);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
+  Future<void> _submitQuoteRequest(int providerId) async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    if (_subjectController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.enterRequestSubject)),
+      );
+      return;
+    }
+
+    if (_descriptionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.describeYourRequest)),
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isSubmittingQuote = true;
+      });
+
+      double budget = 0.0;
+      if (_budgetController.text.isNotEmpty) {
+        String cleanBudgetText = _budgetController.text
+            .replaceAll(RegExp(r'[^\d.]'), '')
+            .trim();
+        
+        if (cleanBudgetText.isNotEmpty) {
+          final parsedBudget = double.tryParse(cleanBudgetText);
+          if (parsedBudget != null && parsedBudget >= 0) {
+            budget = parsedBudget;
+          }
+        }
+      }
+
+      final quoteProvider = Provider.of<QuoteProvider>(context, listen: false);
+      final success = await quoteProvider.createQuoteRequest(
+        providerId,
+        _subjectController.text,
+        budget,
+        _descriptionController.text,
+      );
+
+      if (success && mounted) {
+        _subjectController.clear();
+        _budgetController.clear();
+        _descriptionController.clear();
+        _closeQuoteRequestForm();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.quoteRequestSentSuccess),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(quoteProvider.errorMessage ?? l10n.errorSendingQuoteRequest),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.errorSendingQuoteRequest}: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingQuote = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitReview(int providerId) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pleaseGiveRating)),
+      );
+      return;
+    }
+
+    if (_reviewController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pleaseWriteComment)),
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isSubmittingReview = true;
+      });
+
+      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+      final success = await reviewProvider.createReview(
+        providerId,
+        _rating,
+        _reviewController.text,
+        _titleController.text.trim(),
+        _selectedReviewImages,
+        null, // Pas de serviceId spécifique
+      );
+
+      if (success && mounted) {
+        _rating = 0;
+        _reviewController.clear();
+        _titleController.clear();
+        _selectedReviewImages = [];
+        _closeReviewForm();
+
+        await _loadProviderReviews(providerId);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.reviewSentSuccess),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(reviewProvider.errorMessage ?? l10n.errorSendingReview),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.errorSendingReview}: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingReview = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickReviewImage() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    setState(() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.addImageFeatureNotImplemented)),
+      );
+    });
+  }
   String _getBusinessType(ProviderModel provider, AppLocalizations l10n) {
     switch (provider.businessType.toLowerCase()) {
       case 'entreprise':
@@ -658,95 +913,106 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
           else
             // ✅ DESIGN AMÉLIORÉ - Cards plus grandes avec description
             ..._providerServices.map((service) => Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
-                  child: InkWell(
-                    onTap: () {
-                      print('🔍 Navigation vers service ${service.id}');
-                      Navigator.pushNamed(
-                        context,
-                        '/service-detail',
-                        arguments: {
-                          'serviceId': service.id,
-                          'providerId': provider.id,
-                        },
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Partie gauche: Titre + Description
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Titre du service
-                                Text(
-                                  service.title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () {
+                  print('🔍 Navigation vers service ${service.id} du prestataire ${provider.id}');
+                  
+                  // ✅ CORRECTION : Importer ServiceDetailScreen en haut du fichier
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ServiceDetailScreen(
+                        serviceId: service.id,
+                        providerId: provider.id,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Partie gauche: Titre + Description
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Titre du service
+                            Text(
+                              service.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // Description du service
+                            if (service.description.isNotEmpty)
+                              Text(
+                                service.description,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  height: 1.4,
                                 ),
-                                const SizedBox(height: 8),
-                                // Description du service
-                                if (service.description.isNotEmpty)
-                                  Text(
-                                    service.description,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      height: 1.4,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Partie droite: Prix + Flèche
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            service.priceType == 'quote'
+                                ? 'Sur devis'
+                                : '${service.price.toStringAsFixed(0)} AOA',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF142FE2),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          // Partie droite: Prix
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                service.priceType == 'quote'
-                                    ? 'Sur devis'
-                                    : '${service.price.toStringAsFixed(0)} AOA',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF142FE2),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                                color: Colors.grey[400],
-                              ),
-                            ],
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF142FE2).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.arrow_forward_ios,
+                              size: 14,
+                              color: const Color(0xFF142FE2),
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                )),
+                ),
+              ),
+            )),
         ],
       ),
     );
@@ -770,10 +1036,10 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
                   color: Color(0xFF142FE2),
                 ),
               ),
-              TextButton(
-                onPressed: _onReviewFormPressed,
-                child: Text(l10n.writeReview),
-              ),
+              // TextButton(
+              //   onPressed: _onReviewFormPressed,
+              //   child: Text(l10n.writeReview),
+              // ),
             ],
           ),
           const SizedBox(height: 16),
@@ -958,27 +1224,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen>
     } else if (difference.inDays == 1) {
       return l10n.yesterday;
     } else if (difference.inDays < 7) {
-      return l10n.daysAgo(difference.inDays.toString() as int);
+      return l10n.daysAgo(difference.inDays); // ✅ CORRIGÉ : Passer directement l'int
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
       if (weeks == 1) {
-        return l10n.weeksAgo(weeks.toString());
+        return l10n.weeksAgo(weeks); // ✅ CORRIGÉ : Passer l'int, pas le String
       } else {
-        return l10n.weeksAgoPlural(weeks.toString());
+        return l10n.weeksAgoPlural(weeks); // ✅ CORRIGÉ
       }
     } else if (difference.inDays < 365) {
       final months = (difference.inDays / 30).floor();
       if (months == 1) {
-        return l10n.monthsAgo(months.toString() as int);
+        return l10n.monthsAgo(months); // ✅ CORRIGÉ : Passer directement l'int
       } else {
-        return l10n.monthsAgoPlural(months.toString() as int);
+        return l10n.monthsAgoPlural(months); // ✅ CORRIGÉ
       }
     } else {
       final years = (difference.inDays / 365).floor();
       if (years == 1) {
-        return l10n.yearsAgo(years.toString());
+        return l10n.yearsAgo(years); // ✅ CORRIGÉ
       } else {
-        return l10n.yearsAgoPlural(years.toString());
+        return l10n.yearsAgoPlural(years); // ✅ CORRIGÉ
       }
     }
   }

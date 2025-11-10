@@ -318,7 +318,7 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
         ),
         if (_selectedBudgetRange != 'sur_devis') ...[
           const SizedBox(height: 16),
-          // ✅ BUDGET MINIMUM AVEC FORMATAGE
+          // ✅ BUDGET MINIMUM AVEC TRADUCTIONS
           TextFormField(
             controller: _minBudgetController,
             keyboardType: TextInputType.number,
@@ -326,28 +326,28 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               PriceInputFormatter(),
             ],
             decoration: InputDecoration(
-              labelText: 'Budget minimum (AOA)',
-              hintText: 'Ex: 5 000',
+              labelText: l10n.minBudgetLabel,    // ✅ MODIFIÉ
+              hintText: l10n.budgetHintMin,      // ✅ MODIFIÉ
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.account_balance_wallet),
-              helperText: 'Montant minimum pour votre projet',
+              helperText: l10n.minBudgetHelper,  // ✅ MODIFIÉ
             ),
             validator: (value) {
               if (value != null && value.isNotEmpty) {
                 final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
                 if (cleanValue.isEmpty) {
-                  return 'Veuillez entrer un montant valide';
+                  return l10n.validAmountRequired;  // ✅ MODIFIÉ
                 }
                 final amount = int.tryParse(cleanValue);
                 if (amount == null || amount <= 0) {
-                  return 'Le montant doit être supérieur à 0';
+                  return l10n.amountMustBePositive;  // ✅ MODIFIÉ
                 }
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          // ✅ BUDGET MAXIMUM AVEC FORMATAGE
+          // ✅ BUDGET MAXIMUM AVEC TRADUCTIONS
           TextFormField(
             controller: _maxBudgetController,
             keyboardType: TextInputType.number,
@@ -355,29 +355,29 @@ class _PostProjectScreenState extends State<PostProjectScreen> {
               PriceInputFormatter(),
             ],
             decoration: InputDecoration(
-              labelText: l10n.maxBudget,
-              hintText: 'Ex: 10 000',
+              labelText: l10n.maxBudgetLabel,    // ✅ MODIFIÉ
+              hintText: l10n.budgetHintMax,      // ✅ MODIFIÉ
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
-              helperText: 'Montant maximum pour votre projet',
+              helperText: l10n.maxBudgetHelper,  // ✅ MODIFIÉ
             ),
             validator: (value) {
               if (value != null && value.isNotEmpty) {
                 final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
                 if (cleanValue.isEmpty) {
-                  return 'Veuillez entrer un montant valide';
+                  return l10n.validAmountRequired;  // ✅ MODIFIÉ
                 }
                 final amount = int.tryParse(cleanValue);
                 if (amount == null || amount <= 0) {
-                  return 'Le montant doit être supérieur à 0';
+                  return l10n.amountMustBePositive;  // ✅ MODIFIÉ
                 }
                 
-                // ✅ Vérifier que max > min si les deux sont renseignés
+                // Vérifier que max > min si les deux sont renseignés
                 final minText = _minBudgetController.text.replaceAll(RegExp(r'[^\d]'), '');
                 if (minText.isNotEmpty) {
                   final minAmount = int.parse(minText);
                   if (amount <= minAmount) {
-                    return 'Le budget max doit être supérieur au budget min';
+                    return l10n.maxBudgetMustBeGreater;  // ✅ MODIFIÉ
                   }
                 }
               }
