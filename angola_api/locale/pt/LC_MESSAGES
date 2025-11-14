@@ -1,0 +1,236 @@
+# LANGUAGE: Português (pt)
+# TRANSLATION FILE FOR ANGOLA API
+# Generated on 2025-11-10
+
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pt\n"
+
+msgid "..."
+msgstr "..."
+
+msgid "Accès non autorisé"
+msgstr "Acesso não autorizado"
+
+msgid "Accès non autorisé à cette conversation"
+msgstr "Acesso não autorizado a esta conversa"
+
+msgid "Anonymous user not allowed."
+msgstr "Usuário anônimo não permitido."
+
+msgid "Aucun compte trouvé avec cet email"
+msgstr "Nenhuma conta encontrada com este e-mail"
+
+msgid "Authentication credentials were not provided."
+msgstr "Credenciais de autenticação não foram fornecidas."
+
+msgid "Authentication required"
+msgstr "Autenticação necessária"
+
+msgid "Authentification requise pour créer un projet"
+msgstr "Autenticação necessária para criar um projeto"
+
+msgid "Ce compte a été désactivé"
+msgstr "Esta conta foi desativada"
+
+msgid "Code de réinitialisation envoyé"
+msgstr "Código de redefinição enviado"
+
+msgid "Code expiré"
+msgstr "Código expirado"
+
+msgid "Code invalide"
+msgstr "Código inválido"
+
+msgid "Code vérifié avec succès"
+msgstr "Código verificado com sucesso"
+
+msgid "Conversation créée avec succès"
+msgstr "Conversa criada com sucesso"
+
+msgid "Conversation non trouvée"
+msgstr "Conversa não encontrada"
+
+msgid "Coordonnées invalides"
+msgstr "Coordenadas inválidas"
+
+msgid "Either service_id or provider_id is required"
+msgstr "service_id ou provider_id é obrigatório"
+
+msgid "Email et code sont requis"
+msgstr "E-mail e código são obrigatórios"
+
+msgid "Email et mot de passe sont requis"
+msgstr "E-mail e senha são obrigatórios"
+
+msgid "Email requis"
+msgstr "E-mail obrigatório"
+
+msgid "Email, code et nouveau mot de passe sont requis"
+msgstr "E-mail, código e nova senha são obrigatórios"
+
+msgid "Erreur interne du serveur"
+msgstr "Erro interno do servidor"
+
+msgid "Erreur lors de la lecture des données."
+msgstr "Erro ao ler os dados."
+
+msgid "Erreur lors de la sauvegarde. Veuillez réessayer."
+msgstr "Erro ao salvar. Por favor, tente novamente."
+
+msgid "ID utilisateur invalide"
+msgstr "ID de usuário inválido"
+
+msgid "La description est requise"
+msgstr "A descrição é obrigatória"
+
+msgid "Le champ 'is_available' est requis"
+msgstr "O campo 'is_available' é obrigatório"
+
+msgid "Mot de passe incorrect"
+msgstr "Senha incorreta"
+
+msgid "Mot de passe réinitialisé avec succès"
+msgstr "Senha redefinida com sucesso"
+
+msgid "Notification marquée comme lue"
+msgstr "Notificação marcada como lida"
+
+msgid "Notifications marquées comme lues"
+msgstr "Notificações marcadas como lidas"
+
+msgid "Aucune offre trouvée"
+msgstr "Nenhuma oferta encontrada"
+
+msgid "Offre acceptée avec succès"
+msgstr "Oferta aceita com sucesso"
+
+msgid "Offre annulée avec succès"
+msgstr "Oferta cancelada com sucesso"
+
+msgid "Offre complétée avec succès"
+msgstr "Oferta concluída com sucesso"
+
+msgid "Offre créée avec succès"
+msgstr "Oferta criada com sucesso"
+
+msgid "Offre non trouvée"
+msgstr "Oferta não encontrada"
+
+msgid "Offre refusée avec succès"
+msgstr "Oferta recusada com sucesso"
+
+msgid "Offre retirée avec succès"
+msgstr "Oferta retirada com sucesso"
+
+msgid "Prestataire introuvable"
+msgstr "Prestador não encontrado"
+
+msgid "Prestataire non trouvé"
+msgstr "Prestador não encontrado"
+
+msgid "Profil prestataire créé avec succès"
+msgstr "Perfil de prestador criado com sucesso"
+
+msgid "Profil prestataire mis à jour avec succès"
+msgstr "Perfil de prestador atualizado com sucesso"
+
+msgid "Profil utilisateur mis à jour"
+msgstr "Perfil de usuário atualizado"
+
+msgid "Projet créé avec succès"
+msgstr "Projeto criado com sucesso"
+
+msgid "Projet mis à jour avec succès"
+msgstr "Projeto atualizado com sucesso"
+
+msgid "Projet non trouvé"
+msgstr "Projeto não encontrado"
+
+msgid "Seul l'auteur peut modifier ce projet"
+msgstr "Apenas o autor pode modificar este projeto"
+
+msgid "Seul le client peut accepter une offre"
+msgstr "Apenas o cliente pode aceitar uma oferta"
+
+msgid "Seul le client peut annuler l'offre"
+msgstr "Apenas o cliente pode cancelar a oferta"
+
+msgid "Seul le prestataire peut compléter l'offre"
+msgstr "Apenas o prestador pode concluir a oferta"
+
+msgid "Seul le prestataire peut retirer son offre"
+msgstr "Apenas o prestador pode retirar sua oferta"
+
+msgid "Service ajouté aux favoris"
+msgstr "Serviço adicionado aos favoritos"
+
+msgid "Service créé avec succès"
+msgstr "Serviço criado com sucesso"
+
+msgid "Service non trouvé"
+msgstr "Serviço não encontrado"
+
+msgid "Service retiré des favoris"
+msgstr "Serviço removido dos favoritos"
+
+msgid "Si cet email existe, un code de réinitialisation a été envoyé"
+msgstr "Se este e-mail existir, um código de redefinição foi enviado"
+
+msgid "Token créé avec succès"
+msgstr "Token criado com sucesso"
+
+msgid "Token supprimé avec succès"
+msgstr "Token excluído com sucesso"
+
+msgid "Utilisateur non trouvé"
+msgstr "Usuário não encontrado"
+
+msgid "Veuillez fournir les coordonnées (latitude et longitude)"
+msgstr "Por favor, forneça as coordenadas (latitude e longitude)"
+
+msgid "Vous avez déjà un profil prestataire"
+msgstr "Você já tem um perfil de prestador"
+
+msgid "Vous n'avez pas de profil prestataire"
+msgstr "Você não tem um perfil de prestador"
+
+msgid "Vous ne pouvez pas accepter votre propre offre"
+msgstr "Você não pode aceitar sua própria oferta"
+
+msgid "Vous ne pouvez pas créer une offre pour votre propre projet"
+msgstr "Você não pode criar uma oferta para seu próprio projeto"
+
+msgid "Vous ne pouvez pas soumettre plusieurs offres pour le même projet"
+msgstr "Você não pode enviar várias ofertas para o mesmo projeto"
+
+msgid "Ce service existe déjà dans vos favoris"
+msgstr "Este serviço já existe nos seus favoritos"
+
+msgid "Token FCM requis"
+msgstr "Token FCM obrigatório"
+
+msgid "Type d'appareil requis"
+msgstr "Tipo de dispositivo obrigatório"
+
+msgid "Préférences mises à jour avec succès"
+msgstr "Preferências atualizadas com sucesso"
+
+msgid "Aucune notification trouvée"
+msgstr "Nenhuma notificação encontrada"
+
+msgid "Historique supprimé avec succès"
+msgstr "Histórico excluído com sucesso"
+
+msgid "Toutes les notifications marquées comme lues"
+msgstr "Todas as notificações marcadas como lidas"
+
+msgid "Message envoyé avec succès"
+msgstr "Mensagem enviada com sucesso"
+
+msgid "Le contenu du message est requis"
+msgstr "O conteúdo da mensagem é obrigatório"
+
+msgid "Erreur lors de l'envoi du message"
+msgstr "Erro ao enviar a mensagem"

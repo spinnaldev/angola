@@ -66,7 +66,8 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'channels',
-    'operation'
+    'operation',
+    # 'modeltranslation',
 ]
 
 # Configuration Channels
@@ -96,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'operation.middleware.JWTDebugMiddleware', 
+    'operation.middleware.LanguageMiddleware',
 ]
 
 ROOT_URLCONF = 'angola_api.urls'
@@ -330,26 +332,36 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 
+# USE_I18N = True
+
+# USE_TZ = True
+LANGUAGE_CODE = 'pt'  # Portugais par défaut
+TIME_ZONE = 'Africa/Luanda'  # Fuseau horaire Angola
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
+from django.utils.translation import gettext_lazy as _
 
 # Langues supportées
 LANGUAGES = [
+    ('pt', _('Português')),
     ('fr', _('Français')),
     ('en', _('English')),
-    ('pt', _('Português')),
 ]
 
 # Répertoires des fichiers de traduction
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
+
+LANGUAGE_COOKIE_NAME = 'django_language'
+LANGUAGE_COOKIE_AGE = 31536000  # 1 an
+
 
 
 # Static files (CSS, JavaScript, Images)

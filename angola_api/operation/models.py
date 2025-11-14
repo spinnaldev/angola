@@ -69,11 +69,15 @@ class ResetPasswordCode(models.Model):
     
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    # name_pt = models.CharField(max_length=100, blank=True, null=True)  # ✅ NOUVEAU
     name_en = models.CharField(max_length=100, blank=True, null=True)
     name_fr = models.CharField(max_length=100, blank=True, null=True)
+    
     description = models.TextField(blank=True)
+    # description_pt = models.TextField(blank=True, null=True)  # ✅ NOUVEAU
     description_en = models.TextField(blank=True, null=True)
     description_fr = models.TextField(blank=True, null=True)
+    
     icon = models.CharField(max_length=50, blank=True)
     image_url = models.URLField(blank=True, help_text="URL de l'image de catégorie")
     
@@ -86,11 +90,13 @@ class Category(models.Model):
 class SubCategory(TimeStampMixin):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
     name = models.CharField(max_length=100)
+    # name_pt = models.CharField(max_length=100, blank=True, null=True)  
     name_en = models.CharField(max_length=100, blank=True, null=True)
     name_fr = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True)
     description_en = models.TextField(blank=True, null=True)
     description_fr = models.TextField(blank=True, null=True)
+    # description_pt = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True)
     
     class Meta:

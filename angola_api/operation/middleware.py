@@ -1,5 +1,7 @@
 import logging
 import jwt
+from django.utils import translation
+from django.conf import settings
 logger = logging.getLogger(__name__)
 
 class JWTDebugMiddleware:
@@ -75,4 +77,31 @@ class AuthDebugMiddleware:
         if '/api/' in request.path and response.status_code in [401, 403]:
             logger.warning(f"Auth failed for {request.path}: {response.status_code}")
             
+        return response
+    
+
+
+class LanguageMiddleware:
+    """
+    Middleware pour gérer la langue via l'en-tête Accept-Language
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Récupérer la langue depuis le header Accept-Language
+        language = request.META.get('HTTP_ACCEPT_LANGUAGE', '').split(',')[0].strip()
+        
+        # Vérifier si la langue est supportée
+        supported_languages = [lang[0] for lang in settings.LANGUAGES]
+        
+        if language and language[:2] in supported_languages:
+            translation.activate(language[:2])
+            request.LANGUAGE_CODE = language[:2]
+        else:
+            # Utiliser la langue par défaut (pt)
+            translation.activate(settings.LANGUAGE_CODE)
+            request.LANGUAGE_CODE = settings.LANGUAGE_CODE
+
+        response = self.get_response(request)
         return response

@@ -31,6 +31,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Sum
 import logging
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext
 from django.utils.translation import get_language_from_request
 from django.core.cache import cache
 
@@ -444,7 +445,7 @@ class PasswordResetRequestView(APIView):
             logger.error(f"Traceback: {traceback.format_exc()}")
             
             return Response(
-                {"detail": "Erreur interne du serveur"}, 
+                {"detail": _("Erreur interne du serveur")}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -662,7 +663,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             logger.error("❌ Utilisateur non authentifié")
             return Response(
-                {"detail": "Authentication required"}, 
+                {"detail": _("Authentication required")}, 
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -702,7 +703,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Vérifier les permissions
         if not (request.user.is_staff or request.user == instance):
             return Response(
-                {"detail": "Vous n'êtes pas autorisé à modifier cet utilisateur"}, 
+                {"detail": _("Vous n'êtes pas autorisé à modifier cet utilisateur")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -745,14 +746,14 @@ class UserViewSet(viewsets.ModelViewSet):
         # Vérifier les permissions - seuls les admins peuvent supprimer
         # if not request.user.is_staff:
         #     return Response(
-        #         {"detail": "Seuls les administrateurs peuvent supprimer des utilisateurs"}, 
+        #         {"detail": _("Seuls les administrateurs peuvent supprimer des utilisateurs")}, 
         #         status=status.HTTP_403_FORBIDDEN
         #     )
         
         # Empêcher la suppression de son propre compte
         if request.user == instance:
             return Response(
-                {"detail": "Vous ne pouvez pas supprimer votre propre compte"}, 
+                {"detail": _("Vous ne pouvez pas supprimer votre propre compte")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -776,7 +777,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 instance.delete()
                 
                 return Response(
-                    {"detail": "Utilisateur supprimé avec succès"}, 
+                    {"detail": _("Utilisateur supprimé avec succès")}, 
                     status=status.HTTP_204_NO_CONTENT
                 )
         
@@ -794,14 +795,14 @@ class UserViewSet(viewsets.ModelViewSet):
         # Vérifier les permissions
         if not request.user.is_staff:
             return Response(
-                {"detail": "Seuls les administrateurs peuvent modifier le statut"}, 
+                {"detail": _("Seuls les administrateurs peuvent modifier le statut")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Empêcher la désactivation de son propre compte
         if request.user == user:
             return Response(
-                {"detail": "Vous ne pouvez pas modifier le statut de votre propre compte"}, 
+                {"detail": _("Vous ne pouvez pas modifier le statut de votre propre compte")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -822,7 +823,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Vérifier les permissions
         if not request.user.is_staff:
             return Response(
-                {"detail": "Seuls les administrateurs peuvent modifier la vérification"}, 
+                {"detail": _("Seuls les administrateurs peuvent modifier la vérification")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -851,7 +852,7 @@ class GetUserByIdView(APIView):
                 user_id = int(user_id)
             except (ValueError, TypeError):
                 return Response(
-                    {"detail": "ID utilisateur invalide"}, 
+                    {"detail": _("ID utilisateur invalide")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -861,7 +862,7 @@ class GetUserByIdView(APIView):
                 logger.debug(f"✅ Utilisateur trouvé: {user.username}")
             except User.DoesNotExist:
                 return Response(
-                    {"detail": "Utilisateur non trouvé"}, 
+                    {"detail": _("Utilisateur non trouvé")}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
             
@@ -906,14 +907,14 @@ class CurrentUserView(APIView):
             if not request.user.is_authenticated:
                 logger.warning("❌ Utilisateur non authentifié")
                 return Response(
-                    {"detail": "Authentication credentials were not provided."}, 
+                    {"detail": _("Authentication credentials were not provided.")}, 
                     status=status.HTTP_401_UNAUTHORIZED
                 )
             
             if request.user.is_anonymous:
                 logger.warning("❌ Utilisateur anonyme")
                 return Response(
-                    {"detail": "Anonymous user not allowed."}, 
+                    {"detail": _("Anonymous user not allowed.")}, 
                     status=status.HTTP_401_UNAUTHORIZED
                 )
             
@@ -1202,7 +1203,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
     def me(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         provider = user.provider_profile
         serializer = ProviderDetailSerializer(provider, context={'request': request})
@@ -1214,7 +1215,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
         user = request.user
         if not hasattr(user, 'provider_profile'):
             return Response(
-                {"detail": "Vous n'êtes pas un prestataire"}, 
+                {"detail": _("Vous n'êtes pas un prestataire")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -1253,13 +1254,13 @@ class ProviderViewSet(viewsets.ModelViewSet):
     def update_expertise_categories(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
             
         provider = user.provider_profile
         category_ids = request.data.get('categories', [])
         
         if not isinstance(category_ids, list):
-            return Response({"detail": "categories field must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("categories field must be a list")}, status=status.HTTP_400_BAD_REQUEST)
             
         # Mise à jour des catégories
         from django.apps import apps
@@ -1279,7 +1280,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
         user = request.user
         if not hasattr(user, 'provider_profile'):
             return Response(
-                {"detail": "Vous n'êtes pas un prestataire"}, 
+                {"detail": _("Vous n'êtes pas un prestataire")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -1296,7 +1297,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
     def by_category(self, request):
         category_id = request.query_params.get('category_id')
         if not category_id:
-            return Response({"detail": "category_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("category_id parameter is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         # Get providers that have services in this category
         providers = Provider.objects.filter(
@@ -1315,7 +1316,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
     def by_subcategory(self, request):
         subcategory_id = request.query_params.get('subcategory_id')
         if not subcategory_id:
-            return Response({"detail": "subcategory_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("subcategory_id parameter is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         # Get providers that have services in this subcategory
         providers = Provider.objects.filter(
@@ -1337,7 +1338,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         provider = user.provider_profile
         categories = provider.expertise_categories.all()
@@ -1368,7 +1369,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
             longitude = float(longitude)
         except (ValueError, TypeError):
             return Response(
-                {"detail": "Coordonnées invalides"}, 
+                {"detail": _("Coordonnées invalides")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -1704,7 +1705,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
     def my_services(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         services = ProviderService.objects.filter(provider=user.provider_profile)
         page = self.paginate_queryset(services)
@@ -1725,7 +1726,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
             # Vérifier que l'utilisateur est bien le propriétaire
             if not hasattr(request.user, 'provider_profile') or service.provider != request.user.provider_profile:
                 return Response(
-                    {"detail": "Vous n'êtes pas autorisé à modifier ce service"}, 
+                    {"detail": _("Vous n'êtes pas autorisé à modifier ce service")}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -1733,7 +1734,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
             is_available = request.data.get('is_available')
             if is_available is None:
                 return Response(
-                    {"detail": "Le champ 'is_available' est requis"}, 
+                    {"detail": _("Le champ 'is_available' est requis")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -1764,13 +1765,13 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         category_id = request.query_params.get('category_id')
         
         if not category_id:
-            return Response({"detail": "category_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("category_id parameter is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             # Convertir en entier
             category_id = int(category_id)
         except ValueError:
-            return Response({"detail": "category_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("category_id must be an integer")}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             # Compter les services pour cette catégorie
@@ -1832,13 +1833,13 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
         subcategory_id = request.query_params.get('subcategory_id')
         
         if not subcategory_id:
-            return Response({"detail": "subcategory_id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("subcategory_id parameter is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             # Convertir en entier
             subcategory_id = int(subcategory_id)
         except ValueError:
-            return Response({"detail": "subcategory_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("subcategory_id must be an integer")}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             # Compter les services pour cette sous-catégorie
@@ -1897,7 +1898,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
             radius = float(radius)
         except (ValueError, TypeError):
             return Response(
-                {"detail": "Coordonnées invalides"}, 
+                {"detail": _("Coordonnées invalides")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -1938,14 +1939,14 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Make sure the logged-in user is a provider
         if not hasattr(self.request.user, 'provider_profile'):
-            raise ValidationError("Only providers can create portfolio items")
+            raise ValidationError(_("Only providers can create portfolio items"))
         serializer.save(provider=self.request.user.provider_profile)
     
     @action(detail=False, methods=['get'])
     def my_portfolio(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         portfolio = Portfolio.objects.filter(provider=user.provider_profile)
         serializer = self.get_serializer(portfolio, many=True)
@@ -1970,14 +1971,14 @@ class CertificateViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Make sure the logged-in user is a provider
         if not hasattr(self.request.user, 'provider_profile'):
-            raise ValidationError("Only providers can upload certificates")
+            raise ValidationError(_("Only providers can upload certificates"))
         serializer.save(provider=self.request.user.provider_profile)
     
     @action(detail=False, methods=['get'])
     def my_certificates(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         certificates = Certificate.objects.filter(provider=user.provider_profile)
         serializer = self.get_serializer(certificates, many=True)
@@ -2015,7 +2016,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def provider_reviews(self, request):
         user = request.user
         if not hasattr(user, 'provider_profile'):
-            return Response({"detail": "You are not a provider"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("You are not a provider")}, status=status.HTTP_400_BAD_REQUEST)
         
         reviews = Review.objects.filter(provider=user.provider_profile)
         page = self.paginate_queryset(reviews)
@@ -2130,7 +2131,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         """
         Basculer un favori (ajouter si absent, retirer si présent)
         Body: {"service_id": 123}
-        Returns: {"is_favorited": true/false, "message": "..."}
+        Returns: {"is_favorited": true/false, "message": _("...")}
         """
         service_id = request.data.get('service_id')
         
@@ -2440,13 +2441,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
         user_id = request.query_params.get('user_id')
         
         if not user_id:
-            return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("user_id est requis")}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             user_id = int(user_id)
             user = User.objects.get(id=user_id)
         except (ValueError, User.DoesNotExist):
-            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Utilisateur non trouvé")}, status=status.HTTP_404_NOT_FOUND)
             
         conversation = self.get_object()
         
@@ -2455,7 +2456,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             not hasattr(user, 'provider_profile') or 
             conversation.provider.id != user.provider_profile.id
         ):
-            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": _("Accès non autorisé")}, status=status.HTTP_403_FORBIDDEN)
         
         # Marquer les messages comme lus pour cet utilisateur
         # (tous les messages envoyés par l'autre personne)
@@ -2502,7 +2503,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             
             if not content:
                 return Response(
-                    {"detail": "content est requis"}, 
+                    {"detail": _("content est requis")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -2513,7 +2514,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.info(f"❌ Conversation non trouvée: {e}")
                 return Response(
-                    {"detail": "Conversation non trouvée"}, 
+                    {"detail": _("Conversation non trouvée")}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
             
@@ -2526,7 +2527,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
                 logger.info(f"❌ Accès refusé pour user {request.user.id}")
                 logger.info(f"Client: {conversation.client.id}, Provider: {conversation.provider.id}")
                 return Response(
-                    {"detail": "Accès non autorisé à cette conversation"}, 
+                    {"detail": _("Accès non autorisé à cette conversation")}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -2563,13 +2564,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
         user_id = request.data.get('user_id')
         
         if not user_id:
-            return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("user_id est requis")}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             user_id = int(user_id)
             user = User.objects.get(id=user_id)
         except (ValueError, User.DoesNotExist):
-            return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Utilisateur non trouvé")}, status=status.HTTP_404_NOT_FOUND)
             
         conversation = self.get_object()
         
@@ -2578,7 +2579,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             not hasattr(user, 'provider_profile') or 
             conversation.provider.id != user.provider_profile.id
         ):
-            return Response({"detail": "Accès non autorisé"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": _("Accès non autorisé")}, status=status.HTTP_403_FORBIDDEN)
         
         # Marquer les messages comme lus
         if hasattr(user, 'provider_profile') and conversation.provider.id == user.provider_profile.id:
@@ -2606,7 +2607,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         
         if not user_id or not provider_id:
             return Response(
-                {"detail": "user_id et provider_id sont requis"}, 
+                {"detail": _("user_id et provider_id sont requis")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -2616,12 +2617,12 @@ class ConversationViewSet(viewsets.ModelViewSet):
             user = User.objects.get(id=user_id)
             provider = Provider.objects.get(id=provider_id)
         except (ValueError, User.DoesNotExist, Provider.DoesNotExist):
-            return Response({"detail": "Utilisateur ou prestataire non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Utilisateur ou prestataire non trouvé")}, status=status.HTTP_404_NOT_FOUND)
         
         # Vérifier que l'utilisateur n'est pas le prestataire lui-même
         if hasattr(user, 'provider_profile') and user.provider_profile.id == provider.id:
             return Response(
-                {"detail": "Vous ne pouvez pas démarrer une conversation avec vous-même"}, 
+                {"detail": _("Vous ne pouvez pas démarrer une conversation avec vous-même")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -2957,7 +2958,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             
             if not conversation_id or not content:
                 return Response(
-                    {"detail": "conversation et content sont requis"}, 
+                    {"detail": _("conversation et content sont requis")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -2966,7 +2967,7 @@ class MessageViewSet(viewsets.ModelViewSet):
                 conversation = Conversation.objects.get(id=conversation_id)
             except Conversation.DoesNotExist:
                 return Response(
-                    {"detail": "Conversation non trouvée"}, 
+                    {"detail": _("Conversation non trouvée")}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
             
@@ -2977,7 +2978,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             
             if not (is_client or is_provider):
                 return Response(
-                    {"detail": "Accès non autorisé"}, 
+                    {"detail": _("Accès non autorisé")}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -3062,7 +3063,7 @@ def mark_all_notifications_read(request):
     user_id = request.data.get('user_id')
     
     if not user_id:
-        return Response({"detail": "user_id est requis"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": _("user_id est requis")}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         user_id = int(user_id)
@@ -3073,7 +3074,7 @@ def mark_all_notifications_read(request):
         
         return Response({"count": count, "status": "success"}, status=status.HTTP_200_OK)
     except (ValueError, User.DoesNotExist):
-        return Response({"detail": "Utilisateur non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": _("Utilisateur non trouvé")}, status=status.HTTP_404_NOT_FOUND)
 
 
 
@@ -3136,7 +3137,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
             
             # 3. Si aucun des deux n'est fourni
             else:
-                raise ValidationError({"error": "Either service_id or provider_id is required"})
+                raise ValidationError({"error": _("Either service_id or provider_id is required")})
             
             serializer.save(client=user, provider=provider)
         
@@ -3153,7 +3154,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
             # Vérifier les droits
             if request.user != dispute.client and request.user != dispute.provider.user:
                 return Response(
-                    {"detail": "Vous n'avez pas l'autorisation d'ajouter des preuves à ce litige"}, 
+                    {"detail": _("Vous n'avez pas l'autorisation d'ajouter des preuves à ce litige")}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -3170,14 +3171,14 @@ class DisputeViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.error(f"Erreur lecture request.data: {e}")
                 return Response(
-                    {"detail": "Erreur lors de la lecture des données."}, 
+                    {"detail": _("Erreur lors de la lecture des données.")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
             # ✅ MODIFICATION : Validation adaptée
             if not description:
                 return Response(
-                    {"detail": "La description est requise"}, 
+                    {"detail": _("La description est requise")}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -3228,7 +3229,7 @@ class DisputeViewSet(viewsets.ModelViewSet):
             except Exception as create_error:
                 logger.error(f"Erreur création preuve/commentaire: {create_error}")
                 return Response(
-                    {"detail": "Erreur lors de la sauvegarde. Veuillez réessayer."}, 
+                    {"detail": _("Erreur lors de la sauvegarde. Veuillez réessayer.")}, 
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
                 
@@ -3251,14 +3252,14 @@ class DisputeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
         if not request.user.is_staff:
-            return Response({"detail": "Only staff can update dispute status"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": _("Only staff can update dispute status")}, status=status.HTTP_403_FORBIDDEN)
         
         dispute = self.get_object()
         status_value = request.data.get('status')
         resolution_note = request.data.get('resolution_note', '')
         
         if not status_value or status_value not in [s[0] for s in Dispute.STATUS_CHOICES]:
-            return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("Valid status is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         dispute.status = status_value
         dispute.resolution_note = resolution_note
@@ -3301,7 +3302,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
             # Vérifier les permissions
             if notification.user != request.user and not (request.user.is_staff or request.user.is_superuser):
                 return Response(
-                    {"detail": "Permission refusée"}, 
+                    {"detail": _("Permission refusée")}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -3312,14 +3313,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
             # Réponse de succès
             return Response({
                 "status": "success",
-                "message": "Notification marquée comme lue",
+                "message": _("Notification marquée comme lue"),
                 "notification_id": notification.id,
                 "is_read": True
             }, status=status.HTTP_200_OK)
             
         except Notification.DoesNotExist:
             return Response(
-                {"detail": "Notification non trouvée"}, 
+                {"detail": _("Notification non trouvée")}, 
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
@@ -3352,7 +3353,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Statistiques des notifications (pour admins)"""
         if not (request.user.is_staff or request.user.is_superuser):
             return Response(
-                {"detail": "Permission denied"}, 
+                {"detail": _("Permission denied")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -3387,14 +3388,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Marquer plusieurs notifications comme lues (pour admins)"""
         if not (request.user.is_staff or request.user.is_superuser):
             return Response(
-                {"detail": "Permission denied"}, 
+                {"detail": _("Permission denied")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         notification_ids = request.data.get('notification_ids', [])
         if not notification_ids:
             return Response(
-                {"detail": "notification_ids required"}, 
+                {"detail": _("notification_ids required")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -3413,14 +3414,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Supprimer plusieurs notifications (pour admins seulement)"""
         if not (request.user.is_staff or request.user.is_superuser):
             return Response(
-                {"detail": "Permission denied"}, 
+                {"detail": _("Permission denied")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         notification_ids = request.data.get('notification_ids', [])
         if not notification_ids:
             return Response(
-                {"detail": "notification_ids required"}, 
+                {"detail": _("notification_ids required")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -3472,7 +3473,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
             except Provider.DoesNotExist:
                 raise ValidationError({"provider": "Provider not found"})
         else:
-            raise ValidationError({"error": "Either service_id or provider_id is required"})
+            raise ValidationError({"error": _("Either service_id or provider_id is required")})
         
         # Sauvegarder - le signal se chargera de créer la notification
         serializer.save(client=self.request.user, provider=provider, service=service)
@@ -3486,7 +3487,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         # Validation du statut
         if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
             return Response(
-                {"detail": "Valid status is required"}, 
+                {"detail": _("Valid status is required")}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -3494,7 +3495,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         user = request.user
         if not (hasattr(user, 'provider_profile') and quote_request.provider == user.provider_profile):
             return Response(
-                {"detail": "You are not authorized to update this quote request"}, 
+                {"detail": _("You are not authorized to update this quote request")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -3537,7 +3538,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         # Vérifier que l'utilisateur est le client
         if quote_request.client != request.user:
             return Response(
-                {"detail": "Only the client can contact the provider"}, 
+                {"detail": _("Only the client can contact the provider")}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -3551,7 +3552,7 @@ class QuoteRequestViewSet(viewsets.ModelViewSet):
         
         return Response({
             "conversation_id": conversation.id,
-            "message": "Conversation créée avec succès" if created else "Conversation existante récupérée"
+            "message": _("Conversation créée avec succès") if created else "Conversation existante récupérée"
         })
 
 # Endpoints pour les notifications (si pas déjà dans urls.py)
@@ -3585,14 +3586,14 @@ class ReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
         if not request.user.is_staff:
-            return Response({"detail": "Only staff can update report status"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": _("Only staff can update report status")}, status=status.HTTP_403_FORBIDDEN)
         
         report = self.get_object()
         status_value = request.data.get('status')
         admin_notes = request.data.get('admin_notes', '')
         
         if not status_value or status_value not in [s[0] for s in Report.STATUS_CHOICES]:
-            return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("Valid status is required")}, status=status.HTTP_400_BAD_REQUEST)
         
         report.status = status_value
         report.admin_notes = admin_notes
@@ -3644,7 +3645,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         
 #         # 3. Si aucun des deux n'est fourni
 #         else:
-#             raise ValidationError({"error": "Either service_id or provider_id is required"})
+#             raise ValidationError({"error": _("Either service_id or provider_id is required")})
         
 #         # Sauvegarder avec client, provider et service automatiquement définis
 #         serializer.save(client=self.request.user, provider=provider, service=service)
@@ -3655,7 +3656,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 #         status_value = request.data.get('status')
         
 #         if not status_value or status_value not in [s[0] for s in QuoteRequest.STATUS_CHOICES]:
-#             return Response({"detail": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+#             return Response({"detail": _("Valid status is required")}, status=status.HTTP_400_BAD_REQUEST)
         
 #         # Vérifier que l'utilisateur est autorisé à modifier le statut
 #         user = request.user
@@ -3665,7 +3666,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 #             serializer = self.get_serializer(quote_request)
 #             return Response(serializer.data)
 #         else:
-#             return Response({"detail": "You are not authorized to update this quote request"}, 
+#             return Response({"detail": _("You are not authorized to update this quote request")}, 
 #                            status=status.HTTP_403_FORBIDDEN)
     
 
@@ -3860,7 +3861,7 @@ class ClientProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # La création nécessite toujours une authentification
         if not self.request.user.is_authenticated:
-            raise PermissionDenied("Authentification requise pour créer un projet")
+            raise PermissionDenied(_("Authentification requise pour créer un projet"))
         serializer.save(client=self.request.user)
     
     def retrieve(self, request, *args, **kwargs):
@@ -4761,7 +4762,7 @@ class ProviderVerificationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Associer automatiquement au prestataire connecté"""
         if not hasattr(self.request.user, 'provider_profile'):
-            raise ValidationError("Profil prestataire requis")
+            raise ValidationError(_("Profil prestataire requis"))
         
         serializer.save(provider=self.request.user.provider_profile)
     

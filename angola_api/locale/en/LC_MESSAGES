@@ -1,0 +1,236 @@
+# LANGUAGE: English (en)
+# TRANSLATION FILE FOR ANGOLA API
+# Generated on 2025-11-10
+
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "..."
+msgstr "..."
+
+msgid "Accès non autorisé"
+msgstr "Unauthorized access"
+
+msgid "Accès non autorisé à cette conversation"
+msgstr "Unauthorized access to this conversation"
+
+msgid "Anonymous user not allowed."
+msgstr "Anonymous user not allowed."
+
+msgid "Aucun compte trouvé avec cet email"
+msgstr "No account found with this email"
+
+msgid "Authentication credentials were not provided."
+msgstr "Authentication credentials were not provided."
+
+msgid "Authentication required"
+msgstr "Authentication required"
+
+msgid "Authentification requise pour créer un projet"
+msgstr "Authentication required to create a project"
+
+msgid "Ce compte a été désactivé"
+msgstr "This account has been disabled"
+
+msgid "Code de réinitialisation envoyé"
+msgstr "Reset code sent"
+
+msgid "Code expiré"
+msgstr "Expired code"
+
+msgid "Code invalide"
+msgstr "Invalid code"
+
+msgid "Code vérifié avec succès"
+msgstr "Code verified successfully"
+
+msgid "Conversation créée avec succès"
+msgstr "Conversation created successfully"
+
+msgid "Conversation non trouvée"
+msgstr "Conversation not found"
+
+msgid "Coordonnées invalides"
+msgstr "Invalid coordinates"
+
+msgid "Either service_id or provider_id is required"
+msgstr "Either service_id or provider_id is required"
+
+msgid "Email et code sont requis"
+msgstr "Email and code are required"
+
+msgid "Email et mot de passe sont requis"
+msgstr "Email and password are required"
+
+msgid "Email requis"
+msgstr "Email required"
+
+msgid "Email, code et nouveau mot de passe sont requis"
+msgstr "Email, code and new password are required"
+
+msgid "Erreur interne du serveur"
+msgstr "Internal server error"
+
+msgid "Erreur lors de la lecture des données."
+msgstr "Error reading data."
+
+msgid "Erreur lors de la sauvegarde. Veuillez réessayer."
+msgstr "Error saving. Please try again."
+
+msgid "ID utilisateur invalide"
+msgstr "Invalid user ID"
+
+msgid "La description est requise"
+msgstr "Description is required"
+
+msgid "Le champ 'is_available' est requis"
+msgstr "The 'is_available' field is required"
+
+msgid "Mot de passe incorrect"
+msgstr "Incorrect password"
+
+msgid "Mot de passe réinitialisé avec succès"
+msgstr "Password reset successfully"
+
+msgid "Notification marquée comme lue"
+msgstr "Notification marked as read"
+
+msgid "Notifications marquées comme lues"
+msgstr "Notifications marked as read"
+
+msgid "Aucune offre trouvée"
+msgstr "No offer found"
+
+msgid "Offre acceptée avec succès"
+msgstr "Offer accepted successfully"
+
+msgid "Offre annulée avec succès"
+msgstr "Offer cancelled successfully"
+
+msgid "Offre complétée avec succès"
+msgstr "Offer completed successfully"
+
+msgid "Offre créée avec succès"
+msgstr "Offer created successfully"
+
+msgid "Offre non trouvée"
+msgstr "Offer not found"
+
+msgid "Offre refusée avec succès"
+msgstr "Offer rejected successfully"
+
+msgid "Offre retirée avec succès"
+msgstr "Offer withdrawn successfully"
+
+msgid "Prestataire introuvable"
+msgstr "Provider not found"
+
+msgid "Prestataire non trouvé"
+msgstr "Provider not found"
+
+msgid "Profil prestataire créé avec succès"
+msgstr "Provider profile created successfully"
+
+msgid "Profil prestataire mis à jour avec succès"
+msgstr "Provider profile updated successfully"
+
+msgid "Profil utilisateur mis à jour"
+msgstr "User profile updated"
+
+msgid "Projet créé avec succès"
+msgstr "Project created successfully"
+
+msgid "Projet mis à jour avec succès"
+msgstr "Project updated successfully"
+
+msgid "Projet non trouvé"
+msgstr "Project not found"
+
+msgid "Seul l'auteur peut modifier ce projet"
+msgstr "Only the author can modify this project"
+
+msgid "Seul le client peut accepter une offre"
+msgstr "Only the client can accept an offer"
+
+msgid "Seul le client peut annuler l'offre"
+msgstr "Only the client can cancel the offer"
+
+msgid "Seul le prestataire peut compléter l'offre"
+msgstr "Only the provider can complete the offer"
+
+msgid "Seul le prestataire peut retirer son offre"
+msgstr "Only the provider can withdraw their offer"
+
+msgid "Service ajouté aux favoris"
+msgstr "Service added to favorites"
+
+msgid "Service créé avec succès"
+msgstr "Service created successfully"
+
+msgid "Service non trouvé"
+msgstr "Service not found"
+
+msgid "Service retiré des favoris"
+msgstr "Service removed from favorites"
+
+msgid "Si cet email existe, un code de réinitialisation a été envoyé"
+msgstr "If this email exists, a reset code has been sent"
+
+msgid "Token créé avec succès"
+msgstr "Token created successfully"
+
+msgid "Token supprimé avec succès"
+msgstr "Token deleted successfully"
+
+msgid "Utilisateur non trouvé"
+msgstr "User not found"
+
+msgid "Veuillez fournir les coordonnées (latitude et longitude)"
+msgstr "Please provide coordinates (latitude and longitude)"
+
+msgid "Vous avez déjà un profil prestataire"
+msgstr "You already have a provider profile"
+
+msgid "Vous n'avez pas de profil prestataire"
+msgstr "You do not have a provider profile"
+
+msgid "Vous ne pouvez pas accepter votre propre offre"
+msgstr "You cannot accept your own offer"
+
+msgid "Vous ne pouvez pas créer une offre pour votre propre projet"
+msgstr "You cannot create an offer for your own project"
+
+msgid "Vous ne pouvez pas soumettre plusieurs offres pour le même projet"
+msgstr "You cannot submit multiple offers for the same project"
+
+msgid "Ce service existe déjà dans vos favoris"
+msgstr "This service already exists in your favorites"
+
+msgid "Token FCM requis"
+msgstr "FCM token required"
+
+msgid "Type d'appareil requis"
+msgstr "Device type required"
+
+msgid "Préférences mises à jour avec succès"
+msgstr "Preferences updated successfully"
+
+msgid "Aucune notification trouvée"
+msgstr "No notification found"
+
+msgid "Historique supprimé avec succès"
+msgstr "History deleted successfully"
+
+msgid "Toutes les notifications marquées comme lues"
+msgstr "All notifications marked as read"
+
+msgid "Message envoyé avec succès"
+msgstr "Message sent successfully"
+
+msgid "Le contenu du message est requis"
+msgstr "Message content is required"
+
+msgid "Erreur lors de l'envoi du message"
+msgstr "Error sending message"

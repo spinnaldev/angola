@@ -1,0 +1,236 @@
+# LANGUAGE: Français (fr)
+# TRANSLATION FILE FOR ANGOLA API
+# Generated on 2025-11-10
+
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fr\n"
+
+msgid "..."
+msgstr "..."
+
+msgid "Accès non autorisé"
+msgstr "Accès non autorisé"
+
+msgid "Accès non autorisé à cette conversation"
+msgstr "Accès non autorisé à cette conversation"
+
+msgid "Anonymous user not allowed."
+msgstr "Utilisateur anonyme non autorisé."
+
+msgid "Aucun compte trouvé avec cet email"
+msgstr "Aucun compte trouvé avec cet email"
+
+msgid "Authentication credentials were not provided."
+msgstr "Les identifiants d'authentification n'ont pas été fournis."
+
+msgid "Authentication required"
+msgstr "Authentification requise"
+
+msgid "Authentification requise pour créer un projet"
+msgstr "Authentification requise pour créer un projet"
+
+msgid "Ce compte a été désactivé"
+msgstr "Ce compte a été désactivé"
+
+msgid "Code de réinitialisation envoyé"
+msgstr "Code de réinitialisation envoyé"
+
+msgid "Code expiré"
+msgstr "Code expiré"
+
+msgid "Code invalide"
+msgstr "Code invalide"
+
+msgid "Code vérifié avec succès"
+msgstr "Code vérifié avec succès"
+
+msgid "Conversation créée avec succès"
+msgstr "Conversation créée avec succès"
+
+msgid "Conversation non trouvée"
+msgstr "Conversation non trouvée"
+
+msgid "Coordonnées invalides"
+msgstr "Coordonnées invalides"
+
+msgid "Either service_id or provider_id is required"
+msgstr "service_id ou provider_id est requis"
+
+msgid "Email et code sont requis"
+msgstr "Email et code sont requis"
+
+msgid "Email et mot de passe sont requis"
+msgstr "Email et mot de passe sont requis"
+
+msgid "Email requis"
+msgstr "Email requis"
+
+msgid "Email, code et nouveau mot de passe sont requis"
+msgstr "Email, code et nouveau mot de passe sont requis"
+
+msgid "Erreur interne du serveur"
+msgstr "Erreur interne du serveur"
+
+msgid "Erreur lors de la lecture des données."
+msgstr "Erreur lors de la lecture des données."
+
+msgid "Erreur lors de la sauvegarde. Veuillez réessayer."
+msgstr "Erreur lors de la sauvegarde. Veuillez réessayer."
+
+msgid "ID utilisateur invalide"
+msgstr "ID utilisateur invalide"
+
+msgid "La description est requise"
+msgstr "La description est requise"
+
+msgid "Le champ 'is_available' est requis"
+msgstr "Le champ 'is_available' est requis"
+
+msgid "Mot de passe incorrect"
+msgstr "Mot de passe incorrect"
+
+msgid "Mot de passe réinitialisé avec succès"
+msgstr "Mot de passe réinitialisé avec succès"
+
+msgid "Notification marquée comme lue"
+msgstr "Notification marquée comme lue"
+
+msgid "Notifications marquées comme lues"
+msgstr "Notifications marquées comme lues"
+
+msgid "Aucune offre trouvée"
+msgstr "Aucune offre trouvée"
+
+msgid "Offre acceptée avec succès"
+msgstr "Offre acceptée avec succès"
+
+msgid "Offre annulée avec succès"
+msgstr "Offre annulée avec succès"
+
+msgid "Offre complétée avec succès"
+msgstr "Offre complétée avec succès"
+
+msgid "Offre créée avec succès"
+msgstr "Offre créée avec succès"
+
+msgid "Offre non trouvée"
+msgstr "Offre non trouvée"
+
+msgid "Offre refusée avec succès"
+msgstr "Offre refusée avec succès"
+
+msgid "Offre retirée avec succès"
+msgstr "Offre retirée avec succès"
+
+msgid "Prestataire introuvable"
+msgstr "Prestataire introuvable"
+
+msgid "Prestataire non trouvé"
+msgstr "Prestataire non trouvé"
+
+msgid "Profil prestataire créé avec succès"
+msgstr "Profil prestataire créé avec succès"
+
+msgid "Profil prestataire mis à jour avec succès"
+msgstr "Profil prestataire mis à jour avec succès"
+
+msgid "Profil utilisateur mis à jour"
+msgstr "Profil utilisateur mis à jour"
+
+msgid "Projet créé avec succès"
+msgstr "Projet créé avec succès"
+
+msgid "Projet mis à jour avec succès"
+msgstr "Projet mis à jour avec succès"
+
+msgid "Projet non trouvé"
+msgstr "Projet non trouvé"
+
+msgid "Seul l'auteur peut modifier ce projet"
+msgstr "Seul l'auteur peut modifier ce projet"
+
+msgid "Seul le client peut accepter une offre"
+msgstr "Seul le client peut accepter une offre"
+
+msgid "Seul le client peut annuler l'offre"
+msgstr "Seul le client peut annuler l'offre"
+
+msgid "Seul le prestataire peut compléter l'offre"
+msgstr "Seul le prestataire peut compléter l'offre"
+
+msgid "Seul le prestataire peut retirer son offre"
+msgstr "Seul le prestataire peut retirer son offre"
+
+msgid "Service ajouté aux favoris"
+msgstr "Service ajouté aux favoris"
+
+msgid "Service créé avec succès"
+msgstr "Service créé avec succès"
+
+msgid "Service non trouvé"
+msgstr "Service non trouvé"
+
+msgid "Service retiré des favoris"
+msgstr "Service retiré des favoris"
+
+msgid "Si cet email existe, un code de réinitialisation a été envoyé"
+msgstr "Si cet email existe, un code de réinitialisation a été envoyé"
+
+msgid "Token créé avec succès"
+msgstr "Token créé avec succès"
+
+msgid "Token supprimé avec succès"
+msgstr "Token supprimé avec succès"
+
+msgid "Utilisateur non trouvé"
+msgstr "Utilisateur non trouvé"
+
+msgid "Veuillez fournir les coordonnées (latitude et longitude)"
+msgstr "Veuillez fournir les coordonnées (latitude et longitude)"
+
+msgid "Vous avez déjà un profil prestataire"
+msgstr "Vous avez déjà un profil prestataire"
+
+msgid "Vous n'avez pas de profil prestataire"
+msgstr "Vous n'avez pas de profil prestataire"
+
+msgid "Vous ne pouvez pas accepter votre propre offre"
+msgstr "Vous ne pouvez pas accepter votre propre offre"
+
+msgid "Vous ne pouvez pas créer une offre pour votre propre projet"
+msgstr "Vous ne pouvez pas créer une offre pour votre propre projet"
+
+msgid "Vous ne pouvez pas soumettre plusieurs offres pour le même projet"
+msgstr "Vous ne pouvez pas soumettre plusieurs offres pour le même projet"
+
+msgid "Ce service existe déjà dans vos favoris"
+msgstr "Ce service existe déjà dans vos favoris"
+
+msgid "Token FCM requis"
+msgstr "Token FCM requis"
+
+msgid "Type d'appareil requis"
+msgstr "Type d'appareil requis"
+
+msgid "Préférences mises à jour avec succès"
+msgstr "Préférences mises à jour avec succès"
+
+msgid "Aucune notification trouvée"
+msgstr "Aucune notification trouvée"
+
+msgid "Historique supprimé avec succès"
+msgstr "Historique supprimé avec succès"
+
+msgid "Toutes les notifications marquées comme lues"
+msgstr "Toutes les notifications marquées comme lues"
+
+msgid "Message envoyé avec succès"
+msgstr "Message envoyé avec succès"
+
+msgid "Le contenu du message est requis"
+msgstr "Le contenu du message est requis"
+
+msgid "Erreur lors de l'envoi du message"
+msgstr "Erreur lors de l'envoi du message"
