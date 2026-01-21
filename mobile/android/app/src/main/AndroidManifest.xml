@@ -25,6 +25,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBbWG2TknngAvTkzGksyubwmdr6gT3dndw"/>
 
+        <meta-data
+            android:name="android.supports_16k_pages"
+            android:value="true" />
+            
         <!-- ✅ FIREBASE : Métadonnées pour les notifications -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

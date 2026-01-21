@@ -1,553 +1,3 @@
-// // lib/ui/widgets/map_filter_screen.dart
-// import 'package:flutter/material.dart';
-// import 'package:google_maps_flutter/google_maps_flutter.dart';
-// import 'package:provider/provider.dart';
-// import '../../providers/provider_list_provider.dart';
-// import '../../providers/location_provider.dart';
-// import '../../core/models/provider_model.dart';
-// import '../widgets/loading_indicator.dart';
-
-// class MapFilterScreen extends StatefulWidget {
-//   final VoidCallback onClose;
-//   final int? categoryId;
-
-//   const MapFilterScreen({
-//     Key? key, 
-//     required this.onClose,
-//     this.categoryId,
-//   }) : super(key: key);
-
-//   @override
-//   _MapFilterScreenState createState() => _MapFilterScreenState();
-// }
-
-// class _MapFilterScreenState extends State<MapFilterScreen> {
-//   GoogleMapController? _mapController;
-//   final Set<Marker> _markers = {};
-//   bool _isLoading = true;
-//   String _errorMessage = '';
-//   LatLng? _currentPosition;
-//   bool _showListView = false;
-//   List<ProviderModel> _providers = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _loadData();
-//   }
-
-//   Future<void> _loadData() async {
-//     setState(() {
-//       _isLoading = true;
-//       _errorMessage = '';
-//     });
-
-//     try {
-//       // Récupérer la position actuelle
-//       final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-//       bool locationAvailable = await locationProvider.checkLocationServices();
-      
-//       if (locationAvailable) {
-//         bool success = await locationProvider.getCurrentLocation();
-//         if (success && locationProvider.currentPosition != null) {
-//           _currentPosition = LatLng(
-//             locationProvider.currentPosition!.latitude,
-//             locationProvider.currentPosition!.longitude,
-//           );
-//         }
-//       }
-      
-//       // Position par défaut si la géolocalisation échoue (Cotonou, Bénin)
-//       _currentPosition ??= const LatLng(6.3728, 2.3905);
-
-//       // Charger les prestataires
-//       final providerListProvider = Provider.of<ProviderListProvider>(context, listen: false);
-      
-//       if (widget.categoryId != null) {
-//         await providerListProvider.fetchProvidersByCategory(widget.categoryId!);
-//       } else {
-//         // Essayer de récupérer les prestataires à proximité
-//         if (locationProvider.currentPosition != null) {
-//           await providerListProvider.fetchNearbyProviders(
-//             locationProvider.currentPosition!.latitude,
-//             locationProvider.currentPosition!.longitude,
-//             radius: 10.0, // 10 km de rayon
-//           );
-//         } else {
-//           await providerListProvider.fetchProviders();
-//         }
-//       }
-
-//       _providers = providerListProvider.providers;
-//       _createMarkers(_providers);
-
-//       setState(() {
-//         _isLoading = false;
-//       });
-//     } catch (e) {
-//       setState(() {
-//         _errorMessage = 'Erreur lors du chargement: $e';
-//         _isLoading = false;
-//       });
-//     }
-//   }
-
-//   void _createMarkers(List<ProviderModel> providers) {
-//     _markers.clear();
-    
-//     for (var provider in providers) {
-//       if (provider.latitude != null && provider.longitude != null) {
-//         _markers.add(
-//           Marker(
-//             markerId: MarkerId('provider_${provider.id}'),
-//             position: LatLng(provider.latitude!, provider.longitude!),
-//             infoWindow: InfoWindow(
-//               title: provider.name,
-//               snippet: '${provider.businessType} • ${provider.rating.toStringAsFixed(1)}⭐',
-//             ),
-//             onTap: () => _showProviderBottomSheet(provider),
-//             icon: BitmapDescriptor.defaultMarkerWithHue(
-//               provider.isVerified 
-//                 ? BitmapDescriptor.hueGreen
-//                 : provider.businessType == 'Entreprise' 
-//                   ? BitmapDescriptor.hueBlue 
-//                   : BitmapDescriptor.hueOrange
-//             ),
-//           ),
-//         );
-//       }
-//     }
-    
-//     if (mounted) {
-//       setState(() {});
-//     }
-//   }
-
-//   void _showProviderBottomSheet(ProviderModel provider) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       builder: (context) => DraggableScrollableSheet(
-//         initialChildSize: 0.4,
-//         minChildSize: 0.3,
-//         maxChildSize: 0.8,
-//         builder: (context, scrollController) {
-//           return Container(
-//             decoration: const BoxDecoration(
-//               color: Colors.white,
-//               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//             ),
-//             child: SingleChildScrollView(
-//               controller: scrollController,
-//               child: Padding(
-//                 padding: const EdgeInsets.all(16),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     // Handle bar
-//                     Center(
-//                       child: Container(
-//                         width: 40,
-//                         height: 4,
-//                         decoration: BoxDecoration(
-//                           color: Colors.grey[300],
-//                           borderRadius: BorderRadius.circular(2),
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(height: 16),
-                    
-//                     // Provider header
-//                     Row(
-//                       children: [
-//                         CircleAvatar(
-//                           radius: 30,
-//                           backgroundImage: provider.profileImageUrl.isNotEmpty
-//                               ? NetworkImage(provider.profileImageUrl)
-//                               : null,
-//                           child: provider.profileImageUrl.isEmpty
-//                               ? Text(
-//                                   provider.name.isNotEmpty ? provider.name[0] : 'P',
-//                                   style: const TextStyle(fontSize: 24),
-//                                 )
-//                               : null,
-//                         ),
-//                         const SizedBox(width: 16),
-//                         Expanded(
-//                           child: Column(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Row(
-//                                 children: [
-//                                   Expanded(
-//                                     child: Text(
-//                                       provider.name,
-//                                       style: const TextStyle(
-//                                         fontSize: 18,
-//                                         fontWeight: FontWeight.bold,
-//                                       ),
-//                                     ),
-//                                   ),
-//                                   if (provider.isVerified)
-//                                     const Icon(
-//                                       Icons.verified,
-//                                       color: Colors.green,
-//                                       size: 20,
-//                                     ),
-//                                 ],
-//                               ),
-//                               Text(
-//                                 provider.businessType,
-//                                 style: TextStyle(
-//                                   color: Colors.grey[600],
-//                                   fontSize: 14,
-//                                 ),
-//                               ),
-//                               Row(
-//                                 children: [
-//                                   const Icon(Icons.star, color: Colors.amber, size: 16),
-//                                   const SizedBox(width: 4),
-//                                   Text(
-//                                     provider.rating.toStringAsFixed(1),
-//                                     style: const TextStyle(
-//                                       fontWeight: FontWeight.bold,
-//                                       fontSize: 14,
-//                                     ),
-//                                   ),
-//                                   const SizedBox(width: 4),
-//                                   Text(
-//                                     '(${provider.reviewCount} avis)',
-//                                     style: TextStyle(
-//                                       color: Colors.grey[600],
-//                                       fontSize: 14,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-                    
-//                     const SizedBox(height: 16),
-                    
-//                     // Description
-//                     if (provider.description.isNotEmpty) ...[
-//                       Text(
-//                         provider.description,
-//                         style: const TextStyle(fontSize: 14),
-//                         maxLines: 3,
-//                         overflow: TextOverflow.ellipsis,
-//                       ),
-//                       const SizedBox(height: 16),
-//                     ],
-                    
-//                     // Services
-//                     if (provider.services.isNotEmpty) ...[
-//                       const Text(
-//                         'Services proposés',
-//                         style: TextStyle(
-//                           fontSize: 16,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//                       const SizedBox(height: 8),
-//                       ...provider.services.take(3).map((service) => Padding(
-//                         padding: const EdgeInsets.only(bottom: 4),
-//                         child: Row(
-//                           children: [
-//                             Icon(Icons.check_circle, 
-//                                  color: Colors.green, size: 16),
-//                             const SizedBox(width: 8),
-//                             Expanded(
-//                               child: Text(
-//                                 service.title,
-//                                 style: const TextStyle(fontSize: 14),
-//                               ),
-//                             ),
-//                             Text(
-//                               service.priceType == 'quote' 
-//                                   ? 'Sur devis' 
-//                                   : service.priceType,
-//                               style: TextStyle(
-//                                 fontSize: 12,
-//                                 color: Colors.grey[600],
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                       )),
-//                       if (provider.services.length > 3)
-//                         Text(
-//                           '+${provider.services.length - 3} autres services',
-//                           style: TextStyle(
-//                             color: Colors.grey[600],
-//                             fontSize: 12,
-//                           ),
-//                         ),
-//                       const SizedBox(height: 16),
-//                     ],
-                    
-//                     // Distance et adresse
-//                     if (provider.address != null) ...[
-//                       Row(
-//                         children: [
-//                           Icon(Icons.location_on, 
-//                                color: Colors.grey[600], size: 16),
-//                           const SizedBox(width: 8),
-//                           Expanded(
-//                             child: Text(
-//                               provider.address!,
-//                               style: TextStyle(
-//                                 color: Colors.grey[600],
-//                                 fontSize: 14,
-//                               ),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                       const SizedBox(height: 16),
-//                     ],
-                    
-//                     // Action buttons
-//                     Row(
-//                       children: [
-//                         Expanded(
-//                           child: OutlinedButton.icon(
-//                             onPressed: () {
-//                               Navigator.pop(context);
-//                               Navigator.pushNamed(
-//                                 context,
-//                                 '/provider-detail',
-//                                 arguments: provider.id,
-//                               );
-//                             },
-//                             icon: const Icon(Icons.info_outline),
-//                             label: const Text('Voir le profil'),
-//                           ),
-//                         ),
-//                         const SizedBox(width: 12),
-//                         Expanded(
-//                           child: ElevatedButton.icon(
-//                             onPressed: () {
-//                               Navigator.pop(context);
-//                               // Naviguer vers la messagerie ou demande de devis
-//                             },
-//                             icon: const Icon(Icons.message),
-//                             label: const Text('Contacter'),
-//                             style: ElevatedButton.styleFrom(
-//                               backgroundColor: const Color(0xFF142FE2),
-//                             ),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Stack(
-//         children: [
-//           // Carte ou liste
-//           _showListView ? _buildListView() : _buildMapView(),
-          
-//           // Header
-//           SafeArea(
-//             child: Container(
-//               margin: const EdgeInsets.all(16),
-//               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(12),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 8,
-//                     spreadRadius: 1,
-//                   ),
-//                 ],
-//               ),
-//               child: Row(
-//                 children: [
-//                   IconButton(
-//                     icon: const Icon(Icons.arrow_back),
-//                     onPressed: widget.onClose,
-//                     padding: EdgeInsets.zero,
-//                     constraints: const BoxConstraints(),
-//                   ),
-//                   const SizedBox(width: 16),
-//                   Expanded(
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         const Text(
-//                           'Services à proximité',
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         Text(
-//                           _isLoading 
-//                               ? 'Chargement...'
-//                               : '${_providers.length} prestataire(s) trouvé(s)',
-//                           style: TextStyle(
-//                             fontSize: 12,
-//                             color: Colors.grey[600],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                   IconButton(
-//                     icon: Icon(_showListView ? Icons.map : Icons.list),
-//                     onPressed: () {
-//                       setState(() {
-//                         _showListView = !_showListView;
-//                       });
-//                     },
-//                     tooltip: _showListView ? 'Vue carte' : 'Vue liste',
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildMapView() {
-//     if (_isLoading) {
-//       return const Center(child: LoadingIndicator());
-//     }
-
-//     if (_errorMessage.isNotEmpty) {
-//       return Center(
-//         child: Padding(
-//           padding: const EdgeInsets.all(20.0),
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: [
-//               const Icon(Icons.error_outline, size: 64, color: Colors.red),
-//               const SizedBox(height: 16),
-//               Text(
-//                 _errorMessage,
-//                 textAlign: TextAlign.center,
-//                 style: TextStyle(color: Colors.grey[600]),
-//               ),
-//               const SizedBox(height: 24),
-//               ElevatedButton(
-//                 onPressed: _loadData,
-//                 child: const Text('Réessayer'),
-//               ),
-//             ],
-//           ),
-//         ),
-//       );
-//     }
-
-//     if (_currentPosition == null) {
-//       return const Center(child: Text('Position non disponible'));
-//     }
-
-//     return GoogleMap(
-//       initialCameraPosition: CameraPosition(
-//         target: _currentPosition!,
-//         zoom: 12,
-//       ),
-//       markers: _markers,
-//       myLocationEnabled: true,
-//       myLocationButtonEnabled: true,
-//       onMapCreated: (controller) {
-//         _mapController = controller;
-//       },
-//     );
-//   }
-
-//   Widget _buildListView() {
-//     if (_isLoading) {
-//       return const Center(child: LoadingIndicator());
-//     }
-
-//     if (_providers.isEmpty) {
-//       return const Center(
-//         child: Text('Aucun prestataire trouvé'),
-//       );
-//     }
-
-//     return ListView.builder(
-//       padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16),
-//       itemCount: _providers.length,
-//       itemBuilder: (context, index) {
-//         final provider = _providers[index];
-//         return Card(
-//           margin: const EdgeInsets.only(bottom: 12),
-//           child: ListTile(
-//             leading: CircleAvatar(
-//               backgroundImage: provider.profileImageUrl.isNotEmpty
-//                   ? NetworkImage(provider.profileImageUrl)
-//                   : null,
-//               child: provider.profileImageUrl.isEmpty
-//                   ? Text(provider.name.isNotEmpty ? provider.name[0] : 'P')
-//                   : null,
-//             ),
-//             title: Row(
-//               children: [
-//                 Expanded(
-//                   child: Text(
-//                     provider.name,
-//                     style: const TextStyle(fontWeight: FontWeight.bold),
-//                   ),
-//                 ),
-//                 if (provider.isVerified)
-//                   const Icon(Icons.verified, color: Colors.green, size: 16),
-//               ],
-//             ),
-//             subtitle: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(provider.businessType),
-//                 Row(
-//                   children: [
-//                     const Icon(Icons.star, color: Colors.amber, size: 16),
-//                     const SizedBox(width: 4),
-//                     Text(
-//                       provider.rating.toStringAsFixed(1),
-//                       style: const TextStyle(fontWeight: FontWeight.bold),
-//                     ),
-//                     const SizedBox(width: 4),
-//                     Text('(${provider.reviewCount})'),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//             trailing: IconButton(
-//               icon: const Icon(Icons.arrow_forward_ios),
-//               onPressed: () => _showProviderBottomSheet(provider),
-//             ),
-//             onTap: () => _showProviderBottomSheet(provider),
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
-
-// 
-// lib/ui/widgets/map_filter_screen.dart - Version améliorée
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -556,20 +6,19 @@ import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/provider_list_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/models/provider_model.dart';
-import '../../core/models/service.dart';
-import '../screens/service_detail_screen.dart';
+import '../../core/models/user.dart';
+import '../../core/services/api_service.dart';
 
 class MapFilterScreen extends StatefulWidget {
   final VoidCallback onClose;
   final int? categoryId;
-  final bool isProviderMode;
 
   const MapFilterScreen({
     Key? key, 
     required this.onClose,
     this.categoryId,
-    this.isProviderMode = false,
   }) : super(key: key);
 
   @override
@@ -584,9 +33,18 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   String _errorMessage = '';
   LatLng? _currentPosition;
   bool _showListView = false;
-  List<ProviderModel> _allProviders = []; // Liste complète
-  List<ProviderModel> _filteredProviders = []; // Liste filtrée
+  
+  // Listes pour les deux types d'utilisateurs
+  List<ProviderModel> _allProviders = [];
+  List<ProviderModel> _filteredProviders = [];
+  List<User> _allClients = [];
+  List<User> _filteredClients = [];
+  
   ProviderModel? _selectedProvider;
+  User? _selectedClient;
+  
+  // Déterminer le rôle de l'utilisateur
+  bool _isProvider = false;
   
   // Contrôleurs d'animation
   late AnimationController _bottomSheetController;
@@ -594,15 +52,22 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   late Animation<double> _bottomSheetAnimation;
   late Animation<double> _fabAnimation;
 
-  // Filtres simplifiés - seulement distance et rating
-  double _radiusFilter = 15.0; // km
-  double _minRatingFilter = 0.0; // Note minimum (0 à 5)
+  // Filtres
+  double _radiusFilter = 15.0;
+  double _minRatingFilter = 0.0;
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
+    _checkUserRole();
     _loadDataWithLocation();
+  }
+
+  void _checkUserRole() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    _isProvider = authProvider.currentUser?.role == 'provider';
+    print('🔍 Rôle utilisateur: ${_isProvider ? "PRESTATAIRE" : "CLIENT"}');
   }
 
   void _initAnimations() {
@@ -642,7 +107,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     super.dispose();
   }
 
-  // Méthode améliorée pour charger les données avec localisation
   Future<void> _loadDataWithLocation() async {
     if (!mounted) return;
     
@@ -652,11 +116,14 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     });
 
     try {
-      // 1. D'abord récupérer la position actuelle
       await _updateCurrentLocation();
       
-      // 2. Puis charger les prestataires
-      await _loadProviders();
+      // Charger selon le rôle
+      if (_isProvider) {
+        await _loadClients();
+      } else {
+        await _loadProviders();
+      }
 
       if (mounted) {
         setState(() {
@@ -674,12 +141,10 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     }
   }
 
-  // Méthode séparée pour mettre à jour la localisation
   Future<void> _updateCurrentLocation() async {
     try {
       final locationProvider = Provider.of<LocationProvider>(context, listen: false);
       
-      // Vérifier si on a déjà une position
       if (locationProvider.currentPosition != null) {
         _currentPosition = LatLng(
           locationProvider.currentPosition!.latitude,
@@ -688,7 +153,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
         return;
       }
 
-      // Sinon, essayer de récupérer la position
       bool locationServicesEnabled = await locationProvider.checkLocationServices();
       
       if (locationServicesEnabled) {
@@ -706,15 +170,15 @@ class _MapFilterScreenState extends State<MapFilterScreen>
         }
       }
       
-      // Position par défaut si échec (Cotonou, Bénin)
       _currentPosition ??= const LatLng(6.3728, 2.3905);
       
     } catch (e) {
-      print('Erreur lors de la récupération de la localisation: $e');
+      print('Erreur localisation: $e');
       _currentPosition = const LatLng(6.3728, 2.3905);
     }
   }
 
+  // Charger les PRESTATAIRES (pour les clients)
   Future<void> _loadProviders() async {
     if (!mounted) return;
     
@@ -724,11 +188,10 @@ class _MapFilterScreenState extends State<MapFilterScreen>
       if (widget.categoryId != null) {
         await providerListProvider.fetchProvidersByCategory(widget.categoryId!);
       } else if (_currentPosition != null) {
-        // Utiliser un rayon par défaut pour charger tous les prestataires proches
         await providerListProvider.fetchNearbyProviders(
           _currentPosition!.latitude,
           _currentPosition!.longitude,
-          radius: 70.0, // Rayon plus large pour avoir plus de données
+          radius: 70.0,
         );
       } else {
         await providerListProvider.fetchProviders();
@@ -738,49 +201,97 @@ class _MapFilterScreenState extends State<MapFilterScreen>
       _applyFilters();
       
     } catch (e) {
-      print('Erreur lors du chargement des prestataires: $e');
+      print('Erreur chargement prestataires: $e');
       _allProviders = [];
       _filteredProviders = [];
+    }
+  }
+
+  // Charger les CLIENTS (pour les prestataires)
+  Future<void> _loadClients() async {
+    if (!mounted) return;
+    
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    
+    try {
+      if (_currentPosition != null) {
+        _allClients = await apiService.getNearbyClients(
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          radius: 70.0,
+        );
+      } else {
+        _allClients = [];
+      }
+
+      _applyFilters();
+      
+    } catch (e) {
+      print('Erreur chargement clients: $e');
+      _allClients = [];
+      _filteredClients = [];
     }
   }
 
   void _applyFilters() {
     if (!mounted) return;
 
-    List<ProviderModel> filtered = List.from(_allProviders);
+    if (_isProvider) {
+      // Filtrer les CLIENTS
+      List<User> filtered = List.from(_allClients);
 
-    // Filtre par note minimum
-    if (_minRatingFilter > 0) {
-      filtered = filtered.where((provider) => provider.rating >= _minRatingFilter).toList();
+      if (_currentPosition != null) {
+        filtered = filtered.where((client) {
+          if (client.latitude == null || client.longitude == null) return false;
+          
+          double distance = _calculateDistance(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            client.latitude!,
+            client.longitude!,
+          );
+          
+          return distance <= _radiusFilter;
+        }).toList();
+      }
+
+      _filteredClients = filtered;
+      _createClientMarkers(_filteredClients);
+      
+    } else {
+      // Filtrer les PRESTATAIRES
+      List<ProviderModel> filtered = List.from(_allProviders);
+
+      if (_minRatingFilter > 0) {
+        filtered = filtered.where((provider) => provider.rating >= _minRatingFilter).toList();
+      }
+
+      if (_currentPosition != null) {
+        filtered = filtered.where((provider) {
+          if (provider.latitude == null || provider.longitude == null) return false;
+          
+          double distance = _calculateDistance(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            provider.latitude!,
+            provider.longitude!,
+          );
+          
+          return distance <= _radiusFilter;
+        }).toList();
+      }
+
+      _filteredProviders = filtered;
+      _createProviderMarkers(_filteredProviders);
     }
-
-    // Filtre par distance si on a une position actuelle
-    if (_currentPosition != null) {
-      filtered = filtered.where((provider) {
-        if (provider.latitude == null || provider.longitude == null) return false;
-        
-        double distance = _calculateDistance(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-          provider.latitude!,
-          provider.longitude!,
-        );
-        
-        return distance <= _radiusFilter;
-      }).toList();
-    }
-
-    _filteredProviders = filtered;
-    _createMarkers(_filteredProviders);
     
     if (mounted) {
       setState(() {});
     }
   }
 
-  // Calcul de distance entre deux points (en km)
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const double earthRadius = 6371; // Rayon de la Terre en km
+    const double earthRadius = 6371;
     
     double dLat = _toRadians(lat2 - lat1);
     double dLon = _toRadians(lon2 - lon1);
@@ -798,10 +309,10 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     return degrees * (math.pi / 180);
   }
 
-  void _createMarkers(List<ProviderModel> providers) {
+  // Créer les marqueurs pour les PRESTATAIRES
+  void _createProviderMarkers(List<ProviderModel> providers) {
     _markers.clear();
     
-    // Marqueur pour la position actuelle
     if (_currentPosition != null) {
       _markers.add(
         Marker(
@@ -815,7 +326,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
       );
     }
     
-    // Marqueurs pour les prestataires
     for (var provider in providers) {
       if (provider.latitude != null && provider.longitude != null) {
         _markers.add(
@@ -840,17 +350,62 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     }
   }
 
+  // Créer les marqueurs pour les CLIENTS
+  void _createClientMarkers(List<User> clients) {
+    _markers.clear();
+    
+    if (_currentPosition != null) {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('current_position'),
+          position: _currentPosition!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          infoWindow: InfoWindow(
+            title: AppLocalizations.of(context)!.yourPosition,
+          ),
+        ),
+      );
+    }
+    
+    for (var client in clients) {
+      if (client.latitude != null && client.longitude != null) {
+        _markers.add(
+          Marker(
+            markerId: MarkerId('client_${client.id}'),
+            position: LatLng(client.latitude!, client.longitude!),
+            infoWindow: InfoWindow(
+              title: client.fullName,
+              snippet: client.location ?? '',
+            ),
+            onTap: () => _showClientBottomSheet(client),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          ),
+        );
+      }
+    }
+  }
+
   void _showProviderBottomSheet(ProviderModel provider) {
     setState(() {
       _selectedProvider = provider;
+      _selectedClient = null;
     });
     _bottomSheetController.forward();
   }
 
-  void _hideProviderBottomSheet() {
+  void _showClientBottomSheet(User client) {
+    setState(() {
+      _selectedClient = client;
+      _selectedProvider = null;
+    });
+    _bottomSheetController.forward();
+  }
+
+  void _hideBottomSheet() {
     _bottomSheetController.reverse();
     setState(() {
       _selectedProvider = null;
+      _selectedClient = null;
     });
   }
 
@@ -867,7 +422,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
     return StatefulBuilder(
       builder: (context, setModalState) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.5, // Réduit la hauteur
+          height: MediaQuery.of(context).size.height * 0.5,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
@@ -877,7 +432,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
           ),
           child: Column(
             children: [
-              // Handle
               Container(
                 width: 40,
                 height: 4,
@@ -888,7 +442,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                 ),
               ),
               
-              // Header
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -920,7 +473,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Rayon de recherche
                       Text(
                         '${AppLocalizations.of(context)!.searchRadius}: ${_radiusFilter.toInt()} km',
                         style: const TextStyle(
@@ -944,31 +496,32 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       
                       const SizedBox(height: 30),
                       
-                      // Note minimum
-                      Text(
-                        '${AppLocalizations.of(context)!.minimumRating}: ${_minRatingFilter.toStringAsFixed(1)} ⭐',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      // Note minimum (seulement pour les clients qui voient les prestataires)
+                      if (!_isProvider) ...[
+                        Text(
+                          '${AppLocalizations.of(context)!.minimumRating}: ${_minRatingFilter.toStringAsFixed(1)} ⭐',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Slider(
-                        value: _minRatingFilter,
-                        min: 0.0,
-                        max: 5.0,
-                        divisions: 10, // Steps de 0.5
-                        activeColor: const Color(0xFF142FE2),
-                        onChanged: (value) {
-                          setModalState(() {
-                            _minRatingFilter = value;
-                          });
-                        },
-                      ),
+                        const SizedBox(height: 10),
+                        Slider(
+                          value: _minRatingFilter,
+                          min: 0.0,
+                          max: 5.0,
+                          divisions: 10,
+                          activeColor: const Color(0xFF142FE2),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _minRatingFilter = value;
+                            });
+                          },
+                        ),
+                      ],
                       
                       const SizedBox(height: 20),
                       
-                      // Afficher le nombre de prestataires qui correspondent
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -981,7 +534,9 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Rayon: ${_radiusFilter.toInt()}km, Note min: ${_minRatingFilter.toStringAsFixed(1)}',
+                                _isProvider
+                                    ? 'Rayon: ${_radiusFilter.toInt()}km'
+                                    : 'Rayon: ${_radiusFilter.toInt()}km, Note min: ${_minRatingFilter.toStringAsFixed(1)}',
                                 style: TextStyle(
                                   color: Colors.grey[700],
                                   fontSize: 14,
@@ -996,13 +551,12 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                 ),
               ),
               
-              // Bouton appliquer
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    _applyFilters(); // Appliquer les filtres
+                    _applyFilters();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
@@ -1024,10 +578,11 @@ class _MapFilterScreenState extends State<MapFilterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       body: Stack(
         children: [
-          // Carte Google Maps ou état de chargement
           _isLoading
               ? const Center(
                   child: Column(
@@ -1062,7 +617,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF142FE2),
                             ),
-                            child: Text(AppLocalizations.of(context)!.retry),
+                            child: Text(l10n.retry),
                           ),
                         ],
                       ),
@@ -1080,16 +635,14 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       myLocationButtonEnabled: false,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
-                      onTap: (_) => _hideProviderBottomSheet(),
+                      onTap: (_) => _hideBottomSheet(),
                     ),
 
-          // Header avec boutons
           SafeArea(
             child: Container(
               margin: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Bouton retour
                   ScaleTransition(
                     scale: _fabAnimation,
                     child: FloatingActionButton(
@@ -1104,7 +657,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                   
                   const SizedBox(width: 8),
                   
-                  // Info sur le nombre de prestataires
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1119,7 +671,9 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                         ],
                       ),
                       child: Text(
-                        '${_filteredProviders.length} prestataire(s) trouvé(s)',
+                        _isProvider
+                            ? l10n.clientsFound(_filteredClients.length)
+                            : l10n.providersFound(_filteredProviders.length),
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
@@ -1131,7 +685,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                   
                   const SizedBox(width: 8),
                   
-                  // Bouton actualiser localisation
                   ScaleTransition(
                     scale: _fabAnimation,
                     child: FloatingActionButton(
@@ -1144,7 +697,11 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                           _isLoading = true;
                         });
                         await _updateCurrentLocation();
-                        await _loadProviders();
+                        if (_isProvider) {
+                          await _loadClients();
+                        } else {
+                          await _loadProviders();
+                        }
                         setState(() {
                           _isLoading = false;
                         });
@@ -1155,7 +712,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                   
                   const SizedBox(width: 8),
                   
-                  // Bouton filtres
                   ScaleTransition(
                     scale: _fabAnimation,
                     child: FloatingActionButton(
@@ -1170,7 +726,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                   
                   const SizedBox(width: 8),
                   
-                  // Bouton liste/carte
                   ScaleTransition(
                     scale: _fabAnimation,
                     child: FloatingActionButton(
@@ -1191,7 +746,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
             ),
           ),
 
-          // Bottom sheet prestataire sélectionné
+          // Bottom sheet pour prestataire
           if (_selectedProvider != null)
             Positioned(
               bottom: 0,
@@ -1211,7 +766,27 @@ class _MapFilterScreenState extends State<MapFilterScreen>
               ),
             ),
 
-          // Vue liste (optionnelle)
+          // Bottom sheet pour client
+          if (_selectedClient != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: AnimatedBuilder(
+                animation: _bottomSheetAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(
+                      0,
+                      200 * (1 - _bottomSheetAnimation.value),
+                    ),
+                    child: _buildClientBottomSheet(_selectedClient!),
+                  );
+                },
+              ),
+            ),
+
+          // Vue liste
           if (_showListView && !_isLoading)
             Positioned(
               top: 100,
@@ -1235,7 +810,9 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        '${_filteredProviders.length} ${AppLocalizations.of(context)!.providersFound}',
+                        _isProvider
+                            ? l10n.clientsFound(_filteredClients.length)
+                            : l10n.providersFound(_filteredProviders.length),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1243,7 +820,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                       ),
                     ),
                     Expanded(
-                      child: _filteredProviders.isEmpty
+                      child: (_isProvider ? _filteredClients.isEmpty : _filteredProviders.isEmpty)
                           ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1251,28 +828,23 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                                   Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Aucun prestataire trouvé',
+                                    _isProvider ? l10n.noClientsFound : l10n.noProvidersFound,
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Essayez d\'élargir votre rayon de recherche',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[500],
                                     ),
                                   ),
                                 ],
                               ),
                             )
                           : ListView.builder(
-                              itemCount: _filteredProviders.length,
+                              itemCount: _isProvider ? _filteredClients.length : _filteredProviders.length,
                               itemBuilder: (context, index) {
-                                final provider = _filteredProviders[index];
-                                return _buildProviderListItem(provider);
+                                if (_isProvider) {
+                                  return _buildClientListItem(_filteredClients[index]);
+                                } else {
+                                  return _buildProviderListItem(_filteredProviders[index]);
+                                }
                               },
                             ),
                     ),
@@ -1286,6 +858,8 @@ class _MapFilterScreenState extends State<MapFilterScreen>
   }
 
   Widget _buildProviderBottomSheet(ProviderModel provider) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -1354,7 +928,7 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '(${provider.reviewCount} avis)',
+                          '(${provider.reviewCount} ${l10n.reviews})',
                           style: TextStyle(color: Colors.grey[600], fontSize: 12),
                         ),
                       ],
@@ -1382,7 +956,6 @@ class _MapFilterScreenState extends State<MapFilterScreen>
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    // Centrer la carte sur le prestataire
                     if (provider.latitude != null && provider.longitude != null) {
                       _mapController?.animateCamera(
                         CameraUpdate.newLatLngZoom(
@@ -1391,27 +964,119 @@ class _MapFilterScreenState extends State<MapFilterScreen>
                         ),
                       );
                     }
-                    _hideProviderBottomSheet();
+                    _hideBottomSheet();
                   },
-                  child: Text(AppLocalizations.of(context)!.viewOnMap),
+                  child: Text(l10n.viewOnMap),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Naviguer vers le détail du prestataire
-                    Navigator.pop(context); // Fermer la carte
-                    // Ajouter ici navigation vers profil prestataire
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      '/provider-detail',
+                      arguments: provider.id,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF142FE2),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Voir profil'),
+                  child: Text(l10n.viewProfile),
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClientBottomSheet(User client) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundImage: client.profilePicture != null && client.profilePicture!.isNotEmpty
+                    ? NetworkImage(client.profilePicture!)
+                    : null,
+                child: client.profilePicture == null || client.profilePicture!.isEmpty
+                    ? Text(client.fullName[0].toUpperCase())
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      client.fullName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (client.location != null)
+                      Text(
+                        client.location!,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          if (client.bio != null && client.bio!.isNotEmpty)
+            Text(
+              client.bio!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+          
+          const SizedBox(height: 16),
+          
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigation vers chat avec le client
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF142FE2),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            child: Text(l10n.contact),
           ),
         ],
       ),
@@ -1449,6 +1114,22 @@ class _MapFilterScreenState extends State<MapFilterScreen>
         ],
       ),
       onTap: () => _showProviderBottomSheet(provider),
+    );
+  }
+
+  Widget _buildClientListItem(User client) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: client.profilePicture != null && client.profilePicture!.isNotEmpty
+            ? NetworkImage(client.profilePicture!)
+            : null,
+        child: client.profilePicture == null || client.profilePicture!.isEmpty
+            ? Text(client.fullName[0].toUpperCase())
+            : null,
+      ),
+      title: Text(client.fullName),
+      subtitle: client.location != null ? Text(client.location!) : null,
+      onTap: () => _showClientBottomSheet(client),
     );
   }
 }

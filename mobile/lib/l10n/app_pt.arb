@@ -20,8 +20,8 @@
   "findBestProviders": "Encontre os melhores prestadores",
   "bookQualityServices": "Reserve facilmente serviços de qualidade",
   "discoverNewProjects": "Descubra novos projetos",
-  "findClientsDevelop": "Encontre clientes e desenvolva seu negócio",
-  "findClientsDevelopBusiness": "Encontre clientes e desenvolva seu negócio",
+  "findClientsDevelop": "Encontre seus próximos clientes",
+  "findClientsDevelopBusiness": "Encontre seus próximos clientes",
   "viewProjects": "Ver projetos",
   
   "popularCategories": "Categorias populares",
@@ -2093,7 +2093,23 @@
         "type": "String"
       }
     }
-  }
+  },
+  "providersNearby": "Prestadores próximos",
+  "clientsNearby": "Clientes próximos",
+  "providersCategory": "Prestadores - Categoria",
+  "noProvidersFound": "Nenhum prestador encontrado nesta área",
+  "noClientsFound": "Nenhum cliente encontrado nesta área",
+  "providersFound": "{count} prestador(es) encontrado(s)",
+  "clientsFound": "{count} cliente(s) encontrado(s)",
+  "locationServicesNotAvailable": "Serviços de localização não disponíveis",
+  "positionNotAvailable": "Posição não disponível",
+  "loadingDataError": "Erro ao carregar dados: {error}",
+  "retry": "Tentar novamente",
+  "servicesOffered": "Serviços oferecidos",
+  "otherServices": "+{count} outros serviços",
+  "viewProfile": "Ver perfil",
+  "contact": "Contactar",
+  "refresh": "Atualizar"
 
 
 }

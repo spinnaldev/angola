@@ -33,6 +33,10 @@ class User(AbstractUser, TimeStampMixin):
     location = models.CharField(max_length=255, blank=True)
     company_name = models.CharField(max_length=100, blank=True, null=True)
     
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    last_location_update = models.DateTimeField(null=True, blank=True)
+    
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 

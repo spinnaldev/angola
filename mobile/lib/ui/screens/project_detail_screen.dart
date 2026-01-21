@@ -1357,6 +1357,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           child: OfferCard(
             offer: _offers[index],
             onOfferUpdated: () => _loadOffers(), // Callback pour rafraîchir
+            hideViewProjectButton: true
           ),
         );
       },

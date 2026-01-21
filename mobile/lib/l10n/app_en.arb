@@ -20,8 +20,8 @@
   "findBestProviders": "Find the best service providers",
   "bookQualityServices": "Easily book quality services",
   "discoverNewProjects": "Discover new projects",
-  "findClientsDevelop": "Find clients and grow your business",
-  "findClientsDevelopBusiness": "Find clients and grow your business",
+  "findClientsDevelop": "Find your next clients",
+  "findClientsDevelopBusiness": "Find your next clients",
   "viewProjects": "View projects",
   
   "popularCategories": "Popular categories",
@@ -2022,6 +2022,22 @@
       "type": "String"
     }
   }
-}
+},
+"providersNearby": "Providers nearby",
+"clientsNearby": "Clients nearby",
+"providersCategory": "Providers - Category",
+"noProvidersFound": "No providers found in this area",
+"noClientsFound": "No clients found in this area",
+"providersFound": "{count} provider(s) found",
+"clientsFound": "{count} client(s) found",
+"locationServicesNotAvailable": "Location services are not available",
+"positionNotAvailable": "Position not available",
+"loadingDataError": "Error loading data: {error}",
+"retry": "Retry",
+"servicesOffered": "Services offered",
+"otherServices": "+{count} other services",
+"viewProfile": "View profile",
+"contact": "Contact",
+"refresh": "Refresh"
 
 }

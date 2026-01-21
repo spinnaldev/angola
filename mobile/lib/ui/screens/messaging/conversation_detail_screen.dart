@@ -171,7 +171,22 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
   /// Construire l'app bar
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
     return AppBar(
-      title: Row(
+      title: InkWell(
+      onTap: () {
+        if (widget.otherPerson.companyName != null ) {
+          Navigator.pushNamed(
+            context,
+            '/provider-detail',
+            arguments: widget.otherPerson.id,
+          );
+        } else {
+          // Navigation vers profil client (si tu as un écran pour ça)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profil client non disponible')),
+          );
+        }
+      },
+      child: Row(
         children: [
           CircleAvatar(
             radius: 20,
@@ -195,33 +210,37 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  widget.otherPerson.firstName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      widget.otherPerson.firstName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Icône pour indiquer que c'est cliquable
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ],
                 ),
-                // if (widget.otherPerson.isOnline == true)
-                //   Text(
-                //     l10n.online,
-                //     style: TextStyle(
-                //       fontSize: 12,
-                //       color: Colors.green[600],
-                //     ),
-                //   ),
               ],
             ),
           ),
         ],
       ),
+    ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.phone),
-          onPressed: () {
-            // Implémenter l'appel téléphonique
-          },
-        ),
+        // IconButton(
+        //   icon: const Icon(Icons.phone),
+        //   onPressed: () {
+        //     // Implémenter l'appel téléphonique
+        //   },
+        // ),
         IconButton(
           icon: const Icon(Icons.more_vert),
           onPressed: () {

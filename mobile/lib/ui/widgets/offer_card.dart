@@ -11,11 +11,13 @@ import '../screens/provider_detail_screen.dart';
 class OfferCard extends StatefulWidget {
   final dynamic offer;
   final VoidCallback? onOfferUpdated;
-  
+  final bool hideViewProjectButton;
+
   const OfferCard({
     Key? key,
     required this.offer,
     this.onOfferUpdated,
+    this.hideViewProjectButton = false,
   }) : super(key: key);
 
   @override
@@ -349,26 +351,28 @@ class _OfferCardState extends State<OfferCard> {
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
-          child: OutlinedButton(
-            onPressed: () => _viewProject(context),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF142FE2),
-              side: const BorderSide(color: Color(0xFF142FE2)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        if (!widget.hideViewProjectButton) 
+          Flexible(
+            child: OutlinedButton(
+              onPressed: () => _viewProject(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF142FE2),
+                side: const BorderSide(color: Color(0xFF142FE2)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 32),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: const Size(0, 32),
-            ),
-            child: Text(
-              l10n.viewProject,
-              style: const TextStyle(fontSize: 12),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              child: Text(
+                l10n.viewProject,
+                style: const TextStyle(fontSize: 12),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
-        ),
+        
       ],
     );
   }

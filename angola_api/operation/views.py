@@ -1161,6 +1161,90 @@ def provider_public_stats(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
     
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def nearby_clients(request):
+    """Endpoint pour récupérer les clients à proximité (pour les prestataires)"""
+    from math import radians, cos, sin, asin, sqrt
+    
+    latitude = request.query_params.get('latitude')
+    longitude = request.query_params.get('longitude')
+    radius = min(float(request.query_params.get('radius', 10.0)), 70)
+    
+    if not (latitude and longitude):
+        # Fallback vers les clients récents
+        clients = User.objects.filter(
+            role='client',
+            latitude__isnull=False,
+            longitude__isnull=False
+        ).order_by('-date_joined')[:20]
+        
+        serializer = UserSerializer(clients, many=True, context={'request': request})
+        return Response({"results": serializer.data, "count": len(serializer.data)})
+    
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (ValueError, TypeError):
+        return Response(
+            {"detail": "Coordonnées invalides"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Fonction Haversine
+    def calculate_distance(lat1, lon1, lat2, lon2):
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        return c * 6371
+    
+    # Bounding box
+    import math
+    lat_radius = radius / 111.0
+    lng_radius = radius / (111.0 * math.cos(math.radians(latitude)))
+    
+    # Filtrer les clients dans la zone
+    clients = User.objects.filter(
+        role='client',
+        latitude__isnull=False,
+        longitude__isnull=False,
+        latitude__gte=latitude - lat_radius,
+        latitude__lte=latitude + lat_radius,
+        longitude__gte=longitude - lng_radius,
+        longitude__lte=longitude + lng_radius
+    )
+    
+    # Calculer distances
+    clients_with_distance = []
+    for client in clients:
+        if client.latitude and client.longitude:
+            distance = calculate_distance(
+                latitude, longitude,
+                float(client.latitude), float(client.longitude)
+            )
+            if distance <= radius:
+                clients_with_distance.append((client, distance))
+    
+    # Trier par distance
+    clients_with_distance.sort(key=lambda x: x[1])
+    sorted_clients = clients_with_distance[:50]
+    
+    # Sérialiser
+    serializer = UserSerializer([c[0] for c in sorted_clients], many=True, context={'request': request})
+    results = serializer.data
+    
+    # Ajouter distance
+    for i, (client, distance) in enumerate(sorted_clients):
+        if i < len(results):
+            results[i]['distance'] = round(distance, 2)
+    
+    return Response({
+        "results": results,
+        "count": len(results)
+    })
+
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = Provider.objects.all()
     serializer_class = ProviderListSerializer
@@ -1348,15 +1432,16 @@ class ProviderViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def nearby(self, request):
-        """Endpoint optimisé pour récupérer les prestataires à proximité"""
+        """Endpoint optimisé pour récupérer les prestataires à proximité avec distance"""
+        from math import radians, cos, sin, asin, sqrt
+        
         latitude = request.query_params.get('latitude')
         longitude = request.query_params.get('longitude')
-        radius =min(float(request.query_params.get('radius', 10.0)) , 70)
+        radius = min(float(request.query_params.get('radius', 10.0)), 70)
         
         if not (latitude and longitude):
             # Fallback vers les prestataires récents
             queryset = Provider.objects.filter(
-                is_active=True,
                 latitude__isnull=False,
                 longitude__isnull=False
             ).order_by('-created_at')[:20]
@@ -1372,14 +1457,22 @@ class ProviderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Calcul optimisé de la zone de recherche
+        # Fonction Haversine pour calculer la distance
+        def calculate_distance(lat1, lon1, lat2, lon2):
+            lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * asin(sqrt(a))
+            return c * 6371  # Rayon de la Terre en km
+        
+        # Bounding box pour filtrer rapidement
         import math
-        lat_radius = radius / 111.0  # 1° latitude ≈ 111 km
+        lat_radius = radius / 111.0
         lng_radius = radius / (111.0 * math.cos(math.radians(latitude)))
         
-        # Filtrer les prestataires dans la zone
+        # Filtrer les prestataires dans la zone approximative
         providers = Provider.objects.filter(
-            # is_active=True,
             latitude__isnull=False,
             longitude__isnull=False,
             latitude__gte=latitude - lat_radius,
@@ -1388,12 +1481,11 @@ class ProviderViewSet(viewsets.ModelViewSet):
             longitude__lte=longitude + lng_radius
         )
         
-        # Calculer les distances exactes
+        # Calculer les distances exactes et filtrer
         providers_with_distance = []
         for provider in providers:
             if provider.latitude and provider.longitude:
-                # Calcul de distance avec la formule de Haversine
-                distance = self._calculate_distance(
+                distance = calculate_distance(
                     latitude, longitude,
                     float(provider.latitude), float(provider.longitude)
                 )
@@ -1402,10 +1494,23 @@ class ProviderViewSet(viewsets.ModelViewSet):
         
         # Trier par distance
         providers_with_distance.sort(key=lambda x: x[1])
-        sorted_providers = [p[0] for p in providers_with_distance[:20]]
         
-        serializer = self.get_serializer(sorted_providers, many=True)
-        return Response({"results": serializer.data, "count": len(serializer.data)})
+        # Limiter à 50 résultats
+        sorted_providers = providers_with_distance[:50]
+        
+        # Sérialiser avec la distance
+        serializer = self.get_serializer([p[0] for p in sorted_providers], many=True)
+        results = serializer.data
+        
+        # Ajouter la distance dans chaque résultat
+        for i, (provider, distance) in enumerate(sorted_providers):
+            if i < len(results):
+                results[i]['distance'] = round(distance, 2)
+        
+        return Response({
+            "results": results,
+            "count": len(results)
+        })
 
     def _calculate_distance(self, lat1, lon1, lat2, lon2):
         """Calcul de distance avec la formule de Haversine"""
@@ -6619,3 +6724,56 @@ class ServiceFavoriteViewSet(viewsets.ModelViewSet):
                 {'message': 'Prestataire déjà en favoris'},
                 status=status.HTTP_200_OK
             )
+        
+
+
+@api_view(['PUT', 'POST'])
+@permission_classes([IsAuthenticated])
+def update_user_location(request):
+    """Mettre à jour la position GPS de l'utilisateur"""
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+    
+    if latitude is None or longitude is None:
+        return Response(
+            {'error': 'Latitude et longitude requis'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+        
+        # Validation des coordonnées
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return Response(
+                {'error': 'Coordonnées invalides'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Mettre à jour l'utilisateur
+        user = request.user
+        user.latitude = latitude
+        user.longitude = longitude
+        user.last_location_update = timezone.now()
+        user.save(update_fields=['latitude', 'longitude', 'last_location_update'])
+        
+        # Si c'est un prestataire, mettre à jour aussi son profil Provider
+        if hasattr(user, 'provider_profile'):
+            provider = user.provider_profile
+            provider.latitude = latitude
+            provider.longitude = longitude
+            provider.save(update_fields=['latitude', 'longitude'])
+        
+        return Response({
+            'success': True,
+            'message': 'Position mise à jour',
+            'latitude': latitude,
+            'longitude': longitude
+        })
+        
+    except (ValueError, TypeError) as e:
+        return Response(
+            {'error': f'Erreur de conversion: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

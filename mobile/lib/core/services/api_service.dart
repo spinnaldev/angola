@@ -2793,6 +2793,39 @@ class ApiService {
     }
   }
 
+  Future<List<User>> getNearbyClients({
+    required double latitude,
+    required double longitude,
+    double radius = 10,
+  }) async {
+    try {
+      final data = await _apiClient.get(
+        'clients/nearby/?latitude=$latitude&longitude=$longitude&radius=$radius',
+        requireAuth: false,
+      );
+      
+      final List<dynamic> clientsData = data['results'] ?? [];
+      return clientsData.map((json) => User.fromJson(json)).toList();
+    } catch (e) {
+      print('❌ Erreur récupération clients: $e');
+      return [];
+    }
+  }
+
+  Future<bool> updateUserLocation(double latitude, double longitude) async {
+    try {
+      final data = await _apiClient.put('user/update-location/', data: {
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+      print('✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅Position mis à jour ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅');
+      return data['success'] == true;
+    } catch (e) {
+      print('❌ Erreur mise à jour position: $e');
+      return false;
+    }
+  }
+
   Future<List<ProviderModel>> getNearbyProviders(
       double latitude, double longitude,
       {double radius = 10.0}) async {

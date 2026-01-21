@@ -26,6 +26,10 @@ class User {
   final bool isClientVerified;
   final String? clientVerificationStatus;
   
+  // Coordonnées GPS
+  final double? latitude;
+  final double? longitude;
+  
   User({
     required this.id,
     required this.username,
@@ -48,6 +52,10 @@ class User {
     this.needsVerification = false,
     this.isClientVerified = false,
     this.clientVerificationStatus,
+    
+    // Coordonnées GPS
+    this.latitude,
+    this.longitude,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -74,6 +82,10 @@ class User {
 
       isClientVerified: json['is_client_verified'] ?? false,
       clientVerificationStatus: json['client_verification_status'],
+      
+      // Coordonnées GPS
+      latitude: json['latitude'] != null ? (json['latitude'] is double ? json['latitude'] : double.tryParse(json['latitude'].toString())) : null,
+      longitude: json['longitude'] != null ? (json['longitude'] is double ? json['longitude'] : double.tryParse(json['longitude'].toString())) : null,
     );
   }
 
@@ -101,7 +113,10 @@ class User {
 
       'is_client_verified': isClientVerified,
       'client_verification_status': clientVerificationStatus,
-
+      
+      // Coordonnées GPS
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -244,6 +259,8 @@ class User {
     bool? needsVerification,
     bool? isClientVerified,
     String? clientVerificationStatus,
+    double? latitude,
+    double? longitude,
   }) {
     return User(
       id: id ?? this.id,
@@ -268,6 +285,10 @@ class User {
       // NOUVEAU
       isClientVerified: isClientVerified ?? this.isClientVerified,
       clientVerificationStatus: clientVerificationStatus ?? this.clientVerificationStatus,
+      
+      // Coordonnées GPS
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 

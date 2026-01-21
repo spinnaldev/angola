@@ -111,6 +111,9 @@ urlpatterns = [
     path('api/user/force-refresh-profile/', views.force_refresh_profile, name='force_refresh_profile'),
     path('api/user/profile-detailed/', views.get_current_user_detailed, name='get_current_user_detailed'),
     
+    path('api/user/update-location/', views.update_user_location, name='update-location'),
+    path('api/clients/nearby/', views.nearby_clients, name='nearby-clients'),
+    
     # Notifications endpoints
     # path('api/notifications/count/', views.get_notification_count, name='notification-count'),
     path('api/notifications/mark_all_read/', views.mark_all_notifications_read, name='mark-all-notifications-read'),

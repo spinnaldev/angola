@@ -95,27 +95,29 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentAuthState = authProvider.isAuthenticated;
-    
+
     if (_previousAuthState != null && _previousAuthState != currentAuthState) {
       print("🔓 Changement d'état d'authentification détecté");
-      
+
       if (!currentAuthState) {
         print("🔔 Utilisateur déconnecté - Effacement des notifications");
-        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        final notificationProvider =
+            Provider.of<NotificationProvider>(context, listen: false);
         notificationProvider.clearNotifications();
       } else {
         print("🔔 Utilisateur connecté - Chargement des notifications");
         _loadNotificationsIfAuthenticated();
       }
     }
-    
+
     _previousAuthState = currentAuthState;
-    
+
     if (!_hasFetchedReviews) {
-      final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+      final reviewProvider =
+          Provider.of<ReviewProvider>(context, listen: false);
       reviewProvider.fetchTopReviews();
       _hasFetchedReviews = true;
     }
@@ -124,8 +126,9 @@ class _HomeScreenState extends State<HomeScreen>
   // Ajouter cette nouvelle méthode :
   void _loadNotificationsIfAuthenticated() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
-    
+    final notificationProvider =
+        Provider.of<NotificationProvider>(context, listen: false);
+
     if (authProvider.isAuthenticated) {
       print("🔔 Utilisateur connecté - Chargement des notifications");
       notificationProvider.loadUnreadCount();
@@ -134,11 +137,11 @@ class _HomeScreenState extends State<HomeScreen>
       notificationProvider.clearNotifications();
     }
   }
-  
 
   @override
   void initState() {
     super.initState();
+    _updateLocationOnStartup();
     // Différents onglets selon le profil
     int tabLength = _isProviderMode()
         ? 3
@@ -153,6 +156,21 @@ class _HomeScreenState extends State<HomeScreen>
         _loadNotificationsIfAuthenticated();
       }
     });
+  }
+
+  Future<void> _updateLocationOnStartup() async {
+    final locationService =
+        Provider.of<ImprovedLocationService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    print(
+        '------------------------------------ UPDATE LOCATION START-------------------------------------------------------');
+    bool success = await locationService.getCurrentLocation();
+    if (success && locationService.currentPosition != null) {
+      await apiService.updateUserLocation(
+        locationService.currentPosition!.latitude,
+        locationService.currentPosition!.longitude,
+      );
+    }
   }
 
   @override
@@ -225,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen>
     _nearbyServices = providers.take(6).map((provider) {
       // ✅ Récupérer l'image du service (pas du provider)
       String serviceImageUrl = '';
-      
+
       if (provider.services.isNotEmpty) {
         final service = provider.services.first;
         // Essayer d'obtenir l'image du service
@@ -235,13 +253,14 @@ class _HomeScreenState extends State<HomeScreen>
           serviceImageUrl = service.imageUrl!;
         }
       }
-      
+
       // ✅ Fallback: image du profil du provider ou image par défaut
       if (serviceImageUrl.isEmpty) {
         if (provider.profileImageUrl.isNotEmpty) {
           serviceImageUrl = provider.profileImageUrl;
         } else {
-          serviceImageUrl = 'https://picsum.photos/id/${1010 + provider.id}/300/200';
+          serviceImageUrl =
+              'https://picsum.photos/id/${1010 + provider.id}/300/200';
         }
       }
 
@@ -437,63 +456,65 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadServicesWithoutLocation() async {
-  final providerListProvider =
-      Provider.of<ProviderListProvider>(context, listen: false);
+    final providerListProvider =
+        Provider.of<ProviderListProvider>(context, listen: false);
 
-  try {
-    // Charger tous les prestataires sans filtre de proximité
-    await providerListProvider.fetchProviders();
+    try {
+      // Charger tous les prestataires sans filtre de proximité
+      await providerListProvider.fetchProviders();
 
-    // Générer quelques services par défaut
-    if (providerListProvider.providers.isNotEmpty) {
-      _nearbyServices =
-          providerListProvider.providers.take(6).map((provider) {
-        // ✅ Récupérer l'image du service (pas du provider)
-        String serviceImageUrl = '';
-        
-        if (provider.services.isNotEmpty) {
-          final service = provider.services.first;
-          // Essayer d'obtenir l'image du service
-          if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
-            serviceImageUrl = service.imageUrl!;
-          } else if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
-            serviceImageUrl = service.imageUrl!;
+      // Générer quelques services par défaut
+      if (providerListProvider.providers.isNotEmpty) {
+        _nearbyServices =
+            providerListProvider.providers.take(6).map((provider) {
+          // ✅ Récupérer l'image du service (pas du provider)
+          String serviceImageUrl = '';
+
+          if (provider.services.isNotEmpty) {
+            final service = provider.services.first;
+            // Essayer d'obtenir l'image du service
+            if (service.imageUrl != null && service.imageUrl!.isNotEmpty) {
+              serviceImageUrl = service.imageUrl!;
+            } else if (service.imageUrl != null &&
+                service.imageUrl!.isNotEmpty) {
+              serviceImageUrl = service.imageUrl!;
+            }
           }
-        }
-        
-        // ✅ Fallback: image du profil du provider ou image par défaut
-        if (serviceImageUrl.isEmpty) {
-          if (provider.profileImageUrl.isNotEmpty) {
-            serviceImageUrl = provider.profileImageUrl;
-          } else {
-            serviceImageUrl = 'https://picsum.photos/id/${1010 + provider.id}/300/200';
-          }
-        }
 
-        return Service(
-          id: 200 + provider.id,
-          title: provider.services.isNotEmpty
-              ? provider.services.first.title
-              : provider.name,
-          description: provider.description,
-          imageUrl: serviceImageUrl, // ✅ Utiliser l'image du service
-          rating: provider.rating,
-          reviewCount: provider.reviewCount,
-          provider_id: provider.id,
-          businessType: provider.businessType,
-          price: 50.0 + random.nextInt(150) * 1.0,
-          categoryId: 1 + random.nextInt(5),
-          priceType: random.nextBool() ? 'quote' : 'fixed',
-        );
-      }).toList();
-    } else {
+          // ✅ Fallback: image du profil du provider ou image par défaut
+          if (serviceImageUrl.isEmpty) {
+            if (provider.profileImageUrl.isNotEmpty) {
+              serviceImageUrl = provider.profileImageUrl;
+            } else {
+              serviceImageUrl =
+                  'https://picsum.photos/id/${1010 + provider.id}/300/200';
+            }
+          }
+
+          return Service(
+            id: 200 + provider.id,
+            title: provider.services.isNotEmpty
+                ? provider.services.first.title
+                : provider.name,
+            description: provider.description,
+            imageUrl: serviceImageUrl, // ✅ Utiliser l'image du service
+            rating: provider.rating,
+            reviewCount: provider.reviewCount,
+            provider_id: provider.id,
+            businessType: provider.businessType,
+            price: 50.0 + random.nextInt(150) * 1.0,
+            categoryId: 1 + random.nextInt(5),
+            priceType: random.nextBool() ? 'quote' : 'fixed',
+          );
+        }).toList();
+      } else {
+        _nearbyServices = [];
+      }
+    } catch (e) {
+      print('Erreur lors du chargement des prestataires: $e');
       _nearbyServices = [];
     }
-  } catch (e) {
-    print('Erreur lors du chargement des prestataires: $e');
-    _nearbyServices = [];
   }
-}
 
   // MÉTHODE AMÉLIORÉE _loadProjectsData avec gestion de la localisation
   Future<void> _loadProjectsData() async {
@@ -1204,9 +1225,9 @@ class _HomeScreenState extends State<HomeScreen>
         if (!authProvider.isAuthenticated) {
           return const SizedBox.shrink();
         }
-        
+
         final unreadCount = notificationProvider.unreadCount;
-        
+
         return Stack(
           children: [
             IconButton(
@@ -1585,7 +1606,9 @@ class _HomeScreenState extends State<HomeScreen>
               Expanded(
                 child: _buildStatCard(
                   l10n.completedServices,
-                  _providerStats['prestations_completed_this_month']?.toString() ?? '0',
+                  _providerStats['prestations_completed_this_month']
+                          ?.toString() ??
+                      '0',
                   Icons.check_circle,
                   Colors.green,
                   // ✅ REDIRECTION: Services terminés → Page liste demandes de devis
@@ -1673,13 +1696,12 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     );
                   },
-                  
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  l10n.totalReviews, 
+                  l10n.totalReviews,
                   _providerStats['total_reviews']?.toString() ?? '0',
                   Icons.rate_review,
                   Colors.purple,
@@ -1704,9 +1726,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildStatCard(
-    String title, 
-    String value, 
-    IconData icon, 
+    String title,
+    String value,
+    IconData icon,
     Color color, {
     VoidCallback? onTap, // ✅ NOUVEAU PARAMÈTRE OPTIONNEL
   }) {
